@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Platform</string>
+    <string name="welcome_message">Bem-vindo ao Platform</string>
+    <string name="items_title">Itens Disponíveis</string>
+    <string name="empty_items">Nenhum item encontrado.</string>
+    <string name="error_loading">Erro ao carregar dados.</string>
+    <string name="retry">Tentar novamente</string>
+</resources>

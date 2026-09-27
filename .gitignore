@@ -1,0 +1,51 @@
+# Built application files
+*.apk
+*.aar
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+app/build/
+
+# Gradle files
+.gradle/
+buildOutputCleanup/
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+local.properties
+captures/
+.externalNativeBuild
+.cxx/
+
+# Keystores and Certificates
+*.jks
+*.keystore
+*.p12
+*.pem
+google-services.json
+
+# OS and Scratch files
+.DS_Store
+Thumbs.db
+*.log
+temp/
+tmp/
+scratch/
+*:Zone.Identifier
+*.Zone.Identifier

@@ -63,6 +63,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.Goal
+import com.platform.app.presentation.components.PlatformAppBar
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
@@ -94,29 +95,10 @@ fun GoalsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Metas Financeiras",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${uiState.goals.size} objetivos cadastrados",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+            PlatformAppBar(
+                title = "Metas Financeiras",
+                subtitle = "${uiState.goals.size} objetivos cadastrados",
+                onOpenDrawer = onOpenDrawer
             )
         },
         floatingActionButton = {

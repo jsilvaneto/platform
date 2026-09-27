@@ -1,5 +1,12 @@
 package com.platform.app.presentation.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -8,13 +15,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.platform.app.presentation.theme.GlowBlue
 
 data class BottomNavItem(
     val screen: Screen,
-    val iconEmoji: String
+    val icon: ImageVector
 )
 
 @Composable
@@ -23,10 +32,11 @@ fun BottomNavBar(
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        BottomNavItem(Screen.Dashboard, "📊"),
-        BottomNavItem(Screen.Bills, "💳"),
-        BottomNavItem(Screen.Contacts, "👥"),
-        BottomNavItem(Screen.Management, "⚙️")
+        BottomNavItem(Screen.Dashboard, Icons.Default.Dashboard),
+        BottomNavItem(Screen.Bills, Icons.Default.ReceiptLong),
+        BottomNavItem(Screen.Budgets, Icons.Default.PieChart),
+        BottomNavItem(Screen.Contacts, Icons.Default.People),
+        BottomNavItem(Screen.Management, Icons.Default.Tune)
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -57,9 +67,9 @@ fun BottomNavBar(
                     }
                 },
                 icon = {
-                    Text(
-                        text = item.iconEmoji,
-                        style = MaterialTheme.typography.titleMedium
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = item.screen.title
                     )
                 },
                 label = {
@@ -70,8 +80,11 @@ fun BottomNavBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    selectedIconColor = GlowBlue,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedTextColor = GlowBlue,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    indicatorColor = GlowBlue.copy(alpha = 0.2f)
                 )
             )
         }

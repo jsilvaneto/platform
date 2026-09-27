@@ -48,6 +48,9 @@ class GetContactDetailsUseCaseTest {
             id = "i1",
             billId = "b1",
             billTitle = "Aluguel",
+            categoryId = "cat-1",
+            installmentNumber = 1,
+            totalInstallments = 1,
             amountCents = 200000L,
             dueDate = System.currentTimeMillis() + 100000,
             paidAt = null
@@ -56,6 +59,9 @@ class GetContactDetailsUseCaseTest {
             id = "i0",
             billId = "b1",
             billTitle = "Aluguel",
+            categoryId = "cat-1",
+            installmentNumber = 1,
+            totalInstallments = 1,
             amountCents = 200000L,
             dueDate = System.currentTimeMillis() - 100000,
             paidAt = System.currentTimeMillis() - 90000

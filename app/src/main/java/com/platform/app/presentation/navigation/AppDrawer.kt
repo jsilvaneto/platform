@@ -1,7 +1,6 @@
 package com.platform.app.presentation.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +11,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
@@ -22,6 +22,8 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Badge
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +45,13 @@ data class DrawerItem(
     val screen: Screen,
     val title: String,
     val subtitle: String,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val badgeText: String? = null
+)
+
+data class DrawerSection(
+    val sectionTitle: String,
+    val items: List<DrawerItem>
 )
 
 @Composable
@@ -53,48 +61,74 @@ fun AppDrawer(
     onCloseDrawer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val items = listOf(
-        DrawerItem(
-            screen = Screen.Dashboard,
-            title = "Início",
-            subtitle = "Visão geral e planejamento",
-            icon = Icons.Default.Home
+    val sections = listOf(
+        DrawerSection(
+            sectionTitle = "OPERACIONAL",
+            items = listOf(
+                DrawerItem(
+                    screen = Screen.Dashboard,
+                    title = "Início",
+                    subtitle = "Visão geral e balanço",
+                    icon = Icons.Default.Home
+                ),
+                DrawerItem(
+                    screen = Screen.Bills,
+                    title = "Registros",
+                    subtitle = "Lançamentos e vencimentos",
+                    icon = Icons.Default.ReceiptLong
+                ),
+                DrawerItem(
+                    screen = Screen.RecurringInstallments,
+                    title = "Recorrentes & Parcelados",
+                    subtitle = "Assinaturas e parcelamentos",
+                    icon = Icons.Default.Repeat
+                )
+            )
         ),
-        DrawerItem(
-            screen = Screen.Bills,
-            title = "Registros",
-            subtitle = "Lançamentos e vencimentos",
-            icon = Icons.Default.ReceiptLong
+        DrawerSection(
+            sectionTitle = "PLANEJAMENTO",
+            items = listOf(
+                DrawerItem(
+                    screen = Screen.Budgets,
+                    title = "Orçamentos",
+                    subtitle = "Tetos de gastos por categoria",
+                    icon = Icons.Default.PieChart
+                ),
+                DrawerItem(
+                    screen = Screen.Goals,
+                    title = "Metas",
+                    subtitle = "Objetivos e reservas financeiras",
+                    icon = Icons.Default.Flag
+                )
+            )
         ),
-        DrawerItem(
-            screen = Screen.RecurringInstallments,
-            title = "Recorrentes e Parcelados",
-            subtitle = "Assinaturas e parcelamentos",
-            icon = Icons.Default.Repeat
+        DrawerSection(
+            sectionTitle = "CADASTROS",
+            items = listOf(
+                DrawerItem(
+                    screen = Screen.Contacts,
+                    title = "Contatos",
+                    subtitle = "Favorecidos e beneficiários",
+                    icon = Icons.Default.People
+                ),
+                DrawerItem(
+                    screen = Screen.Management,
+                    title = "Cadastros Base",
+                    subtitle = "Contas, cartões e categorias",
+                    icon = Icons.Default.Tune
+                )
+            )
         ),
-        DrawerItem(
-            screen = Screen.Goals,
-            title = "Metas",
-            subtitle = "Objetivos e reservas financeiras",
-            icon = Icons.Default.Flag
-        ),
-        DrawerItem(
-            screen = Screen.Budgets,
-            title = "Orçamentos",
-            subtitle = "Tetos de gastos por categoria",
-            icon = Icons.Default.PieChart
-        ),
-        DrawerItem(
-            screen = Screen.Contacts,
-            title = "Contatos",
-            subtitle = "Favorecidos e beneficiários",
-            icon = Icons.Default.People
-        ),
-        DrawerItem(
-            screen = Screen.Settings,
-            title = "Configurações",
-            subtitle = "Cadastros, biometria e sobre",
-            icon = Icons.Default.Settings
+        DrawerSection(
+            sectionTitle = "SISTEMA",
+            items = listOf(
+                DrawerItem(
+                    screen = Screen.Settings,
+                    title = "Configurações",
+                    subtitle = "Biometria, tema e sobre",
+                    icon = Icons.Default.Settings
+                )
+            )
         )
     )
 
@@ -122,98 +156,123 @@ fun AppDrawer(
                     )
                     .padding(16.dp)
             ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(44.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primary
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    text = "P",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = "Platform",
+                                text = "P",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Gestão Financeira Pessoal",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            text = "Platform",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Gestão Financeira Pessoal",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Itens de Navegação
-            items.forEach { item ->
-                val selected = currentRoute == item.screen.route
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                sections.forEachIndexed { sectionIndex, section ->
+                    if (sectionIndex > 0) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
 
-                NavigationDrawerItem(
-                    icon = {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = item.title,
-                            tint = if (selected)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    Text(
+                        text = section.sectionTitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                    )
+
+                    section.items.forEach { item ->
+                        val selected = currentRoute == item.screen.route
+
+                        NavigationDrawerItem(
+                            icon = {
+                                Icon(
+                                    imageVector = item.icon,
+                                    contentDescription = item.title,
+                                    tint = if (selected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            },
+                            label = {
+                                Column {
+                                    Text(
+                                        text = item.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (selected)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = item.subtitle,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                    )
+                                }
+                            },
+                            badge = item.badgeText?.let { badge ->
+                                {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    ) {
+                                        Text(text = badge)
+                                    }
+                                }
+                            },
+                            selected = selected,
+                            onClick = {
+                                onCloseDrawer()
+                                if (currentRoute != item.screen.route) {
+                                    onNavigate(item.screen)
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = NavigationDrawerItemDefaults.colors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                unselectedContainerColor = Color.Transparent
+                            ),
+                            modifier = Modifier.padding(vertical = 2.dp)
                         )
-                    },
-                    label = {
-                        Column {
-                            Text(
-                                text = item.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (selected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = item.subtitle,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
-                        }
-                    },
-                    selected = selected,
-                    onClick = {
-                        onCloseDrawer()
-                        if (currentRoute != item.screen.route) {
-                            onNavigate(item.screen)
-                        }
-                    },
-                    shape = RoundedCornerShape(12.dp),
-                    colors = NavigationDrawerItemDefaults.colors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        unselectedContainerColor = Color.Transparent
-                    ),
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             Spacer(modifier = Modifier.height(12.dp))
 
             // Rodapé do Drawer

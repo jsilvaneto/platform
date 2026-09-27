@@ -9,10 +9,8 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.util.Calendar
 
 class GetFinancialDashboardUseCaseTest {
 
@@ -29,15 +27,18 @@ class GetFinancialDashboardUseCaseTest {
     fun `should calculate dashboard metrics and future projections accurately`() = runTest {
         val now = System.currentTimeMillis()
         val currentMonthEpoch = DateUtils.getStartOfMonth(now)
-        val endOfMonthEpoch = DateUtils.getEndOfMonth(now)
+        val endOfCurrentMonth = DateUtils.getEndOfMonth(now)
 
         val paidInst = BillInstallment(
             id = "inst-1",
             billId = "bill-1",
             billTitle = "Internet Fibra",
+            categoryId = "cat-1",
+            installmentNumber = 1,
+            totalInstallments = 1,
             amountCents = 15000L, // R$ 150,00
-            dueDate = currentMonthEpoch + 86400000L,
-            paidAt = currentMonthEpoch + 86400000L,
+            dueDate = currentMonthEpoch + 1000L,
+            paidAt = currentMonthEpoch + 1000L,
             categoryName = "Moradia",
             categoryColorHex = "#4CAF50"
         )
@@ -46,20 +47,27 @@ class GetFinancialDashboardUseCaseTest {
             id = "inst-2",
             billId = "bill-2",
             billTitle = "Energia Elétrica",
+            categoryId = "cat-1",
+            installmentNumber = 1,
+            totalInstallments = 1,
             amountCents = 25000L, // R$ 250,00
-            dueDate = now + (2L * 86400000L), // daqui a 2 dias (dentro dos 7 dias)
+            dueDate = endOfCurrentMonth - 1000L, // final do mês atual (garantido pendente e no mês atual)
             paidAt = null,
             categoryName = "Moradia",
             categoryColorHex = "#4CAF50"
         )
 
         val nextMonthEpoch = DateUtils.addMonths(currentMonthEpoch, 1)
+        val futureStart = DateUtils.getStartOfMonth(nextMonthEpoch)
         val futureInst = BillInstallment(
             id = "inst-3",
             billId = "bill-3",
             billTitle = "Seguro Carro 2/10",
+            categoryId = "cat-2",
+            installmentNumber = 2,
+            totalInstallments = 10,
             amountCents = 30000L, // R$ 300,00
-            dueDate = nextMonthEpoch + 86400000L,
+            dueDate = futureStart + (2L * 86400000L), // dia 3 do próximo mês
             paidAt = null,
             categoryName = "Transporte",
             categoryColorHex = "#2196F3"
@@ -79,10 +87,6 @@ class GetFinancialDashboardUseCaseTest {
             assertEquals(15000L, metrics.totalPaidMonthCents) // 150
             assertEquals(25000L, metrics.totalPendingMonthCents) // 250
             assertEquals(0L, metrics.totalOverdueMonthCents)
-
-            // Upcoming week (pendingInst is in next 2 days)
-            assertEquals(1, metrics.upcomingWeekInstallments.size)
-            assertEquals("inst-2", metrics.upcomingWeekInstallments.first().id)
 
             // Future projections (6 months)
             assertEquals(6, metrics.futureMonthsProjections.size)

@@ -1,64 +1,87 @@
 package com.platform.app.presentation.theme
 
 import android.app.Activity
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryBlue,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    background = BackgroundDark,
-    surface = SurfaceDark,
     onPrimary = TextPrimaryDark,
+    primaryContainer = PrimaryBlueContainerDark,
+    onPrimaryContainer = TextPrimaryDark,
+    secondary = InfoCyan,
+    onSecondary = TextPrimaryDark,
+    secondaryContainer = InfoCyanContainer,
+    onSecondaryContainer = TextPrimaryDark,
+    tertiary = SuccessGreen,
+    onTertiary = TextPrimaryDark,
+    tertiaryContainer = SuccessGreenContainer,
+    onTertiaryContainer = TextPrimaryDark,
+    background = SlateBackgroundDark,
     onBackground = TextPrimaryDark,
-    onSurface = TextPrimaryDark
+    surface = SlateSurfaceDark,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SlateSurfaceVariantDark,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = SlateBorderDark,
+    outlineVariant = SlateSurfaceVariantDark,
+    error = ErrorRed,
+    onError = TextPrimaryDark,
+    errorContainer = ErrorRedContainer,
+    onErrorContainer = TextPrimaryDark
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryBlue,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onPrimary = SurfaceLight,
+    onPrimary = SlateSurfaceLight,
+    primaryContainer = PrimaryBlueContainerLight,
+    onPrimaryContainer = TextPrimaryLight,
+    secondary = InfoCyan,
+    onSecondary = SlateSurfaceLight,
+    secondaryContainer = InfoCyanLightContainer,
+    onSecondaryContainer = TextPrimaryLight,
+    tertiary = SuccessGreen,
+    onTertiary = SlateSurfaceLight,
+    tertiaryContainer = SuccessGreenLightContainer,
+    onTertiaryContainer = TextPrimaryLight,
+    background = SlateBackgroundLight,
     onBackground = TextPrimaryLight,
-    onSurface = TextPrimaryLight
+    surface = SlateSurfaceLight,
+    onSurface = TextPrimaryLight,
+    surfaceVariant = SlateSurfaceVariantLight,
+    onSurfaceVariant = TextSecondaryLight,
+    outline = SlateBorderLight,
+    outlineVariant = SlateSurfaceVariantLight,
+    error = ErrorRed,
+    onError = SlateSurfaceLight,
+    errorContainer = ErrorRedLightContainer,
+    onErrorContainer = TextPrimaryLight
 )
 
 @Composable
 fun PlatformTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // Forçamos o tema escuro DarkColorScheme por padrão da aplicação
+    val colorScheme = if (darkTheme) DarkColorScheme else DarkColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as? Activity)?.window
             window?.let {
-                it.statusBarColor = colorScheme.background.toArgb()
-                WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = !darkTheme
+                it.statusBarColor = SlateBackgroundDark.toArgb()
+                it.navigationBarColor = SlateBackgroundDark.toArgb()
+                val controller = WindowCompat.getInsetsController(it, view)
+                controller.isAppearanceLightStatusBars = false
+                controller.isAppearanceLightNavigationBars = false
             }
         }
     }

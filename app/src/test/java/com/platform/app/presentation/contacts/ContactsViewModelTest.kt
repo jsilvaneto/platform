@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.GetContactDetailsUseCase
+import com.platform.app.domain.usecase.LookupAddressByCepUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,6 +29,7 @@ class ContactsViewModelTest {
     private lateinit var repository: FinancialRepository
     private lateinit var getContactDetailsUseCase: GetContactDetailsUseCase
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private lateinit var lookupAddressByCepUseCase: LookupAddressByCepUseCase
     private lateinit var viewModel: ContactsViewModel
 
     @Before
@@ -36,6 +38,7 @@ class ContactsViewModelTest {
         repository = mockk(relaxed = true)
         getContactDetailsUseCase = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
+        lookupAddressByCepUseCase = mockk(relaxed = true)
 
         every { repository.getContacts() } returns flowOf(emptyList())
     }
@@ -56,7 +59,7 @@ class ContactsViewModelTest {
             state = "PB"
         )
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -76,7 +79,7 @@ class ContactsViewModelTest {
 
     @Test
     fun `DeleteContact should invoke repository deleteContact`() = runTest {
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(ContactsUiAction.DeleteContact("c1"))
@@ -91,7 +94,7 @@ class ContactsViewModelTest {
         val c2 = Contact(id = "2", name = "Maria Santos", city = "Fortaleza")
         every { repository.getContacts() } returns flowOf(listOf(c1, c2))
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(ContactsUiAction.SearchQueryChanged("Maria"))

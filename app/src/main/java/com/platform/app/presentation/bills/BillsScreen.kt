@@ -75,6 +75,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.IconButton
+import com.platform.app.presentation.theme.SuccessGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,11 +104,8 @@ fun BillsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Registros",
-                navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
-                    }
-                }
+                subtitle = "Lançamentos e vencimentos",
+                onOpenDrawer = onOpenDrawer
             )
         },
         snackbarHost = {
@@ -327,7 +325,7 @@ fun BillInstallmentItemCard(
             Checkbox(
                 checked = installment.isPaid,
                 onCheckedChange = { onTogglePayment() },
-                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF10B981))
+                colors = CheckboxDefaults.colors(checkedColor = SuccessGreen)
             )
 
             Spacer(modifier = Modifier.width(6.dp))
@@ -372,7 +370,7 @@ fun BillInstallmentItemCard(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
                         color = when {
-                            installment.isPaid -> Color(0xFF10B981)
+                            installment.isPaid -> SuccessGreen
                             isOverdue -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         }

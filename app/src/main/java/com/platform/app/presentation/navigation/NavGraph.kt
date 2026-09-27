@@ -30,6 +30,7 @@ import com.platform.app.presentation.recurring.RecurringInstallmentsScreen
 import com.platform.app.presentation.recurring.RecurringInstallmentsViewModel
 import com.platform.app.presentation.settings.SettingsScreen
 import com.platform.app.presentation.settings.SettingsViewModel
+import com.platform.app.presentation.statistics.StatisticsScreen
 
 @Composable
 fun NavGraph(
@@ -49,6 +50,17 @@ fun NavGraph(
             val uiState by viewModel.uiState.collectAsState()
 
             DashboardScreen(
+                uiState = uiState,
+                onAction = viewModel::onAction,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        composable(route = Screen.Statistics.route) {
+            val viewModel: DashboardViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            StatisticsScreen(
                 uiState = uiState,
                 onAction = viewModel::onAction,
                 onOpenDrawer = onOpenDrawer

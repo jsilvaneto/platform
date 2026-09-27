@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 data class DrawerItem(
@@ -86,8 +88,14 @@ fun AppDrawer(
             )
         ),
         DrawerSection(
-            sectionTitle = "PLANEJAMENTO",
+            sectionTitle = "PLANEJAMENTO & ANÁLISES",
             items = listOf(
+                DrawerItem(
+                    screen = Screen.Statistics,
+                    title = "Estatísticas",
+                    subtitle = "Análises, histórico e projeções",
+                    icon = Icons.Default.BarChart
+                ),
                 DrawerItem(
                     screen = Screen.Budgets,
                     title = "Orçamentos",
@@ -133,7 +141,7 @@ fun AppDrawer(
     )
 
     ModalDrawerSheet(
-        modifier = modifier.width(320.dp),
+        modifier = modifier.width(310.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
@@ -179,12 +187,16 @@ fun AppDrawer(
                             text = "Platform",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Gestão Financeira Pessoal",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -206,7 +218,7 @@ fun AppDrawer(
                         text = section.sectionTitle,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                     )
 
@@ -221,7 +233,7 @@ fun AppDrawer(
                                     tint = if (selected)
                                         MaterialTheme.colorScheme.primary
                                     else
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
                             label = {
@@ -230,6 +242,8 @@ fun AppDrawer(
                                         text = item.title,
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
                                         color = if (selected)
                                             MaterialTheme.colorScheme.primary
                                         else
@@ -238,7 +252,9 @@ fun AppDrawer(
                                     Text(
                                         text = item.subtitle,
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             },
@@ -269,7 +285,7 @@ fun AppDrawer(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
             }
 
@@ -279,7 +295,7 @@ fun AppDrawer(
             Text(
                 text = "Platform • Versão 1.0.0",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
         }

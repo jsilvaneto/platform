@@ -19,7 +19,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.platform.app.presentation.theme.GlowBlue
 
 data class BottomNavItem(
     val screen: Screen,
@@ -80,11 +79,11 @@ fun BottomNavBar(
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = GlowBlue,
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
                     unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    selectedTextColor = GlowBlue,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    indicatorColor = GlowBlue.copy(alpha = 0.2f)
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 )
             )
         }

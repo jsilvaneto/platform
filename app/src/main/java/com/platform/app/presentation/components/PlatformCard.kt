@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun PlatformCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(12.dp),
     containerColor: Color = MaterialTheme.colorScheme.surface,
-    borderColor: Color? = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+    borderColor: Color? = MaterialTheme.colorScheme.outlineVariant,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {

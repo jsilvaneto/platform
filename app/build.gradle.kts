@@ -68,10 +68,11 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    // Persistência Local com Room
+    // Persistência Local com Room e DataStore
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.datastore.preferences)
 
     // Rede e APIs com Retrofit / OkHttp
     implementation(libs.retrofit)

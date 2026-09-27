@@ -1,15 +1,21 @@
 package com.platform.app.di
 
 import android.app.Application
+import android.content.Context
 import androidx.room.Room
+import com.platform.app.core.connectivity.ConnectivityNetworkMonitor
+import com.platform.app.core.connectivity.NetworkMonitor
 import com.platform.app.core.dispatcher.DefaultDispatcherProvider
 import com.platform.app.core.dispatcher.DispatcherProvider
+import com.platform.app.core.preferences.PreferencesManager
+import com.platform.app.core.preferences.PreferencesManagerImpl
 import com.platform.app.data.local.PlatformDatabase
 import com.platform.app.data.local.dao.ItemDao
 import com.platform.app.data.remote.PlatformApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -26,6 +32,18 @@ object AppModule {
     @Singleton
     fun provideDispatcherProvider(): DispatcherProvider {
         return DefaultDispatcherProvider()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkMonitor(@ApplicationContext context: Context): NetworkMonitor {
+        return ConnectivityNetworkMonitor(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePreferencesManager(@ApplicationContext context: Context): PreferencesManager {
+        return PreferencesManagerImpl(context)
     }
 
     @Provides

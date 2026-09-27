@@ -5,18 +5,20 @@ Este documento registra a visão do produto, princípios fundamentais e invarian
 ---
 
 ## 1. Visão Geral do Produto
-O **Platform** é um aplicativo Android nativo projetado para proporcionar uma experiência fluida, reativa e offline-first para os usuários. Ele funciona como a interface móvel canônica da plataforma, conectando-se a serviços e dados locais e remotos com segurança, alta disponibilidade e ergonomia visual adaptativa.
+O **Platform** é um aplicativo Android nativo projetado para operar prioritariamente de forma **100% offline**. Ele funciona como um gestor de dados, notas e tarefas local de alta performance, proporcionando uma experiência reativa, privativa e sem qualquer dependência de conectividade de rede para sua usabilidade cotidiana.
+
+Qualquer integração remota ou sincronização com servidores externos está planejada exclusivamente para fases futuras, não existindo bloqueios ou chamadas ativas de rede na versão atual.
 
 ---
 
 ## 2. Invariantes de Domínio e Arquitetura Móvel
-1. **Offline-First com Cache Local**:
-   - Dados primários são persistidos no Room Database local antes de serem sincronizados com APIs remotas. O usuário nunca deve ficar bloqueado em tela branca por falta de conexão.
-2. **Imutabilidade e Fluxo Unidirecional (UDF)**:
-   - Os estados de tela fluem em uma única direção: o ViewModel emite `UiState` imutável, a tela renderiza e emite eventos/intenções de volta para o ViewModel.
+1. **Operação 100% Offline (Single Source of Truth Local)**:
+   - Todo dado gerado ou manipulado pelo usuário é persistido exclusivamente no banco local **Room (SQLite)** e nas preferências locais **DataStore**. O aplicativo opera com 100% de funcionalidade mesmo em Modo Avião.
+2. **Padrão MVI com Efeitos Seguros**:
+   - Estados de tela são imutáveis (`UiState`), intenções de usuário são enviadas via `UiAction` e efeitos colaterais de disparo único (como Snackbars e navegação) trafegam via canal dedicado (`UiEffect`) para evitar repetições em recomposição.
 3. **Respeito ao Ciclo de Vida do Android**:
-   - Nenhuma operação de rede ou banco deve continuar ativa se a tela ou o ViewModel for destruído (`viewModelScope`).
-4. **Isolamento de Negócio**:
-   - A camada `domain` não tem referências a bibliotecas da Google Play, classes de UI (`Context`, `View`, `Composable`) ou persistência (`Room`, `Retrofit`). É 100% Kotlin puro.
-5. **Ergonomia e Acessibilidade**:
-   - Suporte mandatório a temas Claro e Escuro (*Material 3 Dark Theme*), contrastes legíveis e tamanhos de toque mínimos de 48dp recomendados pelo Material Design.
+   - Todas as operações assíncronas são encapsuladas em `viewModelScope`, evitando vazamentos de memória (*memory leaks*) ao rotacionar a tela ou encerrar a Activity.
+4. **Isolamento de Negócio (Clean Architecture)**:
+   - A camada `domain` é 100% Kotlin puro, livre de dependências da Google Play, Android Framework (`Context`, `View`, `Composable`) ou persistência (`Room`, `Retrofit`).
+5. **Ergonomia e Design System**:
+   - Suporte nativo e obrigatório a temas Claro e Escuro (*Material 3 Dark Theme*), contrastes legíveis e alvos de toque mínimos de 48dp recomendados pelo Material Design.

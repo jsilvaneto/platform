@@ -40,20 +40,25 @@ graph TD
 
 ## 2. Regras Mandatórias de Código
 
-1. **Nunca misture lógica de apresentação com regras de negócio**:
+1. **Operação 100% Offline-First**:
+   - Todo dado gerado no app deve ser lido e gravado exclusivamente no banco local **Room** e **DataStore**. Nenhuma funcionalidade pode depender de resposta de rede para funcionar. O cliente HTTP e endpoints remotos são desacoplados e reservados para fases futuras.
+2. **Padrão MVI com Canal de Efeitos (`UiEffect`)**:
+   - A tela emite intenções via `UiAction` (`onAction(action)`).
+   - Efeitos transitórios (Snackbars, navegação, diálogos) NUNCA devem residir no `UiState`. Devem trafegar através de um `Channel<UiEffect>(Channel.BUFFERED)` exposto como Flow e consumido na UI via `LaunchedEffect`.
+3. **Nunca misture lógica de apresentação com regras de negócio**:
    - Composables devem ser o mais puros e "burros" possível, recebendo estados (`UiState`) e emitindo eventos por lambdas.
-2. **Tipagem e Imutabilidade Estrita**:
+4. **Tipagem e Imutabilidade Estrita**:
    - Todo estado de UI deve ser representado por uma `data class` imutável (ex: `HomeUiState`).
    - Proibido o uso de `Any` ou variáveis mutáveis públicas (`var`). Use `MutableStateFlow` privado e exponha `StateFlow` público imutável via `asStateFlow()`.
-3. **Assincronismo Seguro com Coroutines e Flow**:
-   - Todo acesso a banco e rede deve ser executado em background via Coroutines (`viewModelScope.launch`) injetando `DispatcherProvider.io`.
+5. **Assincronismo Seguro com Coroutines e Flow**:
+   - Todo acesso a banco e arquivos deve ser executado em background via Coroutines (`viewModelScope.launch`) injetando `DispatcherProvider.io`.
    - Colete fluxos na UI de forma segura com `collectAsState()` ou `collectAsStateWithLifecycle()`.
-4. **Material 3 & Dark Mode Obrigatório**:
+6. **Material 3 & Dark Mode Obrigatório**:
    - Todas as telas e componentes visuais DEVEM suportar nativamente **Modo Claro** e **Modo Escuro** utilizando as cores semânticas do `MaterialTheme.colorScheme` (ex: `surface`, `background`, `onSurface`, `primary`).
    - Proibido uso de cores hardcoded como `Color.White` ou `Color.Black` diretamente em componentes de UI.
-5. **Tratamento de Estados (Carregamento, Vazio e Erro)**:
+7. **Tratamento de Estados (Carregamento, Vazio e Erro)**:
    - Toda tela que consome dados deve tratar explicitamente os 3 estados: `isLoading` (spinner/skeleton), `isEmpty` (mensagem informativa e botão de ação) e `isError` (banner amigável e botão de retry).
-6. **Política de Resíduo Zero em Testes**:
+8. **Política de Resíduo Zero em Testes**:
    - Testes unitários e de integração devem rodar isolados com dispatchers de teste (`StandardTestDispatcher`), mocks (MockK/Turbine) ou banco em memória (`Room.inMemoryDatabaseBuilder`).
 
 ---

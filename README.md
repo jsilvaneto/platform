@@ -1,15 +1,21 @@
-# Platform — Aplicativo Android (Android Studio)
+# Platform — Aplicativo Android (100% Offline-First & MVI)
 
-Aplicativo Android nativo construído com as melhores práticas de engenharia de software móvel moderna, utilizando **Kotlin**, **Jetpack Compose (Material 3)**, **Clean Architecture**, injeção de dependências com **Hilt**, persistência local com **Room**, consumo de API com **Retrofit/OkHttp** e fluxos assíncronos reativos com **Coroutines & StateFlow**.
+Aplicativo Android nativo construído com as melhores práticas de engenharia de software móvel moderna, utilizando **Kotlin**, **Jetpack Compose (Material 3)**, **Clean Architecture**, arquitetura **100% Offline-First**, padrão **MVI (Model-View-Intent)**, injeção de dependências com **Hilt**, persistência local com **Room**, preferências com **AndroidX DataStore** e fluxos reativos com **Coroutines & StateFlow**.
 
 ---
 
 ## 🏛️ Visão Geral da Arquitetura
 
 O projeto adota separação estrita de responsabilidades:
-- **Presentation Layer**: Telas e componentes puramente declarativos em Jetpack Compose, gerenciamento de estado previsível via `StateFlow` e ViewModels integrados com Hilt (`@HiltViewModel`). Suporte completo a **Modo Claro** e **Modo Escuro** (*Dark Mode*) com Material 3 e Dynamic Colors.
-- **Domain Layer**: Modelos de domínio puros, contratos de repositório e Casos de Uso (`UseCases`) desacoplados de qualquer framework Android.
-- **Data Layer**: Cache local offline-first via **Room Database**, cliente HTTP **Retrofit + OkHttp** com interceptor de logging e sincronização bidirecional.
+- **100% Offline-First**: O aplicativo opera de forma totalmente autônoma e privativa no dispositivo móvel. Toda operação de criação, leitura, atualização, filtro e exclusão ocorre localmente no banco de dados **Room (SQLite)**.
+- **Padrão MVI com Efeitos Seguros**:
+  - `UiState`: Estado imutável da tela exposto via `StateFlow`.
+  - `UiAction`: Intenções explícitas do usuário enviadas ao ViewModel.
+  - `UiEffect`: Efeitos colaterais transitórios (Snackbars, navegação) enviados através de um `Channel` bufferizado, eliminando re-execuções indesejadas em recomposição ou rotação de tela.
+- **Presentation Layer**: Telas e componentes em Jetpack Compose, suporte completo a **Modo Claro** e **Modo Escuro** (*Dark Mode*) com Material 3 e Dynamic Colors.
+- **Domain Layer**: Modelos de domínio puros, contratos de repositório e Casos de Uso (`UseCases`) desacoplados de qualquer framework Android (100% Kotlin puro).
+- **Data Layer**: Banco local **Room**, preferências em **DataStore** e interfaces preparadas para futura sincronização em nuvem.
+- **Conectividade**: Monitor reativo em tempo real (`NetworkMonitor`) que observa a conexão sem bloquear ou travar funcionalidades locais.
 - **Dependency Injection**: Injeção desacoplada de escopo Singleton e ViewModel via **Dagger Hilt**.
 - **Infraestrutura de IA**: Governança em [.ai/](file:///home/jsilvaneto/projetos/platform/.ai), manual mestre em [AGENT_RULES.md](file:///home/jsilvaneto/projetos/platform/AGENT_RULES.md) e catálogo de skills em [.agents/skills/](file:///home/jsilvaneto/projetos/platform/.agents/skills).
 
@@ -23,20 +29,20 @@ platform/
 │   ├── rules/               # architecture.md, coding_standards.md, test_data_cleanup.md
 │   └── skills/              # android-compose-design-system, add-new-screen-or-feature, etc.
 ├── .ai/                     # Documentação de arquitetura, contexto e status do projeto
-│   ├── DECISIONS/           # Architecture Decision Records (ADRs)
+│   ├── DECISIONS/           # Architecture Decision Records (ADRs 001, 002 e 003)
 │   ├── ARCHITECTURE.md      # Referência técnica canônica e diagramas
-│   ├── CONTEXT.md           # Visão de produto e regras de domínio móvel
+│   ├── CONTEXT.md           # Visão de produto e regras de domínio móvel 100% offline
 │   ├── STATUS.md            # Roadmap de releases e checklist de fases
 │   └── ANDROID_GUIDE.md     # Manual prático de desenvolvimento
 ├── app/                     # Módulo principal do aplicativo Android
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/platform/app/
-│   │   │   │   ├── core/            # Dispatchers, wrappers de resultado (Resource), utils
-│   │   │   │   ├── data/            # Room (DAO, Entity), Retrofit (Service, DTO), Repositories
+│   │   │   │   ├── core/            # Dispatchers, MVI contracts, NetworkMonitor, Preferences
+│   │   │   │   ├── data/            # Room (DAO, Entity, Database), Repositories
 │   │   │   │   ├── domain/          # Modelos puros, UseCases e interfaces de Repository
 │   │   │   │   ├── di/              # Módulos de injeção Hilt (AppModule, RepositoryModule)
-│   │   │   │   └── presentation/    # Telas Compose, ViewModels, UiState, Tema Material 3
+│   │   │   │   └── presentation/    # Telas Compose, ViewModels (MVI), UiState/UiAction/UiEffect
 │   │   │   ├── res/                 # Strings, cores, temas nativos, regras de backup
 │   │   │   └── AndroidManifest.xml  # Manifesto do app
 │   │   └── test/                    # Testes unitários com JUnit, MockK e Turbine
@@ -64,12 +70,13 @@ platform/
 3. Aguarde o Android Studio realizar a sincronização automática do Gradle (*Sync Project with Gradle Files*).
 4. Selecione um emulador Android (API 26 ou superior) ou conecte um dispositivo físico via USB com Depuração USB ativada.
 5. Clique no botão **Run** (`Shift + F10`) para compilar e iniciar o aplicativo.
+6. O app abrirá e funcionará perfeitamente, mesmo sem qualquer conexão de rede ou com o aparelho em Modo Avião.
 
 ---
 
 ## 🧪 Testes Automatizados
 
-O projeto inclui suite de testes unitários isolados com MockK e Turbine:
+O projeto inclui suite de testes unitários isolados com MockK e Turbine testando o fluxo MVI completo e o comportamento offline:
 ```bash
 ./gradlew test
 ```

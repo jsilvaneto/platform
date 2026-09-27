@@ -26,9 +26,8 @@ fun NavGraph(
 
             HomeScreen(
                 uiState = uiState,
-                onAddItem = { title, desc -> viewModel.addItem(title, desc) },
-                onDeleteItem = { id -> viewModel.deleteItem(id) },
-                onRetry = { viewModel.observeItems() }
+                uiEffect = viewModel.uiEffect,
+                onAction = viewModel::onAction
             )
         }
     }

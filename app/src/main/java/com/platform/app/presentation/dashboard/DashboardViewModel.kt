@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.GetFinancialDashboardUseCase
+import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val getDashboardUseCase: GetFinancialDashboardUseCase,
+    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
     private val repository: FinancialRepository
 ) : ViewModel() {
 
@@ -44,6 +46,11 @@ class DashboardViewModel @Inject constructor(
             }
             is DashboardUiAction.CurrentMonth -> {
                 loadMetricsForMonth(System.currentTimeMillis())
+            }
+            is DashboardUiAction.TogglePayment -> {
+                viewModelScope.launch {
+                    togglePaymentUseCase(action.installmentId, action.currentPaid)
+                }
             }
             is DashboardUiAction.Refresh -> {
                 loadMetricsForMonth(_uiState.value.selectedMonthMillis)

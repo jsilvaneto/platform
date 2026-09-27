@@ -68,12 +68,22 @@ import com.platform.app.presentation.dashboard.MonthSelector
 import com.platform.app.presentation.home.OfflineBadge
 import kotlinx.coroutines.flow.Flow
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material3.IconButton
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BillsScreen(
     uiState: BillsUiState,
     uiEffect: Flow<BillsUiEffect>,
     onAction: (BillsUiAction) -> Unit,
+    onOpenDrawer: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -94,6 +104,11 @@ fun BillsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Contas a Pagar",
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                    }
+                },
                 actions = {
                     OfflineBadge()
                 }
@@ -456,267 +471,399 @@ fun AddBillBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Nova Conta / Despesa",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            // Header Elegante
+            Column {
+                Text(
+                    text = "Nova Despesa",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Preencha as informações para organizar seus pagamentos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
 
-            // Seletor de Tipo
-            Text(
-                text = "Tipo de Despesa:",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // CARD 1: Identificação
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                BillType.values().forEach { type ->
-                    FilterChip(
-                        selected = selectedType == type,
-                        onClick = { selectedType = type },
-                        label = { Text(type.label) }
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "1. Identificação",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
-                }
-            }
 
-            // Título
-            OutlinedTextField(
-                value = title,
-                onValueChange = {
-                    title = it
-                    showValidationError = false
-                },
-                label = { Text("Nome da Conta * (ex: Aluguel, Celular, Notebook)") },
-                isError = showValidationError && title.isBlank(),
-                supportingText = if (showValidationError && title.isBlank()) {
-                    { Text("Nome da conta é obrigatório", color = MaterialTheme.colorScheme.error) }
-                } else null,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Descrição (Observações)
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Descrição / Observações (opcional)") },
-                singleLine = false,
-                maxLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Valor
-            OutlinedTextField(
-                value = rawAmount,
-                onValueChange = {
-                    rawAmount = it
-                    showValidationError = false
-                },
-                label = { Text("Valor Total (R$) *") },
-                placeholder = { Text("Ex: 150,00 ou 150") },
-                isError = showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L,
-                supportingText = if (showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L) {
-                    { Text("Informe um valor maior que R$ 0,00", color = MaterialTheme.colorScheme.error) }
-                } else null,
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Parcelas se for parcelada
-            if (selectedType == BillType.INSTALLMENT) {
-                OutlinedTextField(
-                    value = installmentsCountText,
-                    onValueChange = { installmentsCountText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Quantidade de Parcelas (mínimo 2)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Data de Vencimento
-            Text(
-                text = "Data de Primeiro Vencimento: ${DateUtils.formatDate(dueDateMillis)}",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    val now = System.currentTimeMillis()
-                    FilterChip(
-                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(now),
-                        onClick = { dueDateMillis = now },
-                        label = { Text("Hoje") }
-                    )
-                }
-                item {
-                    val plus7 = System.currentTimeMillis() + 7L * 24 * 3600 * 1000
-                    FilterChip(
-                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus7),
-                        onClick = { dueDateMillis = plus7 },
-                        label = { Text("+7 dias") }
-                    )
-                }
-                item {
-                    val plus15 = System.currentTimeMillis() + 15L * 24 * 3600 * 1000
-                    FilterChip(
-                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus15),
-                        onClick = { dueDateMillis = plus15 },
-                        label = { Text("+15 dias") }
-                    )
-                }
-                item {
-                    val plus30 = System.currentTimeMillis() + 30L * 24 * 3600 * 1000
-                    FilterChip(
-                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus30),
-                        onClick = { dueDateMillis = plus30 },
-                        label = { Text("+30 dias") }
-                    )
-                }
-            }
-
-            // Seleção de Contato
-            if (contacts.isNotEmpty()) {
-                Text(
-                    text = "Vincular a Contato:",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = selectedContactId == null,
-                            onClick = { selectedContactId = null },
-                            label = { Text("Nenhum") }
-                        )
-                    }
-                    items(contacts, key = { it.id }) { c ->
-                        FilterChip(
-                            selected = selectedContactId == c.id,
-                            onClick = { selectedContactId = c.id },
-                            label = { Text(c.name) }
-                        )
-                    }
-                }
-            }
-
-            // Seleção de Conta Financeira
-            if (financialAccounts.isNotEmpty()) {
-                Text(
-                    text = "Conta de Débito / Saída:",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = selectedAccountId == null,
-                            onClick = { selectedAccountId = null },
-                            label = { Text("Nenhuma") }
-                        )
-                    }
-                    items(financialAccounts, key = { it.id }) { acc ->
-                        FilterChip(
-                            selected = selectedAccountId == acc.id,
-                            onClick = { selectedAccountId = acc.id },
-                            label = { Text(acc.name) }
-                        )
-                    }
-                }
-            }
-
-            // Seleção de Forma de Pagamento
-            if (paymentMethods.isNotEmpty()) {
-                Text(
-                    text = "Forma de Pagamento:",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = selectedPaymentMethodId == null,
-                            onClick = { selectedPaymentMethodId = null },
-                            label = { Text("Nenhuma") }
-                        )
-                    }
-                    items(paymentMethods, key = { it.id }) { method ->
-                        FilterChip(
-                            selected = selectedPaymentMethodId == method.id,
-                            onClick = { selectedPaymentMethodId = method.id },
-                            label = { Text(method.name) }
-                        )
-                    }
-                }
-            }
-
-            // Seleção de Categoria
-            Text(
-                text = "Categoria:",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(categories, key = { it.id }) { cat ->
-                    FilterChip(
-                        selected = selectedCategoryId == cat.id,
-                        onClick = {
-                            selectedCategoryId = cat.id
-                            selectedSubcategoryId = null
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = {
+                            title = it
+                            showValidationError = false
                         },
-                        label = { Text(cat.name) }
+                        label = { Text("Nome da Despesa *") },
+                        placeholder = { Text("Ex: Aluguel, Internet, Supermercado...") },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        },
+                        isError = showValidationError && title.isBlank(),
+                        supportingText = if (showValidationError && title.isBlank()) {
+                            { Text("O nome da conta é obrigatório", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Observações (opcional)") },
+                        placeholder = { Text("Notas, código de barras ou detalhes adicionais...") },
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = false,
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
-            // Seleção de Subcategoria (se houver para a categoria selecionada)
-            if (filteredSubcategories.isNotEmpty()) {
-                Text(
-                    text = "Subcategoria:",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    item {
-                        FilterChip(
-                            selected = selectedSubcategoryId == null,
-                            onClick = { selectedSubcategoryId = null },
-                            label = { Text("Nenhuma") }
-                        )
+            // CARD 2: Valor e Condição de Cobrança
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "2. Valor & Tipo",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    OutlinedTextField(
+                        value = rawAmount,
+                        onValueChange = {
+                            rawAmount = it
+                            showValidationError = false
+                        },
+                        label = { Text("Valor Total (R$) *") },
+                        placeholder = { Text("Ex: 150,00 ou 2500") },
+                        prefix = {
+                            Text(
+                                text = "R$ ",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        isError = showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L,
+                        supportingText = if (showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L) {
+                            { Text("Informe um valor maior que zero", color = MaterialTheme.colorScheme.error) }
+                        } else null,
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        text = "Tipo de Despesa:",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        BillType.values().forEach { type ->
+                            FilterChip(
+                                selected = selectedType == type,
+                                onClick = { selectedType = type },
+                                label = { Text(type.label) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
-                    items(filteredSubcategories, key = { it.id }) { sub ->
-                        FilterChip(
-                            selected = selectedSubcategoryId == sub.id,
-                            onClick = { selectedSubcategoryId = sub.id },
-                            label = { Text(sub.name) }
-                        )
+
+                    if (selectedType == BillType.INSTALLMENT) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Número de Parcelas:",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Medium
+                            )
+                            val commonInstallments = listOf("2", "3", "6", "10", "12")
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                commonInstallments.forEach { count ->
+                                    FilterChip(
+                                        selected = installmentsCountText == count,
+                                        onClick = { installmentsCountText = count },
+                                        label = { Text("${count}x") }
+                                    )
+                                }
+                            }
+
+                            OutlinedTextField(
+                                value = installmentsCountText,
+                                onValueChange = { installmentsCountText = it.filter { c -> c.isDigit() } },
+                                label = { Text("Outra quantidade de parcelas (ex: 18)") },
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+            // CARD 3: Vencimento & Planejamento
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "3. Vencimento",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Primeiro Vencimento",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = DateUtils.formatDate(dueDateMillis),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    // Atalhos rápidos
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val now = System.currentTimeMillis()
+                        item {
+                            FilterChip(
+                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(now),
+                                onClick = { dueDateMillis = now },
+                                label = { Text("Hoje") }
+                            )
+                        }
+                        item {
+                            val plus7 = now + 7L * 24 * 3600 * 1000
+                            FilterChip(
+                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus7),
+                                onClick = { dueDateMillis = plus7 },
+                                label = { Text("+7 dias") }
+                            )
+                        }
+                        item {
+                            val plus15 = now + 15L * 24 * 3600 * 1000
+                            FilterChip(
+                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus15),
+                                onClick = { dueDateMillis = plus15 },
+                                label = { Text("+15 dias") }
+                            )
+                        }
+                        item {
+                            val plus30 = now + 30L * 24 * 3600 * 1000
+                            FilterChip(
+                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus30),
+                                onClick = { dueDateMillis = plus30 },
+                                label = { Text("+30 dias") }
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+            }
+
+            // CARD 4: Vínculos e Classificação
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "4. Classificação & Origem",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    // Categoria
+                    Text(
+                        text = "Categoria:",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(categories, key = { it.id }) { cat ->
+                            FilterChip(
+                                selected = selectedCategoryId == cat.id,
+                                onClick = {
+                                    selectedCategoryId = cat.id
+                                    selectedSubcategoryId = null
+                                },
+                                label = { Text(cat.name) }
+                            )
+                        }
+                    }
+
+                    // Subcategoria
+                    if (filteredSubcategories.isNotEmpty()) {
+                        Text(
+                            text = "Subcategoria:",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = selectedSubcategoryId == null,
+                                    onClick = { selectedSubcategoryId = null },
+                                    label = { Text("Nenhuma") }
+                                )
+                            }
+                            items(filteredSubcategories, key = { it.id }) { sub ->
+                                FilterChip(
+                                    selected = selectedSubcategoryId == sub.id,
+                                    onClick = { selectedSubcategoryId = sub.id },
+                                    label = { Text(sub.name) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Contato
+                    if (contacts.isNotEmpty()) {
+                        Text(
+                            text = "Contato / Favorecido:",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = selectedContactId == null,
+                                    onClick = { selectedContactId = null },
+                                    label = { Text("Nenhum") }
+                                )
+                            }
+                            items(contacts, key = { it.id }) { c ->
+                                FilterChip(
+                                    selected = selectedContactId == c.id,
+                                    onClick = { selectedContactId = c.id },
+                                    label = { Text(c.name) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Conta de Saída
+                    if (financialAccounts.isNotEmpty()) {
+                        Text(
+                            text = "Conta de Débito:",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = selectedAccountId == null,
+                                    onClick = { selectedAccountId = null },
+                                    label = { Text("Nenhuma") }
+                                )
+                            }
+                            items(financialAccounts, key = { it.id }) { acc ->
+                                FilterChip(
+                                    selected = selectedAccountId == acc.id,
+                                    onClick = { selectedAccountId = acc.id },
+                                    label = { Text(acc.name) }
+                                )
+                            }
+                        }
+                    }
+
+                    // Forma de Pagamento
+                    if (paymentMethods.isNotEmpty()) {
+                        Text(
+                            text = "Forma de Pagamento:",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = selectedPaymentMethodId == null,
+                                    onClick = { selectedPaymentMethodId = null },
+                                    label = { Text("Nenhuma") }
+                                )
+                            }
+                            items(paymentMethods, key = { it.id }) { pm ->
+                                FilterChip(
+                                    selected = selectedPaymentMethodId == pm.id,
+                                    onClick = { selectedPaymentMethodId = pm.id },
+                                    label = { Text(pm.name) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Ações / Botões
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.height(52.dp)
+                ) {
+                    Text("Cancelar", style = MaterialTheme.typography.titleMedium)
+                }
+
                 Button(
                     onClick = {
                         val amountCents = CurrencyUtils.parseInputToCents(rawAmount)
@@ -742,12 +889,21 @@ fun AddBillBottomSheet(
                                 dueDateMillis
                             )
                         }
-                    }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp)
                 ) {
-                    Text("Cadastrar Conta")
+                    Text(
+                        text = "Cadastrar Conta",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+
+            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }

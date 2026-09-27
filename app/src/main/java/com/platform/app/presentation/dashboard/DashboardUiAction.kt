@@ -6,5 +6,6 @@ sealed interface DashboardUiAction : UiAction {
     object PreviousMonth : DashboardUiAction
     object NextMonth : DashboardUiAction
     object CurrentMonth : DashboardUiAction
+    data class TogglePayment(val installmentId: String, val currentPaid: Boolean) : DashboardUiAction
     object Refresh : DashboardUiAction
 }

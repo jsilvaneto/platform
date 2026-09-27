@@ -32,8 +32,8 @@ fun BottomNavBar(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Oculta a barra inferior em telas de detalhe
-    if (currentRoute?.startsWith("contact_detail") == true) {
+    // Oculta a barra inferior em telas de detalhe e configurações
+    if (currentRoute?.startsWith("contact_detail") == true || currentRoute == Screen.Settings.route) {
         return
     }
 

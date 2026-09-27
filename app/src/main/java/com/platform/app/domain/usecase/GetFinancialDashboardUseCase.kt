@@ -4,9 +4,10 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
+import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.domain.repository.FinancialRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
 class GetFinancialDashboardUseCase @Inject constructor(
@@ -17,13 +18,16 @@ class GetFinancialDashboardUseCase @Inject constructor(
         val endOfMonth = DateUtils.getEndOfMonth(monthMillis)
         val now = System.currentTimeMillis()
 
-        return repository.getInstallmentsForPeriod(startOfMonth, endOfMonth).map { installments ->
+        return combine(
+            repository.getInstallmentsForPeriod(startOfMonth, endOfMonth),
+            repository.getAllInstallments()
+        ) { installments, allInstallments ->
             var totalDue = 0L
             var totalPaid = 0L
             var totalPending = 0L
             var totalOverdue = 0L
 
-            val categoryMap = mutableMapOf<String, Pair<String, Long>>() // name -> (color, totalCents)
+            val categoryMap = mutableMapOf<String, Pair<String, Long>>()
 
             for (inst in installments) {
                 totalDue += inst.amountCents
@@ -38,7 +42,6 @@ class GetFinancialDashboardUseCase @Inject constructor(
                     }
                 }
 
-                // Agrupamento por Categoria
                 val currentCategory = categoryMap[inst.categoryName] ?: Pair(inst.categoryColorHex, 0L)
                 categoryMap[inst.categoryName] = Pair(inst.categoryColorHex, currentCategory.second + inst.amountCents)
             }
@@ -59,6 +62,30 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 .sortedBy { it.dueDate }
                 .take(5)
 
+            // Vencimentos dos próximos 7 dias
+            val sevenDaysAhead = now + (7L * 24 * 3600 * 1000)
+            val upcomingWeek = allInstallments
+                .filter { !it.isPaid && it.dueDate in now..sevenDaysAhead }
+                .sortedBy { it.dueDate }
+
+            // Projeções dos próximos 6 meses para planejamento
+            val futureProjections = (1..6).map { i ->
+                val futureMonthEpoch = DateUtils.addMonths(monthMillis, i)
+                val futureStart = DateUtils.getStartOfMonth(futureMonthEpoch)
+                val futureEnd = DateUtils.getEndOfMonth(futureMonthEpoch)
+                val monthInsts = allInstallments.filter { it.dueDate in futureStart..futureEnd }
+                FutureMonthProjection(
+                    monthMillis = futureMonthEpoch,
+                    monthLabel = DateUtils.formatMonthYear(futureMonthEpoch),
+                    totalCommittedCents = monthInsts.sumOf { it.amountCents },
+                    installmentsCount = monthInsts.size
+                )
+            }
+
+            val totalCommittedFuture = allInstallments
+                .filter { !it.isPaid && it.dueDate >= startOfMonth }
+                .sumOf { it.amountCents }
+
             FinancialDashboardMetrics(
                 monthMillis = monthMillis,
                 totalDueMonthCents = totalDue,
@@ -66,7 +93,10 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 totalPendingMonthCents = totalPending,
                 totalOverdueMonthCents = totalOverdue,
                 upcomingInstallments = upcoming,
-                categoryDistribution = categoryDistribution
+                upcomingWeekInstallments = upcomingWeek,
+                categoryDistribution = categoryDistribution,
+                futureMonthsProjections = futureProjections,
+                totalCommittedFutureCents = totalCommittedFuture
             )
         }
     }

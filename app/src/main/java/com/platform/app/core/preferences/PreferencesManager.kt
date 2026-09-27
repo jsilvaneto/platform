@@ -20,8 +20,10 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 interface PreferencesManager {
     val isDarkMode: Flow<Boolean?>
+    val isBiometricEnabled: Flow<Boolean>
     val lastOfflineBackupTimestamp: Flow<Long>
     suspend fun setDarkMode(enabled: Boolean?)
+    suspend fun setBiometricEnabled(enabled: Boolean)
     suspend fun updateLastOfflineBackupTimestamp(timestamp: Long)
 }
 
@@ -32,6 +34,7 @@ class PreferencesManagerImpl @Inject constructor(
 
     private object PreferencesKeys {
         val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
+        val IS_BIOMETRIC_ENABLED = booleanPreferencesKey("is_biometric_enabled")
         val LAST_BACKUP_TIMESTAMP = longPreferencesKey("last_backup_timestamp")
     }
 
@@ -45,6 +48,18 @@ class PreferencesManagerImpl @Inject constructor(
         }
         .map { preferences ->
             preferences[PreferencesKeys.IS_DARK_MODE]
+        }
+
+    override val isBiometricEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] ?: false
         }
 
     override val lastOfflineBackupTimestamp: Flow<Long> = context.dataStore.data
@@ -66,6 +81,12 @@ class PreferencesManagerImpl @Inject constructor(
             } else {
                 preferences[PreferencesKeys.IS_DARK_MODE] = enabled
             }
+        }
+    }
+
+    override suspend fun setBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] = enabled
         }
     }
 

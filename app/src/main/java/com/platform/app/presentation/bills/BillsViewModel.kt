@@ -192,7 +192,7 @@ class BillsViewModel @Inject constructor(
 
     private fun handleMonthChanged(monthMillis: Long) {
         _uiState.update { it.copy(selectedMonthMillis = monthMillis) }
-        loadData()
+        loadInstallments()
     }
 
     private fun applyFilters(

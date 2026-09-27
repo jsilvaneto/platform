@@ -108,6 +108,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGoalDao(db: PlatformDatabase): com.platform.app.data.local.dao.GoalDao {
+        return db.goalDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideBudgetDao(db: PlatformDatabase): com.platform.app.data.local.dao.BudgetDao {
+        return db.budgetDao
+    }
+
+    @Provides
+    @Singleton
     fun provideOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {

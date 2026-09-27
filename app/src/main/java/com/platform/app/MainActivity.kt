@@ -24,7 +24,6 @@ import androidx.navigation.compose.rememberNavController
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.security.BiometricAuthManager
 import com.platform.app.presentation.navigation.AppDrawer
-import com.platform.app.presentation.navigation.BottomNavBar
 import com.platform.app.presentation.navigation.NavGraph
 import com.platform.app.presentation.navigation.Screen
 import com.platform.app.presentation.security.BiometricLockOverlay
@@ -126,11 +125,7 @@ class MainActivity : FragmentActivity() {
                                 )
                             }
                         ) {
-                            Scaffold(
-                                bottomBar = {
-                                    BottomNavBar(navController = navController)
-                                }
-                            ) { innerPadding ->
+                            Scaffold { innerPadding ->
                                 NavGraph(
                                     navController = navController,
                                     paddingValues = innerPadding,

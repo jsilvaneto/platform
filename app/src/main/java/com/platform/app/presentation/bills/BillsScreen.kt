@@ -65,7 +65,6 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.dashboard.MonthSelector
-import com.platform.app.presentation.home.OfflineBadge
 import kotlinx.coroutines.flow.Flow
 
 import androidx.compose.material.icons.Icons
@@ -103,14 +102,11 @@ fun BillsScreen(
     Scaffold(
         topBar = {
             PlatformAppBar(
-                title = "Contas a Pagar",
+                title = "Registros",
                 navigationIcon = {
                     IconButton(onClick = onOpenDrawer) {
                         Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
                     }
-                },
-                actions = {
-                    OfflineBadge()
                 }
             )
         },

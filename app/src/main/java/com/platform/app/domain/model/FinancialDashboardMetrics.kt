@@ -6,11 +6,16 @@ data class FinancialDashboardMetrics(
     val totalPaidMonthCents: Long = 0L,
     val totalPendingMonthCents: Long = 0L,
     val totalOverdueMonthCents: Long = 0L,
+    val previousMonthDueCents: Long = 0L,
+    val previousMonthPaidCents: Long = 0L,
+    val totalHistoricalPaidCents: Long = 0L,
+    val onTimePaymentRate: Int = 100,
     val upcomingInstallments: List<BillInstallment> = emptyList(),
     val upcomingWeekInstallments: List<BillInstallment> = emptyList(),
     val categoryDistribution: List<CategorySpend> = emptyList(),
     val futureMonthsProjections: List<FutureMonthProjection> = emptyList(),
-    val totalCommittedFutureCents: Long = 0L
+    val totalCommittedFutureCents: Long = 0L,
+    val futureInstallmentsCount: Int = 0
 )
 
 data class CategorySpend(

@@ -87,10 +87,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             PlatformAppBar(
-                title = stringResource(id = R.string.app_name),
-                actions = {
-                    OfflineBadge()
-                }
+                title = stringResource(id = R.string.app_name)
             )
         },
         snackbarHost = {
@@ -235,35 +232,6 @@ fun HomeScreen(
     }
 }
 
-@Composable
-fun OfflineBadge() {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-        modifier = Modifier.padding(end = 12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(4.dp)
-                    )
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = "100% Offline",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
 
 @Composable
 fun ItemCard(

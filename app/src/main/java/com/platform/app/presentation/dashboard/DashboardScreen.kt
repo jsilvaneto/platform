@@ -19,13 +19,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.QueryBuilder
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.TrendingDown
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Card
@@ -55,7 +56,6 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
-import com.platform.app.presentation.home.OfflineBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,7 +71,7 @@ fun DashboardScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Dashboard",
+                            text = "Início",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -87,9 +87,6 @@ fun DashboardScreen(
                         Icon(imageVector = Icons.Default.Menu, contentDescription = "Abrir menu")
                     }
                 },
-                actions = {
-                    OfflineBadge()
-                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
@@ -103,7 +100,7 @@ fun DashboardScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Seletor de Mês Estilizado
+            // Seletor de Mês
             MonthSelector(
                 selectedMonthMillis = uiState.selectedMonthMillis,
                 onPreviousMonth = { onAction(DashboardUiAction.PreviousMonth) },
@@ -123,19 +120,24 @@ fun DashboardScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(18.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Card de Destaque com Resumo e Progresso
+                        // 1. Card de Destaque: Mês Atual
                         item {
                             MonthOverviewHeroCard(metrics = metrics)
                         }
 
-                        // Visão de Planejamento Futuro (6 Meses)
+                        // 2. Card: Visão do Passado e Histórico (Requisito 7)
+                        item {
+                            PastInsightsSection(metrics = metrics)
+                        }
+
+                        // 3. Card: Visão do Futuro e Planejamento (Requisito 7)
                         item {
                             FuturePlanningSection(metrics = metrics)
                         }
 
-                        // Contas a Vencer nos Próximos 7 Dias (Ação Rápida)
+                        // 4. Vencimentos dos Próximos 7 Dias (Ação Rápida de Pagamento)
                         if (metrics.upcomingWeekInstallments.isNotEmpty()) {
                             item {
                                 UpcomingWeekSection(
@@ -152,7 +154,7 @@ fun DashboardScreen(
                             }
                         }
 
-                        // Próximos Vencimentos Gerais do Mês
+                        // 5. Próximos Vencimentos Gerais do Mês
                         if (metrics.upcomingInstallments.isNotEmpty()) {
                             item {
                                 Text(
@@ -167,7 +169,7 @@ fun DashboardScreen(
                             }
                         }
 
-                        // Distribuição por Categoria
+                        // 6. Distribuição por Categoria
                         if (metrics.categoryDistribution.isNotEmpty()) {
                             item {
                                 Text(
@@ -254,7 +256,6 @@ fun MonthOverviewHeroCard(metrics: FinancialDashboardMetrics) {
                     }
                 }
 
-                // Barra de progresso elegante
                 LinearProgressIndicator(
                     progress = { paidProgress },
                     color = Color(0xFF10B981),
@@ -264,7 +265,6 @@ fun MonthOverviewHeroCard(metrics: FinancialDashboardMetrics) {
                         .height(8.dp)
                 )
 
-                // Sub-Cards: Já Pago, Pendente e Atrasado
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -296,31 +296,129 @@ fun MonthOverviewHeroCard(metrics: FinancialDashboardMetrics) {
 }
 
 @Composable
-fun MiniKpiPill(
-    label: String,
-    valueCents: Long,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = color.copy(alpha = 0.1f)
+fun PastInsightsSection(metrics: FinancialDashboardMetrics) {
+    val diffCents = metrics.totalDueMonthCents - metrics.previousMonthDueCents
+    val hasPrevData = metrics.previousMonthDueCents > 0L
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = color,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = CurrencyUtils.formatCentsToCurrency(valueCents),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Visão do Passado & Histórico",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Comparativo com mês anterior e pontualidade",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // Card Comparativo do Mês Anterior
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Mês Anterior",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = CurrencyUtils.formatCentsToCurrency(metrics.previousMonthDueCents),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        if (hasPrevData) {
+                            val isHigher = diffCents > 0L
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = if (isHigher) Icons.Default.TrendingUp else Icons.Default.TrendingDown,
+                                    contentDescription = null,
+                                    tint = if (isHigher) MaterialTheme.colorScheme.error else Color(0xFF10B981),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = if (isHigher) "+${CurrencyUtils.formatCentsToCurrency(diffCents)}" else "-${CurrencyUtils.formatCentsToCurrency(-diffCents)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (isHigher) MaterialTheme.colorScheme.error else Color(0xFF10B981),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "Sem dados anteriores",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+                }
+
+                // Card Taxa de Pontualidade
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Pontualidade Histórica",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "${metrics.onTimePaymentRate}% no prazo",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF10B981)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Total liquidado: ${CurrencyUtils.formatCentsToCurrency(metrics.totalHistoricalPaidCents)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -352,13 +450,13 @@ fun FuturePlanningSection(metrics: FinancialDashboardMetrics) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Planejamento dos Próximos Meses",
+                        text = "Visão de Futuro & Projeções",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Comprometimento de parcelas e custos futuros",
+                        text = "Planejamento financeiro para os próximos 6 meses",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -367,7 +465,6 @@ fun FuturePlanningSection(metrics: FinancialDashboardMetrics) {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Projeções futuras em carrossel horizontal
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(metrics.futureMonthsProjections, key = { it.monthMillis }) { proj ->
                     FutureMonthCard(projection = proj)
@@ -376,7 +473,6 @@ fun FuturePlanningSection(metrics: FinancialDashboardMetrics) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Resumo do total comprometido futuro
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
@@ -390,7 +486,7 @@ fun FuturePlanningSection(metrics: FinancialDashboardMetrics) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Total comprometido para o futuro:",
+                        text = "Total futuro já comprometido:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -432,7 +528,7 @@ fun FutureMonthCard(projection: FutureMonthProjection) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${projection.installmentsCount} pagamentos",
+                text = "${projection.installmentsCount} parcelas/contas",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
@@ -689,10 +785,40 @@ fun EmptyDashboardState() {
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Abra o menu lateral ou cadastre uma nova despesa para iniciar seu planejamento.",
+            text = "Abra o menu lateral ou cadastre uma nova despesa no menu Registros para iniciar seu planejamento.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
+    }
+}
+
+@Composable
+fun MiniKpiPill(
+    label: String,
+    valueCents: Long,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.1f)
+    ) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = color,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = CurrencyUtils.formatCentsToCurrency(valueCents),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
     }
 }

@@ -15,13 +15,19 @@ import androidx.navigation.navArgument
 import com.platform.app.core.security.BiometricAuthManager
 import com.platform.app.presentation.bills.BillsScreen
 import com.platform.app.presentation.bills.BillsViewModel
+import com.platform.app.presentation.budgets.BudgetsScreen
+import com.platform.app.presentation.budgets.BudgetsViewModel
 import com.platform.app.presentation.contacts.ContactDetailScreen
 import com.platform.app.presentation.contacts.ContactsScreen
 import com.platform.app.presentation.contacts.ContactsViewModel
 import com.platform.app.presentation.dashboard.DashboardScreen
 import com.platform.app.presentation.dashboard.DashboardViewModel
+import com.platform.app.presentation.goals.GoalsScreen
+import com.platform.app.presentation.goals.GoalsViewModel
 import com.platform.app.presentation.management.ManagementScreen
 import com.platform.app.presentation.management.ManagementViewModel
+import com.platform.app.presentation.recurring.RecurringInstallmentsScreen
+import com.platform.app.presentation.recurring.RecurringInstallmentsViewModel
 import com.platform.app.presentation.settings.SettingsScreen
 import com.platform.app.presentation.settings.SettingsViewModel
 
@@ -61,6 +67,33 @@ fun NavGraph(
             )
         }
 
+        composable(route = Screen.RecurringInstallments.route) {
+            val viewModel: RecurringInstallmentsViewModel = hiltViewModel()
+
+            RecurringInstallmentsScreen(
+                viewModel = viewModel,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        composable(route = Screen.Goals.route) {
+            val viewModel: GoalsViewModel = hiltViewModel()
+
+            GoalsScreen(
+                viewModel = viewModel,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        composable(route = Screen.Budgets.route) {
+            val viewModel: BudgetsViewModel = hiltViewModel()
+
+            BudgetsScreen(
+                viewModel = viewModel,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
         composable(route = Screen.Contacts.route) {
             val viewModel: ContactsViewModel = hiltViewModel()
 
@@ -94,7 +127,8 @@ fun NavGraph(
 
             ManagementScreen(
                 viewModel = viewModel,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -104,7 +138,10 @@ fun NavGraph(
             SettingsScreen(
                 viewModel = viewModel,
                 biometricAuthManager = biometricAuthManager,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToManagement = {
+                    navController.navigate(Screen.Management.route)
+                }
             )
         }
     }

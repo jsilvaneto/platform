@@ -6,6 +6,9 @@ data class Contact(
     val phone: String = "",
     val email: String = "",
     val street: String = "",
+    val number: String = "",
+    val complement: String = "",
+    val neighborhood: String = "",
     val city: String = "",
     val state: String = "",
     val country: String = "Brasil",
@@ -14,8 +17,14 @@ data class Contact(
 ) {
     val fullAddress: String
         get() {
+            val streetWithNumber = buildString {
+                if (street.isNotBlank()) append(street)
+                if (number.isNotBlank()) append(", nº $number")
+                if (complement.isNotBlank()) append(" ($complement)")
+            }
             val parts = listOfNotNull(
-                street.takeIf { it.isNotBlank() },
+                streetWithNumber.takeIf { it.isNotBlank() },
+                neighborhood.takeIf { it.isNotBlank() },
                 city.takeIf { it.isNotBlank() },
                 state.takeIf { it.isNotBlank() },
                 country.takeIf { it.isNotBlank() },

@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.repository.AddressInfo
 import com.platform.app.domain.usecase.GetContactDetailsUseCase
+import com.platform.app.domain.usecase.LookupAddressByCepUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -25,7 +27,8 @@ import javax.inject.Inject
 class ContactsViewModel @Inject constructor(
     private val repository: FinancialRepository,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
-    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
+    private val lookupAddressByCepUseCase: LookupAddressByCepUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactsUiState())
@@ -149,5 +152,9 @@ class ContactsViewModel @Inject constructor(
                 _effectChannel.send(ContactsUiEffect.ShowSnackbar("Erro ao atualizar pagamento: ${e.message}"))
             }
         }
+    }
+
+    suspend fun lookupCep(cep: String): AddressInfo? {
+        return lookupAddressByCepUseCase(cep)
     }
 }

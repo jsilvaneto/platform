@@ -60,6 +60,10 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.usecase.ContactDetails
 import kotlinx.coroutines.flow.collectLatest
 
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.mutableStateOf
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactDetailScreen(
@@ -70,6 +74,8 @@ fun ContactDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedTabIndex by remember { mutableIntStateOf(0) }
+    var isEditDialogOpen by remember { mutableStateOf(false) }
+    val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(contactId) {
         viewModel.loadContactDetails(contactId)
@@ -79,6 +85,10 @@ fun ContactDetailScreen(
         viewModel.uiEffect.collectLatest { effect ->
             when (effect) {
                 is ContactsUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is ContactsUiEffect.ContactSaved -> {
+                    isEditDialogOpen = false
+                    viewModel.loadContactDetails(contactId)
+                }
                 else -> Unit
             }
         }
@@ -95,6 +105,17 @@ fun ContactDetailScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Voltar"
                         )
+                    }
+                },
+                actions = {
+                    val details = uiState.selectedContactDetails
+                    if (details != null) {
+                        IconButton(onClick = { isEditDialogOpen = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar Contato"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -161,6 +182,18 @@ fun ContactDetailScreen(
                     }
                 }
             }
+        }
+
+        if (isEditDialogOpen && details != null) {
+            AddContactBottomSheet(
+                contact = details.contact,
+                sheetState = editSheetState,
+                onLookupCep = viewModel::lookupCep,
+                onDismiss = { isEditDialogOpen = false },
+                onSave = { updatedContact ->
+                    viewModel.onAction(ContactsUiAction.SaveContact(updatedContact))
+                }
+            )
         }
     }
 }

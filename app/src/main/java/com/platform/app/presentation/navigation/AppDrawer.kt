@@ -14,11 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Flag
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.QueryStats
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,15 +55,33 @@ fun AppDrawer(
     val items = listOf(
         DrawerItem(
             screen = Screen.Dashboard,
-            title = "Dashboard",
+            title = "Início",
             subtitle = "Visão geral e planejamento",
-            icon = Icons.Default.QueryStats
+            icon = Icons.Default.Home
         ),
         DrawerItem(
             screen = Screen.Bills,
-            title = "Contas a Pagar",
-            subtitle = "Parcelamentos e vencimentos",
-            icon = Icons.Default.CreditCard
+            title = "Registros",
+            subtitle = "Lançamentos e vencimentos",
+            icon = Icons.Default.ReceiptLong
+        ),
+        DrawerItem(
+            screen = Screen.RecurringInstallments,
+            title = "Recorrentes e Parcelados",
+            subtitle = "Assinaturas e parcelamentos",
+            icon = Icons.Default.Repeat
+        ),
+        DrawerItem(
+            screen = Screen.Goals,
+            title = "Metas",
+            subtitle = "Objetivos e reservas financeiras",
+            icon = Icons.Default.Flag
+        ),
+        DrawerItem(
+            screen = Screen.Budgets,
+            title = "Orçamentos",
+            subtitle = "Tetos de gastos por categoria",
+            icon = Icons.Default.PieChart
         ),
         DrawerItem(
             screen = Screen.Contacts,
@@ -71,15 +90,9 @@ fun AppDrawer(
             icon = Icons.Default.People
         ),
         DrawerItem(
-            screen = Screen.Management,
-            title = "Cadastros Base",
-            subtitle = "Contas, formas e categorias",
-            icon = Icons.Default.Category
-        ),
-        DrawerItem(
             screen = Screen.Settings,
-            title = "Configurações & Sobre",
-            subtitle = "Biometria, tema e versão",
+            title = "Configurações",
+            subtitle = "Cadastros, biometria e sobre",
             icon = Icons.Default.Settings
         )
     )
@@ -135,34 +148,9 @@ fun AppDrawer(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Gestão Pessoal Offline",
+                                text = "Gestão Financeira Pessoal",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFF10B981).copy(alpha = 0.15f)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(Color(0xFF10B981), CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "100% Offline • Seguro",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF10B981),
-                                fontWeight = FontWeight.Bold
                             )
                         }
                     }

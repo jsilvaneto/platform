@@ -1,6 +1,7 @@
 package com.platform.app.presentation.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,12 +18,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +35,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -37,21 +43,23 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.platform.app.core.security.BiometricAuthManager
@@ -63,12 +71,15 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     biometricAuthManager: BiometricAuthManager,
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
+    onNavigateToManagement: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    var showReleaseNotesDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -131,6 +142,34 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Seção de Cadastros Base (Contas, Formas de Pagamento e Categorias)
+            SectionCard(
+                title = "Cadastros Base",
+                icon = Icons.Default.Category
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Gerencie suas contas financeiras, formas de pagamento (Pix, cartões, boletos) e categorias/subcategorias personalizadas.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+
+                    Button(
+                        onClick = onNavigateToManagement,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Gerenciar Contas, Formas e Categorias")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
             // Seção de Segurança
             SectionCard(
                 title = "Segurança & Privacidade",
@@ -229,29 +268,15 @@ fun SettingsScreen(
                 title = "Armazenamento",
                 icon = Icons.Default.Storage
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF10B981).copy(alpha = 0.15f)
-                    ) {
-                        Text(
-                            text = "100% Offline-First",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Banco de Dados Local Room SQLite",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Nenhum dado financeiro sai deste aparelho. Todas as contas, parcelamentos e contatos são processados e armazenados localmente.",
+                    text = "Banco de Dados Local Room SQLite",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Todos os dados financeiros, parcelas e contatos são processados e armazenados com privacidade em seu dispositivo.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -263,7 +288,9 @@ fun SettingsScreen(
                 icon = Icons.Default.Info
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showReleaseNotesDialog = true },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
@@ -303,7 +330,7 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -320,16 +347,146 @@ fun SettingsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    Text(
-                        text = "Arquitetura Clean Architecture com Jetpack Compose, Material 3 e MVI reativo.",
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
+                    OutlinedButton(
+                        onClick = { showReleaseNotesDialog = true },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Ver Novidades e Melhorias da Versão")
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        if (showReleaseNotesDialog) {
+            ReleaseNotesDialog(
+                versionName = uiState.appVersionName,
+                onDismiss = { showReleaseNotesDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun ReleaseNotesDialog(
+    versionName: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text("🚀", style = MaterialTheme.typography.titleMedium)
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "Melhorias & Correções",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Versão $versionName",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "O que há de novo nesta versão:",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                ReleaseNoteItem(
+                    emoji = "📊",
+                    title = "Dashboard Aprimorado (Início)",
+                    description = "Novos cards inteligentes para visualização clara do passado, compromissos do mês e projeção futura de despesas."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "💳",
+                    title = "Recorrentes e Parcelados",
+                    description = "Novo menu lateral dedicado ao gerenciamento de assinaturas fixas e compras parceladas em andamento."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🎯",
+                    title = "Metas e Orçamentos",
+                    description = "Crie objetivos financeiros com progresso visual e estabeleça tetos mensais de gastos por categoria."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "📍",
+                    title = "Cadastro de Contatos Inteligente",
+                    description = "Busca automática de endereço a partir do CEP, novos campos de número e complemento, e edição rápida."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "⚡",
+                    title = "Edição com 1 Toque",
+                    description = "Edição instantânea de contas bancárias, formas de pagamento, categorias e subcategorias com um toque."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "✨",
+                    title = "Interface Despoluída",
+                    description = "Remoção de barras redundantes na parte inferior, unificação das configurações e navegação fluida."
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss, shape = RoundedCornerShape(10.dp)) {
+                Text("Entendido")
+            }
+        }
+    )
+}
+
+@Composable
+fun ReleaseNoteItem(
+    emoji: String,
+    title: String,
+    description: String
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(text = emoji, style = MaterialTheme.typography.bodyLarge)
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
         }
     }
 }

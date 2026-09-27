@@ -68,7 +68,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 .filter { !it.isPaid && it.dueDate in now..sevenDaysAhead }
                 .sortedBy { it.dueDate }
 
-            // Projeções dos próximos 6 meses para planejamento
+            // Projeções dos próximos 6 meses para planejamento futuro
             val futureProjections = (1..6).map { i ->
                 val futureMonthEpoch = DateUtils.addMonths(monthMillis, i)
                 val futureStart = DateUtils.getStartOfMonth(futureMonthEpoch)
@@ -86,17 +86,41 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 .filter { !it.isPaid && it.dueDate >= startOfMonth }
                 .sumOf { it.amountCents }
 
+            val futureInstallmentsCount = allInstallments
+                .count { !it.isPaid && it.dueDate > endOfMonth }
+
+            // Métricas do Mês Anterior (Passado)
+            val prevMonthEpoch = DateUtils.addMonths(monthMillis, -1)
+            val prevStart = DateUtils.getStartOfMonth(prevMonthEpoch)
+            val prevEnd = DateUtils.getEndOfMonth(prevMonthEpoch)
+            val prevMonthInsts = allInstallments.filter { it.dueDate in prevStart..prevEnd }
+            val prevDue = prevMonthInsts.sumOf { it.amountCents }
+            val prevPaid = prevMonthInsts.filter { it.isPaid }.sumOf { it.amountCents }
+
+            // Histórico Total
+            val allPaidInsts = allInstallments.filter { it.isPaid }
+            val totalHistPaid = allPaidInsts.sumOf { it.amountCents }
+            val onTimeCount = allPaidInsts.count { (it.paidAt ?: it.dueDate) <= it.dueDate }
+            val onTimeRate = if (allPaidInsts.isNotEmpty()) {
+                ((onTimeCount.toFloat() / allPaidInsts.size.toFloat()) * 100).toInt()
+            } else 100
+
             FinancialDashboardMetrics(
                 monthMillis = monthMillis,
                 totalDueMonthCents = totalDue,
                 totalPaidMonthCents = totalPaid,
                 totalPendingMonthCents = totalPending,
                 totalOverdueMonthCents = totalOverdue,
+                previousMonthDueCents = prevDue,
+                previousMonthPaidCents = prevPaid,
+                totalHistoricalPaidCents = totalHistPaid,
+                onTimePaymentRate = onTimeRate,
                 upcomingInstallments = upcoming,
                 upcomingWeekInstallments = upcomingWeek,
                 categoryDistribution = categoryDistribution,
                 futureMonthsProjections = futureProjections,
-                totalCommittedFutureCents = totalCommittedFuture
+                totalCommittedFutureCents = totalCommittedFuture,
+                futureInstallmentsCount = futureInstallmentsCount
             )
         }
     }

@@ -23,13 +23,19 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Signpost
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -199,6 +205,10 @@ fun ContactsScreen(
                             ContactCard(
                                 contact = contact,
                                 onClick = { onNavigateToDetail(contact.id) },
+                                onEdit = {
+                                    contactToEdit = contact
+                                    isBottomSheetOpen = true
+                                },
                                 onDelete = { viewModel.onAction(ContactsUiAction.DeleteContact(contact.id)) }
                             )
                         }
@@ -211,6 +221,7 @@ fun ContactsScreen(
             AddContactBottomSheet(
                 contact = contactToEdit,
                 sheetState = sheetState,
+                onLookupCep = viewModel::lookupCep,
                 onDismiss = {
                     isBottomSheetOpen = false
                     contactToEdit = null
@@ -227,6 +238,7 @@ fun ContactsScreen(
 fun ContactCard(
     contact: Contact,
     onClick: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
@@ -326,12 +338,21 @@ fun ContactCard(
                 }
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir Contato",
-                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar Contato",
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Excluir Contato",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
@@ -342,17 +363,46 @@ fun ContactCard(
 fun AddContactBottomSheet(
     contact: Contact?,
     sheetState: androidx.compose.material3.SheetState,
+    onLookupCep: suspend (String) -> com.platform.app.domain.repository.AddressInfo?,
     onDismiss: () -> Unit,
     onSave: (Contact) -> Unit
 ) {
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
     var name by remember { mutableStateOf(contact?.name ?: "") }
     var phone by remember { mutableStateOf(contact?.phone ?: "") }
     var email by remember { mutableStateOf(contact?.email ?: "") }
+    var zipCode by remember { mutableStateOf(contact?.zipCode ?: "") }
     var street by remember { mutableStateOf(contact?.street ?: "") }
+    var number by remember { mutableStateOf(contact?.number ?: "") }
+    var complement by remember { mutableStateOf(contact?.complement ?: "") }
+    var neighborhood by remember { mutableStateOf(contact?.neighborhood ?: "") }
     var city by remember { mutableStateOf(contact?.city ?: "") }
     var state by remember { mutableStateOf(contact?.state ?: "") }
-    var zipCode by remember { mutableStateOf(contact?.zipCode ?: "") }
     var country by remember { mutableStateOf(contact?.country ?: "Brasil") }
+
+    var isCepLoading by remember { mutableStateOf(false) }
+    var cepError by remember { mutableStateOf<String?>(null) }
+
+    fun triggerCepLookup(cepToSearch: String) {
+        val clean = cepToSearch.replace(Regex("[^0-9]"), "")
+        if (clean.length == 8) {
+            isCepLoading = true
+            cepError = null
+            coroutineScope.launch {
+                val address = onLookupCep(clean)
+                isCepLoading = false
+                if (address != null) {
+                    if (address.street.isNotBlank()) street = address.street
+                    if (address.neighborhood.isNotBlank()) neighborhood = address.neighborhood
+                    if (address.city.isNotBlank()) city = address.city
+                    if (address.state.isNotBlank()) state = address.state
+                } else {
+                    cepError = "CEP não localizado automaticamente"
+                }
+            }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -362,32 +412,76 @@ fun AddContactBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 24.dp, vertical = 12.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // Header estilizado
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (contact == null) Icons.Default.Person else Icons.Default.Edit,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = if (contact == null) "Novo Contato" else "Editar Contato",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Preencha as informações do fornecedor ou beneficiário",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // Seção 1: Dados Pessoais
             Text(
-                text = if (contact == null) "Novo Contato" else "Editar Contato",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                text = "Identificação & Contato",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome Completo / Empresa *") },
+                label = { Text("Nome Completo / Razão Social *") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Telefone / WhatsApp") },
+                    label = { Text("Telefone / Celular") },
+                    leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 )
 
@@ -395,53 +489,131 @@ fun AddContactBottomSheet(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("E-mail") },
+                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 )
             }
 
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Seção 2: Endereço & Localização com busca por CEP
             Text(
-                text = "Endereço",
+                text = "Endereço & Localidade",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.primary
             )
 
+            // Campo de CEP com indicador de busca automática
             OutlinedTextField(
-                value = street,
-                onValueChange = { street = it },
-                label = { Text("Rua / Av., Número e Complemento") },
+                value = zipCode,
+                onValueChange = {
+                    zipCode = it
+                    triggerCepLookup(it)
+                },
+                label = { Text("CEP (busca automática ao digitar)") },
+                placeholder = { Text("Ex: 01001-000") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    if (isCepLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else if (zipCode.replace(Regex("[^0-9]"), "").length == 8) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "CEP válido",
+                            tint = Color(0xFF10B981)
+                        )
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                isError = cepError != null,
+                supportingText = cepError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Logradouro / Rua
+            OutlinedTextField(
+                value = street,
+                onValueChange = { street = it },
+                label = { Text("Logradouro (Rua, Avenida, Praça)") },
+                leadingIcon = { Icon(Icons.Default.Home, contentDescription = null) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Número e Complemento
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = number,
+                    onValueChange = { number = it },
+                    label = { Text("Número") },
+                    placeholder = { Text("Ex: 123, S/N") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.width(130.dp)
+                )
+
+                OutlinedTextField(
+                    value = complement,
+                    onValueChange = { complement = it },
+                    label = { Text("Complemento") },
+                    placeholder = { Text("Apto 42, Bloco B") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Bairro e Cidade
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = neighborhood,
+                    onValueChange = { neighborhood = it },
+                    label = { Text("Bairro") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.weight(1f)
+                )
+
                 OutlinedTextField(
                     value = city,
                     onValueChange = { city = it },
                     label = { Text("Cidade") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 )
+            }
 
+            // Estado (UF) e País
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = state,
                     onValueChange = { state = it },
                     label = { Text("Estado (UF)") },
+                    placeholder = { Text("Ex: SP") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.width(110.dp)
-                )
-            }
-
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = zipCode,
-                    onValueChange = { zipCode = it },
-                    label = { Text("CEP") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.weight(1f)
                 )
 
                 OutlinedTextField(
@@ -449,20 +621,23 @@ fun AddContactBottomSheet(
                     onValueChange = { country = it },
                     label = { Text("País") },
                     singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Botões de Ação
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDismiss) {
                     Text("Cancelar")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 Button(
                     onClick = {
                         if (name.isNotBlank()) {
@@ -473,6 +648,9 @@ fun AddContactBottomSheet(
                                     phone = phone.trim(),
                                     email = email.trim(),
                                     street = street.trim(),
+                                    number = number.trim(),
+                                    complement = complement.trim(),
+                                    neighborhood = neighborhood.trim(),
                                     city = city.trim(),
                                     state = state.trim(),
                                     country = country.trim(),
@@ -481,12 +659,13 @@ fun AddContactBottomSheet(
                             )
                         }
                     },
-                    enabled = name.isNotBlank()
+                    enabled = name.isNotBlank(),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Salvar Contato")
+                    Text(if (contact == null) "Salvar Contato" else "Atualizar Contato")
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }

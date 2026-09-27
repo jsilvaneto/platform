@@ -20,11 +20,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Menu
@@ -76,25 +77,37 @@ import java.util.UUID
 @Composable
 fun ManagementScreen(
     viewModel: ManagementViewModel,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var showAddAccountDialog by remember { mutableStateOf(false) }
-    var showAddMethodDialog by remember { mutableStateOf(false) }
-    var showAddCategoryDialog by remember { mutableStateOf(false) }
+    var accountToEdit by remember { mutableStateOf<FinancialAccount?>(null) }
+    var isNewAccountDialog by remember { mutableStateOf(false) }
+
+    var methodToEdit by remember { mutableStateOf<PaymentMethod?>(null) }
+    var isNewMethodDialog by remember { mutableStateOf(false) }
+
+    var categoryToEdit by remember { mutableStateOf<Category?>(null) }
+    var isNewCategoryDialog by remember { mutableStateOf(false) }
+
     var subcategoryTargetCategory by remember { mutableStateOf<Category?>(null) }
+    var subcategoryToEdit by remember { mutableStateOf<Pair<Subcategory, Category>?>(null) }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
             when (effect) {
                 is ManagementUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is ManagementUiEffect.ItemSaved -> {
-                    showAddAccountDialog = false
-                    showAddMethodDialog = false
-                    showAddCategoryDialog = false
+                    accountToEdit = null
+                    isNewAccountDialog = false
+                    methodToEdit = null
+                    isNewMethodDialog = false
+                    categoryToEdit = null
+                    isNewCategoryDialog = false
                     subcategoryTargetCategory = null
+                    subcategoryToEdit = null
                 }
             }
         }
@@ -118,8 +131,14 @@ fun ManagementScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                    if (onNavigateBack != null) {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                        }
+                    } else {
+                        IconButton(onClick = onOpenDrawer) {
+                            Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -132,9 +151,9 @@ fun ManagementScreen(
             FloatingActionButton(
                 onClick = {
                     when (uiState.selectedTab) {
-                        0 -> showAddAccountDialog = true
-                        1 -> showAddMethodDialog = true
-                        2 -> showAddCategoryDialog = true
+                        0 -> isNewAccountDialog = true
+                        1 -> isNewMethodDialog = true
+                        2 -> isNewCategoryDialog = true
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -149,7 +168,6 @@ fun ManagementScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-
             TabRow(
                 selectedTabIndex = uiState.selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -180,15 +198,19 @@ fun ManagementScreen(
                 when (uiState.selectedTab) {
                     0 -> AccountsTab(
                         accounts = uiState.accounts,
+                        onEdit = { accountToEdit = it },
                         onDelete = { viewModel.onAction(ManagementUiAction.DeleteAccount(it)) }
                     )
                     1 -> PaymentMethodsTab(
                         methods = uiState.paymentMethods,
+                        onEdit = { methodToEdit = it },
                         onDelete = { viewModel.onAction(ManagementUiAction.DeletePaymentMethod(it)) }
                     )
                     2 -> CategoriesTab(
                         categories = uiState.categories,
                         subcategories = uiState.subcategories,
+                        onEditCategory = { categoryToEdit = it },
+                        onEditSubcategory = { sub, cat -> subcategoryToEdit = Pair(sub, cat) },
                         onDeleteCategory = { viewModel.onAction(ManagementUiAction.DeleteCategory(it)) },
                         onDeleteSubcategory = { viewModel.onAction(ManagementUiAction.DeleteSubcategory(it)) },
                         onAddSubcategory = { category -> subcategoryTargetCategory = category }
@@ -197,33 +219,59 @@ fun ManagementScreen(
             }
         }
 
-        // Diálogos de Adição
-        if (showAddAccountDialog) {
-            AddAccountDialog(
-                onDismiss = { showAddAccountDialog = false },
+        // Diálogos de Contas Financeiras
+        if (isNewAccountDialog || accountToEdit != null) {
+            AddEditAccountDialog(
+                account = accountToEdit,
+                onDismiss = {
+                    isNewAccountDialog = false
+                    accountToEdit = null
+                },
                 onConfirm = { account -> viewModel.onAction(ManagementUiAction.SaveAccount(account)) }
             )
         }
 
-        if (showAddMethodDialog) {
-            AddPaymentMethodDialog(
-                onDismiss = { showAddMethodDialog = false },
+        // Diálogos de Formas de Pagamento
+        if (isNewMethodDialog || methodToEdit != null) {
+            AddEditPaymentMethodDialog(
+                method = methodToEdit,
+                onDismiss = {
+                    isNewMethodDialog = false
+                    methodToEdit = null
+                },
                 onConfirm = { method -> viewModel.onAction(ManagementUiAction.SavePaymentMethod(method)) }
             )
         }
 
-        if (showAddCategoryDialog) {
-            AddCategoryDialog(
-                onDismiss = { showAddCategoryDialog = false },
+        // Diálogos de Categorias
+        if (isNewCategoryDialog || categoryToEdit != null) {
+            AddEditCategoryDialog(
+                category = categoryToEdit,
+                onDismiss = {
+                    isNewCategoryDialog = false
+                    categoryToEdit = null
+                },
                 onConfirm = { category -> viewModel.onAction(ManagementUiAction.SaveCategory(category)) }
             )
         }
 
+        // Nova Subcategoria
         subcategoryTargetCategory?.let { targetCat ->
-            AddSubcategoryDialog(
+            AddEditSubcategoryDialog(
+                subcategory = null,
                 category = targetCat,
                 onDismiss = { subcategoryTargetCategory = null },
                 onConfirm = { sub -> viewModel.onAction(ManagementUiAction.SaveSubcategory(sub)) }
+            )
+        }
+
+        // Editar Subcategoria existente
+        subcategoryToEdit?.let { (sub, targetCat) ->
+            AddEditSubcategoryDialog(
+                subcategory = sub,
+                category = targetCat,
+                onDismiss = { subcategoryToEdit = null },
+                onConfirm = { updatedSub -> viewModel.onAction(ManagementUiAction.SaveSubcategory(updatedSub)) }
             )
         }
     }
@@ -232,6 +280,7 @@ fun ManagementScreen(
 @Composable
 fun AccountsTab(
     accounts: List<FinancialAccount>,
+    onEdit: (FinancialAccount) -> Unit,
     onDelete: (String) -> Unit
 ) {
     if (accounts.isEmpty()) {
@@ -250,7 +299,9 @@ fun AccountsTab(
                 }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEdit(account) },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
@@ -277,10 +328,14 @@ fun AccountsTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = account.accountType,
+                                text = "${account.accountType} • Toque para editar",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
+                        }
+
+                        IconButton(onClick = { onEdit(account) }) {
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar Conta", tint = MaterialTheme.colorScheme.primary)
                         }
 
                         IconButton(onClick = { onDelete(account.id) }) {
@@ -296,6 +351,7 @@ fun AccountsTab(
 @Composable
 fun PaymentMethodsTab(
     methods: List<PaymentMethod>,
+    onEdit: (PaymentMethod) -> Unit,
     onDelete: (String) -> Unit
 ) {
     if (methods.isEmpty()) {
@@ -310,7 +366,9 @@ fun PaymentMethodsTab(
         ) {
             items(methods, key = { it.id }) { method ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onEdit(method) },
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
@@ -338,13 +396,23 @@ fun PaymentMethodsTab(
 
                         Spacer(modifier = Modifier.width(14.dp))
 
-                        Text(
-                            text = method.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = method.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Toque para editar",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        IconButton(onClick = { onEdit(method) }) {
+                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar Forma de Pagamento", tint = MaterialTheme.colorScheme.primary)
+                        }
 
                         IconButton(onClick = { onDelete(method.id) }) {
                             Icon(imageVector = Icons.Default.Delete, contentDescription = "Excluir Forma de Pagamento", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
@@ -360,6 +428,8 @@ fun PaymentMethodsTab(
 fun CategoriesTab(
     categories: List<Category>,
     subcategories: List<Subcategory>,
+    onEditCategory: (Category) -> Unit,
+    onEditSubcategory: (Subcategory, Category) -> Unit,
     onDeleteCategory: (String) -> Unit,
     onDeleteSubcategory: (String) -> Unit,
     onAddSubcategory: (Category) -> Unit
@@ -405,10 +475,18 @@ fun CategoriesTab(
                             )
 
                             Text(
-                                text = "${subs.size} subcategorias",
+                                text = "${subs.size} subs",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
+
+                            IconButton(onClick = { onEditCategory(cat) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Editar Categoria",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
 
                             IconButton(onClick = { expanded = !expanded }) {
                                 Icon(
@@ -449,9 +527,22 @@ fun CategoriesTab(
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                                             modifier = Modifier.weight(1f)
                                         )
+
+                                        IconButton(
+                                            onClick = { onEditSubcategory(sub, cat) },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Edit,
+                                                contentDescription = "Editar Subcategoria",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+
                                         IconButton(
                                             onClick = { onDeleteSubcategory(sub.id) },
-                                            modifier = Modifier.size(24.dp)
+                                            modifier = Modifier.size(28.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
@@ -482,19 +573,20 @@ fun CategoriesTab(
 }
 
 @Composable
-fun AddAccountDialog(
+fun AddEditAccountDialog(
+    account: FinancialAccount?,
     onDismiss: () -> Unit,
     onConfirm: (FinancialAccount) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(account?.name ?: "") }
     val types = listOf("Conta Corrente", "Cartão de Crédito", "Dinheiro / Carteira", "Investimento / Reserva", "Outro")
-    var selectedType by remember { mutableStateOf(types[0]) }
+    var selectedType by remember { mutableStateOf(account?.accountType ?: types[0]) }
     val colors = listOf("#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#64748B")
-    var selectedColor by remember { mutableStateOf(colors[0]) }
+    var selectedColor by remember { mutableStateOf(account?.colorHex ?: colors[0]) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova Conta Financeira") },
+        title = { Text(if (account == null) "Nova Conta Financeira" else "Editar Conta Financeira") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -502,6 +594,7 @@ fun AddAccountDialog(
                     onValueChange = { name = it },
                     label = { Text("Nome da Conta (ex: Nubank, Itaú, Carteira)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -536,7 +629,7 @@ fun AddAccountDialog(
                     if (name.isNotBlank()) {
                         onConfirm(
                             FinancialAccount(
-                                id = UUID.randomUUID().toString(),
+                                id = account?.id ?: UUID.randomUUID().toString(),
                                 name = name.trim(),
                                 accountType = selectedType,
                                 colorHex = selectedColor
@@ -546,7 +639,7 @@ fun AddAccountDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Salvar")
+                Text(if (account == null) "Salvar" else "Atualizar")
             }
         },
         dismissButton = {
@@ -556,15 +649,16 @@ fun AddAccountDialog(
 }
 
 @Composable
-fun AddPaymentMethodDialog(
+fun AddEditPaymentMethodDialog(
+    method: PaymentMethod?,
     onDismiss: () -> Unit,
     onConfirm: (PaymentMethod) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(method?.name ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova Forma de Pagamento") },
+        title = { Text(if (method == null) "Nova Forma de Pagamento" else "Editar Forma de Pagamento") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -572,6 +666,7 @@ fun AddPaymentMethodDialog(
                     onValueChange = { name = it },
                     label = { Text("Nome (ex: Pix, Boleto, Vale Refeição)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -582,16 +677,16 @@ fun AddPaymentMethodDialog(
                     if (name.isNotBlank()) {
                         onConfirm(
                             PaymentMethod(
-                                id = UUID.randomUUID().toString(),
+                                id = method?.id ?: UUID.randomUUID().toString(),
                                 name = name.trim(),
-                                iconName = "payments"
+                                iconName = method?.iconName ?: "payments"
                             )
                         )
                     }
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Salvar")
+                Text(if (method == null) "Salvar" else "Atualizar")
             }
         },
         dismissButton = {
@@ -601,17 +696,18 @@ fun AddPaymentMethodDialog(
 }
 
 @Composable
-fun AddCategoryDialog(
+fun AddEditCategoryDialog(
+    category: Category?,
     onDismiss: () -> Unit,
     onConfirm: (Category) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(category?.name ?: "") }
     val colors = listOf("#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#EC4899", "#6366F1", "#64748B")
-    var selectedColor by remember { mutableStateOf(colors[0]) }
+    var selectedColor by remember { mutableStateOf(category?.colorHex ?: colors[0]) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova Categoria") },
+        title = { Text(if (category == null) "Nova Categoria" else "Editar Categoria") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -619,6 +715,7 @@ fun AddCategoryDialog(
                     onValueChange = { name = it },
                     label = { Text("Nome da Categoria (ex: Vestuário, Viagens)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -642,17 +739,17 @@ fun AddCategoryDialog(
                     if (name.isNotBlank()) {
                         onConfirm(
                             Category(
-                                id = UUID.randomUUID().toString(),
+                                id = category?.id ?: UUID.randomUUID().toString(),
                                 name = name.trim(),
                                 colorHex = selectedColor,
-                                iconName = "category"
+                                iconName = category?.iconName ?: "category"
                             )
                         )
                     }
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Salvar")
+                Text(if (category == null) "Salvar" else "Atualizar")
             }
         },
         dismissButton = {
@@ -662,16 +759,24 @@ fun AddCategoryDialog(
 }
 
 @Composable
-fun AddSubcategoryDialog(
+fun AddEditSubcategoryDialog(
+    subcategory: Subcategory?,
     category: Category,
     onDismiss: () -> Unit,
     onConfirm: (Subcategory) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(subcategory?.name ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nova Subcategoria em '${category.name}'") },
+        title = {
+            Text(
+                if (subcategory == null)
+                    "Nova Subcategoria em '${category.name}'"
+                else
+                    "Editar Subcategoria em '${category.name}'"
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -679,6 +784,7 @@ fun AddSubcategoryDialog(
                     onValueChange = { name = it },
                     label = { Text("Nome da Subcategoria (ex: Farmácia, Mercado)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -689,7 +795,7 @@ fun AddSubcategoryDialog(
                     if (name.isNotBlank()) {
                         onConfirm(
                             Subcategory(
-                                id = UUID.randomUUID().toString(),
+                                id = subcategory?.id ?: UUID.randomUUID().toString(),
                                 categoryId = category.id,
                                 name = name.trim()
                             )
@@ -698,7 +804,7 @@ fun AddSubcategoryDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Adicionar")
+                Text(if (subcategory == null) "Adicionar" else "Atualizar")
             }
         },
         dismissButton = {

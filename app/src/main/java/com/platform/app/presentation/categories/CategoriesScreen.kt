@@ -42,7 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
-import com.platform.app.presentation.home.OfflineBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,10 +56,7 @@ fun CategoriesScreen(
     Scaffold(
         topBar = {
             PlatformAppBar(
-                title = "Categorias",
-                actions = {
-                    OfflineBadge()
-                }
+                title = "Categorias"
             )
         },
         floatingActionButton = {

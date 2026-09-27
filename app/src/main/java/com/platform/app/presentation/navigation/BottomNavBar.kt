@@ -25,11 +25,17 @@ fun BottomNavBar(
     val items = listOf(
         BottomNavItem(Screen.Dashboard, "📊"),
         BottomNavItem(Screen.Bills, "💳"),
-        BottomNavItem(Screen.Categories, "🏷️")
+        BottomNavItem(Screen.Contacts, "👥"),
+        BottomNavItem(Screen.Management, "⚙️")
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    // Oculta a barra inferior em telas de detalhe
+    if (currentRoute?.startsWith("contact_detail") == true) {
+        return
+    }
 
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,

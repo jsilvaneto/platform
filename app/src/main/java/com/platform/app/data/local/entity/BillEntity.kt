@@ -14,6 +14,10 @@ data class BillEntity(
     val type: String, // SINGLE, INSTALLMENT, RECURRING
     val totalAmountCents: Long,
     val categoryId: String?,
+    val subcategoryId: String? = null,
+    val contactId: String? = null,
+    val financialAccountId: String? = null,
+    val paymentMethodId: String? = null,
     val totalInstallments: Int,
     val createdAt: Long
 ) {
@@ -25,6 +29,10 @@ data class BillEntity(
             type = BillType.valueOf(type),
             totalAmountCents = totalAmountCents,
             categoryId = categoryId,
+            subcategoryId = subcategoryId,
+            contactId = contactId,
+            financialAccountId = financialAccountId,
+            paymentMethodId = paymentMethodId,
             totalInstallments = totalInstallments,
             createdAt = createdAt
         )
@@ -39,6 +47,10 @@ data class BillEntity(
                 type = bill.type.name,
                 totalAmountCents = bill.totalAmountCents,
                 categoryId = bill.categoryId,
+                subcategoryId = bill.subcategoryId,
+                contactId = bill.contactId,
+                financialAccountId = bill.financialAccountId,
+                paymentMethodId = bill.paymentMethodId,
                 totalInstallments = bill.totalInstallments,
                 createdAt = bill.createdAt
             )

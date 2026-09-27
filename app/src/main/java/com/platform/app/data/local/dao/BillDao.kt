@@ -15,6 +15,9 @@ interface BillDao {
     @Query("SELECT * FROM bills WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): BillEntity?
 
+    @Query("SELECT * FROM bills WHERE contactId = :contactId ORDER BY createdAt DESC")
+    fun getBillsByContact(contactId: String): Flow<List<BillEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(bill: BillEntity)
 

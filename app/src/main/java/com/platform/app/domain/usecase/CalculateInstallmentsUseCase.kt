@@ -21,6 +21,10 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                         billId = bill.id,
                         billTitle = bill.title,
                         categoryId = bill.categoryId,
+                        subcategoryId = bill.subcategoryId,
+                        contactId = bill.contactId,
+                        financialAccountId = bill.financialAccountId,
+                        paymentMethodId = bill.paymentMethodId,
                         installmentNumber = 1,
                         totalInstallments = 1,
                         amountCents = bill.totalAmountCents,
@@ -37,7 +41,6 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                 val remainder = bill.totalAmountCents % totalInstallments
 
                 for (i in 1..totalInstallments) {
-                    // O centavo restante da divisão é distribuído na primeira parcela
                     val installmentAmount = if (i == 1) baseAmount + remainder else baseAmount
                     val dueDate = DateUtils.addMonths(firstDueDate, i - 1)
 
@@ -47,6 +50,10 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                             billId = bill.id,
                             billTitle = bill.title,
                             categoryId = bill.categoryId,
+                            subcategoryId = bill.subcategoryId,
+                            contactId = bill.contactId,
+                            financialAccountId = bill.financialAccountId,
+                            paymentMethodId = bill.paymentMethodId,
                             installmentNumber = i,
                             totalInstallments = totalInstallments,
                             amountCents = installmentAmount,
@@ -59,7 +66,6 @@ class CalculateInstallmentsUseCase @Inject constructor() {
             }
 
             BillType.RECURRING -> {
-                // Para contas recorrentes, geramos projeção inicial de 12 meses de vencimentos
                 for (i in 1..12) {
                     val dueDate = DateUtils.addMonths(firstDueDate, i - 1)
                     installments.add(
@@ -68,6 +74,10 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                             billId = bill.id,
                             billTitle = bill.title,
                             categoryId = bill.categoryId,
+                            subcategoryId = bill.subcategoryId,
+                            contactId = bill.contactId,
+                            financialAccountId = bill.financialAccountId,
+                            paymentMethodId = bill.paymentMethodId,
                             installmentNumber = i,
                             totalInstallments = 12,
                             amountCents = bill.totalAmountCents,

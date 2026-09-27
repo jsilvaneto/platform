@@ -42,6 +42,10 @@ class BillsViewModelTest {
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
         every { repository.getCategories() } returns flowOf(emptyList())
+        every { repository.getAllSubcategories() } returns flowOf(emptyList())
+        every { repository.getContacts() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+        every { repository.getPaymentMethods() } returns flowOf(emptyList())
     }
 
     @After

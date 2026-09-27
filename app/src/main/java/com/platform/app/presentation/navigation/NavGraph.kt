@@ -8,14 +8,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.platform.app.presentation.bills.BillsScreen
 import com.platform.app.presentation.bills.BillsViewModel
-import com.platform.app.presentation.categories.CategoriesScreen
-import com.platform.app.presentation.categories.CategoriesViewModel
+import com.platform.app.presentation.contacts.ContactDetailScreen
+import com.platform.app.presentation.contacts.ContactsScreen
+import com.platform.app.presentation.contacts.ContactsViewModel
 import com.platform.app.presentation.dashboard.DashboardScreen
 import com.platform.app.presentation.dashboard.DashboardViewModel
+import com.platform.app.presentation.management.ManagementScreen
+import com.platform.app.presentation.management.ManagementViewModel
 
 @Composable
 fun NavGraph(
@@ -49,13 +54,38 @@ fun NavGraph(
             )
         }
 
-        composable(route = Screen.Categories.route) {
-            val viewModel: CategoriesViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsState()
+        composable(route = Screen.Contacts.route) {
+            val viewModel: ContactsViewModel = hiltViewModel()
 
-            CategoriesScreen(
-                uiState = uiState,
-                onAddCategory = { name, color -> viewModel.addCategory(name, color) }
+            ContactsScreen(
+                viewModel = viewModel,
+                onNavigateToDetail = { contactId ->
+                    navController.navigate(Screen.ContactDetail.createRoute(contactId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.ContactDetail.route,
+            arguments = listOf(
+                navArgument("contactId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val contactId = backStackEntry.arguments?.getString("contactId").orEmpty()
+            val viewModel: ContactsViewModel = hiltViewModel()
+
+            ContactDetailScreen(
+                contactId = contactId,
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Screen.Management.route) {
+            val viewModel: ManagementViewModel = hiltViewModel()
+
+            ManagementScreen(
+                viewModel = viewModel
             )
         }
     }

@@ -72,6 +72,30 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideSubcategoryDao(db: PlatformDatabase): com.platform.app.data.local.dao.SubcategoryDao {
+        return db.subcategoryDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideContactDao(db: PlatformDatabase): com.platform.app.data.local.dao.ContactDao {
+        return db.contactDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideFinancialAccountDao(db: PlatformDatabase): com.platform.app.data.local.dao.FinancialAccountDao {
+        return db.financialAccountDao
+    }
+
+    @Provides
+    @Singleton
+    fun providePaymentMethodDao(db: PlatformDatabase): com.platform.app.data.local.dao.PaymentMethodDao {
+        return db.paymentMethodDao
+    }
+
+    @Provides
+    @Singleton
     fun provideBillDao(db: PlatformDatabase): com.platform.app.data.local.dao.BillDao {
         return db.billDao
     }

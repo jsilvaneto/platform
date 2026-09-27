@@ -18,6 +18,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,6 +32,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -48,6 +54,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.PaymentMethod
+import com.platform.app.domain.model.Subcategory
+import java.util.Calendar
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
@@ -183,9 +194,13 @@ fun BillsScreen(
                 if (showAddSheet) {
                     AddBillBottomSheet(
                         categories = uiState.categories,
+                        subcategories = uiState.subcategories,
+                        contacts = uiState.contacts,
+                        financialAccounts = uiState.financialAccounts,
+                        paymentMethods = uiState.paymentMethods,
                         sheetState = sheetState,
                         onDismiss = { showAddSheet = false },
-                        onConfirm = { title, desc, type, totalCents, catId, totalInst, dueDate ->
+                        onConfirm = { title, desc, type, totalCents, catId, subcatId, contactId, accountId, paymentMethodId, totalInst, dueDate ->
                             onAction(
                                 BillsUiAction.CreateBill(
                                     title = title,
@@ -193,6 +208,10 @@ fun BillsScreen(
                                     type = type,
                                     totalAmountCents = totalCents,
                                     categoryId = catId,
+                                    subcategoryId = subcatId,
+                                    contactId = contactId,
+                                    financialAccountId = accountId,
+                                    paymentMethodId = paymentMethodId,
                                     totalInstallments = totalInst,
                                     firstDueDate = dueDate
                                 )
@@ -394,9 +413,25 @@ fun InstallmentBadge(installment: BillInstallment) {
 @Composable
 fun AddBillBottomSheet(
     categories: List<Category>,
+    subcategories: List<Subcategory>,
+    contacts: List<Contact>,
+    financialAccounts: List<FinancialAccount>,
+    paymentMethods: List<PaymentMethod>,
     sheetState: androidx.compose.material3.SheetState,
     onDismiss: () -> Unit,
-    onConfirm: (String, String, BillType, Long, String?, Int, Long) -> Unit
+    onConfirm: (
+        title: String,
+        description: String,
+        type: BillType,
+        amountCents: Long,
+        categoryId: String?,
+        subcategoryId: String?,
+        contactId: String?,
+        accountId: String?,
+        paymentMethodId: String?,
+        totalInstallments: Int,
+        dueDate: Long
+    ) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -404,6 +439,17 @@ fun AddBillBottomSheet(
     var selectedType by remember { mutableStateOf(BillType.SINGLE) }
     var installmentsCountText by remember { mutableStateOf("2") }
     var selectedCategoryId by remember { mutableStateOf<String?>(categories.firstOrNull()?.id) }
+    var selectedSubcategoryId by remember { mutableStateOf<String?>(null) }
+    var selectedContactId by remember { mutableStateOf<String?>(null) }
+    var selectedAccountId by remember { mutableStateOf<String?>(financialAccounts.firstOrNull()?.id) }
+    var selectedPaymentMethodId by remember { mutableStateOf<String?>(paymentMethods.firstOrNull()?.id) }
+    var dueDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showValidationError by remember { mutableStateOf(false) }
+
+    val filteredSubcategories = remember(selectedCategoryId, subcategories) {
+        if (selectedCategoryId == null) emptyList()
+        else subcategories.filter { it.categoryId == selectedCategoryId }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -413,7 +459,8 @@ fun AddBillBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
@@ -424,6 +471,12 @@ fun AddBillBottomSheet(
             )
 
             // Seletor de Tipo
+            Text(
+                text = "Tipo de Despesa:",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -437,31 +490,178 @@ fun AddBillBottomSheet(
                 }
             }
 
+            // Título
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
-                label = { Text("Nome da Conta (ex: Aluguel, Celular, Notebook)") },
+                onValueChange = {
+                    title = it
+                    showValidationError = false
+                },
+                label = { Text("Nome da Conta * (ex: Aluguel, Celular, Notebook)") },
+                isError = showValidationError && title.isBlank(),
+                supportingText = if (showValidationError && title.isBlank()) {
+                    { Text("Nome da conta é obrigatório", color = MaterialTheme.colorScheme.error) }
+                } else null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Descrição (Observações)
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Descrição / Observações (opcional)") },
+                singleLine = false,
+                maxLines = 3,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Valor
             OutlinedTextField(
                 value = rawAmount,
-                onValueChange = { rawAmount = it },
-                label = { Text("Valor Total (R$)") },
+                onValueChange = {
+                    rawAmount = it
+                    showValidationError = false
+                },
+                label = { Text("Valor Total (R$) *") },
                 placeholder = { Text("Ex: 150,00 ou 150") },
+                isError = showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L,
+                supportingText = if (showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L) {
+                    { Text("Informe um valor maior que R$ 0,00", color = MaterialTheme.colorScheme.error) }
+                } else null,
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Parcelas se for parcelada
             if (selectedType == BillType.INSTALLMENT) {
                 OutlinedTextField(
                     value = installmentsCountText,
                     onValueChange = { installmentsCountText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Quantidade de Parcelas (ex: 10)") },
+                    label = { Text("Quantidade de Parcelas (mínimo 2)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            // Data de Vencimento
+            Text(
+                text = "Data de Primeiro Vencimento: ${DateUtils.formatDate(dueDateMillis)}",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item {
+                    val now = System.currentTimeMillis()
+                    FilterChip(
+                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(now),
+                        onClick = { dueDateMillis = now },
+                        label = { Text("Hoje") }
+                    )
+                }
+                item {
+                    val plus7 = System.currentTimeMillis() + 7L * 24 * 3600 * 1000
+                    FilterChip(
+                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus7),
+                        onClick = { dueDateMillis = plus7 },
+                        label = { Text("+7 dias") }
+                    )
+                }
+                item {
+                    val plus15 = System.currentTimeMillis() + 15L * 24 * 3600 * 1000
+                    FilterChip(
+                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus15),
+                        onClick = { dueDateMillis = plus15 },
+                        label = { Text("+15 dias") }
+                    )
+                }
+                item {
+                    val plus30 = System.currentTimeMillis() + 30L * 24 * 3600 * 1000
+                    FilterChip(
+                        selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus30),
+                        onClick = { dueDateMillis = plus30 },
+                        label = { Text("+30 dias") }
+                    )
+                }
+            }
+
+            // Seleção de Contato
+            if (contacts.isNotEmpty()) {
+                Text(
+                    text = "Vincular a Contato:",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedContactId == null,
+                            onClick = { selectedContactId = null },
+                            label = { Text("Nenhum") }
+                        )
+                    }
+                    items(contacts, key = { it.id }) { c ->
+                        FilterChip(
+                            selected = selectedContactId == c.id,
+                            onClick = { selectedContactId = c.id },
+                            label = { Text(c.name) }
+                        )
+                    }
+                }
+            }
+
+            // Seleção de Conta Financeira
+            if (financialAccounts.isNotEmpty()) {
+                Text(
+                    text = "Conta de Débito / Saída:",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedAccountId == null,
+                            onClick = { selectedAccountId = null },
+                            label = { Text("Nenhuma") }
+                        )
+                    }
+                    items(financialAccounts, key = { it.id }) { acc ->
+                        FilterChip(
+                            selected = selectedAccountId == acc.id,
+                            onClick = { selectedAccountId = acc.id },
+                            label = { Text(acc.name) }
+                        )
+                    }
+                }
+            }
+
+            // Seleção de Forma de Pagamento
+            if (paymentMethods.isNotEmpty()) {
+                Text(
+                    text = "Forma de Pagamento:",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedPaymentMethodId == null,
+                            onClick = { selectedPaymentMethodId = null },
+                            label = { Text("Nenhuma") }
+                        )
+                    }
+                    items(paymentMethods, key = { it.id }) { method ->
+                        FilterChip(
+                            selected = selectedPaymentMethodId == method.id,
+                            onClick = { selectedPaymentMethodId = method.id },
+                            label = { Text(method.name) }
+                        )
+                    }
+                }
             }
 
             // Seleção de Categoria
@@ -475,11 +675,42 @@ fun AddBillBottomSheet(
                 items(categories, key = { it.id }) { cat ->
                     FilterChip(
                         selected = selectedCategoryId == cat.id,
-                        onClick = { selectedCategoryId = cat.id },
+                        onClick = {
+                            selectedCategoryId = cat.id
+                            selectedSubcategoryId = null
+                        },
                         label = { Text(cat.name) }
                     )
                 }
             }
+
+            // Seleção de Subcategoria (se houver para a categoria selecionada)
+            if (filteredSubcategories.isNotEmpty()) {
+                Text(
+                    text = "Subcategoria:",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedSubcategoryId == null,
+                            onClick = { selectedSubcategoryId = null },
+                            label = { Text("Nenhuma") }
+                        )
+                    }
+                    items(filteredSubcategories, key = { it.id }) { sub ->
+                        FilterChip(
+                            selected = selectedSubcategoryId == sub.id,
+                            onClick = { selectedSubcategoryId = sub.id },
+                            label = { Text(sub.name) }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -497,24 +728,29 @@ fun AddBillBottomSheet(
                         else
                             1
 
-                        if (title.isNotBlank() && amountCents > 0L) {
+                        if (title.isBlank() || amountCents <= 0L) {
+                            showValidationError = true
+                        } else {
                             onConfirm(
-                                title,
-                                description,
+                                title.trim(),
+                                description.trim(),
                                 selectedType,
                                 amountCents,
                                 selectedCategoryId,
+                                selectedSubcategoryId,
+                                selectedContactId,
+                                selectedAccountId,
+                                selectedPaymentMethodId,
                                 totalInst,
-                                System.currentTimeMillis()
+                                dueDateMillis
                             )
                         }
-                    },
-                    enabled = title.isNotBlank() && rawAmount.isNotBlank()
+                    }
                 ) {
                     Text("Cadastrar Conta")
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

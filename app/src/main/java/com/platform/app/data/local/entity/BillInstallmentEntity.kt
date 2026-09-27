@@ -20,7 +20,9 @@ import com.platform.app.domain.model.BillType
     ],
     indices = [
         Index("billId"),
-        Index("dueDate")
+        Index("dueDate"),
+        Index("contactId"),
+        Index("financialAccountId")
     ]
 )
 data class BillInstallmentEntity(
@@ -32,13 +34,21 @@ data class BillInstallmentEntity(
     val amountCents: Long,
     val dueDate: Long,
     val paidAt: Long?,
-    val status: String
+    val status: String,
+    val subcategoryId: String? = null,
+    val contactId: String? = null,
+    val financialAccountId: String? = null,
+    val paymentMethodId: String? = null
 ) {
     fun toDomain(
         billTitle: String,
         categoryId: String?,
         categoryName: String,
         categoryColorHex: String,
+        subcategoryName: String?,
+        contactName: String?,
+        financialAccountName: String?,
+        paymentMethodName: String?,
         billType: BillType
     ): BillInstallment {
         return BillInstallment(
@@ -48,6 +58,14 @@ data class BillInstallmentEntity(
             categoryId = categoryId,
             categoryName = categoryName,
             categoryColorHex = categoryColorHex,
+            subcategoryId = subcategoryId,
+            subcategoryName = subcategoryName,
+            contactId = contactId,
+            contactName = contactName,
+            financialAccountId = financialAccountId,
+            financialAccountName = financialAccountName,
+            paymentMethodId = paymentMethodId,
+            paymentMethodName = paymentMethodName,
             installmentNumber = installmentNumber,
             totalInstallments = totalInstallments,
             amountCents = amountCents,
@@ -68,7 +86,11 @@ data class BillInstallmentEntity(
                 amountCents = installment.amountCents,
                 dueDate = installment.dueDate,
                 paidAt = installment.paidAt,
-                status = installment.status.name
+                status = installment.status.name,
+                subcategoryId = installment.subcategoryId,
+                contactId = installment.contactId,
+                financialAccountId = installment.financialAccountId,
+                paymentMethodId = installment.paymentMethodId
             )
         }
     }

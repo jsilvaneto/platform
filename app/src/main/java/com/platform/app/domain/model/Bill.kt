@@ -7,6 +7,10 @@ data class Bill(
     val type: BillType,
     val totalAmountCents: Long,
     val categoryId: String? = null,
+    val subcategoryId: String? = null,
+    val contactId: String? = null,
+    val financialAccountId: String? = null,
+    val paymentMethodId: String? = null,
     val totalInstallments: Int = 1,
     val createdAt: Long = System.currentTimeMillis()
 )

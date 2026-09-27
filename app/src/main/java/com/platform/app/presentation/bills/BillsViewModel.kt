@@ -11,6 +11,7 @@ import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CreateBillUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,8 +40,16 @@ class BillsViewModel @Inject constructor(
     private val _effectChannel = Channel<BillsUiEffect>(Channel.BUFFERED)
     val uiEffect: Flow<BillsUiEffect> = _effectChannel.receiveAsFlow()
 
+    private var installmentsJob: Job? = null
+
     init {
-        loadData()
+        viewModelScope.launch {
+            repository.seedInitialCategoriesIfEmpty()
+            repository.seedInitialFinancialAccountsIfEmpty()
+            repository.seedInitialPaymentMethodsIfEmpty()
+        }
+        loadAuxiliaryData()
+        loadInstallments()
     }
 
     fun onAction(action: BillsUiAction) {
@@ -52,46 +61,65 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.TypeFilterChanged -> handleTypeFilter(action.type)
             is BillsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
             is BillsUiAction.MonthChanged -> handleMonthChanged(action.monthMillis)
-            is BillsUiAction.Refresh -> loadData()
+            is BillsUiAction.Refresh -> {
+                loadAuxiliaryData()
+                loadInstallments()
+            }
         }
     }
 
-    private fun loadData() {
+    private fun loadAuxiliaryData() {
+        combine(
+            repository.getCategories(),
+            repository.getAllSubcategories(),
+            repository.getContacts(),
+            repository.getFinancialAccounts(),
+            repository.getPaymentMethods()
+        ) { categories, subcategories, contacts, accounts, methods ->
+            _uiState.update {
+                it.copy(
+                    categories = categories,
+                    subcategories = subcategories,
+                    contacts = contacts,
+                    financialAccounts = accounts,
+                    paymentMethods = methods
+                )
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    private fun loadInstallments() {
+        installmentsJob?.cancel()
         val monthMillis = _uiState.value.selectedMonthMillis
         val start = DateUtils.getStartOfMonth(monthMillis)
         val end = DateUtils.getEndOfMonth(monthMillis)
 
         _uiState.update { it.copy(isLoading = true) }
 
-        combine(
-            repository.getInstallmentsForPeriod(start, end),
-            repository.getCategories()
-        ) { installments, categories ->
-            Pair(installments, categories)
-        }.onEach { (installments, categories) ->
-            _uiState.update { current ->
-                val filtered = applyFilters(
-                    installments = installments,
-                    query = current.searchQuery,
-                    typeFilter = current.typeFilter,
-                    statusFilter = current.statusFilter
-                )
-                current.copy(
-                    installments = installments,
-                    filteredInstallments = filtered,
-                    categories = categories,
-                    isLoading = false,
-                    errorMessage = null
-                )
-            }
-        }.catch { error ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = error.localizedMessage ?: "Erro ao carregar dados locais."
-                )
-            }
-        }.launchIn(viewModelScope)
+        installmentsJob = repository.getInstallmentsForPeriod(start, end)
+            .onEach { installments ->
+                _uiState.update { current ->
+                    val filtered = applyFilters(
+                        installments = installments,
+                        query = current.searchQuery,
+                        typeFilter = current.typeFilter,
+                        statusFilter = current.statusFilter
+                    )
+                    current.copy(
+                        installments = installments,
+                        filteredInstallments = filtered,
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                }
+            }.catch { error ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.localizedMessage ?: "Erro ao carregar dados locais."
+                    )
+                }
+            }.launchIn(viewModelScope)
     }
 
     private fun handleCreateBill(action: BillsUiAction.CreateBill) {
@@ -104,6 +132,10 @@ class BillsViewModel @Inject constructor(
                     type = action.type,
                     totalAmountCents = action.totalAmountCents,
                     categoryId = action.categoryId,
+                    subcategoryId = action.subcategoryId,
+                    contactId = action.contactId,
+                    financialAccountId = action.financialAccountId,
+                    paymentMethodId = action.paymentMethodId,
                     totalInstallments = action.totalInstallments
                 )
                 createBillUseCase(bill, action.firstDueDate)

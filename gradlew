@@ -110,13 +110,6 @@ if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
     esac
 fi
 
-# Collect all arguments for the java sub-shell.
-# If there are no arguments, the loop does not run.
-while [ "$#" -gt 0 ] ; do
-    APP_ARGS="$APP_ARGS \"$1\""
-    shift
-done
-
 # If gradle-wrapper.jar does not exist, notify user to open project in Android Studio or build with system gradle
 if [ ! -f "$CLASSPATH" ]; then
     if command -v gradle >/dev/null 2>&1; then

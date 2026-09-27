@@ -12,6 +12,10 @@ sealed interface BillsUiAction : UiAction {
         val type: BillType,
         val totalAmountCents: Long,
         val categoryId: String?,
+        val subcategoryId: String? = null,
+        val contactId: String? = null,
+        val financialAccountId: String? = null,
+        val paymentMethodId: String? = null,
         val totalInstallments: Int,
         val firstDueDate: Long
     ) : BillsUiAction

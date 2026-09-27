@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+        <!-- Base Wallet / Card Shape -->
+        <path
+            android:fillColor="#2563EB"
+            android:pathData="M18,32 C18,25.37 23.37,20 30,20 L78,20 C84.63,20 90,25.37 90,32 L90,76 C90,82.63 84.63,88 78,88 L30,88 C23.37,88 18,82.63 18,76 Z" />
+        <!-- Inner Card Layer -->
+        <path
+            android:fillColor="#3B82F6"
+            android:pathData="M24,36 C24,30.48 28.48,26 34,26 L74,26 C79.52,26 84,30.48 84,36 L84,54 L24,54 Z" />
+        <!-- Magnetic Stripe / Chip -->
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M30,42 L46,42 C48.2,42 50,43.8 50,46 L50,56 C50,58.2 48.2,60 46,60 L30,60 C27.8,60 26,58.2 26,56 L26,46 C26,43.8 27.8,42 30,42 Z" />
+        <!-- Lock / Coin Indicator -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M70,54 C64.48,54 60,58.48 60,64 C60,69.52 64.48,74 70,74 C75.52,74 80,69.52 80,64 C80,58.48 75.52,54 70,54 Z M70,68 C67.79,68 66,66.21 66,64 C66,61.79 67.79,60 70,60 C72.21,60 74,61.79 74,64 C74,66.21 72.21,68 70,68 Z" />
+    </group>
+</vector>

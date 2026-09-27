@@ -53,13 +53,33 @@ object AppModule {
             app,
             PlatformDatabase::class.java,
             PlatformDatabase.DATABASE_NAME
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
     @Singleton
     fun provideItemDao(db: PlatformDatabase): ItemDao {
         return db.itemDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideCategoryDao(db: PlatformDatabase): com.platform.app.data.local.dao.CategoryDao {
+        return db.categoryDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideBillDao(db: PlatformDatabase): com.platform.app.data.local.dao.BillDao {
+        return db.billDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideBillInstallmentDao(db: PlatformDatabase): com.platform.app.data.local.dao.BillInstallmentDao {
+        return db.billInstallmentDao
     }
 
     @Provides

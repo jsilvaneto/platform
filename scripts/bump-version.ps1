@@ -15,15 +15,15 @@ $CurrentVersion = if (Test-Path $VersionFile) {
 
 if (-not $Target) {
     Write-Host "=================================================================" -ForegroundColor Cyan
-    Write-Host "  🏷️  SCRIPT DE ATUALIZAÇÃO DE VERSÃO ANDROID (POWERSHELL)" -ForegroundColor Cyan
+    Write-Host "  SCRIPT DE ATUALIZACAO DE VERSAO ANDROID (POWERSHELL)" -ForegroundColor Cyan
     Write-Host "=================================================================" -ForegroundColor Cyan
-    Write-Host "  Versão atual (versionName): v$CurrentVersion"
+    Write-Host "  Versao atual (versionName): v$CurrentVersion"
     Write-Host ""
     Write-Host "  Uso:"
     Write-Host "    .\scripts\bump-version.ps1 patch    (ex: 1.2.0 -> 1.2.1)"
     Write-Host "    .\scripts\bump-version.ps1 minor    (ex: 1.2.0 -> 1.3.0)"
     Write-Host "    .\scripts\bump-version.ps1 major    (ex: 1.2.0 -> 2.0.0)"
-    Write-Host "    .\scripts\bump-version.ps1 1.3.0    (define versão exata)"
+    Write-Host "    .\scripts\bump-version.ps1 1.3.0    (define versao exata)"
     Write-Host "=================================================================" -ForegroundColor Cyan
     exit 1
 }
@@ -51,34 +51,41 @@ switch ($Target.ToLower()) {
     }
 }
 
-Write-Host ">> Elevando versão do app: v$CurrentVersion -> v$NewVersion" -ForegroundColor Green
+Write-Host ">> Elevando versao do app: v$CurrentVersion -> v$NewVersion" -ForegroundColor Green
 
 # 1. Atualiza arquivo VERSION
 Set-Content -Path $VersionFile -Value $NewVersion -NoNewline
-Write-Host "   [✓] Atualizado: VERSION -> $NewVersion" -ForegroundColor Green
+Write-Host "   [OK] Atualizado: VERSION -> $NewVersion" -ForegroundColor Green
 
-# 2. Insere esqueleto no CHANGELOG.md caso não exista
+# 2. Insere esqueleto no CHANGELOG.md caso nao exista
 $Today = Get-Date -Format "yyyy-MM-dd"
 $ChangelogContent = Get-Content -Path $ChangelogFile -Raw
-if ($ChangelogContent -notmatch "## \[$NewVersion\]") {
-    $Template = @"
-## [$NewVersion] - $Today
-
-### 🚀 Melhorias
-- Descreva as melhorias do aplicativo aqui...
-
-### 🛠️ Correções
-- Descreva as correções aqui...
-
----
-
-"@
-    $NewChangelog = $ChangelogContent -replace "(?m)(^## \[)", "$Template`$1"
-    Set-Content -Path $ChangelogFile -Value $NewChangelog
-    Write-Host "   [✓] Template adicionado ao CHANGELOG.md" -ForegroundColor Green
+$VersionHeader = "## [$NewVersion]"
+if (-not $ChangelogContent.Contains($VersionHeader)) {
+    $TemplateLines = @(
+        "## [$NewVersion] - $Today",
+        "",
+        "### Melhorias",
+        "- Descreva as melhorias do aplicativo aqui...",
+        "",
+        "### Correcoes",
+        "- Descreva as correcoes aqui...",
+        "",
+        "---",
+        ""
+    )
+    $TemplateText = [string]::Join("`r`n", $TemplateLines)
+    $FirstEntryPos = $ChangelogContent.IndexOf("## [")
+    if ($FirstEntryPos -ge 0) {
+        $NewChangelog = $ChangelogContent.Substring(0, $FirstEntryPos) + $TemplateText + "`r`n" + $ChangelogContent.Substring($FirstEntryPos)
+    } else {
+        $NewChangelog = $ChangelogContent + "`r`n`r`n" + $TemplateText
+    }
+    Set-Content -Path $ChangelogFile -Value $NewChangelog -Encoding UTF8
+    Write-Host "   [OK] Template adicionado ao CHANGELOG.md" -ForegroundColor Green
 }
 
 Write-Host "=================================================================" -ForegroundColor Cyan
-Write-Host "  ✅ Versão v$NewVersion configurada com sucesso!" -ForegroundColor Green
-Write-Host "  O Gradle lerá automaticamente de VERSION no próximo build/execução."
+Write-Host "  Versao v$NewVersion configurada com sucesso!" -ForegroundColor Green
+Write-Host "  O Gradle lera automaticamente de VERSION no proximo build/execucao."
 Write-Host "=================================================================" -ForegroundColor Cyan

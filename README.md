@@ -25,10 +25,14 @@ O projeto adota separação estrita de responsabilidades:
   - 📈 **Estatísticas**: Histórico de pagamentos e pontualidade.
   - 🎯 **Orçamentos & Metas**: Tetos mensais de gastos por categoria e objetivos de reserva.
   - 👥 **Contatos**: Favorecidos e beneficiários a quem os pagamentos são devidos.
-  - ⚙️ **Cadastros Base**: Gestão de Contas Financeiras de Referência, Formas de Pagamento e Categorias/Subcategorias.
+  - 🏦 **Contas**: Gestão direta de Contas Financeiras de Referência (bancos, carteiras, cartões).
+  - 💳 **Formas de Pagamento**: Cadastro de métodos e vínculos padrão.
+  - 🏷️ **Categorias & Subcategorias**: Classificação hierárquica e tags coloridas.
+  - 💾 **Backup & Restauração Offline**: Exportação e restauração atômica de banco de dados em formato JSON com SAF nativo e compartilhamento direto (ShareSheet).
+  - ⚙️ **Configurações**: Notas de versão dinâmicas, gerenciamento de dados e preferências.
 - **Domain Layer**: Modelos de domínio puros, contratos de repositório e Casos de Uso (`UseCases`) desacoplados de qualquer framework Android (100% Kotlin puro).
 - **Dependency Injection**: Injeção desacoplada de escopo Singleton e ViewModel via **Dagger Hilt**.
-- **Infraestrutura de IA**: Governança em [.ai/](file:///home/jsilvaneto/projetos/platform/.ai), manual mestre em [AGENT_RULES.md](file:///home/jsilvaneto/projetos/platform/AGENT_RULES.md) e catálogo de 10 skills em [.agents/skills/](file:///home/jsilvaneto/projetos/platform/.agents/skills).
+- **Infraestrutura de Governança**: Governança em [.ai/](file:///c:/Users/jsilvaneto/drive/projects/platform/.ai), diretrizes em [AGENT_RULES.md](file:///c:/Users/jsilvaneto/drive/projects/platform/AGENT_RULES.md), regras invioláveis em [.agents/rules/](file:///c:/Users/jsilvaneto/drive/projects/platform/.agents/rules) e catálogo de 11 skills em [.agents/skills/](file:///c:/Users/jsilvaneto/drive/projects/platform/.agents/skills).
 
 ---
 
@@ -36,26 +40,26 @@ O projeto adota separação estrita de responsabilidades:
 
 ```text
 platform/
-├── .agents/                 # Skills e regras executáveis para Agentes de IA
-│   ├── rules/               # architecture.md, coding_standards.md, test_data_cleanup.md
-│   └── skills/              # financial-domain-guard, room-database-and-migrations, etc.
-├── .ai/                     # Documentação canônica de arquitetura e contexto
-│   ├── DECISIONS/           # Architecture Decision Records
+├── .agents/                 # Regras mandatórias e skills especializadas para Agentes de IA
+│   ├── rules/               # architecture.md, coding_standards.md, test_data_cleanup.md, governance_and_versioning.md
+│   └── skills/              # ui-elegance-and-proportions, offline-backup-and-export, financial-domain-guard, etc.
+├── .ai/                     # Documentação canônica viva de arquitetura e contexto
+│   ├── DECISIONS/           # Architecture Decision Records (ADRs 001 a 006)
 │   ├── ARCHITECTURE.md      # Referência técnica canônica e diagramas
 │   ├── CONTEXT.md           # Visão de produto e regras de domínio móvel 100% offline
-│   ├── STATUS.md            # Roadmap de releases e checklist de fases
+│   ├── STATUS.md            # Roadmap de releases e checklist de fases (Versão atual: 1.3.0)
 │   └── ANDROID_GUIDE.md     # Manual prático de desenvolvimento
 ├── app/                     # Módulo principal do aplicativo Android
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/platform/app/
 │   │   │   │   ├── core/            # CurrencyUtils, DateUtils, MVI, Preferences, Security
-│   │   │   │   ├── data/            # Room (DAOs, Entities, Database), Repositories
+│   │   │   │   ├── data/            # Room (DAOs, Entities, Database, BackupRepository), Repositories
 │   │   │   │   ├── domain/          # Modelos, UseCases, Contratos de Repositório
 │   │   │   │   ├── di/              # Módulos de injeção Hilt (AppModule, RepositoryModule)
-│   │   │   │   └── presentation/    # Dashboard, Bills, Recurring, Budgets, Goals, Contacts, Management
+│   │   │   │   └── presentation/    # Dashboard, Bills, Recurring, Budgets, Goals, Contacts, Management, Settings
 │   │   │   ├── res/                 # Strings, cores, temas nativos, regras de backup
-│   │   │   └── AndroidManifest.xml  # Manifesto do app
+│   │   │   └── AndroidManifest.xml  # Manifesto do app (FileProvider configurado para exportação)
 │   │   └── test/                    # Testes unitários com JUnit, MockK e Turbine
 │   ├── build.gradle.kts             # Dependências e build config do módulo app
 │   └── proguard-rules.pro           # Regras de ofuscação e otimização R8/ProGuard
@@ -63,10 +67,11 @@ platform/
 │   ├── libs.versions.toml           # Version Catalog com versões centralizadas de dependências
 │   └── wrapper/                     # Gradle wrapper
 ├── scripts/
-│   └── bump-version.sh              # Automação de versionamento móvel (versionCode e versionName)
+│   ├── bump-version.ps1             # Automação de versionamento para Windows PowerShell (versionCode e versionName)
+│   └── bump-version.sh              # Automação de versionamento para Bash/Linux
 ├── AGENT_RULES.md                   # Diretrizes operacionais para agentes de IA
-├── CHANGELOG.md                     # Registro histórico de alterações por versão
-├── VERSION                          # Versão SemVer atual (ex: 1.0.0)
+├── CHANGELOG.md                     # Registro histórico de alterações por versão (v1.3.0)
+├── VERSION                          # Versão SemVer atual (1.3.0)
 ├── build.gradle.kts                 # Script de build raiz
 ├── settings.gradle.kts              # Configuração de repositórios e módulos
 └── gradle.properties                # Configurações de JVM e AndroidX
@@ -77,7 +82,7 @@ platform/
 ## 🚀 Como Executar o Projeto no Android Studio
 
 1. Abra o **Android Studio**.
-2. Abra a pasta `/home/jsilvaneto/projetos/platform`.
-3. Selecione um emulador ou conecte um celular físico via USB.
+2. Abra a pasta do projeto `platform`.
+3. Selecione um emulador Android ou conecte um celular físico via USB (Android 8.0+ / API 26+).
 4. Clique em **Run** (`Shift + F10`).
-5. O app iniciará no **Dashboard Financeiro**, permitindo navegar pelo menu lateral (**Início**, **Registros**, **Recorrentes & Parcelados**, **Estatísticas**, **Orçamentos**, **Metas**, **Contatos**, **Cadastros Base** e **Configurações**).
+5. O app iniciará no **Dashboard Financeiro**, permitindo navegar pelo menu lateral com a nova estrutura ergonômica direta (**Início**, **Registros**, **Recorrentes & Parcelados**, **Estatísticas**, **Orçamentos**, **Metas**, **Contatos**, **Contas**, **Formas de Pagamento**, **Categorias** e **Configurações**).

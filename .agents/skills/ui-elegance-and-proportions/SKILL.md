@@ -48,9 +48,22 @@ Esta skill estabelece diretrizes rigorosas de design de interface, refinamento e
 
 ### 2.3 Formulários e Campos de Texto
 - **Altura Compacta**: Campos com `singleLine = true`, altura comedida e cantos de `10.dp` a `12.dp`.
-- **Labels e Placeholders Discretos**: Textos de ajuda curtos em `bodySmall` que não poluam o fluxo visual do usuário.
+- **Seletores Nativos em Lista (Dropdown)**: Para campos de seleção pré-definida (tipo de conta, categoria, periodicidade), utilize menus nativos com `ExposedDropdownMenuBox` e `DropdownMenuItem`. Proibido campo de texto livre onde a opção for restrita.
+- **Paletas de Cores com Indicador**: Em seletores de cor, utilize círculos de cor onde a cor atualmente selecionada exiba um ponto central branco (`CircleShape` de 8.dp) para confirmação visual inequívoca.
 
----
+### 2.4 Padrão Universal de Detalhes e Ações (Padrão de Contas)
+- **Cards 100% Limpos na Listagem**:
+  - Proibido ícones inline de lixeira, lápis ou acordeões expansíveis dentro dos cards das listas.
+  - O card deve conter apenas: ícone/avatar, título, subtítulo/vínculo, valor (se aplicável), badge de status e um chevron sutil de navegação (`Icons.AutoMirrored.Filled.ArrowForward`).
+- **Toque Abre ModalBottomSheet de Detalhes**:
+  - Ao clicar no card, abre-se um `ModalBottomSheet` dedicado.
+  - Estrutura do BottomSheet:
+    1. **Hero Header**: Ícone centralizado em container sutil, título da entidade, valor monetário destacado (em `titleLarge` ou `headlineSmall`) e badge de status.
+    2. **Ações no Topo**: Menu de 3 pontos (`Icons.Default.MoreVert`) no canto superior direito do BottomSheet contendo "Editar" e "Excluir".
+    3. **Card Contextual de Vínculos**: Exibe dados completos (Conta Financeira debitada, Categoria/Subcategoria, Favorecido/Contato, Forma de Pagamento, Datas).
+    4. **Ação Principal em Destaque**: Botão de largura total na base (ex: "Registrar Aporte", "Ajustar Limite", "Marcar como Pago").
+- **Exclusão Segura Obrigatória com Confirmação**:
+  - Toda ação de exclusão DEVE disparar um `AlertDialog` de confirmação seguro com aviso claro de irreversibilidade, botão "Excluir" com cor de destaque (`error`) e botão "Cancelar".
 
 ## 3. Checklist de Validação Visual
 Antes de concluir qualquer tela ou componente em Compose:

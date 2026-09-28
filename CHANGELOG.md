@@ -5,6 +5,35 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [1.3.0] - 2026-09-28
+
+### 🚀 Novas Funcionalidades
+- **Backup e Restauração de Dados Offline**:
+  - Exportação completa e versionada do banco de dados em formato JSON compacto com valores inteiros em centavos (`Long`).
+  - Restauração atômica em lote utilizando transações seguras do Room (`database.withTransaction`), garantindo rollback total em caso de falha.
+  - Integração com o *Storage Access Framework (SAF)* nativo do Android (`CreateDocument` e `OpenDocument`) para salvar e restaurar do Google Drive, Documentos, Downloads ou cartão SD.
+  - Compartilhamento rápido via *ShareSheet* (`FileProvider`) direto para WhatsApp, Telegram ou e-mail.
+  - Indicador em tempo real nas Configurações com a data e hora exata do último backup efetuado.
+  - Diálogo de advertência e confirmação antes de restaurações para impedir substituições acidentais de dados.
+
+### 🎨 Harmonização Visual & Padrão de Detalhes (4 Etapas)
+- **Adoção Universal do Padrão de Detalhes com BottomSheet**:
+  - Cards 100% limpos e minimalistas em todo o sistema: remoção de botões inline de lixeira, lápis e acordeões soltos.
+  - Toque no card abre `ModalBottomSheet` dedicado com métricas contextuais, visualização de vínculos (conta, categoria, contato, método) e ações rápidas.
+  - Menu de 3 pontos (`MoreVert`) no topo do BottomSheet para edição e exclusão segura.
+  - Diálogos de confirmação obrigatórios (`AlertDialog`) antes de qualquer exclusão definitiva.
+  - Seletores de campos com opções pré-definidas migrados para menus dropdown nativos (`ExposedDropdownMenuBox`).
+  - Seletor de cores aprimorado com indicador visual circular branco na cor ativa.
+- **Telas Harmonizadas**:
+  - [ManagementScreen.kt]: Formas de Pagamento e Categorias desacopladas com BottomSheet e seletor com indicador.
+  - [BillsScreen.kt]: Cards de parcelas sanitizados, tipografia reduzida de 28sp para 16sp bold, chevron sutil e BottomSheet detalhado de liquidação.
+  - [GoalsScreen.kt]: Cards de metas limpos, BottomSheet com progresso, aporte rápido e menu de ações.
+  - [BudgetsScreen.kt]: Cards de orçamento limpos, BottomSheet com comparação teto vs realizado e ajuste de limite.
+  - [RecurringInstallmentsScreen.kt]: Cards de contratos enxutos, BottomSheet com detalhes do contrato e listagem completa de parcelas interativas.
+  - [ContactDetailScreen.kt]: Exclusão segura de contato no menu de 3 pontos com diálogo de confirmação.
+
+---
+
 ## [1.2.0] - 2026-09-28
 
 ### 🚀 Melhorias & Evoluções

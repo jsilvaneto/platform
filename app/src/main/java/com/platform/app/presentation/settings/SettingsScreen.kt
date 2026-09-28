@@ -621,46 +621,46 @@ fun ReleaseNotesDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "O que há de novo nesta versão:",
+                    text = "O que há de novo na versão $versionName:",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
                 ReleaseNoteItem(
-                    emoji = "📊",
-                    title = "Dashboard Aprimorado (Início)",
-                    description = "Novos cards inteligentes para visualização clara do passado, compromissos do mês e projeção futura de despesas."
+                    emoji = "💾",
+                    title = "Backup e Restauração de Dados",
+                    description = "Exporte todos os seus dados em JSON para o Google Drive ou arquivos locais via SAF e restaure com transação segura atômica."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "💳",
-                    title = "Recorrentes e Parcelados",
-                    description = "Novo menu lateral dedicado ao gerenciamento de assinaturas fixas e compras parceladas em andamento."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🎯",
-                    title = "Metas e Orçamentos",
-                    description = "Crie objetivos financeiros com progresso visual e estabeleça tetos mensais de gastos por categoria."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "📍",
-                    title = "Cadastro de Contatos Inteligente",
-                    description = "Busca automática de endereço a partir do CEP, novos campos de número e complemento, e edição rápida."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🏛️",
-                    title = "Gestão Financeira Direta",
-                    description = "Telas dedicadas e exclusivas para Contas, Formas de Pagamento e Categorias, sem menus misturados."
+                    emoji = "📤",
+                    title = "Compartilhamento Instantâneo",
+                    description = "Envie arquivos de backup diretamente para WhatsApp, Telegram ou e-mail com 1 toque."
                 )
 
                 ReleaseNoteItem(
                     emoji = "✨",
-                    title = "Menu Lateral Minimalista",
-                    description = "Interface enxuta, proporções elegantes, remoção de subtítulos e navegação ágil."
+                    title = "Padrão de Detalhes Universal",
+                    description = "Cards limpos sem botões redundantes. Toque no card para abrir painel inferior (BottomSheet) com métricas e detalhes completos."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🛡️",
+                    title = "Ações Seguras nos 3 Pontos",
+                    description = "Opções de edição e exclusão organizadas no menu superior direito com confirmação obrigatória para evitar perdas acidentais."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🎨",
+                    title = "Seletores Nativos e Cores",
+                    description = "Campos com opções pré-definidas agora utilizam dropdown nativo e as paletas de cores possuem indicador circular de seleção."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🏛️",
+                    title = "Estrutura Financeira Direta",
+                    description = "Acesso direto e despoluído a Contas, Formas de Pagamento e Categorias tanto no menu lateral quanto em Configurações."
                 )
             }
         },

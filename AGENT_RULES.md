@@ -88,7 +88,14 @@ Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo
 
 ### Passo 5: Testes e Validação
 1. Crie testes unitários para os casos de uso e ViewModel em `app/src/test/`.
-2. Atualize o checklist em `.ai/STATUS.md` e registre novos ADRs em `.ai/DECISIONS/` se houver mudança arquitetural.
+2. Garanta 100% de sucesso executando `.\gradlew testDebugUnitTest`.
+
+### Passo 6: Governança, Versionamento e Registro (OBRIGATÓRIO)
+1. **Atualização de Versão**: Incremente o SemVer através do script `.\scripts\bump-version.ps1 <versão>` (ou `bump-version.sh`). Proibido entregar entregáveis sem versionamento explícito.
+2. **Histórico no CHANGELOG.md**: Registre a versão, data e todos os pontos implementados/alterados na seção correspondente.
+3. **Notas de Versão no App**: Atualize o `ReleaseNotesDialog` em `SettingsScreen.kt` caso a entrega altere fluxos ou adicione recursos visíveis ao usuário.
+4. **Status e Decisões**: Atualize `.ai/STATUS.md` e registre novos ADRs em `.ai/DECISIONS/` para mudanças arquiteturais ou novos padrões.
+5. **Manutenção de Skills**: Se um novo padrão de UI ou arquitetura for aprovado (ex: BottomSheet universal, 3 pontos, SAF), sincronize o catálogo de skills (`.agents/skills/`).
 
 ---
 
@@ -96,12 +103,12 @@ Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo
 
 - **Skills Disponíveis (`.agents/skills/<skill-name>/SKILL.md`)**:
   - `financial-domain-guard`: Invariantes de contas a pagar, parcelamentos, recorrências, centavos exatos e contas de referência.
-  - `ui-elegance-and-proportions`: Diretrizes de elegância visual, moderação de escala, busca inline e padrões Compose.
+  - `ui-elegance-and-proportions`: Diretrizes de elegância visual, moderação de escala, busca inline, padrão universal de BottomSheet e ações seguras.
   - `android-compose-design-system`: Padrões de interface Material 3, Dark Mode e previews.
   - `add-new-screen-or-feature`: Fluxo oficial de novas features 100% offline-first.
   - `android-testing-suite`: Práticas de testes unitários (MockK, Turbine, JUnit) em MVI e Room.
   - `room-database-and-migrations`: Queries de alta performance em SQLite, `@Transaction` obrigatório e evolução de schema.
-  - `offline-backup-and-export`: Estratégia de exportação e restauração local de dados em JSON.
+  - `offline-backup-and-export`: Estratégia de exportação e restauração local atômica de dados em JSON via SAF e ShareSheet.
   - `gradle-build-and-lint`: Comandos de build, verificação estática e lint.
   - `security-guard`: Diretrizes de biometria e isolamento no aparelho.
   - `token-optimizer`: Protocolo para economia cirúrgica de contexto.
@@ -109,3 +116,4 @@ Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo
   - `architecture.md`: Fronteiras invioláveis entre Presentation, Domain e Data.
   - `coding_standards.md`: Convenções idiomáticas de Kotlin, imutabilidade e StateFlow.
   - `test_data_cleanup.md`: Política de Resíduo Zero.
+  - `governance_and_versioning.md`: Regra mandatória de incremento de versão, changelog, status e atualização contínua de skills a cada entrega.

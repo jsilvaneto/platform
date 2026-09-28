@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -53,7 +52,6 @@ class RecurringInstallmentsViewModel @Inject constructor(
             repository.getAllInstallments()
         ) { bills, allInstallments ->
             val installmentsByBill = allInstallments.groupBy { it.billId }
-            val now = System.currentTimeMillis()
 
             // Filtra apenas contas que são do tipo parcelada ou recorrente
             val targetBills = bills.filter { it.type == BillType.INSTALLMENT || it.type == BillType.RECURRING }
@@ -63,6 +61,11 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 val paidInsts = insts.filter { it.isPaid }
                 val paidCount = paidInsts.size
                 val totalPaid = paidInsts.sumOf { it.amountCents }
+
+                val nextInst = insts
+                    .filter { !it.isPaid }
+                    .minByOrNull { it.dueDate }
+
                 val remaining = if (bill.type == BillType.INSTALLMENT) {
                     (bill.totalAmountCents - totalPaid).coerceAtLeast(0L)
                 } else {
@@ -71,10 +74,6 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 val progress = if (bill.type == BillType.INSTALLMENT && bill.totalAmountCents > 0L) {
                     (totalPaid.toFloat() / bill.totalAmountCents.toFloat()).coerceIn(0f, 1f)
                 } else 0f
-
-                val nextInst = insts
-                    .filter { !it.isPaid }
-                    .minByOrNull { it.dueDate }
 
                 BillWithInstallments(
                     bill = bill,

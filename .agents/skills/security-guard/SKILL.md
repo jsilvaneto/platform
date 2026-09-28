@@ -2,37 +2,29 @@
 name: security-guard
 description: >-
   Use this skill to enforce Android security best practices, secret isolation in local.properties,
-  ProGuard/R8 obfuscation, and secure data storage.
+  biometric authentication, and secure device data storage.
 ---
 
 # Skill: Security Guard (Segurança no Android)
 
-Esta skill define as diretrizes mandatórias de segurança para o aplicativo móvel **Platform**.
+Esta skill define as diretrizes de segurança e integridade de dados para o aplicativo **Platform**.
 
-## 1. Gestão de Segredos e Chaves de API
-- **Proibição de Chaves Hardcoded**:
-  - NUNCA declare chaves de API, senhas ou tokens privados diretamente no código Kotlin ou em arquivos XML.
-  - Armazene credenciais sensíveis no arquivo `local.properties`:
-    ```properties
-    API_KEY=meu_segredo_local
-    ```
-  - Injete no `buildConfigField` do `build.gradle.kts`:
-    ```kotlin
-    val apiKey = project.rootProject.file("local.properties").let { file ->
-        if (file.exists()) {
-            java.util.Properties().apply { load(file.inputStream()) }.getProperty("API_KEY") ?: ""
-        } else ""
-    }
-    buildConfigField("String", "API_KEY", "\"$apiKey\"")
-    ```
+---
 
-## 2. Armazenamento Seguro no Aparelho
-- Para dados sensíveis (tokens JWT de autenticação), utilize **EncryptedSharedPreferences** ou **Proto DataStore** com criptografia do Android Keystore.
-- O Room Database deve conter apenas dados apropriados para cache offline.
+## 1. Proteção de Acesso por Biometria
+- O app conta com bloqueio nativo via `BiometricAuthManager` utilizando a API oficial do `androidx.biometric`.
+- O estado de ativação é persistido no `PreferencesManager` (DataStore).
+- Ao habilitar a biometria, o aplicativo apresenta uma tela de bloqueio (`BiometricLockOverlay`) impedindo a visualização dos dados até a autenticação por impressão digital, reconhecimento facial ou PIN/senha do dispositivo.
 
-## 3. Comunicação Segura
-- Todas as comunicações HTTP devem utilizar estritamente protocolo seguro `https://`.
-- Mantenha certificados TLS atualizados e ative Certificate Pinning em ambientes de alta segurança.
+---
 
-## 4. Ofuscação e Proteção de Código
-- Em builds de release, mantenha o ProGuard/R8 habilitado (`isMinifyEnabled = true` e `isShrinkResources = true`).
+## 2. Isolamento de Arquivos Locais e Segredos
+- **Proibição de Chaves Hardcoded**: NUNCA declare credenciais ou dados sensíveis em arquivos versionados.
+- Arquivos de configuração de máquina (`local.properties`) devem estar sempre presentes no `.gitignore`.
+- Segredos de build devem ser injetados via `buildConfigField`.
+
+---
+
+## 3. Integridade do Banco de Dados Local
+- O banco Room reside exclusivamente na sandbox privada do aplicativo (`/data/data/com.platform.app/databases/`), inacessível a outros aplicativos sem permissões root.
+- Exports de backup gerados não devem expor tokens ou configurações privadas do sistema operacional.

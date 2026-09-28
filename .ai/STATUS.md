@@ -8,46 +8,52 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 
 | Fase | Escopo | Status |
 | :--- | :--- | :--- |
-| **Fase 1: Fundação Mobile & Governança** | Clean Architecture, Gradle Kotlin DSL, Version Catalog, Hilt, Room, Compose BOM, Material 3 e IA | **100% CONCLUÍDO** |
-| **Fase 2: Arquitetura 100% Offline-First & MVI** | Operação 100% local com Room, DataStore, MVI (UiAction/UiEffect), busca e filtros locais | **100% CONCLUÍDO** |
-| **Fase 3: Módulo Financeiro (Contas & Parcelas)** | Contas Avulsas, Parceladas (divisão de centavos), Recorrentes, Dashboard KPIs e Categorias | **100% CONCLUÍDO** |
-| **Fase 4: Expansões Pessoais & Backup** | Backup local de dados (JSON/SQLite), relatórios de fluxo de caixa e novos módulos | **PLANEJADO** |
-| **Fase 5: Sincronização Remota Opcional** | Sincronização em nuvem opcional (WorkManager/API) e otimizações ProGuard/R8 | **PLANEJADO** |
+| **Fase 1: Fundação Mobile & Governança** | Clean Architecture, Gradle Kotlin DSL, Version Catalog, Hilt, Room, Material 3 e IA | **100% CONCLUÍDO** |
+| **Fase 2: Arquitetura 100% Offline-First & MVI** | Operação 100% local com Room, DataStore, MVI, biometria e navegação AppDrawer | **100% CONCLUÍDO** |
+| **Fase 3: Módulo de Contas a Pagar & Planejamento** | Contas Avulsas, Parceladas, Recorrentes, Orçamentos, Metas, Estatísticas e Cadastros Base | **100% CONCLUÍDO** |
+| **Fase 4: Saneamento Arquitetural & Skills de IA** | Limpeza de código zumbi/boilerplate, correção de bugs de recorrência, transações e skills | **100% CONCLUÍDO** |
+| **Fase 5: Backup Local & Exportação de Dados** | Exportação e restauração local via JSON/SQLite com Android ShareSheet | **EM ANDAMENTO** |
 
 ---
 
-## 📋 Checklist de Funcionalidades
+## 📋 Checklist de Funcionalidades Implementadas
 
-### Fase 1 & 2: Fundação Mobile & Offline-First (MVI)
+### Fundação, Arquitetura e MVI
 - [x] Configuração raiz do Gradle com Kotlin DSL (`build.gradle.kts` e `settings.gradle.kts`).
 - [x] Version Catalog centralizado em `gradle/libs.versions.toml`.
-- [x] Arquitetura Clean Architecture dividida em Presentation, Domain, Data e Core.
+- [x] Arquitetura Clean Architecture: Presentation, Domain, Data e Core.
 - [x] Padrão **MVI (Model-View-Intent)** implementado com `UiState`, `UiAction` e `UiEffect` (Channel bufferizado).
-- [x] Operação **100% Offline-First**: O Room Database é a única fonte da verdade e o app opera perfeitamente sem internet.
-- [x] Injeção de dependências desacoplada com Dagger Hilt (`@HiltAndroidApp`, `AppModule`, `RepositoryModule`).
-- [x] Persistência local com Room Database (`PlatformDatabase`).
-- [x] Persistência de configurações locais e preferências via **AndroidX DataStore** (`PreferencesManager`).
-- [x] Monitor reativo de conectividade em segundo plano (`NetworkMonitor` com `ConnectivityManager.NetworkCallback`).
-- [x] Camada de UI reativa em Jetpack Compose com Material 3 (`PlatformTheme`, `Color`, `Type`, `PlatformAppBar`).
-- [x] Suporte nativo a Tema Claro e Tema Escuro (*Dark Mode*).
-- [x] Navegação reativa com Navigation Compose e rotas tipadas (`Screen.kt`, `NavGraph.kt`).
-- [x] Script de automação de versionamento com incremento de `versionCode` e `versionName` (`scripts/bump-version.sh`).
-- [x] Catálogo de regras e skills para agentes de IA em `.agents/` e manuais em `.ai/`.
+- [x] Operação **100% Offline-First**: O Room Database é a única fonte da verdade e o app opera sem internet.
+- [x] Injeção de dependências com Dagger Hilt (`@HiltAndroidApp`, `AppModule`, `RepositoryModule`).
+- [x] Persistência local com Room Database (`PlatformDatabase`) com transações atômicas (`database.withTransaction`).
+- [x] Persistência de configurações e preferências via **AndroidX DataStore** (`PreferencesManager`).
+- [x] Bloqueio e segurança com **AndroidX Biometric** (`BiometricAuthManager`, `BiometricLockOverlay`).
+- [x] Design System Material 3 com Dark Mode nativo (`PlatformTheme`, `Color`, `Type`).
+- [x] Navegação moderna com Navigation Compose e menu lateral categorizado (`AppDrawer.kt`, `NavGraph.kt`).
 
-### Fase 3: Módulo Financeiro Pessoal (Contas a Pagar)
-- [x] Utilitário monetário `CurrencyUtils` em centavos inteiros (`amountCents: Long`) sem erros de ponto flutuante.
-- [x] Utilitário de datas `DateUtils` para manipulação de vencimentos e meses.
-- [x] Modelagem relacional no Room: `CategoryEntity`, `BillEntity` e `BillInstallmentEntity` com cascade delete e índices.
-- [x] Auto-seeding inteligente de categorias padrão (Moradia, Alimentação, Transporte, Assinaturas, etc.).
-- [x] Algoritmo matemático de divisão precisa de centavos para contas parceladas (`CalculateInstallmentsUseCase`).
-- [x] Suporte a Contas Avulsas (`SINGLE`), Compras Parceladas (`INSTALLMENT`) e Assinaturas Recorrentes (`RECURRING`).
-- [x] Tela **Dashboard Financeiro** com seletor de mês, cards de KPIs (Total, Pago, Pendente, Vencido), alerta de próximos vencimentos e distribuição por categoria.
-- [x] Tela **Contas a Pagar** com listagem de parcelas, busca instantânea, filtros por tipo e status, liquidação rápida com 1 toque e modal de cadastro de contas.
-- [x] Tela **Categorias** para visualização e criação de novas categorias com seletor de cores.
-- [x] Barra inferior de navegação do Material 3 (`BottomNavBar`) integrando as abas Dashboard, Contas e Categorias.
-- [x] Suíte de testes unitários de domínio financeiro (`CalculateInstallmentsUseCaseTest`, `BillsViewModelTest`).
+### Módulo de Contas a Pagar e Despesas
+- [x] Gestão monetária estrita em inteiros de centavos (`amountCents: Long`) via `CurrencyUtils`.
+- [x] Utilitário de manipulação temporal e competências mensais via `DateUtils`.
+- [x] Modelagem relacional no Room: `BillEntity`, `BillInstallmentEntity`, `CategoryEntity`, `SubcategoryEntity`, `ContactEntity`, `FinancialAccountEntity`, `PaymentMethodEntity`, `BudgetEntity`, `GoalEntity`.
+- [x] Auto-seeding inteligente de categorias, formas de pagamento e contas de referência.
+- [x] Divisão matemática precisa de centavos com resto na primeira parcela (`CalculateInstallmentsUseCase`).
+- [x] Tela **Dashboard Financeiro** com KPIs do mês, próximos 7 dias, gráficos por categoria e projeções semestrais.
+- [x] Tela **Registros (Bills)** com busca inline expansível animada no `TopAppBar`, filtros rápidos e modal de cadastro.
+- [x] Tela **Recorrentes e Parcelados** com cálculo corrigido de progresso para parcelamentos e visão de compromissos mensais.
+- [x] Tela **Estatísticas** com análises comparativas e histórico.
+- [x] Tela **Orçamentos (Budgets)** com tetos por categoria e barra de progresso de consumo.
+- [x] Tela **Metas (Goals)** com objetivos financeiros de economia.
+- [x] Tela **Contatos** com favorecidos, histórico de despesas e atalho de liquidação.
+- [x] Tela **Cadastros Base (Management)** em abas: Contas de Referência, Formas de Pagamento e Categorias/Subcategorias.
 
-### Fases Futuras (Planejado)
-- [ ] Exportação e importação de backup local de dados (JSON/SQLite).
-- [ ] Relatórios anuais consolidados e previsões de gastos.
-- [ ] Sincronização remota opcional via WorkManager quando o usuário optar por conectar um servidor.
+### Governança e Skills de IA
+- [x] Saneamento completo de código zumbi: remoção de todo o CRUD de `PlatformItem` e `PlatformApiService`.
+- [x] Remoção de telas órfãs (`CategoriesScreen`, `BottomNavBar`).
+- [x] Catálogo de 10 skills ativas em `.agents/skills/` (incluindo `room-database-and-migrations` e `offline-backup-and-export`).
+- [x] Alinhamento canônico de manuais em `.ai/` e `AGENT_RULES.md`.
+
+---
+
+## 🎯 Próximos Passos
+- [ ] Implementar fluxo de exportação de dados em JSON local e restauração via SAF.
+- [ ] Otimizar queries agregadas de dashboard no `BillInstallmentDao`.

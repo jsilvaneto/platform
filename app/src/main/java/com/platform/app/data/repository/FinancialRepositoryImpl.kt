@@ -22,12 +22,15 @@ import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.model.Subcategory
 import com.platform.app.domain.repository.FinancialRepository
+import androidx.room.withTransaction
+import com.platform.app.data.local.PlatformDatabase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 
 class FinancialRepositoryImpl @Inject constructor(
+    private val database: PlatformDatabase,
     private val categoryDao: CategoryDao,
     private val subcategoryDao: SubcategoryDao,
     private val contactDao: ContactDao,
@@ -202,8 +205,10 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) {
-        billDao.insert(BillEntity.fromDomain(bill))
-        installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+        database.withTransaction {
+            billDao.insert(BillEntity.fromDomain(bill))
+            installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+        }
     }
 
     override suspend fun toggleInstallmentPayment(

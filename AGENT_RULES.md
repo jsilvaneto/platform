@@ -4,81 +4,80 @@ Este documento estabelece as diretrizes mandatórias de desenvolvimento, padrõe
 
 ---
 
-## 1. Visão Geral da Arquitetura (Android Clean Architecture)
+## 1. Visão Geral da Arquitetura (Android Clean Architecture 100% Offline-First)
 
-O projeto adota Clean Architecture combinada com o padrão MVVM / MVI e componentes reativos do Jetpack Compose:
+O aplicativo adota Clean Architecture combinada com o padrão MVI (Model-View-Intent), Jetpack Compose (Material 3), persistência local exclusiva via Room e injeção de dependências com Dagger Hilt:
 
 ```mermaid
 graph TD
-    UI["Jetpack Compose UI (Screens, Components, Theme)"] -->|StateFlow / Events| VM["ViewModels (@HiltViewModel)"]
+    UI["Jetpack Compose UI (Screens, Components, Theme)"] -->|UiAction (onAction)| VM["ViewModels (@HiltViewModel)"]
+    VM -->|StateFlow imutável| UI
+    VM -->|UiEffect Channel (receiveAsFlow)| UI
     VM -->|Injeta & Executa| UC["UseCases / Interactors (domain/usecase/)"]
     UC -->|Chama Interfaces| Repo["Repository Contracts (domain/repository/)"]
     RepoImpl["Repository Impl (data/repository/)"] -.->|Implementa| Repo
     RepoImpl -->|Local Caching / Flow| Room["Room Database (data/local/)"]
-    RepoImpl -->|Remote Calls / DTOs| Retrofit["Retrofit / OkHttp (data/remote/)"]
+    RepoImpl -->|Configurações Locais| DataStore[("Preferences DataStore")]
 ```
 
 ### 1.1 Divisão Estrita de Camadas
 - `app/src/main/java/com/platform/app/presentation/`:
   - Camada de exibição pura e gerenciamento de estado de tela.
-  - Composta por **Composables** (`screens/`, `components/`), **ViewModels** (anotados com `@HiltViewModel`), **UiState** imutáveis e temas Material 3 (`theme/`).
-  - **Proibido**: Fazer chamadas diretas de banco de dados, APIs ou I/O dentro de Composables ou ViewModels.
+  - Composta por **Composables** (`bills/`, `dashboard/`, `contacts/`, `management/`, `budgets/`, `goals/`, `recurring/`, `settings/`, `components/`), **ViewModels** (anotados com `@HiltViewModel`), **UiState** imutáveis e temas Material 3 (`theme/`).
+  - **Proibido**: Fazer chamadas diretas de banco de dados ou I/O dentro de Composables.
 - `app/src/main/java/com/platform/app/domain/`:
-  - O coração das regras de negócio do aplicativo.
+  - O coração das regras de negócio do aplicativo de Contas a Pagar.
   - Contém **modelos de domínio puros** (`model/`), interfaces de repositórios (`repository/`) e casos de uso de responsabilidade única (`usecase/`).
-  - **Proibido**: Dependências de frameworks Android (como Context, Views, Room, Retrofit). Código 100% puro Kotlin.
+  - **Proibido**: Dependências de frameworks Android (como Context, Views, Room). Código 100% puro Kotlin.
 - `app/src/main/java/com/platform/app/data/`:
-  - Implementação concreta de acesso a dados e persistência.
-  - Contém **Room DAOs e Entities** (`local/`), clientes HTTP **Retrofit e DTOs** (`remote/`) e implementações de repositórios (`repository/`).
-  - Responsável por mapear DTOs e Entities para modelos de domínio (`toDomain()`).
+  - Implementação concreta de acesso a dados e persistência offline.
+  - Contém **Room DAOs e Entities** (`local/`) e implementações de repositórios (`repository/`).
+  - Responsável por mapear Entities para modelos de domínio (`toDomain()`).
 - `app/src/main/java/com/platform/app/di/`:
-  - Módulos Dagger Hilt (`@Module`, `@InstallIn(SingletonComponent::class)`) para injeção e provimento de dependências singleton e vinculação de repositórios.
+  - Módulos Dagger Hilt (`@Module`, `@InstallIn(SingletonComponent::class)`) para injeção e provimento de dependências singleton (`AppModule.kt`) e vinculação de repositórios (`RepositoryModule.kt`).
 - `app/src/main/java/com/platform/app/core/`:
-  - Utilitários globais, despachantes de coroutines (`DispatcherProvider`), extensões e classes seladas de resultado (`Resource<T>`).
+  - Utilitários globais (`CurrencyUtils`, `DateUtils`), despachantes de coroutines (`DispatcherProvider`), preferências (`PreferencesManager`) e autenticação biométrica (`BiometricAuthManager`).
 
 ---
 
 ## 2. Regras Mandatórias de Código
 
 1. **Operação 100% Offline-First**:
-   - Todo dado gerado no app deve ser lido e gravado exclusivamente no banco local **Room** e **DataStore**. Nenhuma funcionalidade pode depender de resposta de rede para funcionar. O cliente HTTP e endpoints remotos são desacoplados e reservados para fases futuras.
-2. **Padrão MVI com Canal de Efeitos (`UiEffect`)**:
+   - Todo dado gerado no app deve ser lido e gravado exclusivamente no banco local **Room** e **DataStore**. Nenhuma funcionalidade pode depender de resposta de rede para funcionar. O aplicativo opera integralmente em modo avião.
+2. **Escopo Focado em Contas a Pagar & Despesas**:
+   - O sistema NÃO trata receitas ou salários.
+   - Contas bancárias (`FinancialAccount`) atuam estritamente como **contas de referência** para indicar o meio de pagamento ou a conta debitada, sem controle de saldo contábil.
+3. **Padrão MVI com Canal de Efeitos (`UiEffect`)**:
    - A tela emite intenções via `UiAction` (`onAction(action)`).
-   - Efeitos transitórios (Snackbars, navegação, diálogos) NUNCA devem residir no `UiState`. Devem trafegar através de um `Channel<UiEffect>(Channel.BUFFERED)` exposto como Flow e consumido na UI via `LaunchedEffect`.
-3. **Nunca misture lógica de apresentação com regras de negócio**:
-   - Composables devem ser o mais puros e "burros" possível, recebendo estados (`UiState`) e emitindo eventos por lambdas.
-4. **Tipagem e Imutabilidade Estrita**:
-   - Todo estado de UI deve ser representado por uma `data class` imutável (ex: `HomeUiState`).
-   - Proibido o uso de `Any` ou variáveis mutáveis públicas (`var`). Use `MutableStateFlow` privado e exponha `StateFlow` público imutável via `asStateFlow()`.
-5. **Assincronismo Seguro com Coroutines e Flow**:
-   - Todo acesso a banco e arquivos deve ser executado em background via Coroutines (`viewModelScope.launch`) injetando `DispatcherProvider.io`.
-   - Colete fluxos na UI de forma segura com `collectAsState()` ou `collectAsStateWithLifecycle()`.
-6. **Material 3 & Dark Mode Obrigatório**:
+   - Efeitos transitórios (Snackbars, navegação, diálogos) NUNCA devem residir no `UiState`. Trafegam através de um `Channel<UiEffect>(Channel.BUFFERED)` exposto como Flow e consumido na UI via `LaunchedEffect`.
+4. **Valores Monetários em Centavos (`amountCents: Long`)**:
+   - Proibido uso de `Float` ou `Double` para cálculos ou armazenamento de dinheiro. Use sempre inteiros em centavos (`amountCents: Long`).
+5. **Transações Atômicas Obrigatórias (`database.withTransaction`)**:
+   - Gravações compostas (como inserção de conta e parcelas) devem rodar sempre dentro de uma transação atômica do Room.
+6. **Elegância Visual & Anti-Gigantismo**:
+   - Todas as telas devem seguir as diretrizes da skill `ui-elegance-and-proportions`: busca inline animada na `TopAppBar`, tipografia equilibrada, cantos arredondados suaves e FAB com ícone vetorial (`Icons.Default.Add`).
+7. **Material 3 & Dark Mode Obrigatório**:
    - Todas as telas e componentes visuais DEVEM suportar nativamente **Modo Claro** e **Modo Escuro** utilizando as cores semânticas do `MaterialTheme.colorScheme` (ex: `surface`, `background`, `onSurface`, `primary`).
-   - Proibido uso de cores hardcoded como `Color.White` ou `Color.Black` diretamente em componentes de UI.
-7. **Tratamento de Estados (Carregamento, Vazio e Erro)**:
-   - Toda tela que consome dados deve tratar explicitamente os 3 estados: `isLoading` (spinner/skeleton), `isEmpty` (mensagem informativa e botão de ação) e `isError` (banner amigável e botão de retry).
 8. **Política de Resíduo Zero em Testes**:
-   - Testes unitários e de integração devem rodar isolados com dispatchers de teste (`StandardTestDispatcher`), mocks (MockK/Turbine) ou banco em memória (`Room.inMemoryDatabaseBuilder`).
+   - Testes devem utilizar banco em memória (`Room.inMemoryDatabaseBuilder`) e mocks isolados com `Dispatchers.setMain(testDispatcher)`.
 
 ---
 
 ## 3. Instruções para o Agente: Como Adicionar uma Nova Feature
 
-Ao receber uma demanda para implementar uma nova funcionalidade (exemplo: `UserProfile`), siga este fluxo:
+Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo:
 
 ### Passo 1: Domínio Puro
 1. Defina o modelo em `domain/model/<Feature>.kt`.
 2. Adicione os métodos necessários na interface `domain/repository/<Feature>Repository.kt`.
 3. Crie os casos de uso em `domain/usecase/Get<Feature>UseCase.kt`.
 
-### Passo 2: Camada de Dados (Room e/ou Retrofit)
+### Passo 2: Camada de Dados Local (Room)
 1. Crie a entidade Room em `data/local/entity/<Feature>Entity.kt` e o DAO em `data/local/dao/<Feature>Dao.kt`.
-2. Se houver API externa, crie o DTO em `data/remote/dto/<Feature>Dto.kt` e declare o endpoint em `PlatformApiService.kt`.
-3. Implemente o repositório em `data/repository/<Feature>RepositoryImpl.kt`.
+2. Implemente o repositório em `data/repository/<Feature>RepositoryImpl.kt`.
 
 ### Passo 3: Injeção de Dependências
-1. Adicione o DAO no `PlatformDatabase.kt` e proveja-o no `di/AppModule.kt`.
+1. Adicione a entidade no `PlatformDatabase.kt` e proveja o DAO no `di/AppModule.kt`.
 2. Registre o binding do novo repositório em `di/RepositoryModule.kt`.
 
 ### Passo 4: Camada de Apresentação (Compose + ViewModel)
@@ -96,12 +95,16 @@ Ao receber uma demanda para implementar uma nova funcionalidade (exemplo: `UserP
 ## 4. Repositório de Skills e Regras (`.agents/`)
 
 - **Skills Disponíveis (`.agents/skills/<skill-name>/SKILL.md`)**:
-  - `add-new-screen-or-feature`: Guia passo a passo com modelos para criar telas e fluxos.
+  - `financial-domain-guard`: Invariantes de contas a pagar, parcelamentos, recorrências, centavos exatos e contas de referência.
+  - `ui-elegance-and-proportions`: Diretrizes de elegância visual, moderação de escala, busca inline e padrões Compose.
   - `android-compose-design-system`: Padrões de interface Material 3, Dark Mode e previews.
-  - `android-testing-suite`: Práticas de testes unitários (MockK, Turbine, JUnit) e instrumentação.
-  - `gradle-build-and-lint`: Comandos canônicos de compilação, verificação estática e lint.
-  - `security-guard`: Diretrizes de DevSecOps, Android Keystore, ProGuard/R8 e `local.properties`.
-  - `token-optimizer`: Protocolo para economia cirúrgica de contexto em projetos Android.
+  - `add-new-screen-or-feature`: Fluxo oficial de novas features 100% offline-first.
+  - `android-testing-suite`: Práticas de testes unitários (MockK, Turbine, JUnit) em MVI e Room.
+  - `room-database-and-migrations`: Queries de alta performance em SQLite, `@Transaction` obrigatório e evolução de schema.
+  - `offline-backup-and-export`: Estratégia de exportação e restauração local de dados em JSON.
+  - `gradle-build-and-lint`: Comandos de build, verificação estática e lint.
+  - `security-guard`: Diretrizes de biometria e isolamento no aparelho.
+  - `token-optimizer`: Protocolo para economia cirúrgica de contexto.
 - **Regras Mandatórias (`.agents/rules/*.md`)**:
   - `architecture.md`: Fronteiras invioláveis entre Presentation, Domain e Data.
   - `coding_standards.md`: Convenções idiomáticas de Kotlin, imutabilidade e StateFlow.

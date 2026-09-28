@@ -11,27 +11,24 @@ O aplicativo segue os princípios oficiais da Google de **Modern Android Archite
 ```mermaid
 graph TD
     subgraph PresentationLayer ["Presentation Layer (Jetpack Compose + MVI)"]
-        Activity["MainActivity (@AndroidEntryPoint)"] --> Nav["NavGraph (Navigation Compose)"]
-        Nav --> Screen["HomeScreen (Composable UI)"]
-        Screen -->|UiAction (onAction)| ViewModel["HomeViewModel (@HiltViewModel)"]
-        ViewModel -->|StateFlow imutável| Screen
-        ViewModel -->|UiEffect Channel (receiveAsFlow)| Screen
+        Activity["MainActivity (@AndroidEntryPoint)"] --> Drawer["AppDrawer (ModalNavigationDrawer)"]
+        Drawer --> Nav["NavGraph (Navigation Compose)"]
+        Nav --> Screens["DashboardScreen / BillsScreen / RecurringScreen / ..."]
+        Screens -->|UiAction (onAction)| ViewModels["ViewModels (@HiltViewModel)"]
+        ViewModels -->|StateFlow imutável| Screens
+        ViewModels -->|UiEffect Channel (receiveAsFlow)| Screens
     end
 
-    subgraph DomainLayer ["Domain Layer (Kotlin Puro)"]
-        ViewModel -->|Invoca| UseCase["GetItemsUseCase"]
-        UseCase -->|Chama contrato| RepoInterface["ItemRepository (Interface)"]
+    subgraph DomainLayer ["Domain Layer (100% Kotlin Puro)"]
+        ViewModels -->|Invoca| UseCases["CreateBillUseCase / GetFinancialDashboardUseCase / ..."]
+        UseCases -->|Chama contrato| RepoInterface["FinancialRepository / BudgetRepository / GoalRepository"]
     end
 
     subgraph DataLayer ["Data Layer (Single Source of Truth Local)"]
-        RepoImpl["ItemRepositoryImpl"] -.->|Implementa| RepoInterface
-        RepoImpl -->|Queries reativas Flow| Dao["ItemDao (Room)"]
-        Dao --> DB[("SQLite Local (PlatformDatabase)")]
+        RepoImpl["FinancialRepositoryImpl"] -.->|Implementa| RepoInterface
+        RepoImpl -->|database.withTransaction| DAOs["BillDao / BillInstallmentDao / CategoryDao / ..."]
+        DAOs --> DB[("SQLite Local (PlatformDatabase)")]
         DataStore[("Preferences DataStore (Configurações Locais)")]
-    end
-
-    subgraph FutureExtension ["Extensão Futura (Sincronização Remota)"]
-        Api["PlatformApiService (Retrofit)"] -.-> Backend[("API Remota")]
     end
 
     subgraph DiLayer ["Dependency Injection (Dagger Hilt)"]
@@ -49,9 +46,9 @@ graph TD
 - **Padrão de UI**: MVI com `UiState`, `UiAction` e `UiEffect` (Channel bufferizado).
 - **Injeção de Dependências**: Dagger Hilt 2.51 com KSP (Kotlin Symbol Processing).
 - **Persistência Local (Offline-First)**: Room 2.6.1 com Coroutines e Flow, e AndroidX DataStore Preferences 1.0.0.
-- **Monitoramento de Conectividade**: `NetworkMonitor` reativo com `ConnectivityManager.NetworkCallback`.
+- **Segurança e Biometria**: AndroidX Biometric com autenticação por impressão digital ou PIN.
 - **Concorrência**: Kotlin Coroutines e StateFlow/SharedFlow.
-- **Testes Unitários**: JUnit 4, MockK (mocking de coroutines e dispatchers) e Turbine (testes reativos de StateFlow e Channels).
+- **Testes Unitários**: JUnit 4, MockK e Turbine.
 
 ---
 
@@ -59,33 +56,39 @@ graph TD
 
 ```
 app/src/main/java/com/platform/app/
-├── core/                     # Utilitários globais e abstrações de infraestrutura
-│   ├── connectivity/         # NetworkMonitor e ConnectivityNetworkMonitor (Flow<Boolean>)
-│   ├── dispatcher/           # DispatcherProvider para desacoplamento de Dispatchers.IO/Main
+├── core/                     # Utilitários globais e infraestrutura
+│   ├── connectivity/         # NetworkMonitor reativo
+│   ├── dispatcher/           # DispatcherProvider para desacoplamento de IO/Main
 │   ├── mvi/                  # Interfaces marcadoras UiState, UiAction, UiEffect
 │   ├── preferences/          # PreferencesManager usando AndroidX DataStore
-│   └── util/                 # Resource<T> (Success, Error, Loading)
+│   ├── security/             # BiometricAuthManager
+│   └── util/                 # CurrencyUtils, DateUtils, CurrencyVisualTransformation
 ├── data/                     # Camada de dados e persistência offline
 │   ├── local/
-│   │   ├── dao/              # Interfaces Room @Dao com queries @Query e @Insert
-│   │   ├── entity/           # Classes @Entity com mapeamento bidirecional toDomain()
-│   │   └── PlatformDatabase  # Classe abstrata @Database do Room (SQLite)
-│   ├── remote/               # Clientes e DTOs preparados para futura sincronização
-│   │   ├── dto/              # Data Transfer Objects serializados via Gson
-│   │   └── PlatformApiService# Interface Retrofit de endpoints HTTP
-│   └── repository/           # Implementação concreta ItemRepositoryImpl operando sobre o Room
+│   │   ├── dao/              # BillDao, BillInstallmentDao, CategoryDao, ContactDao, etc.
+│   │   ├── entity/           # BillEntity, BillInstallmentEntity, CategoryEntity, etc.
+│   │   └── PlatformDatabase  # Room Database central
+│   └── repository/           # FinancialRepositoryImpl, BudgetRepositoryImpl, GoalRepositoryImpl
 ├── domain/                   # Camada de negócio pura (100% Kotlin puro, sem dependências Android)
-│   ├── model/                # Data classes imutáveis de negócio (PlatformItem)
+│   ├── model/                # Bill, BillInstallment, Category, Subcategory, FinancialAccount, Budget, Goal
 │   ├── repository/           # Interfaces de repositório (inversão de dependência)
-│   └── usecase/              # Interactors de responsabilidade única (GetItemsUseCase)
+│   └── usecase/              # CreateBillUseCase, CalculateInstallmentsUseCase, etc.
 ├── di/                       # Injeção de dependências Hilt
-│   ├── AppModule.kt          # Provimento de Room, DataStore, NetworkMonitor, Retrofit e Dispatchers
+│   ├── AppModule.kt          # Provimento de Room, DataStore, NetworkMonitor e Dispatchers
 │   └── RepositoryModule.kt   # Binds de repositórios para o grafo de dependências
-└── presentation/             # Camada de interface e interação visual
-    ├── components/           # Componentes Compose reutilizáveis (PlatformAppBar, etc.)
-    ├── navigation/           # Screen.kt e NavGraph.kt
-    ├── theme/                # Color, Type, Theme com suporte a Dark Mode e Dynamic Color
-    └── home/                 # Tela inicial modular (Screen, ViewModel, UiState, UiAction, UiEffect)
+└── presentation/             # Camada de interface e interação visual (Compose)
+    ├── navigation/           # Screen.kt, NavGraph.kt, AppDrawer.kt
+    ├── theme/                # Color, Type, Theme com suporte a Dark Mode
+    ├── components/           # PlatformAppBar, PlatformCard, PlatformStatusChip
+    ├── dashboard/            # DashboardScreen (KPIs do Mês, Próximos 7 dias, Gráficos)
+    ├── bills/                # BillsScreen (Lançamentos com busca inline animada e filtros)
+    ├── recurring/            # RecurringInstallmentsScreen (Assinaturas e parcelamentos)
+    ├── statistics/           # StatisticsScreen (Análises históricas e projeções)
+    ├── budgets/              # BudgetsScreen (Tetos de gastos por categoria)
+    ├── goals/                # GoalsScreen (Metas financeiras)
+    ├── contacts/             # ContactsScreen & ContactDetailScreen
+    ├── management/           # ManagementScreen (Cadastros Base: Contas, Formas de Pagamento e Categorias)
+    └── settings/             # SettingsScreen (Biometria, Tema e Sobre)
 ```
 
 ---
@@ -95,10 +98,8 @@ app/src/main/java/com/platform/app/
 1. **Renderização de Estado (`UiState`)**:
    - A tela Compose observa o `StateFlow` exposto pela ViewModel (`val uiState by viewModel.uiState.collectAsState()`).
 2. **Disparo de Intenção (`UiAction`)**:
-   - Qualquer interação do usuário (clique, busca textual, alternância de conclusão de tarefa) envia uma ação tipada para a ViewModel: `onAction(HomeUiAction.ToggleItemCompletion(item))`.
+   - Qualquer interação do usuário (clique, busca textual, alternância de pagamento de parcela) envia uma ação tipada para a ViewModel: `onAction(BillsUiAction.TogglePayment(inst))`.
 3. **Processamento Assíncrono Local**:
-   - A ViewModel processa a ação dentro de `viewModelScope.launch` sem bloquear a thread principal, invocando o repositório local.
-   - O Room persiste a alteração e emite a nova lista atualizada via `Flow`.
+   - A ViewModel processa a ação dentro de `viewModelScope.launch` sem bloquear a thread principal, invocando Casos de Uso ou Repositórios com transações atômicas no Room.
 4. **Efeito Colateral Volátil (`UiEffect`)**:
-   - Quando uma notificação (Snackbar) ou navegação é disparada, ela trafega através do canal `_effectChannel.send(...)`.
-   - O composable captura o efeito via `LaunchedEffect(uiEffect) { uiEffect.collect { ... } }`, garantindo que não ocorra re-execução em rotações de tela.
+   - Mensagens transitórias (Snackbars) ou navegação trafegam através do canal `_effectChannel.send(...)` e são capturadas na UI via `LaunchedEffect`.

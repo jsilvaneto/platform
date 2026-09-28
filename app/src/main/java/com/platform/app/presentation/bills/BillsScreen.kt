@@ -67,14 +67,29 @@ import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.dashboard.MonthSelector
 import kotlinx.coroutines.flow.Flow
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.style.TextOverflow
 import com.platform.app.presentation.theme.SuccessGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,7 +103,15 @@ fun BillsScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
+    var isSearchExpanded by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    LaunchedEffect(isSearchExpanded) {
+        if (isSearchExpanded) {
+            focusRequester.requestFocus()
+        }
+    }
 
     LaunchedEffect(uiEffect) {
         uiEffect.collect { effect ->
@@ -102,10 +125,97 @@ fun BillsScreen(
 
     Scaffold(
         topBar = {
-            PlatformAppBar(
-                title = "Registros",
-                subtitle = "Lançamentos e vencimentos",
-                onOpenDrawer = onOpenDrawer
+            TopAppBar(
+                title = {
+                    if (!isSearchExpanded) {
+                        Column {
+                            Text(
+                                text = "Registros",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "${uiState.filteredInstallments.size} lançamentos encontrados",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                    }
+                },
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = isSearchExpanded,
+                            enter = fadeIn() + expandHorizontally(),
+                            exit = fadeOut() + shrinkHorizontally()
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.searchQuery,
+                                onValueChange = { onAction(BillsUiAction.SearchQueryChanged(it)) },
+                                placeholder = {
+                                    Text(
+                                        text = "Buscar conta ou categoria...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                ),
+                                trailingIcon = {
+                                    if (uiState.searchQuery.isNotBlank()) {
+                                        IconButton(
+                                            onClick = { onAction(BillsUiAction.SearchQueryChanged("")) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Limpar busca",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(230.dp)
+                                    .height(46.dp)
+                                    .focusRequester(focusRequester)
+                                    .padding(end = 4.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    onAction(BillsUiAction.SearchQueryChanged(""))
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = if (isSearchExpanded) "Fechar busca" else "Buscar contas",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         snackbarHost = {
@@ -117,7 +227,7 @@ fun BillsScreen(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Text("+", style = MaterialTheme.typography.headlineMedium)
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Conta")
             }
         },
         modifier = modifier
@@ -142,17 +252,6 @@ fun BillsScreen(
                 onCurrentMonth = {
                     onAction(BillsUiAction.MonthChanged(System.currentTimeMillis()))
                 }
-            )
-
-            // Busca
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { onAction(BillsUiAction.SearchQueryChanged(it)) },
-                label = { Text("Buscar contas ou categorias...") },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
             )
 
             // Filtros de Tipo e Status

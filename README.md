@@ -1,8 +1,8 @@
-# Platform — Aplicativo Android (Finanças Pessoais 100% Offline-First)
+# Platform — Aplicativo Android (Contas a Pagar 100% Offline-First)
 
 Aplicativo Android nativo de produtividade e gestão pessoal construído com **Kotlin**, **Jetpack Compose (Material 3)**, **Clean Architecture**, arquitetura **100% Offline-First**, padrão **MVI (Model-View-Intent)**, injeção de dependências com **Hilt**, persistência local com **Room**, preferências com **AndroidX DataStore** e fluxos reativos com **Coroutines & StateFlow**.
 
-O primeiro módulo central implementado é o **Módulo Financeiro Pessoal**, especializado no controle rigoroso de **Contas a Pagar, Compras Parceladas e Despesas Recorrentes**.
+O aplicativo é especializado no controle rigoroso de **Contas a Pagar, Compras Parceladas, Despesas Recorrentes e Orçamentos**, permitindo vincular lançamentos a **Contas Financeiras de Referência** (bancos, carteiras e cartões).
 
 ---
 
@@ -10,20 +10,25 @@ O primeiro módulo central implementado é o **Módulo Financeiro Pessoal**, esp
 
 O projeto adota separação estrita de responsabilidades:
 - **100% Offline-First & Integridade de Centavos**:
-  - Todo dado gerado é persistido exclusivamente no banco local **Room (SQLite)**.
-  - Valores monetários são calculados e armazenados como inteiros em centavos (`amountCents: Long`), impedindo imprecisões de arredondamento de ponto flutuante.
+  - Todo dado gerado é persistido exclusivamente no banco local **Room (SQLite)** e preferências **DataStore**.
+  - Valores monetários são calculados e armazenados como inteiros em centavos (`amountCents: Long`), impedindo imprecisões de ponto flutuante.
   - Compras parceladas utilizam divisão matemática de centavos exatos com distribuição do resto na primeira parcela.
+  - Gravações compostas operam sob transações atômicas (`database.withTransaction`).
 - **Padrão MVI com Efeitos Seguros**:
   - `UiState`: Estado imutável da tela exposto via `StateFlow`.
   - `UiAction`: Intenções explícitas do usuário enviadas ao ViewModel.
-  - `UiEffect`: Efeitos colaterais transitórios (Snackbars, navegação) enviados através de um `Channel` bufferizado, eliminando re-execuções indesejadas em recomposição ou rotação de tela.
-- **Telas & Navegação (Material 3 Bottom Navigation)**:
-  - 📊 **Dashboard Financeiro**: KPIs do mês (Total a Pagar, Pago, Pendente, Vencido), seletor de mês, alertas de próximos vencimentos e distribuição por categoria.
-  - 💳 **Contas & Parcelas**: Lista de vencimentos com busca, filtros de tipo (`Avulsas`, `Parceladas`, `Recorrentes`), filtros de status (`A Pagar`, `Pagas`, `Vencidas`), liquidação rápida de parcelas com 1 toque e modal de cadastro de contas.
-  - 🏷️ **Categorias**: Visualização e cadastro de categorias com seletor de cores e auto-seeding inicial.
+  - `UiEffect`: Efeitos colaterais transitórios (Snackbars, navegação) enviados através de um `Channel` bufferizado, eliminando repetições indesejadas em recomposição ou rotação de tela.
+- **Telas & Navegação (Material 3 AppDrawer)**:
+  - 📊 **Início (Dashboard)**: KPIs do mês (Total a Pagar, Pago, Pendente, Vencido), seletor de mês, alertas de vencimentos dos próximos 7 dias com quitação rápida e distribuição por categoria.
+  - 💳 **Registros (Contas a Pagar)**: Lista de vencimentos com busca inline animada na TopAppBar, filtros de tipo (`Avulsas`, `Parceladas`, `Recorrentes`), filtros de status (`A Pagar`, `Pagas`, `Vencidas`), quitação rápida e cadastro de contas.
+  - 🔄 **Recorrentes e Parcelados**: Acompanhamento de progresso de compras parceladas e valor consolidado de compromissos mensais.
+  - 📈 **Estatísticas**: Histórico de pagamentos e pontualidade.
+  - 🎯 **Orçamentos & Metas**: Tetos mensais de gastos por categoria e objetivos de reserva.
+  - 👥 **Contatos**: Favorecidos e beneficiários a quem os pagamentos são devidos.
+  - ⚙️ **Cadastros Base**: Gestão de Contas Financeiras de Referência, Formas de Pagamento e Categorias/Subcategorias.
 - **Domain Layer**: Modelos de domínio puros, contratos de repositório e Casos de Uso (`UseCases`) desacoplados de qualquer framework Android (100% Kotlin puro).
 - **Dependency Injection**: Injeção desacoplada de escopo Singleton e ViewModel via **Dagger Hilt**.
-- **Infraestrutura de IA**: Governança em [.ai/](file:///home/jsilvaneto/projetos/platform/.ai), manual mestre em [AGENT_RULES.md](file:///home/jsilvaneto/projetos/platform/AGENT_RULES.md) e catálogo de skills em [.agents/skills/](file:///home/jsilvaneto/projetos/platform/.agents/skills) (incluindo `financial-domain-guard`).
+- **Infraestrutura de IA**: Governança em [.ai/](file:///home/jsilvaneto/projetos/platform/.ai), manual mestre em [AGENT_RULES.md](file:///home/jsilvaneto/projetos/platform/AGENT_RULES.md) e catálogo de 10 skills em [.agents/skills/](file:///home/jsilvaneto/projetos/platform/.agents/skills).
 
 ---
 
@@ -33,9 +38,9 @@ O projeto adota separação estrita de responsabilidades:
 platform/
 ├── .agents/                 # Skills e regras executáveis para Agentes de IA
 │   ├── rules/               # architecture.md, coding_standards.md, test_data_cleanup.md
-│   └── skills/              # financial-domain-guard, android-compose-design-system, etc.
-├── .ai/                     # Documentação de arquitetura, contexto e status do projeto
-│   ├── DECISIONS/           # Architecture Decision Records (ADRs 001, 002, 003 e 004)
+│   └── skills/              # financial-domain-guard, room-database-and-migrations, etc.
+├── .ai/                     # Documentação canônica de arquitetura e contexto
+│   ├── DECISIONS/           # Architecture Decision Records
 │   ├── ARCHITECTURE.md      # Referência técnica canônica e diagramas
 │   ├── CONTEXT.md           # Visão de produto e regras de domínio móvel 100% offline
 │   ├── STATUS.md            # Roadmap de releases e checklist de fases
@@ -44,11 +49,11 @@ platform/
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/com/platform/app/
-│   │   │   │   ├── core/            # CurrencyUtils, DateUtils, MVI, NetworkMonitor, Preferences
+│   │   │   │   ├── core/            # CurrencyUtils, DateUtils, MVI, Preferences, Security
 │   │   │   │   ├── data/            # Room (DAOs, Entities, Database), Repositories
-│   │   │   │   ├── domain/          # Modelos (Bill, Installment, Category), UseCases, Interfaces
+│   │   │   │   ├── domain/          # Modelos, UseCases, Contratos de Repositório
 │   │   │   │   ├── di/              # Módulos de injeção Hilt (AppModule, RepositoryModule)
-│   │   │   │   └── presentation/    # Dashboard, Bills, Categories, BottomNavBar, Theme
+│   │   │   │   └── presentation/    # Dashboard, Bills, Recurring, Budgets, Goals, Contacts, Management
 │   │   │   ├── res/                 # Strings, cores, temas nativos, regras de backup
 │   │   │   └── AndroidManifest.xml  # Manifesto do app
 │   │   └── test/                    # Testes unitários com JUnit, MockK e Turbine
@@ -75,13 +80,4 @@ platform/
 2. Abra a pasta `/home/jsilvaneto/projetos/platform`.
 3. Selecione um emulador ou conecte um celular físico via USB.
 4. Clique em **Run** (`Shift + F10`).
-5. O app iniciará no **Dashboard Financeiro**, permitindo navegar entre as abas inferiores (**Dashboard**, **Contas** e **Categorias**), cadastrar contas e liquidar parcelas offline.
-
----
-
-## 🧪 Testes Automatizados
-
-Para executar os testes unitários da camada de domínio e ViewModels:
-```bash
-./gradlew test
-```
+5. O app iniciará no **Dashboard Financeiro**, permitindo navegar pelo menu lateral (**Início**, **Registros**, **Recorrentes & Parcelados**, **Estatísticas**, **Orçamentos**, **Metas**, **Contatos**, **Cadastros Base** e **Configurações**).

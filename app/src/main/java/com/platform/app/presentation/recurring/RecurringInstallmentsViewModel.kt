@@ -63,8 +63,12 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 val paidInsts = insts.filter { it.isPaid }
                 val paidCount = paidInsts.size
                 val totalPaid = paidInsts.sumOf { it.amountCents }
-                val remaining = (bill.totalAmountCents - totalPaid).coerceAtLeast(0L)
-                val progress = if (bill.totalAmountCents > 0L) {
+                val remaining = if (bill.type == BillType.INSTALLMENT) {
+                    (bill.totalAmountCents - totalPaid).coerceAtLeast(0L)
+                } else {
+                    nextInst?.amountCents ?: bill.totalAmountCents
+                }
+                val progress = if (bill.type == BillType.INSTALLMENT && bill.totalAmountCents > 0L) {
                     (totalPaid.toFloat() / bill.totalAmountCents.toFloat()).coerceIn(0f, 1f)
                 } else 0f
 

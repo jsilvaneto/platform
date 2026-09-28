@@ -1,7 +1,9 @@
 package com.platform.app.domain.usecase
 
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.AccountSpend
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
@@ -20,8 +22,10 @@ class GetFinancialDashboardUseCase @Inject constructor(
 
         return combine(
             repository.getInstallmentsForPeriod(startOfMonth, endOfMonth),
-            repository.getAllInstallments()
-        ) { installments, allInstallments ->
+            repository.getAllInstallments(),
+            repository.getBills(),
+            repository.getFinancialAccounts()
+        ) { installments, allInstallments, bills, accounts ->
             var totalDue = 0L
             var totalPaid = 0L
             var totalPending = 0L
@@ -62,13 +66,13 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 .sortedBy { it.dueDate }
                 .take(5)
 
-            // Vencimentos dos próximos 7 dias
+            // Vencimentos dos próximos 7 dias (ação rápida de liquidação)
             val sevenDaysAhead = now + (7L * 24 * 3600 * 1000)
             val upcomingWeek = allInstallments
-                .filter { !it.isPaid && it.dueDate in now..sevenDaysAhead }
+                .filter { !it.isPaid && it.dueDate in (now - 24 * 3600 * 1000)..sevenDaysAhead }
                 .sortedBy { it.dueDate }
 
-            // Projeções dos próximos 6 meses para planejamento futuro
+            // Projeções dos próximos 6 a 12 meses para planejamento futuro (Curva de Desoneração)
             val futureProjections = (1..6).map { i ->
                 val futureMonthEpoch = DateUtils.addMonths(monthMillis, i)
                 val futureStart = DateUtils.getStartOfMonth(futureMonthEpoch)
@@ -97,7 +101,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val prevDue = prevMonthInsts.sumOf { it.amountCents }
             val prevPaid = prevMonthInsts.filter { it.isPaid }.sumOf { it.amountCents }
 
-            // Histórico Total
+            // Histórico Total e Pontualidade
             val allPaidInsts = allInstallments.filter { it.isPaid }
             val totalHistPaid = allPaidInsts.sumOf { it.amountCents }
             val onTimeCount = allPaidInsts.count { (it.paidAt ?: it.dueDate) <= it.dueDate }
@@ -105,8 +109,34 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 ((onTimeCount.toFloat() / allPaidInsts.size.toFloat()) * 100).toInt()
             } else 100
 
+            // Custo Fixo Recorrente Mensal (assinaturas e contas fixas ativas)
+            val fixedMonthlyTotal = bills
+                .filter { it.type == BillType.RECURRING }
+                .sumOf { it.totalAmountCents }
+            val activeRecurring = bills.count { it.type == BillType.RECURRING }
+
+            // Saldo Devedor Parcelado Total (todas as parcelas ainda não pagas de compras parceladas)
+            val totalInstallmentsRemaining = allInstallments
+                .filter { !it.isPaid && it.type == BillType.INSTALLMENT }
+                .sumOf { it.amountCents }
+            val activeInstallments = bills.count { bill ->
+                bill.type == BillType.INSTALLMENT && allInstallments.any { it.billId == bill.id && !it.isPaid }
+            }
+
+            // Distribuição por Contas Bancárias de Referência
+            val accountsDistribution = accounts.map { acc ->
+                val accPending = allInstallments.filter { it.financialAccountId == acc.id && !it.isPaid }
+                AccountSpend(
+                    accountName = acc.name,
+                    bankName = acc.bankName ?: "Banco",
+                    totalAmountCents = accPending.sumOf { it.amountCents },
+                    pendingBillsCount = accPending.size
+                )
+            }.filter { it.pendingBillsCount > 0 }
+
             FinancialDashboardMetrics(
                 monthMillis = monthMillis,
+                currentMonthLabel = DateUtils.formatMonthYear(monthMillis),
                 totalDueMonthCents = totalDue,
                 totalPaidMonthCents = totalPaid,
                 totalPendingMonthCents = totalPending,
@@ -120,7 +150,12 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 categoryDistribution = categoryDistribution,
                 futureMonthsProjections = futureProjections,
                 totalCommittedFutureCents = totalCommittedFuture,
-                futureInstallmentsCount = futureInstallmentsCount
+                futureInstallmentsCount = futureInstallmentsCount,
+                fixedMonthlyTotalCents = fixedMonthlyTotal,
+                activeRecurringCount = activeRecurring,
+                totalInstallmentsRemainingCents = totalInstallmentsRemaining,
+                activeInstallmentsCount = activeInstallments,
+                accountsDistribution = accountsDistribution
             )
         }
     }

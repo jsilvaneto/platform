@@ -37,8 +37,8 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] Modelagem relacional no Room: `BillEntity`, `BillInstallmentEntity`, `CategoryEntity`, `SubcategoryEntity`, `ContactEntity`, `FinancialAccountEntity`, `PaymentMethodEntity`, `BudgetEntity`, `GoalEntity`.
 - [x] Auto-seeding inteligente de categorias, formas de pagamento e contas de referência.
 - [x] Divisão matemática precisa de centavos com resto na primeira parcela (`CalculateInstallmentsUseCase`).
-- [x] Tela **Dashboard Financeiro** com KPIs do mês, próximos 7 dias, gráficos por categoria e projeções semestrais.
-- [x] Tela **Registros (Bills)** com busca inline expansível animada no `TopAppBar`, filtros rápidos e modal de cadastro.
+- [x] Tela **Dashboard Financeiro** remodelada alinhada ao Wallet: KPIs macro (Custo Fixo Recorrente, Saldo Devedor Parcelado, Próximos 7 Dias e Pontualidade), Mês Vigente sem seletores redundantes e alternância de visualização (Diagnóstico vs Curva de Desoneração Preditiva).
+- [x] Tela **Registros (Bills)** com busca inline, chips de períodos rápidos (Este Mês, Próximos 30d, Atrasadas, Todas) e eliminação completa de MonthSelector.
 - [x] Tela **Recorrentes e Parcelados** com cálculo corrigido de progresso para parcelamentos e visão de compromissos mensais.
 - [x] Tela **Estatísticas** com análises comparativas e histórico.
 - [x] Tela **Orçamentos (Budgets)** com tetos por categoria e barra de progresso de consumo.

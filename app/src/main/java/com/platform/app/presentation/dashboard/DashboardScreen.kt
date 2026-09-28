@@ -1,6 +1,7 @@
 package com.platform.app.presentation.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,10 +19,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.ShieldCheck
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
@@ -50,9 +56,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.AccountSpend
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
+import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformStatusChip
@@ -76,7 +84,7 @@ fun DashboardScreen(
         topBar = {
             PlatformAppBar(
                 title = "Início",
-                subtitle = "Visão Financeira & Planejamento Anual",
+                subtitle = "Painel de Inteligência Financeira",
                 onOpenDrawer = onOpenDrawer,
                 actions = {
                     IconButton(onClick = { isBalanceVisible = !isBalanceVisible }) {
@@ -97,21 +105,13 @@ fun DashboardScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Seletor de Mês sem corte de texto
-            MonthSelector(
-                selectedMonthMillis = uiState.selectedMonthMillis,
-                onPreviousMonth = { onAction(DashboardUiAction.PreviousMonth) },
-                onNextMonth = { onAction(DashboardUiAction.NextMonth) },
-                onCurrentMonth = { onAction(DashboardUiAction.CurrentMonth) }
-            )
-
             if (uiState.isLoading && uiState.metrics == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else {
                 val metrics = uiState.metrics
-                if (metrics == null || (metrics.totalDueMonthCents == 0L && metrics.upcomingInstallments.isEmpty() && metrics.futureMonthsProjections.all { it.totalCommittedCents == 0L })) {
+                if (metrics == null || (metrics.totalDueMonthCents == 0L && metrics.upcomingInstallments.isEmpty() && metrics.futureMonthsProjections.all { it.totalCommittedCents == 0L } && metrics.fixedMonthlyTotalCents == 0L)) {
                     EmptyDashboardState()
                 } else {
                     LazyColumn(
@@ -119,18 +119,17 @@ fun DashboardScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        // 1. Resumo do Ano Presente
+                        // 1. Hero Card: Panorama Geral do Mês Vigente
                         item {
-                            CurrentYearOverviewCard(
+                            CurrentMonthHeroCard(
                                 metrics = metrics,
-                                selectedMonthMillis = uiState.selectedMonthMillis,
                                 isBalanceVisible = isBalanceVisible
                             )
                         }
 
-                        // 2. Grid 2x2 de KPIs do Mês
+                        // 2. Grid de KPIs Globais (Estilo Wallet)
                         item {
-                            KpiCardsGrid(
+                            GlobalMacroKpisGrid(
                                 metrics = metrics,
                                 isBalanceVisible = isBalanceVisible
                             )
@@ -153,41 +152,59 @@ fun DashboardScreen(
                             }
                         }
 
-                        // 4. Vencimentos do Mês
-                        if (metrics.upcomingInstallments.isNotEmpty()) {
-                            item {
-                                Text(
-                                    text = "Vencimentos do Mês",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            items(metrics.upcomingInstallments, key = { it.id }) { installment ->
-                                UpcomingInstallmentCard(
-                                    installment = installment,
-                                    isBalanceVisible = isBalanceVisible
-                                )
-                            }
+                        // 4. Alternador de Visão de Inteligência
+                        item {
+                            DashboardViewModeToggle(
+                                currentMode = uiState.viewMode,
+                                onSelectMode = { onAction(DashboardUiAction.ChangeViewMode(it)) }
+                            )
                         }
 
-                        // 5. Distribuição por Categoria
-                        if (metrics.categoryDistribution.isNotEmpty()) {
-                            item {
-                                Text(
-                                    text = "Distribuição por Categorias",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                        // 5. Conteúdo Dinâmico por Aba
+                        if (uiState.viewMode == DashboardViewMode.OVERVIEW) {
+                            if (metrics.categoryDistribution.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Distribuição por Categorias",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                items(metrics.categoryDistribution, key = { it.categoryName }) { catSpend ->
+                                    CategorySpendRow(
+                                        catSpend = catSpend,
+                                        isBalanceVisible = isBalanceVisible
+                                    )
+                                }
                             }
-                            items(metrics.categoryDistribution, key = { it.categoryName }) { catSpend ->
-                                CategorySpendRow(
-                                    catSpend = catSpend,
+
+                            if (metrics.accountsDistribution.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Comprometimento por Conta de Referência",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                items(metrics.accountsDistribution, key = { it.accountName }) { accSpend ->
+                                    AccountSpendRow(
+                                        accSpend = accSpend,
+                                        isBalanceVisible = isBalanceVisible
+                                    )
+                                }
+                            }
+                        } else {
+                            item {
+                                PredictiveReliefCard(
+                                    futureProjections = metrics.futureMonthsProjections,
+                                    totalCommittedFutureCents = metrics.totalCommittedFutureCents,
                                     isBalanceVisible = isBalanceVisible
                                 )
                             }
@@ -204,19 +221,27 @@ fun DashboardScreen(
 }
 
 @Composable
-fun CurrentYearOverviewCard(
+fun CurrentMonthHeroCard(
     metrics: FinancialDashboardMetrics,
-    selectedMonthMillis: Long,
     isBalanceVisible: Boolean
 ) {
-    val currentYear = Calendar.getInstance().apply { timeInMillis = selectedMonthMillis }.get(Calendar.YEAR)
+    val monthTitle = if (metrics.currentMonthLabel.isNotBlank()) {
+        "Mês Vigente • ${metrics.currentMonthLabel}"
+    } else {
+        "Mês Vigente"
+    }
+
+    val paidProgress = if (metrics.totalDueMonthCents > 0L) {
+        (metrics.totalPaidMonthCents.toFloat() / metrics.totalDueMonthCents.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+    val percentPaid = (paidProgress * 100).toInt()
 
     PlatformCard(
         shape = RoundedCornerShape(16.dp),
-        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        containerColor = MaterialTheme.colorScheme.surface,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -225,21 +250,21 @@ fun CurrentYearOverviewCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
+                            .size(34.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Panorama do Ano $currentYear",
+                            text = monthTitle,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -247,62 +272,290 @@ fun CurrentYearOverviewCard(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Comprometimento financeiro acumulado",
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            text = "Contas a pagar do período",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
                 PlatformStatusChip(
-                    text = "Ano $currentYear",
-                    type = StatusChipType.INFO
+                    text = "$percentPaid% Quitado",
+                    type = if (percentPaid == 100) StatusChipType.SUCCESS else StatusChipType.INFO
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Total Previsto no Mês",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = if (isBalanceVisible)
+                    CurrencyUtils.formatCentsToCurrency(metrics.totalDueMonthCents)
+                else
+                    "R$ ••••••",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LinearProgressIndicator(
+                progress = { paidProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = SuccessGreen,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(SuccessGreen, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column {
+                        Text(
+                            text = "Já Pago",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (isBalanceVisible)
+                                CurrencyUtils.formatCentsToCurrency(metrics.totalPaidMonthCents)
+                            else "R$ •••••",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = SuccessGreen
+                        )
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .background(WarningAmber, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Restante Pendente",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (isBalanceVisible)
+                                CurrencyUtils.formatCentsToCurrency(metrics.totalPendingMonthCents)
+                            else "R$ •••••",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = WarningAmber
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun GlobalMacroKpisGrid(
+    metrics: FinancialDashboardMetrics,
+    isBalanceVisible: Boolean
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Card 1: Custo Fixo Recorrente
+            PlatformCard(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Custo Fixo",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Repeat,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Total Futuro Comprometido",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = if (isBalanceVisible)
+                            CurrencyUtils.formatCentsToCurrency(metrics.fixedMonthlyTotalCents)
+                        else
+                            "R$ •••••",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (isBalanceVisible)
-                            CurrencyUtils.formatCentsToCurrency(metrics.totalCommittedFutureCents)
-                        else
-                            "R$ ••••••",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        text = "${metrics.activeRecurringCount} contratos/mês",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+            }
 
-                Column(horizontalAlignment = Alignment.End) {
+            // Card 2: Saldo Devedor Parcelado
+            PlatformCard(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Saldo Parcelado",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = WarningAmber,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Contas a Vencer",
+                        text = if (isBalanceVisible)
+                            CurrencyUtils.formatCentsToCurrency(metrics.totalInstallmentsRemainingCents)
+                        else
+                            "R$ •••••",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = WarningAmber,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${metrics.activeInstallmentsCount} compras ativas",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // Card 3: Urgência Próximos 7 Dias
+            PlatformCard(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Próximos 7 Dias",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = if (metrics.upcomingWeekInstallments.isNotEmpty()) ErrorRed else SuccessGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${metrics.futureInstallmentsCount} parcelas",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "${metrics.upcomingWeekInstallments.size} a vencer",
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = if (metrics.upcomingWeekInstallments.isNotEmpty()) ErrorRed else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val upcomingWeekSum = metrics.upcomingWeekInstallments.sumOf { it.amountCents }
+                    Text(
+                        text = if (isBalanceVisible) CurrencyUtils.formatCentsToCurrency(upcomingWeekSum) else "R$ •••••",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // Card 4: Pontualidade
+            PlatformCard(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Pontualidade",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = SuccessGreen,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${metrics.onTimePaymentRate}%",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = SuccessGreen,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Histórico no prazo",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -313,158 +566,192 @@ fun CurrentYearOverviewCard(
 }
 
 @Composable
-fun KpiCardsGrid(
-    metrics: FinancialDashboardMetrics,
-    isBalanceVisible: Boolean
+fun DashboardViewModeToggle(
+    currentMode: DashboardViewMode,
+    onSelectMode: (DashboardViewMode) -> Unit
 ) {
-    val paidProgress = if (metrics.totalDueMonthCents > 0L) {
-        (metrics.totalPaidMonthCents.toFloat() / metrics.totalDueMonthCents.toFloat()).coerceIn(0f, 1f)
-    } else 0f
-    val percentPaid = (paidProgress * 100).toInt()
-
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Linha 1
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
         ) {
-            // Card 1: Total do Mês
-            PlatformCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Total a Pagar",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isBalanceVisible)
-                            CurrencyUtils.formatCentsToCurrency(metrics.totalDueMonthCents)
-                        else
-                            "R$ •••••",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    PlatformStatusChip(
-                        text = "$percentPaid% Quitado",
-                        type = StatusChipType.SUCCESS
-                    )
-                }
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onSelectMode(DashboardViewMode.OVERVIEW) },
+                shape = RoundedCornerShape(9.dp),
+                color = if (currentMode == DashboardViewMode.OVERVIEW) MaterialTheme.colorScheme.surface else Color.Transparent,
+                shadowElevation = if (currentMode == DashboardViewMode.OVERVIEW) 1.dp else 0.dp
+            ) {
+                Text(
+                    text = "Diagnóstico Geral",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (currentMode == DashboardViewMode.OVERVIEW) FontWeight.Bold else FontWeight.Normal,
+                    color = if (currentMode == DashboardViewMode.OVERVIEW) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
             }
 
-            // Card 2: Já Pago
-            PlatformCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(14.dp)) {
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onSelectMode(DashboardViewMode.PREDICTIONS) },
+                shape = RoundedCornerShape(9.dp),
+                color = if (currentMode == DashboardViewMode.PREDICTIONS) MaterialTheme.colorScheme.surface else Color.Transparent,
+                shadowElevation = if (currentMode == DashboardViewMode.PREDICTIONS) 1.dp else 0.dp
+            ) {
+                Text(
+                    text = "Projeção Futura (12m)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (currentMode == DashboardViewMode.PREDICTIONS) FontWeight.Bold else FontWeight.Normal,
+                    color = if (currentMode == DashboardViewMode.PREDICTIONS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PredictiveReliefCard(
+    futureProjections: List<FutureMonthProjection>,
+    totalCommittedFutureCents: Long,
+    isBalanceVisible: Boolean
+) {
+    PlatformCard(
+        shape = RoundedCornerShape(16.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
                     Text(
-                        text = "Já Pago",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = SuccessGreen,
+                        text = "Curva de Desoneração",
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (isBalanceVisible)
-                            CurrencyUtils.formatCentsToCurrency(metrics.totalPaidMonthCents)
-                        else
-                            "R$ •••••",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = SuccessGreen,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Contas liquidadas",
+                        text = "Projeção de alívio nos gastos mensais",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.TrendingDown,
+                    contentDescription = null,
+                    tint = SuccessGreen
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            val maxAmount = futureProjections.maxOfOrNull { it.totalCommittedCents } ?: 1L
+            val safeMax = if (maxAmount > 0L) maxAmount else 1L
+
+            futureProjections.forEach { proj ->
+                val ratio = (proj.totalCommittedCents.toFloat() / safeMax.toFloat()).coerceIn(0f, 1f)
+                Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = proj.monthLabel,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (isBalanceVisible)
+                                CurrencyUtils.formatCentsToCurrency(proj.totalCommittedCents)
+                            else "R$ •••••",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LinearProgressIndicator(
+                        progress = { ratio },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
         }
+    }
+}
 
-        // Linha 2
+@Composable
+fun AccountSpendRow(
+    accSpend: AccountSpend,
+    isBalanceVisible: Boolean
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Card 3: Pendente
-            PlatformCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Pendente",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = WarningAmber,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isBalanceVisible)
-                            CurrencyUtils.formatCentsToCurrency(metrics.totalPendingMonthCents)
-                        else
-                            "R$ •••••",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = WarningAmber,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "A vencer este mês",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalance,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
-
-            // Card 4: Atrasado
-            PlatformCard(modifier = Modifier.weight(1f)) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Text(
-                        text = "Atrasado",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = ErrorRed,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = if (isBalanceVisible)
-                            CurrencyUtils.formatCentsToCurrency(metrics.totalOverdueMonthCents)
-                        else
-                            "R$ •••••",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (metrics.totalOverdueMonthCents > 0) ErrorRed else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = if (metrics.totalOverdueMonthCents > 0) "Ação necessária!" else "Tudo em dia",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (metrics.totalOverdueMonthCents > 0) ErrorRed else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = accSpend.accountName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${accSpend.bankName} • ${accSpend.pendingBillsCount} contas vinculadas",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
+            Text(
+                text = if (isBalanceVisible)
+                    CurrencyUtils.formatCentsToCurrency(accSpend.totalAmountCents)
+                else "R$ •••••",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -564,59 +851,6 @@ fun UpcomingWeekSection(
     }
 }
 
-@Composable
-fun MonthSelector(
-    selectedMonthMillis: Long,
-    onPreviousMonth: () -> Unit,
-    onNextMonth: () -> Unit,
-    onCurrentMonth: () -> Unit
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onPreviousMonth, modifier = Modifier.size(36.dp)) {
-                Icon(imageVector = Icons.Default.ChevronLeft, contentDescription = "Mês anterior")
-            }
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = DateUtils.formatMonthYear(selectedMonthMillis),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                TextButton(
-                    onClick = onCurrentMonth,
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "Voltar ao Mês Atual",
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            IconButton(onClick = onNextMonth, modifier = Modifier.size(36.dp)) {
-                Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Próximo mês")
-            }
-        }
-    }
-}
 
 @Composable
 fun UpcomingInstallmentCard(

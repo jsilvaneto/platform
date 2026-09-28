@@ -80,10 +80,10 @@ app/src/main/java/com/platform/app/
     ├── navigation/           # Screen.kt, NavGraph.kt, AppDrawer.kt
     ├── theme/                # Color, Type, Theme com suporte a Dark Mode
     ├── components/           # PlatformAppBar, PlatformCard, PlatformStatusChip
-    ├── dashboard/            # DashboardScreen (KPIs do Mês, Próximos 7 dias, Gráficos)
-    ├── bills/                # BillsScreen (Lançamentos com busca inline animada e filtros)
+    ├── dashboard/            # DashboardScreen (KPIs Macro Globais, Mês Vigente, Ação Rápida 7 Dias, Alternância Diagnóstico vs Projeção Preditiva)
+    ├── bills/                # BillsScreen (Lançamentos com busca inline, chips de períodos rápidos e filtros por tipo/status)
     ├── recurring/            # RecurringInstallmentsScreen (Assinaturas e parcelamentos)
-    ├── statistics/           # StatisticsScreen (Análises históricas e projeções)
+    ├── statistics/           # StatisticsScreen (Análises históricas e projeções anuais sem componentes de paginação mensal)
     ├── budgets/              # BudgetsScreen (Tetos de gastos por categoria)
     ├── goals/                # GoalsScreen (Metas financeiras)
     ├── contacts/             # ContactsScreen & ContactDetailScreen

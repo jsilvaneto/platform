@@ -60,6 +60,7 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is BillsUiAction.TypeFilterChanged -> handleTypeFilter(action.type)
             is BillsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
+            is BillsUiAction.PeriodFilterChanged -> handlePeriodFilter(action.period)
             is BillsUiAction.MonthChanged -> handleMonthChanged(action.monthMillis)
             is BillsUiAction.Refresh -> {
                 loadAuxiliaryData()
@@ -90,20 +91,17 @@ class BillsViewModel @Inject constructor(
 
     private fun loadInstallments() {
         installmentsJob?.cancel()
-        val monthMillis = _uiState.value.selectedMonthMillis
-        val start = DateUtils.getStartOfMonth(monthMillis)
-        val end = DateUtils.getEndOfMonth(monthMillis)
-
         _uiState.update { it.copy(isLoading = true) }
 
-        installmentsJob = repository.getInstallmentsForPeriod(start, end)
+        installmentsJob = repository.getAllInstallments()
             .onEach { installments ->
                 _uiState.update { current ->
                     val filtered = applyFilters(
                         installments = installments,
                         query = current.searchQuery,
                         typeFilter = current.typeFilter,
-                        statusFilter = current.statusFilter
+                        statusFilter = current.statusFilter,
+                        periodFilter = current.periodFilter
                     )
                     current.copy(
                         installments = installments,
@@ -171,22 +169,29 @@ class BillsViewModel @Inject constructor(
 
     private fun handleSearchQuery(query: String) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, query, current.typeFilter, current.statusFilter)
+            val filtered = applyFilters(current.installments, query, current.typeFilter, current.statusFilter, current.periodFilter)
             current.copy(searchQuery = query, filteredInstallments = filtered)
         }
     }
 
     private fun handleTypeFilter(type: BillType?) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, current.searchQuery, type, current.statusFilter)
+            val filtered = applyFilters(current.installments, current.searchQuery, type, current.statusFilter, current.periodFilter)
             current.copy(typeFilter = type, filteredInstallments = filtered)
         }
     }
 
     private fun handleStatusFilter(status: BillStatus?) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, current.searchQuery, current.typeFilter, status)
+            val filtered = applyFilters(current.installments, current.searchQuery, current.typeFilter, status, current.periodFilter)
             current.copy(statusFilter = status, filteredInstallments = filtered)
+        }
+    }
+
+    private fun handlePeriodFilter(period: BillPeriodFilter) {
+        _uiState.update { current ->
+            val filtered = applyFilters(current.installments, current.searchQuery, current.typeFilter, current.statusFilter, period)
+            current.copy(periodFilter = period, filteredInstallments = filtered)
         }
     }
 
@@ -199,10 +204,22 @@ class BillsViewModel @Inject constructor(
         installments: List<BillInstallment>,
         query: String,
         typeFilter: BillType?,
-        statusFilter: BillStatus?
+        statusFilter: BillStatus?,
+        periodFilter: BillPeriodFilter
     ): List<BillInstallment> {
         val now = System.currentTimeMillis()
+        val startOfMonth = DateUtils.getStartOfMonth(now)
+        val endOfMonth = DateUtils.getEndOfMonth(now)
+        val thirtyDaysAhead = now + (30L * 24 * 3600 * 1000)
+
         return installments.filter { inst ->
+            val matchesPeriod = when (periodFilter) {
+                BillPeriodFilter.ALL -> true
+                BillPeriodFilter.THIS_MONTH -> inst.dueDate in startOfMonth..endOfMonth
+                BillPeriodFilter.NEXT_30_DAYS -> inst.dueDate in now..thirtyDaysAhead
+                BillPeriodFilter.OVERDUE -> !inst.isPaid && inst.dueDate < now
+            }
+
             val matchesQuery = query.isBlank() ||
                     inst.billTitle.contains(query, ignoreCase = true) ||
                     inst.categoryName.contains(query, ignoreCase = true)
@@ -216,7 +233,7 @@ class BillsViewModel @Inject constructor(
                 BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now
             }
 
-            matchesQuery && matchesType && matchesStatus
+            matchesPeriod && matchesQuery && matchesType && matchesStatus
         }
     }
 }

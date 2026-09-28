@@ -64,7 +64,6 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
-import com.platform.app.presentation.dashboard.MonthSelector
 import kotlinx.coroutines.flow.Flow
 
 import androidx.compose.animation.AnimatedVisibility
@@ -238,26 +237,12 @@ fun BillsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Seletor de Mês
-            MonthSelector(
-                selectedMonthMillis = uiState.selectedMonthMillis,
-                onPreviousMonth = {
-                    val prev = DateUtils.addMonths(uiState.selectedMonthMillis, -1)
-                    onAction(BillsUiAction.MonthChanged(prev))
-                },
-                onNextMonth = {
-                    val next = DateUtils.addMonths(uiState.selectedMonthMillis, 1)
-                    onAction(BillsUiAction.MonthChanged(next))
-                },
-                onCurrentMonth = {
-                    onAction(BillsUiAction.MonthChanged(System.currentTimeMillis()))
-                }
-            )
-
-            // Filtros de Tipo e Status
+            // Filtros de Período, Tipo e Status
             FilterChipsRow(
+                periodFilter = uiState.periodFilter,
                 typeFilter = uiState.typeFilter,
                 statusFilter = uiState.statusFilter,
+                onPeriodFilterChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
                 onTypeFilterChange = { onAction(BillsUiAction.TypeFilterChanged(it)) },
                 onStatusFilterChange = { onAction(BillsUiAction.StatusFilterChanged(it)) }
             )
@@ -332,24 +317,66 @@ fun BillsScreen(
 
 @Composable
 fun FilterChipsRow(
+    periodFilter: BillPeriodFilter,
     typeFilter: BillType?,
     statusFilter: BillStatus?,
+    onPeriodFilterChange: (BillPeriodFilter) -> Unit,
     onTypeFilterChange: (BillType?) -> Unit,
     onStatusFilterChange: (BillStatus?) -> Unit
 ) {
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Período
         item {
             FilterChip(
-                selected = typeFilter == null,
-                onClick = { onTypeFilterChange(null) },
-                label = { Text("Todos Tipos") }
+                selected = periodFilter == BillPeriodFilter.THIS_MONTH,
+                onClick = { onPeriodFilterChange(BillPeriodFilter.THIS_MONTH) },
+                label = { Text("Este Mês") }
             )
         }
+        item {
+            FilterChip(
+                selected = periodFilter == BillPeriodFilter.NEXT_30_DAYS,
+                onClick = { onPeriodFilterChange(BillPeriodFilter.NEXT_30_DAYS) },
+                label = { Text("Próximos 30d") }
+            )
+        }
+        item {
+            FilterChip(
+                selected = periodFilter == BillPeriodFilter.OVERDUE,
+                onClick = { onPeriodFilterChange(BillPeriodFilter.OVERDUE) },
+                label = { Text("Atrasadas") }
+            )
+        }
+        item {
+            FilterChip(
+                selected = periodFilter == BillPeriodFilter.ALL,
+                onClick = { onPeriodFilterChange(BillPeriodFilter.ALL) },
+                label = { Text("Todas as Contas") }
+            )
+        }
+
+        // Status
+        item {
+            FilterChip(
+                selected = statusFilter == BillStatus.PENDING,
+                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PENDING) null else BillStatus.PENDING) },
+                label = { Text("A Pagar") }
+            )
+        }
+        item {
+            FilterChip(
+                selected = statusFilter == BillStatus.PAID,
+                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PAID) null else BillStatus.PAID) },
+                label = { Text("Pagas") }
+            )
+        }
+
+        // Tipo
         item {
             FilterChip(
                 selected = typeFilter == BillType.SINGLE,
@@ -369,20 +396,6 @@ fun FilterChipsRow(
                 selected = typeFilter == BillType.RECURRING,
                 onClick = { onTypeFilterChange(if (typeFilter == BillType.RECURRING) null else BillType.RECURRING) },
                 label = { Text("Recorrentes") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = statusFilter == BillStatus.PENDING,
-                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PENDING) null else BillStatus.PENDING) },
-                label = { Text("A Pagar") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = statusFilter == BillStatus.PAID,
-                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PAID) null else BillStatus.PAID) },
-                label = { Text("Pagas") }
             )
         }
     }

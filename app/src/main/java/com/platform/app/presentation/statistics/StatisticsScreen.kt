@@ -47,7 +47,6 @@ import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.dashboard.DashboardUiAction
 import com.platform.app.presentation.dashboard.DashboardUiState
-import com.platform.app.presentation.dashboard.MonthSelector
 import com.platform.app.presentation.theme.ErrorRed
 import com.platform.app.presentation.theme.SuccessGreen
 
@@ -63,7 +62,7 @@ fun StatisticsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Estatísticas",
-                subtitle = "Análises, histórico e projeções",
+                subtitle = "Análise Histórica e Projeções Financeiras",
                 onOpenDrawer = onOpenDrawer
             )
         },
@@ -75,13 +74,6 @@ fun StatisticsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            MonthSelector(
-                selectedMonthMillis = uiState.selectedMonthMillis,
-                onPreviousMonth = { onAction(DashboardUiAction.PreviousMonth) },
-                onNextMonth = { onAction(DashboardUiAction.NextMonth) },
-                onCurrentMonth = { onAction(DashboardUiAction.CurrentMonth) }
-            )
-
             if (uiState.isLoading && uiState.metrics == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)

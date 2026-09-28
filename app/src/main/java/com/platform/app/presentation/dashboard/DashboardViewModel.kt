@@ -47,6 +47,9 @@ class DashboardViewModel @Inject constructor(
             is DashboardUiAction.CurrentMonth -> {
                 loadMetricsForMonth(System.currentTimeMillis())
             }
+            is DashboardUiAction.ChangeViewMode -> {
+                _uiState.update { it.copy(viewMode = action.mode) }
+            }
             is DashboardUiAction.TogglePayment -> {
                 viewModelScope.launch {
                     togglePaymentUseCase(action.installmentId, action.currentPaid)

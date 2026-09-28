@@ -10,8 +10,16 @@ import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.model.Subcategory
 
+enum class BillPeriodFilter {
+    THIS_MONTH,
+    NEXT_30_DAYS,
+    OVERDUE,
+    ALL
+}
+
 data class BillsUiState(
     val selectedMonthMillis: Long = System.currentTimeMillis(),
+    val periodFilter: BillPeriodFilter = BillPeriodFilter.THIS_MONTH,
     val installments: List<BillInstallment> = emptyList(),
     val filteredInstallments: List<BillInstallment> = emptyList(),
     val categories: List<Category> = emptyList(),

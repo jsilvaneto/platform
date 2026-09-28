@@ -97,7 +97,6 @@ fun BudgetsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Orçamentos",
-                subtitle = "Tetos de gastos mensais por categoria",
                 onOpenDrawer = onOpenDrawer
             )
         },

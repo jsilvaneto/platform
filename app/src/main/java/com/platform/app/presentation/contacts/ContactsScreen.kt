@@ -126,18 +126,11 @@ fun ContactsScreen(
             TopAppBar(
                 title = {
                     if (!isSearchExpanded) {
-                        Column {
-                            Text(
-                                text = "Contatos",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "${uiState.contacts.size} favorecidos cadastrados",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                        }
+                        Text(
+                            text = "Contatos",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 navigationIcon = {

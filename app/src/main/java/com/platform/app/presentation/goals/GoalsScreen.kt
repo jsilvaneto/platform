@@ -96,8 +96,7 @@ fun GoalsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             PlatformAppBar(
-                title = "Metas Financeiras",
-                subtitle = "${uiState.goals.size} objetivos cadastrados",
+                title = "Metas",
                 onOpenDrawer = onOpenDrawer
             )
         },

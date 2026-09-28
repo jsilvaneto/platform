@@ -83,7 +83,6 @@ fun DashboardScreen(
         topBar = {
             PlatformAppBar(
                 title = "Início",
-                subtitle = "Painel de Inteligência Financeira",
                 onOpenDrawer = onOpenDrawer,
                 actions = {
                     IconButton(onClick = { isBalanceVisible = !isBalanceVisible }) {

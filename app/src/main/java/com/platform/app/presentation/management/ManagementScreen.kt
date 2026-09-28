@@ -174,14 +174,14 @@ fun ManagementScreen(
         }
     }
 
-    val (screenTitle, screenSubtitle) = when (activeSection) {
-        ManagementSection.ACCOUNTS -> "Contas Financeiras" to "Bancos, saldos iniciais e carteiras"
-        ManagementSection.PAYMENT_METHODS -> "Formas de Pagamento" to "Cartões de crédito, débito, Pix e boletos"
-        ManagementSection.CATEGORIES -> "Categorias & Subcategorias" to "Classificação de receitas e despesas"
+    val screenTitle = when (activeSection) {
+        ManagementSection.ACCOUNTS -> "Contas"
+        ManagementSection.PAYMENT_METHODS -> "Formas de Pagamento"
+        ManagementSection.CATEGORIES -> "Categorias"
     }
 
     val fabDescription = when (activeSection) {
-        ManagementSection.ACCOUNTS -> "Nova Conta Financeira"
+        ManagementSection.ACCOUNTS -> "Nova Conta"
         ManagementSection.PAYMENT_METHODS -> "Nova Forma de Pagamento"
         ManagementSection.CATEGORIES -> "Nova Categoria"
     }
@@ -190,18 +190,11 @@ fun ManagementScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = screenTitle,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = screenSubtitle,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
+                    Text(
+                        text = screenTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
                 navigationIcon = {
                     if (onNavigateBack != null) {
@@ -402,11 +395,13 @@ fun AccountsTab(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Text(
-                                text = "${account.accountType} • Toque para editar",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
+                            if (account.accountType.isNotBlank()) {
+                                Text(
+                                    text = account.accountType,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
                         }
 
                         IconButton(onClick = { onEdit(account) }) {
@@ -448,7 +443,7 @@ fun PaymentMethodsTab(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val icon = when {
@@ -460,12 +455,12 @@ fun PaymentMethodsTab(
                         }
 
                         Surface(
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(38.dp),
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                                Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
                             }
                         }
 
@@ -477,11 +472,6 @@ fun PaymentMethodsTab(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Toque para editar",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                             )
                         }
 

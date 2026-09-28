@@ -123,7 +123,6 @@ fun SettingsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Configurações",
-                subtitle = "Estrutura financeira, segurança e tema",
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -134,61 +133,28 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Seção de Estrutura Financeira (Contas, Formas de Pagamento e Categorias)
-            SectionCard(
-                title = "Estrutura Financeira",
-                icon = Icons.Default.AccountBalance
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    val accountsBadge = if (uiState.accountsCount > 0) {
-                        "${uiState.accountsCount} ${if (uiState.accountsCount == 1) "conta" else "contas"}"
-                    } else null
+            // Menu individual: Contas
+            SettingActionCard(
+                title = "Contas",
+                icon = Icons.Default.AccountBalance,
+                onClick = onNavigateToAccounts
+            )
 
-                    SettingsNavigationTile(
-                        title = "Contas Bancárias & Carteiras",
-                        subtitle = "Bancos, saldos iniciais e carteiras de dinheiro",
-                        icon = Icons.Default.AccountBalance,
-                        badgeText = accountsBadge,
-                        onClick = onNavigateToAccounts
-                    )
+            // Menu individual: Formas de Pagamento
+            SettingActionCard(
+                title = "Formas de Pagamento",
+                icon = Icons.Default.CreditCard,
+                onClick = onNavigateToPaymentMethods
+            )
 
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-
-                    val methodsBadge = if (uiState.paymentMethodsCount > 0) {
-                        "${uiState.paymentMethodsCount} ${if (uiState.paymentMethodsCount == 1) "forma" else "formas"}"
-                    } else null
-
-                    SettingsNavigationTile(
-                        title = "Formas de Pagamento",
-                        subtitle = "Cartões de crédito, débito, Pix e boletos",
-                        icon = Icons.Default.CreditCard,
-                        badgeText = methodsBadge,
-                        onClick = onNavigateToPaymentMethods
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
-
-                    val categoriesBadge = if (uiState.categoriesCount > 0) {
-                        "${uiState.categoriesCount} ${if (uiState.categoriesCount == 1) "categoria" else "categorias"}"
-                    } else null
-
-                    SettingsNavigationTile(
-                        title = "Categorias & Subcategorias",
-                        subtitle = "Classificação de receitas, despesas e tags",
-                        icon = Icons.Default.Category,
-                        badgeText = categoriesBadge,
-                        onClick = onNavigateToCategories
-                    )
-                }
-            }
+            // Menu individual: Categorias
+            SettingActionCard(
+                title = "Categorias",
+                icon = Icons.Default.Category,
+                onClick = onNavigateToCategories
+            )
 
             // Seção de Segurança
             SectionCard(
@@ -547,24 +513,25 @@ fun SectionCard(
 }
 
 @Composable
-private fun SettingsNavigationTile(
+private fun SettingActionCard(
     title: String,
-    subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    badgeText: String? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
 ) {
-    Surface(
+    Card(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = Color.Transparent,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 4.dp),
+                .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -584,40 +551,26 @@ private fun SettingsNavigationTile(
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (badgeText != null) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                        ) {
-                            Text(
-                                text = badgeText,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(2.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                if (!subtitle.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -625,9 +578,10 @@ private fun SettingsNavigationTile(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
                 modifier = Modifier.size(16.dp)
             )
         }
     }
 }
+

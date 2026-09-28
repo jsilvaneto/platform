@@ -62,7 +62,6 @@ fun StatisticsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Estatísticas",
-                subtitle = "Análise Histórica e Projeções Financeiras",
                 onOpenDrawer = onOpenDrawer
             )
         },

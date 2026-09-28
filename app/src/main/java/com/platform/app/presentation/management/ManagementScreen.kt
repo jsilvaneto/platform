@@ -1113,8 +1113,17 @@ fun AddEditAccountDialog(
     onConfirm: (FinancialAccount) -> Unit
 ) {
     var name by remember { mutableStateOf(account?.name ?: "") }
-    val types = listOf("Conta Corrente", "Cartão de Crédito", "Dinheiro / Carteira", "Investimento / Reserva", "Outro")
+    val types = listOf(
+        "Conta Corrente",
+        "Cartão de Crédito",
+        "Dinheiro / Carteira",
+        "Poupança",
+        "Investimento / Reserva",
+        "Outro"
+    )
     var selectedType by remember { mutableStateOf(account?.accountType ?: types[0]) }
+    var typeDropdownExpanded by remember { mutableStateOf(false) }
+
     val colors = listOf("#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#64748B")
     var selectedColor by remember { mutableStateOf(account?.colorHex ?: colors[0]) }
 
@@ -1128,7 +1137,7 @@ fun AddEditAccountDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -1138,14 +1147,66 @@ fun AddEditAccountDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Tipo de Conta:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(types) { type ->
-                        FilterChip(
-                            selected = selectedType == type,
-                            onClick = { selectedType = type },
-                            label = { Text(type, style = MaterialTheme.typography.bodySmall) }
-                        )
+                // Campo do Tipo Lista (Dropdown)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedType,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de Conta", style = MaterialTheme.typography.bodySmall) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = if (typeDropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = "Selecionar tipo de conta",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Overlay invisível para capturar o toque em qualquer ponto do campo
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { typeDropdownExpanded = true }
+                    )
+
+                    DropdownMenu(
+                        expanded = typeDropdownExpanded,
+                        onDismissRequest = { typeDropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.72f)
+                    ) {
+                        types.forEach { type ->
+                            val isSelected = type == selectedType
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = type,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    val icon = when {
+                                        type.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
+                                        type.contains("Dinheiro", ignoreCase = true) || type.contains("Carteira", ignoreCase = true) -> Icons.Default.Payments
+                                        else -> Icons.Default.AccountBalance
+                                    }
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    selectedType = type
+                                    typeDropdownExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -1153,12 +1214,22 @@ fun AddEditAccountDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colors.forEach { hex ->
                         val c = Color(android.graphics.Color.parseColor(hex))
+                        val isSelected = selectedColor.equals(hex, ignoreCase = true)
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(26.dp)
                                 .background(c, CircleShape)
-                                .clickable { selectedColor = hex }
-                        )
+                                .clickable { selectedColor = hex },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(Color.White, CircleShape)
+                                )
+                            }
+                        }
                     }
                 }
             }

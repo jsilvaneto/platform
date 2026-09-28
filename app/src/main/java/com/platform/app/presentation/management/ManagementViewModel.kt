@@ -64,14 +64,16 @@ class ManagementViewModel @Inject constructor(
             repository.getFinancialAccounts(),
             repository.getPaymentMethods(),
             repository.getCategories(),
-            repository.getAllSubcategories()
-        ) { accounts, methods, categories, subcategories ->
+            repository.getAllSubcategories(),
+            repository.getAllInstallments()
+        ) { accounts, methods, categories, subcategories, installments ->
             _uiState.update {
                 it.copy(
                     accounts = accounts,
                     paymentMethods = methods,
                     categories = categories,
                     subcategories = subcategories,
+                    installments = installments,
                     isLoading = false,
                     errorMessage = null
                 )

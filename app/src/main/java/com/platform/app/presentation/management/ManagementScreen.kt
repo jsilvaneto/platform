@@ -192,8 +192,8 @@ fun ManagementScreen(
                 title = {
                     Text(
                         text = screenTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
                 },
                 navigationIcon = {
@@ -222,10 +222,12 @@ fun ManagementScreen(
                         ManagementSection.CATEGORIES -> isNewCategoryDialog = true
                     }
                 },
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(14.dp),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription)
+                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription, modifier = Modifier.size(22.dp))
             }
         }
     ) { padding ->
@@ -353,13 +355,17 @@ fun AccountsTab(
 ) {
     if (accounts.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-            Text("Nenhuma conta financeira cadastrada. Toque no '+' para adicionar.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(
+                text = "Nenhuma conta financeira cadastrada. Toque no '+' para adicionar.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(accounts, key = { it.id }) { account ->
                 val color = remember(account.colorHex) {
@@ -374,42 +380,67 @@ fun AccountsTab(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(34.dp)
                                 .background(color.copy(alpha = 0.15f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(imageVector = Icons.Default.AccountBalance, contentDescription = null, tint = color)
+                            Icon(
+                                imageVector = Icons.Default.AccountBalance,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = account.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             if (account.accountType.isNotBlank()) {
                                 Text(
                                     text = account.accountType,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
                                 )
                             }
                         }
 
-                        IconButton(onClick = { onEdit(account) }) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar Conta", tint = MaterialTheme.colorScheme.primary)
+                        IconButton(
+                            onClick = { onEdit(account) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar Conta",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
 
-                        IconButton(onClick = { onDelete(account.id) }) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = "Excluir Conta", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        IconButton(
+                            onClick = { onDelete(account.id) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Excluir Conta",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
@@ -426,13 +457,17 @@ fun PaymentMethodsTab(
 ) {
     if (methods.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-            Text("Nenhuma forma de pagamento cadastrada. Toque no '+' para adicionar.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(
+                text = "Nenhuma forma de pagamento cadastrada. Toque no '+' para adicionar.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(methods, key = { it.id }) { method ->
                 Card(
@@ -443,7 +478,9 @@ fun PaymentMethodsTab(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         val icon = when {
@@ -455,32 +492,55 @@ fun PaymentMethodsTab(
                         }
 
                         Surface(
-                            modifier = Modifier.size(38.dp),
+                            modifier = Modifier.size(34.dp),
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.secondaryContainer
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = method.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        IconButton(onClick = { onEdit(method) }) {
-                            Icon(imageVector = Icons.Default.Edit, contentDescription = "Editar Forma de Pagamento", tint = MaterialTheme.colorScheme.primary)
+                        IconButton(
+                            onClick = { onEdit(method) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar Forma de Pagamento",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
 
-                        IconButton(onClick = { onDelete(method.id) }) {
-                            Icon(imageVector = Icons.Default.Delete, contentDescription = "Excluir Forma de Pagamento", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                        Spacer(modifier = Modifier.width(4.dp))
+
+                        IconButton(
+                            onClick = { onDelete(method.id) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Excluir Forma de Pagamento",
+                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
                 }
@@ -501,13 +561,17 @@ fun CategoriesTab(
 ) {
     if (categories.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-            Text("Nenhuma categoria cadastrada. Toque no '+' para adicionar.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+            Text(
+                text = "Nenhuma categoria cadastrada. Toque no '+' para adicionar.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
         }
     } else {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(categories, key = { it.id }) { cat ->
                 val subs = remember(subcategories, cat.id) {
@@ -524,110 +588,131 @@ fun CategoriesTab(
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Box(modifier = Modifier.size(14.dp).background(color, CircleShape))
+                            Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = cat.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f)
                             )
 
-                            Text(
-                                text = "${subs.size} subs",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                            ) {
+                                Text(
+                                    text = "${subs.size} subs",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
 
-                            IconButton(onClick = { onEditCategory(cat) }) {
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            IconButton(
+                                onClick = { onEditCategory(cat) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Editar Categoria",
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
 
-                            IconButton(onClick = { expanded = !expanded }) {
+                            IconButton(
+                                onClick = { expanded = !expanded },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = "Expandir"
+                                    contentDescription = "Expandir",
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
 
-                            IconButton(onClick = { onDeleteCategory(cat.id) }) {
+                            IconButton(
+                                onClick = { onDeleteCategory(cat.id) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = "Excluir Categoria",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
 
                         if (expanded) {
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             if (subs.isEmpty()) {
                                 Text(
                                     text = "Nenhuma subcategoria ainda.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(start = 24.dp)
+                                    modifier = Modifier.padding(start = 20.dp, top = 2.dp, bottom = 4.dp)
                                 )
                             } else {
                                 subs.forEach { sub ->
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(start = 24.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                                            .padding(start = 20.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
                                             text = "• ${sub.name}",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
                                             modifier = Modifier.weight(1f)
                                         )
 
                                         IconButton(
                                             onClick = { onEditSubcategory(sub, cat) },
-                                            modifier = Modifier.size(28.dp)
+                                            modifier = Modifier.size(26.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Edit,
                                                 contentDescription = "Editar Subcategoria",
                                                 tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(15.dp)
                                             )
                                         }
 
                                         IconButton(
                                             onClick = { onDeleteSubcategory(sub.id) },
-                                            modifier = Modifier.size(28.dp)
+                                            modifier = Modifier.size(26.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Excluir Subcategoria",
                                                 tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(15.dp)
                                             )
                                         }
                                     }
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             TextButton(
                                 onClick = { onAddSubcategory(cat) },
-                                modifier = Modifier.padding(start = 16.dp)
+                                modifier = Modifier.padding(start = 12.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                             ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Adicionar Subcategoria", style = MaterialTheme.typography.labelMedium)
+                                Text("Adicionar Subcategoria", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -651,36 +736,42 @@ fun AddEditAccountDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (account == null) "Nova Conta Financeira" else "Editar Conta Financeira") },
+        title = {
+            Text(
+                text = if (account == null) "Nova Conta" else "Editar Conta",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Conta (ex: Nubank, Itaú, Carteira)") },
+                    label = { Text("Nome da Conta (ex: Nubank, Itaú)", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Tipo de Conta:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Tipo de Conta:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(types) { type ->
                         FilterChip(
                             selected = selectedType == type,
                             onClick = { selectedType = type },
-                            label = { Text(type) }
+                            label = { Text(type, style = MaterialTheme.typography.bodySmall) }
                         )
                     }
                 }
 
-                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colors.forEach { hex ->
                         val c = Color(android.graphics.Color.parseColor(hex))
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(24.dp)
                                 .background(c, CircleShape)
                                 .clickable { selectedColor = hex }
                         )
@@ -702,6 +793,7 @@ fun AddEditAccountDialog(
                         )
                     }
                 },
+                shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
                 Text(if (account == null) "Salvar" else "Atualizar")
@@ -723,13 +815,19 @@ fun AddEditPaymentMethodDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (method == null) "Nova Forma de Pagamento" else "Editar Forma de Pagamento") },
+        title = {
+            Text(
+                text = if (method == null) "Nova Forma de Pagamento" else "Editar Forma de Pagamento",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome (ex: Pix, Boleto, Vale Refeição)") },
+                    label = { Text("Nome (ex: Pix, Boleto, Cartão)", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -749,6 +847,7 @@ fun AddEditPaymentMethodDialog(
                         )
                     }
                 },
+                shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
                 Text(if (method == null) "Salvar" else "Atualizar")
@@ -772,25 +871,31 @@ fun AddEditCategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (category == null) "Nova Categoria" else "Editar Categoria") },
+        title = {
+            Text(
+                text = if (category == null) "Nova Categoria" else "Editar Categoria",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Categoria (ex: Vestuário, Viagens)") },
+                    label = { Text("Nome da Categoria (ex: Mercado, Moradia)", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colors.forEach { hex ->
                         val c = Color(android.graphics.Color.parseColor(hex))
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(24.dp)
                                 .background(c, CircleShape)
                                 .clickable { selectedColor = hex }
                         )
@@ -812,6 +917,7 @@ fun AddEditCategoryDialog(
                         )
                     }
                 },
+                shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
                 Text(if (category == null) "Salvar" else "Atualizar")
@@ -836,18 +942,20 @@ fun AddEditSubcategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                if (subcategory == null)
+                text = if (subcategory == null)
                     "Nova Subcategoria em '${category.name}'"
                 else
-                    "Editar Subcategoria em '${category.name}'"
+                    "Editar Subcategoria em '${category.name}'",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Subcategoria (ex: Farmácia, Mercado)") },
+                    label = { Text("Nome da Subcategoria (ex: Farmácia)", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -867,6 +975,7 @@ fun AddEditSubcategoryDialog(
                         )
                     }
                 },
+                shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
                 Text(if (subcategory == null) "Adicionar" else "Atualizar")

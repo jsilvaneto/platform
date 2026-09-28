@@ -60,10 +60,15 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.usecase.ContactDetails
 import kotlinx.coroutines.flow.collectLatest
 
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.mutableStateOf
 
@@ -79,6 +84,7 @@ fun ContactDetailScreen(
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var isEditDialogOpen by remember { mutableStateOf(false) }
     var showOptionsMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(contactId) {
@@ -137,6 +143,21 @@ fun ContactDetailScreen(
                                     onClick = {
                                         showOptionsMenu = false
                                         isEditDialogOpen = true
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Excluir Contato", color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    onClick = {
+                                        showOptionsMenu = false
+                                        showDeleteConfirmDialog = true
                                     }
                                 )
                             }
@@ -217,6 +238,48 @@ fun ContactDetailScreen(
                 onDismiss = { isEditDialogOpen = false },
                 onSave = { updatedContact ->
                     viewModel.onAction(ContactsUiAction.SaveContact(updatedContact))
+                }
+            )
+        }
+
+        if (showDeleteConfirmDialog && details != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog = false },
+                title = {
+                    Text(
+                        text = "Excluir Contato",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Deseja realmente excluir o contato '${details.contact.name}'? Registros financeiros anteriores manterão o histórico, mas a associação será removida.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showDeleteConfirmDialog = false
+                            viewModel.onAction(ContactsUiAction.DeleteContact(details.contact.id))
+                            onNavigateBack()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirmDialog = false },
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Cancelar")
+                    }
                 }
             )
         }

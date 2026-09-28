@@ -23,4 +23,10 @@ interface PaymentMethodDao {
 
     @Query("DELETE FROM payment_methods WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT * FROM payment_methods")
+    suspend fun getAllList(): List<PaymentMethodEntity>
+
+    @Query("DELETE FROM payment_methods")
+    suspend fun deleteAll()
 }

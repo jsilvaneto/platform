@@ -18,26 +18,35 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -48,6 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,10 +70,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
+import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.Goal
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
@@ -79,6 +92,7 @@ fun GoalsScreen(
     var goalToEdit by remember { mutableStateOf<Goal?>(null) }
     var isNewGoalOpen by remember { mutableStateOf(false) }
     var goalForContribution by remember { mutableStateOf<Goal?>(null) }
+    var goalToViewDetails by remember { mutableStateOf<Goal?>(null) }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -142,9 +156,7 @@ fun GoalsScreen(
                     items(uiState.goals, key = { it.id }) { goal ->
                         GoalCard(
                             goal = goal,
-                            onEdit = { goalToEdit = goal },
-                            onDelete = { viewModel.onAction(GoalsUiAction.DeleteGoal(goal.id)) },
-                            onAddContribution = { goalForContribution = goal }
+                            onClick = { goalToViewDetails = goal }
                         )
                     }
                 }
@@ -171,6 +183,26 @@ fun GoalsScreen(
                 onConfirm = { amountCents ->
                     viewModel.onAction(GoalsUiAction.AddContribution(goal.id, amountCents))
                     goalForContribution = null
+                }
+            )
+        }
+
+        goalToViewDetails?.let { goal ->
+            val currentGoal = uiState.goals.find { it.id == goal.id } ?: goal
+            GoalDetailBottomSheet(
+                goal = currentGoal,
+                onDismiss = { goalToViewDetails = null },
+                onEdit = {
+                    goalToViewDetails = null
+                    goalToEdit = currentGoal
+                },
+                onAddContribution = {
+                    goalToViewDetails = null
+                    goalForContribution = currentGoal
+                },
+                onDelete = { goalId ->
+                    goalToViewDetails = null
+                    viewModel.onAction(GoalsUiAction.DeleteGoal(goalId))
                 }
             )
         }
@@ -280,108 +312,474 @@ fun GoalsSummaryCard(
 @Composable
 fun GoalCard(
     goal: Goal,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onAddContribution: () -> Unit
+    onClick: () -> Unit
 ) {
     val color = remember(goal.colorHex) {
         try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(14.dp)
-                        .background(color, CircleShape)
-                )
+                        .size(40.dp)
+                        .background(color.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = goal.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (goal.isCompleted) "Meta Concluída! 🎉" else "Faltam ${CurrencyUtils.formatCentsToCurrency(goal.remainingAmountCents)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (goal.isCompleted) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (goal.isCompleted) SuccessGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         fontWeight = if (goal.isCompleted) FontWeight.Bold else FontWeight.Normal
                     )
                 }
 
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Editar Meta",
-                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = CurrencyUtils.formatCentsToCurrency(goal.currentAmountCents),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (goal.isCompleted) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${(goal.progressPercentage * 100).toInt()}% da meta",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
 
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Excluir Meta",
-                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
-                    )
-                }
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Ver detalhes",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(16.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             LinearProgressIndicator(
                 progress = { goal.progressPercentage },
-                color = color,
+                color = if (goal.isCompleted) SuccessGreen else color,
                 trackColor = color.copy(alpha = 0.15f),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp)
             )
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(10.dp))
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GoalDetailBottomSheet(
+    goal: Goal,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onAddContribution: () -> Unit,
+    onDelete: (String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
+    val color = remember(goal.colorHex) {
+        try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header: Avatar, Nome, Status Badge e 3 Pontos no Canto Superior Direito
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(color.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${CurrencyUtils.formatCentsToCurrency(goal.currentAmountCents)} de ${CurrencyUtils.formatCentsToCurrency(goal.targetAmountCents)}",
+                        text = goal.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (goal.isCompleted) SuccessGreen.copy(alpha = 0.12f) else color.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = if (goal.isCompleted) "Meta Concluída! 🎉" else "${(goal.progressPercentage * 100).toInt()}% atingido",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (goal.isCompleted) SuccessGreen else color,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Canto Superior Direito: 3 Pontos com Opção de Editar, Aportar e Excluir
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Adicionar Aporte") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.TrendingUp,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onAddContribution()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Editar Meta") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Excluir Meta", color = MaterialTheme.colorScheme.error)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                showDeleteConfirmDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Hero Card: Resumo Financeiro da Meta
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Valor Guardado / Atual",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+
+                    Text(
+                        text = CurrencyUtils.formatCentsToCurrency(goal.currentAmountCents),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (goal.isCompleted) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                    )
+
+                    LinearProgressIndicator(
+                        progress = { goal.progressPercentage },
+                        color = if (goal.isCompleted) SuccessGreen else color,
+                        trackColor = color.copy(alpha = 0.15f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Alvo / Meta",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(goal.targetAmountCents),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = if (goal.isCompleted) "Status" else "Restante",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = if (goal.isCompleted)
+                                    "Atingida!"
+                                else
+                                    CurrencyUtils.formatCentsToCurrency(goal.remainingAmountCents),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (goal.isCompleted) SuccessGreen else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Card de Detalhes da Meta
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Configurações da Meta",
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Text(
-                        text = "${(goal.progressPercentage * 100).toInt()}% concluído",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
 
-                OutlinedButton(
-                    onClick = onAddContribution,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.TrendingUp, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("+ Aporte", style = MaterialTheme.typography.labelMedium)
+                    // Prazo Limite
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Prazo Estimado",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (goal.deadlineDate != null)
+                                    DateUtils.formatDate(goal.deadlineDate)
+                                else
+                                    "Sem prazo definido",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    // Data de Criação
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Criada em",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = DateUtils.formatDate(goal.createdAt),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Cor de Identificação
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Cor Visual",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(color, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = goal.colorHex.uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
                 }
             }
+
+            // Ação Rápida no Rodapé: Adicionar Aporte
+            Button(
+                onClick = {
+                    onAddContribution()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.TrendingUp,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Registrar Aporte",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Excluir Meta",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Deseja realmente excluir a meta '${goal.name}'? O progresso registrado será apagado.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDismiss()
+                        onDelete(goal.id)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteConfirmDialog = false },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -436,12 +834,22 @@ fun AddEditGoalDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colors.forEach { hex ->
                         val c = Color(android.graphics.Color.parseColor(hex))
+                        val isSelected = selectedColor == hex
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(30.dp)
                                 .background(c, CircleShape)
-                                .clickable { selectedColor = hex }
-                        )
+                                .clickable { selectedColor = hex },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(MaterialTheme.colorScheme.surface, CircleShape)
+                                )
+                            }
+                        }
                     }
                 }
             }

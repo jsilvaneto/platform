@@ -1,5 +1,11 @@
 package com.platform.app.presentation.settings
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,18 +27,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -87,11 +101,41 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     var showReleaseNotesDialog by remember { mutableStateOf(false) }
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.onAction(SettingsUiAction.ExportBackupToUri(it)) }
+    }
+
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.onAction(SettingsUiAction.RestoreBackupFromUri(it)) }
+    }
+
+    val lastBackupFormatted = remember(uiState.lastBackupTimestamp) {
+        if (uiState.lastBackupTimestamp > 0L) {
+            val sdf = SimpleDateFormat("dd/MM/yyyy 'às' HH:mm", Locale("pt", "BR"))
+            sdf.format(Date(uiState.lastBackupTimestamp))
+        } else {
+            null
+        }
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
             when (effect) {
                 is SettingsUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is SettingsUiEffect.ShareBackupFile -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/json"
+                        putExtra(Intent.EXTRA_STREAM, effect.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Compartilhar Backup"))
+                }
                 is SettingsUiEffect.RequestBiometricAuthForToggle -> {
                     val activity = context as? FragmentActivity
                     if (activity != null) {
@@ -251,23 +295,150 @@ fun SettingsScreen(
                 }
             }
 
-            // Seção de Armazenamento Local
+            // Seção de Armazenamento & Backup
             SectionCard(
-                title = "Armazenamento",
+                title = "Armazenamento & Backup",
                 icon = Icons.Default.Storage
             ) {
                 Text(
-                    text = "Banco de Dados Local Room SQLite",
+                    text = "Banco de Dados Local (100% Offline)",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Todos os dados financeiros, parcelas e contatos são processados e armazenados com privacidade em seu dispositivo.",
+                    text = "Seus lançamentos, contas e parcelas são gravados com total privacidade no dispositivo. Mantenha backups regulares para garantir a segurança dos seus dados.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Card de Status do Último Backup
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (lastBackupFormatted != null)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (lastBackupFormatted != null)
+                                Icons.Default.CloudDone
+                            else
+                                Icons.Default.Info,
+                            contentDescription = null,
+                            tint = if (lastBackupFormatted != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (lastBackupFormatted != null)
+                                    "Último backup realizado"
+                                else
+                                    "Nenhum backup realizado",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = lastBackupFormatted ?: "Recomendamos exportar seus dados com frequência",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Botões de Ação: Fazer Backup e Restaurar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val timeStampStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                            createDocumentLauncher.launch("platform_backup_$timeStampStr.json")
+                        },
+                        enabled = !uiState.isLoading,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Backup,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Fazer Backup",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { showRestoreConfirmDialog = true },
+                        enabled = !uiState.isLoading,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Restore,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Restaurar",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Compartilhar arquivo direto (WhatsApp / E-mail)
+                TextButton(
+                    onClick = { viewModel.onAction(SettingsUiAction.ShareBackup) },
+                    enabled = !uiState.isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Compartilhar arquivo (WhatsApp / E-mail)",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
             // Seção "Sobre o Aplicativo"
@@ -354,6 +525,56 @@ fun SettingsScreen(
             ReleaseNotesDialog(
                 versionName = uiState.appVersionName,
                 onDismiss = { showReleaseNotesDialog = false }
+            )
+        }
+
+        if (showRestoreConfirmDialog) {
+            AlertDialog(
+                onDismissRequest = { showRestoreConfirmDialog = false },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "Restaurar Backup?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Atenção: A restauração irá substituir completamente os dados atuais do aplicativo pelos dados contidos no arquivo de backup selecionado.\n\nEsta operação é irreversível. Deseja continuar e escolher o arquivo?",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showRestoreConfirmDialog = false
+                            openDocumentLauncher.launch(arrayOf("application/json", "*/*"))
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Selecionar Arquivo")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showRestoreConfirmDialog = false },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
             )
         }
     }

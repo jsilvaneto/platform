@@ -26,4 +26,10 @@ interface SubcategoryDao {
 
     @Query("DELETE FROM subcategories WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT * FROM subcategories")
+    suspend fun getAllList(): List<SubcategoryEntity>
+
+    @Query("DELETE FROM subcategories")
+    suspend fun deleteAll()
 }

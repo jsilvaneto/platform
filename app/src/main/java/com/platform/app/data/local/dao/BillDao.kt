@@ -23,4 +23,13 @@ interface BillDao {
 
     @Query("DELETE FROM bills WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(bills: List<BillEntity>)
+
+    @Query("SELECT * FROM bills")
+    suspend fun getAllList(): List<BillEntity>
+
+    @Query("DELETE FROM bills")
+    suspend fun deleteAll()
 }

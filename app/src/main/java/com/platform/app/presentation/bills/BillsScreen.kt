@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -81,8 +82,19 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -90,6 +102,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextOverflow
 import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.WarningAmber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +118,7 @@ fun BillsScreen(
     var isSearchExpanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var installmentToViewDetails by remember { mutableStateOf<BillInstallment?>(null) }
 
     LaunchedEffect(isSearchExpanded) {
         if (isSearchExpanded) {
@@ -264,7 +278,7 @@ fun BillsScreen(
                                 BillInstallmentItemCard(
                                     installment = installment,
                                     onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
-                                    onDelete = { onAction(BillsUiAction.DeleteBill(installment.billId)) }
+                                    onSelectInstallment = { installmentToViewDetails = installment }
                                 )
                             }
                             item {
@@ -300,6 +314,21 @@ fun BillsScreen(
                                 )
                             )
                             showAddSheet = false
+                        }
+                    )
+                }
+
+                installmentToViewDetails?.let { inst ->
+                    val currentInstallment = uiState.installments.find { it.id == inst.id } ?: inst
+                    BillInstallmentDetailBottomSheet(
+                        installment = currentInstallment,
+                        onDismiss = { installmentToViewDetails = null },
+                        onTogglePayment = {
+                            onAction(BillsUiAction.TogglePayment(currentInstallment))
+                        },
+                        onDelete = { billId ->
+                            installmentToViewDetails = null
+                            onAction(BillsUiAction.DeleteBill(billId))
                         }
                     )
                 }
@@ -398,39 +427,44 @@ fun FilterChipsRow(
 fun BillInstallmentItemCard(
     installment: BillInstallment,
     onTogglePayment: () -> Unit,
-    onDelete: () -> Unit
+    onSelectInstallment: () -> Unit
 ) {
     val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
 
-    val catColor = try {
-        Color(android.graphics.Color.parseColor(installment.categoryColorHex))
-    } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary
+    val catColor = remember(installment.categoryColorHex) {
+        try {
+            Color(android.graphics.Color.parseColor(installment.categoryColorHex))
+        } catch (e: Exception) {
+            Color(0xFF64748B)
+        }
     }
 
     Card(
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (installment.isPaid)
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
             else
                 MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (installment.isPaid) 0.dp else 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (installment.isPaid) 0.dp else 1.5.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onTogglePayment() }
+            .clickable { onSelectInstallment() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = installment.isPaid,
                 onCheckedChange = { onTogglePayment() },
-                colors = CheckboxDefaults.colors(checkedColor = SuccessGreen)
+                colors = CheckboxDefaults.colors(
+                    checkedColor = SuccessGreen,
+                    uncheckedColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             Spacer(modifier = Modifier.width(6.dp))
@@ -439,15 +473,17 @@ fun BillInstallmentItemCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = installment.billTitle,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None,
                         color = if (installment.isPaid)
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         else
                             MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     InstallmentBadge(installment)
                 }
 
@@ -458,12 +494,14 @@ fun BillInstallmentItemCard(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = installment.categoryName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = " • ",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                     )
                     Text(
@@ -472,7 +510,7 @@ fun BillInstallmentItemCard(
                             isOverdue -> "Venceu em ${DateUtils.formatDate(installment.dueDate)}"
                             else -> "Vence em ${DateUtils.formatDate(installment.dueDate)}"
                         },
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
                         color = when {
                             installment.isPaid -> SuccessGreen
@@ -483,21 +521,508 @@ fun BillInstallmentItemCard(
                 }
             }
 
-            Column(horizontalAlignment = Alignment.End) {
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (installment.isPaid)
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     else
                         MaterialTheme.colorScheme.onSurface
                 )
-                TextButton(onClick = onDelete) {
-                    Text("Excluir", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f))
-                }
+                Spacer(modifier = Modifier.width(6.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Ver detalhes",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BillInstallmentDetailBottomSheet(
+    installment: BillInstallment,
+    onDismiss: () -> Unit,
+    onTogglePayment: () -> Unit,
+    onDelete: (String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
+
+    val catColor = remember(installment.categoryColorHex) {
+        try {
+            Color(android.graphics.Color.parseColor(installment.categoryColorHex))
+        } catch (e: Exception) {
+            Color(0xFF64748B)
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header: Avatar com cor da categoria, Título, Badges e Menu de 3 Pontos no Canto Superior Direito
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(catColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ReceiptLong,
+                        contentDescription = null,
+                        tint = catColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = installment.billTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        InstallmentBadge(installment)
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = when {
+                                installment.isPaid -> SuccessGreen.copy(alpha = 0.12f)
+                                isOverdue -> MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)
+                            }
+                        ) {
+                            Text(
+                                text = when {
+                                    installment.isPaid -> "Pago"
+                                    isOverdue -> "Atrasado"
+                                    else -> "A Pagar"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = when {
+                                    installment.isPaid -> SuccessGreen
+                                    isOverdue -> MaterialTheme.colorScheme.error
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Canto Superior Direito: 3 Pontos com Opção de Alternar Pagamento e Excluir
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(if (installment.isPaid) "Marcar como Pendente" else "Marcar como Pago")
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (installment.isPaid) Icons.Default.Schedule else Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = if (installment.isPaid) MaterialTheme.colorScheme.tertiary else SuccessGreen
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onTogglePayment()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Excluir Lançamento", color = MaterialTheme.colorScheme.error)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                showDeleteConfirmDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Hero Card: Valor e Situação do Vencimento
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Valor do Lançamento",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+
+                    Text(
+                        text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (installment.isPaid)
+                            SuccessGreen
+                        else if (isOverdue)
+                            MaterialTheme.colorScheme.error
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Vencimento: ${DateUtils.formatDate(installment.dueDate)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                        }
+
+                        if (installment.isPaid && installment.paidAt != null) {
+                            Text(
+                                text = "Liquidado em ${DateUtils.formatDate(installment.paidAt)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SuccessGreen
+                            )
+                        }
+                    }
+
+                    if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val progress = (installment.installmentNumber.toFloat() / installment.totalInstallments.toFloat()).coerceIn(0f, 1f)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Progresso do Parcelamento",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                                Text(
+                                    text = "${installment.installmentNumber} de ${installment.totalInstallments}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.fillMaxWidth().height(6.dp),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Card: Detalhes e Relações Vinculadas
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Vínculos & Classificação",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    // Categoria & Subcategoria
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Categoria",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(catColor, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (!installment.subcategoryName.isNullOrBlank())
+                                    "${installment.categoryName} (${installment.subcategoryName})"
+                                else
+                                    installment.categoryName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    // Conta Financeira
+                    if (!installment.financialAccountName.isNullOrBlank()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Conta Vinculada",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.AccountBalance,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = installment.financialAccountName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    // Forma de Pagamento
+                    if (!installment.paymentMethodName.isNullOrBlank()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Forma de Pagamento",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.CreditCard,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = installment.paymentMethodName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    // Favorecido / Contato
+                    if (!installment.contactName.isNullOrBlank()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Favorecido / Fornecedor",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = installment.contactName,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+
+                    // Tipo de Operação
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Modalidade",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Text(
+                            text = when (installment.type) {
+                                BillType.SINGLE -> "Lançamento Avulso"
+                                BillType.INSTALLMENT -> "Parcelado (${installment.totalInstallments}x)"
+                                BillType.RECURRING -> "Assinatura / Recorrente"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+
+            // Ação Rápida no Rodapé: Marcar Pago ou Reabrir
+            Button(
+                onClick = {
+                    onTogglePayment()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (installment.isPaid)
+                        MaterialTheme.colorScheme.surfaceVariant
+                    else
+                        SuccessGreen,
+                    contentColor = if (installment.isPaid)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else
+                        MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(
+                    imageVector = if (installment.isPaid) Icons.Default.Schedule else Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (installment.isPaid) "Reabrir Pagamento" else "Confirmar Pagamento",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Excluir Lançamento",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Deseja realmente excluir o lançamento '${installment.billTitle}'? Esta ação removerá a conta e suas parcelas associadas.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDismiss()
+                        onDelete(installment.billId)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteConfirmDialog = false },
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 

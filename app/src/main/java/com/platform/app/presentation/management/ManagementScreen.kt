@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Category as CategoryIcon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -160,9 +161,11 @@ fun ManagementScreen(
     var accountToEdit by remember { mutableStateOf<FinancialAccount?>(null) }
     var isNewAccountDialog by remember { mutableStateOf(false) }
 
+    var methodToViewDetails by remember { mutableStateOf<PaymentMethod?>(null) }
     var methodToEdit by remember { mutableStateOf<PaymentMethod?>(null) }
     var isNewMethodDialog by remember { mutableStateOf(false) }
 
+    var categoryToViewDetails by remember { mutableStateOf<Category?>(null) }
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var isNewCategoryDialog by remember { mutableStateOf(false) }
 
@@ -174,10 +177,13 @@ fun ManagementScreen(
             when (effect) {
                 is ManagementUiEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is ManagementUiEffect.ItemSaved -> {
+                    accountToViewDetails = null
                     accountToEdit = null
                     isNewAccountDialog = false
+                    methodToViewDetails = null
                     methodToEdit = null
                     isNewMethodDialog = false
+                    categoryToViewDetails = null
                     categoryToEdit = null
                     isNewCategoryDialog = false
                     subcategoryTargetCategory = null
@@ -285,17 +291,12 @@ fun ManagementScreen(
                     )
                     ManagementSection.PAYMENT_METHODS -> PaymentMethodsTab(
                         methods = uiState.paymentMethods,
-                        onEdit = { methodToEdit = it },
-                        onDelete = { viewModel.onAction(ManagementUiAction.DeletePaymentMethod(it)) }
+                        onSelectMethod = { methodToViewDetails = it }
                     )
                     ManagementSection.CATEGORIES -> CategoriesTab(
                         categories = uiState.categories,
                         subcategories = uiState.subcategories,
-                        onEditCategory = { categoryToEdit = it },
-                        onEditSubcategory = { sub, cat -> subcategoryToEdit = Pair(sub, cat) },
-                        onDeleteCategory = { viewModel.onAction(ManagementUiAction.DeleteCategory(it)) },
-                        onDeleteSubcategory = { viewModel.onAction(ManagementUiAction.DeleteSubcategory(it)) },
-                        onAddSubcategory = { category -> subcategoryTargetCategory = category }
+                        onSelectCategory = { categoryToViewDetails = it }
                     )
                 }
             }
@@ -370,6 +371,50 @@ fun ManagementScreen(
                 onDelete = { accountId ->
                     accountToViewDetails = null
                     viewModel.onAction(ManagementUiAction.DeleteAccount(accountId))
+                }
+            )
+        }
+
+        // Detalhes da Forma de Pagamento (Bottom Sheet)
+        methodToViewDetails?.let { method ->
+            PaymentMethodDetailBottomSheet(
+                method = method,
+                installments = uiState.installments,
+                onDismiss = { methodToViewDetails = null },
+                onEdit = {
+                    methodToViewDetails = null
+                    methodToEdit = it
+                },
+                onDelete = { methodId ->
+                    methodToViewDetails = null
+                    viewModel.onAction(ManagementUiAction.DeletePaymentMethod(methodId))
+                }
+            )
+        }
+
+        // Detalhes da Categoria (Bottom Sheet)
+        categoryToViewDetails?.let { category ->
+            CategoryDetailBottomSheet(
+                category = category,
+                subcategories = uiState.subcategories,
+                installments = uiState.installments,
+                onDismiss = { categoryToViewDetails = null },
+                onEdit = {
+                    categoryToViewDetails = null
+                    categoryToEdit = it
+                },
+                onDelete = { categoryId ->
+                    categoryToViewDetails = null
+                    viewModel.onAction(ManagementUiAction.DeleteCategory(categoryId))
+                },
+                onAddSubcategory = { cat ->
+                    subcategoryTargetCategory = cat
+                },
+                onEditSubcategory = { sub, cat ->
+                    subcategoryToEdit = Pair(sub, cat)
+                },
+                onDeleteSubcategory = { subId ->
+                    viewModel.onAction(ManagementUiAction.DeleteSubcategory(subId))
                 }
             )
         }
@@ -836,8 +881,7 @@ fun AccountDetailBottomSheet(
 @Composable
 fun PaymentMethodsTab(
     methods: List<PaymentMethod>,
-    onEdit: (PaymentMethod) -> Unit,
-    onDelete: (String) -> Unit
+    onSelectMethod: (PaymentMethod) -> Unit
 ) {
     if (methods.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -851,81 +895,74 @@ fun PaymentMethodsTab(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(methods, key = { it.id }) { method ->
+                val icon = when {
+                    method.name.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
+                    method.name.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
+                    method.name.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
+                    method.name.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
+                    else -> Icons.Default.AccountBalance
+                }
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onEdit(method) },
-                    shape = RoundedCornerShape(12.dp),
+                        .clickable { onSelectMethod(method) },
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val icon = when {
-                            method.name.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
-                            method.name.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
-                            method.name.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
-                            method.name.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
-                            else -> Icons.Default.AccountBalance
-                        }
-
-                        Surface(
-                            modifier = Modifier.size(34.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.secondaryContainer
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(14.dp))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = method.name,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = "Forma de Pagamento",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
 
-                        IconButton(
-                            onClick = { onEdit(method) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Editar Forma de Pagamento",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        IconButton(
-                            onClick = { onDelete(method.id) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Excluir Forma de Pagamento",
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Ver detalhes da forma de pagamento",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -933,15 +970,330 @@ fun PaymentMethodsTab(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PaymentMethodDetailBottomSheet(
+    method: PaymentMethod,
+    installments: List<BillInstallment>,
+    onDismiss: () -> Unit,
+    onEdit: (PaymentMethod) -> Unit,
+    onDelete: (String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+
+    val icon = when {
+        method.name.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
+        method.name.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
+        method.name.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
+        method.name.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
+        else -> Icons.Default.AccountBalance
+    }
+
+    val linkedInstallments = remember(installments, method.id) {
+        installments.filter { it.paymentMethodId == method.id }
+    }
+
+    val pendingCents = remember(linkedInstallments) {
+        linkedInstallments.filter { !it.isPaid }.sumOf { it.amountCents }
+    }
+
+    val paidCents = remember(linkedInstallments) {
+        linkedInstallments.filter { it.isPaid }.sumOf { it.amountCents }
+    }
+
+    val totalCents = remember(pendingCents, paidCents) {
+        pendingCents + paidCents
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header: Avatar, Nome, Tag e 3 Pontos no Canto Superior Direito
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = method.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "Forma de Pagamento",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Canto Superior Direito: 3 Pontos com Opção de Editar e Excluir
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Editar Forma de Pagamento") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onDismiss()
+                                onEdit(method)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Excluir Forma de Pagamento", color = MaterialTheme.colorScheme.error)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                showDeleteConfirmDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Card de Métricas Financeiras Vinculadas
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Movimentação & Lançamentos",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "${linkedInstallments.size} itens",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Pendente
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Pendente",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(pendingCents),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (pendingCents > 0L) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Liquidado
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Liquidado",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(paidCents),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF10B981)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Total Movimentado
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Volume Total Movimentado",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(totalCents),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Excluir Forma de Pagamento",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Deseja realmente excluir a forma de pagamento '${method.name}'? Lançamentos vinculados manterão seus registros financeiros, mas perderão a referência desta forma.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDismiss()
+                        onDelete(method.id)
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
 @Composable
 fun CategoriesTab(
     categories: List<Category>,
     subcategories: List<Subcategory>,
-    onEditCategory: (Category) -> Unit,
-    onEditSubcategory: (Subcategory, Category) -> Unit,
-    onDeleteCategory: (String) -> Unit,
-    onDeleteSubcategory: (String) -> Unit,
-    onAddSubcategory: (Category) -> Unit
+    onSelectCategory: (Category) -> Unit
 ) {
     if (categories.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
@@ -955,154 +1307,560 @@ fun CategoriesTab(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(categories, key = { it.id }) { cat ->
-                val subs = remember(subcategories, cat.id) {
-                    subcategories.filter { it.categoryId == cat.id }
+                val subsCount = remember(subcategories, cat.id) {
+                    subcategories.count { it.categoryId == cat.id }
                 }
-                var expanded by remember { mutableStateOf(false) }
 
                 val color = remember(cat.colorHex) {
                     try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
                 }
 
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectCategory(cat) },
+                    shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
                 ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(color.copy(alpha = 0.15f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Icon(
+                                imageVector = Icons.Default.CategoryIcon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = cat.name,
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-
+                            Spacer(modifier = Modifier.height(2.dp))
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                                color = color.copy(alpha = 0.12f)
                             ) {
                                 Text(
-                                    text = "${subs.size} subs",
+                                    text = if (subsCount == 1) "1 subcategoria" else "$subsCount subcategorias",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                    fontWeight = FontWeight.Medium,
+                                    color = color,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(6.dp))
-
-                            IconButton(
-                                onClick = { onEditCategory(cat) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Editar Categoria",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { expanded = !expanded },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = "Expandir",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = { onDeleteCategory(cat.id) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Excluir Categoria",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
-                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
 
-                        if (expanded) {
-                            Spacer(modifier = Modifier.height(6.dp))
-                            if (subs.isEmpty()) {
-                                Text(
-                                    text = "Nenhuma subcategoria ainda.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                    modifier = Modifier.padding(start = 20.dp, top = 2.dp, bottom = 4.dp)
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Ver detalhes da categoria",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategoryDetailBottomSheet(
+    category: Category,
+    subcategories: List<Subcategory>,
+    installments: List<BillInstallment>,
+    onDismiss: () -> Unit,
+    onEdit: (Category) -> Unit,
+    onDelete: (String) -> Unit,
+    onAddSubcategory: (Category) -> Unit,
+    onEditSubcategory: (Subcategory, Category) -> Unit,
+    onDeleteSubcategory: (String) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var subcategoryToDelete by remember { mutableStateOf<Subcategory?>(null) }
+
+    val catColor = remember(category.colorHex) {
+        try { Color(android.graphics.Color.parseColor(category.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+    }
+
+    val categorySubs = remember(subcategories, category.id) {
+        subcategories.filter { it.categoryId == category.id }
+    }
+
+    val linkedInstallments = remember(installments, category.id) {
+        installments.filter { it.categoryId == category.id }
+    }
+
+    val pendingCents = remember(linkedInstallments) {
+        linkedInstallments.filter { !it.isPaid }.sumOf { it.amountCents }
+    }
+
+    val paidCents = remember(linkedInstallments) {
+        linkedInstallments.filter { it.isPaid }.sumOf { it.amountCents }
+    }
+
+    val totalCents = remember(pendingCents, paidCents) {
+        pendingCents + paidCents
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Header: Avatar, Nome, Badge e 3 Pontos no Canto Superior Direito
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .background(catColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CategoryIcon,
+                        contentDescription = null,
+                        tint = catColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = catColor.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "Categoria",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = catColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Canto Superior Direito: 3 Pontos
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Editar Categoria") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                            } else {
-                                subs.forEach { sub ->
+                            },
+                            onClick = {
+                                showMenu = false
+                                onDismiss()
+                                onEdit(category)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Nova Subcategoria") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onAddSubcategory(category)
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Excluir Categoria", color = MaterialTheme.colorScheme.error)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                showDeleteConfirmDialog = true
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Card de Métricas Financeiras Vinculadas
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Gastos & Movimentação",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "${linkedInstallments.size} itens",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Pendente
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "A Pagar",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(pendingCents),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (pendingCents > 0L) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+
+                        // Pago
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Pago",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(paidCents),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF10B981)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Total Movimentado
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Total na Categoria",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(totalCents),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Card / Seção de Subcategorias
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Subcategorias Vinculadas",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        TextButton(
+                            onClick = { onAddSubcategory(category) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Adicionar", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (categorySubs.isEmpty()) {
+                        Text(
+                            text = "Nenhuma subcategoria vinculada a esta categoria.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            categorySubs.forEach { sub ->
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(start = 20.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(catColor, CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
                                         Text(
-                                            text = "• ${sub.name}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                                            text = sub.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.weight(1f)
                                         )
 
                                         IconButton(
-                                            onClick = { onEditSubcategory(sub, cat) },
-                                            modifier = Modifier.size(26.dp)
+                                            onClick = { onEditSubcategory(sub, category) },
+                                            modifier = Modifier.size(30.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Edit,
                                                 contentDescription = "Editar Subcategoria",
                                                 tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(15.dp)
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
 
                                         IconButton(
-                                            onClick = { onDeleteSubcategory(sub.id) },
-                                            modifier = Modifier.size(26.dp)
+                                            onClick = { subcategoryToDelete = sub },
+                                            modifier = Modifier.size(30.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Excluir Subcategoria",
-                                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
-                                                modifier = Modifier.size(15.dp)
+                                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                     }
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-                            TextButton(
-                                onClick = { onAddSubcategory(cat) },
-                                modifier = Modifier.padding(start = 12.dp),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Adicionar Subcategoria", style = MaterialTheme.typography.labelSmall)
-                            }
                         }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    // Diálogo de confirmação para exclusão de Categoria
+    if (showDeleteConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmDialog = false },
+            title = {
+                Text(
+                    text = "Excluir Categoria",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Deseja realmente excluir a categoria '${category.name}'? Todas as ${categorySubs.size} subcategorias vinculadas também serão removidas. Os lançamentos manterão seus valores financeiros, mas perderão a categorização.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmDialog = false
+                        onDismiss()
+                        onDelete(category.id)
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    // Diálogo de confirmação para exclusão de Subcategoria
+    subcategoryToDelete?.let { sub ->
+        AlertDialog(
+            onDismissRequest = { subcategoryToDelete = null },
+            title = {
+                Text(
+                    text = "Excluir Subcategoria",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            },
+            text = {
+                Text(
+                    text = "Deseja excluir a subcategoria '${sub.name}' de '${category.name}'?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val idToDelete = sub.id
+                        subcategoryToDelete = null
+                        onDeleteSubcategory(idToDelete)
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { subcategoryToDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -1266,7 +2024,25 @@ fun AddEditPaymentMethodDialog(
     onDismiss: () -> Unit,
     onConfirm: (PaymentMethod) -> Unit
 ) {
+    val commonMethods = listOf(
+        "Pix",
+        "Cartão de Crédito",
+        "Cartão de Débito",
+        "Boleto Bancário",
+        "Dinheiro em Espécie",
+        "Transferência TED/DOC",
+        "Outro"
+    )
     var name by remember { mutableStateOf(method?.name ?: "") }
+    var selectedPreset by remember { mutableStateOf(if (method != null && commonMethods.contains(method.name)) method.name else if (method == null) commonMethods[0] else "Outro") }
+    var isCustomName by remember { mutableStateOf(method != null && !commonMethods.contains(method.name)) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (method == null && name.isBlank()) {
+            name = commonMethods[0]
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1278,32 +2054,114 @@ fun AddEditPaymentMethodDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome (ex: Pix, Boleto, Cartão)", style = MaterialTheme.typography.bodySmall) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Campo do Tipo Lista (Dropdown)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = if (isCustomName) "Personalizado: ${name.ifBlank { "Outro" }}" else selectedPreset,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de Pagamento", style = MaterialTheme.typography.bodySmall) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = if (dropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = "Selecionar tipo de pagamento",
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { dropdownExpanded = true }
+                    )
+
+                    DropdownMenu(
+                        expanded = dropdownExpanded,
+                        onDismissRequest = { dropdownExpanded = false },
+                        modifier = Modifier.fillMaxWidth(0.72f)
+                    ) {
+                        commonMethods.forEach { preset ->
+                            val isSelected = (!isCustomName && preset == selectedPreset) || (preset == "Outro" && isCustomName)
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = preset,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                },
+                                leadingIcon = {
+                                    val icon = when {
+                                        preset.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
+                                        preset.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
+                                        preset.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
+                                        preset.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
+                                        else -> Icons.Default.AccountBalance
+                                    }
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    selectedPreset = preset
+                                    dropdownExpanded = false
+                                    if (preset == "Outro") {
+                                        isCustomName = true
+                                        if (name in commonMethods) name = ""
+                                    } else {
+                                        isCustomName = false
+                                        name = preset
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Se selecionou "Outro" ou quer personalizar o nome
+                if (isCustomName) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Nome Personalizado (ex: Vale Alimentação)", style = MaterialTheme.typography.bodySmall) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
+                    val finalName = (if (isCustomName) name else selectedPreset).trim()
+                    if (finalName.isNotBlank()) {
+                        val iconName = when {
+                            finalName.contains("Pix", ignoreCase = true) -> "qr_code"
+                            finalName.contains("Boleto", ignoreCase = true) -> "receipt"
+                            finalName.contains("Cartão", ignoreCase = true) -> "credit_card"
+                            finalName.contains("Dinheiro", ignoreCase = true) -> "payments"
+                            else -> "account_balance"
+                        }
                         onConfirm(
                             PaymentMethod(
                                 id = method?.id ?: UUID.randomUUID().toString(),
-                                name = name.trim(),
-                                iconName = method?.iconName ?: "payments"
+                                name = finalName,
+                                iconName = iconName
                             )
                         )
                     }
                 },
                 shape = RoundedCornerShape(8.dp),
-                enabled = name.isNotBlank()
+                enabled = (!isCustomName && selectedPreset != "Outro") || (isCustomName && name.isNotBlank())
             ) {
                 Text(if (method == null) "Salvar" else "Atualizar")
             }
@@ -1334,11 +2192,11 @@ fun AddEditCategoryDialog(
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Categoria (ex: Mercado, Moradia)", style = MaterialTheme.typography.bodySmall) },
+                    label = { Text("Nome da Categoria (ex: Alimentação, Lazer)", style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -1348,12 +2206,23 @@ fun AddEditCategoryDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     colors.forEach { hex ->
                         val c = Color(android.graphics.Color.parseColor(hex))
+                        val isSelected = selectedColor.equals(hex, ignoreCase = true)
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(26.dp)
                                 .background(c, CircleShape)
-                                .clickable { selectedColor = hex }
-                        )
+                                .clickable { selectedColor = hex },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .background(Color.White, CircleShape)
+                                        .align(Alignment.Center)
+                                )
+                            }
+                        }
                     }
                 }
             }

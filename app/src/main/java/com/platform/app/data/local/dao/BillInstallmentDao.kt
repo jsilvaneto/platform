@@ -158,4 +158,10 @@ interface BillInstallmentDao {
 
     @Query("DELETE FROM bill_installments WHERE billId = :billId")
     suspend fun deleteByBillId(billId: String)
+
+    @Query("SELECT * FROM bill_installments")
+    suspend fun getAllInstallmentsList(): List<BillInstallmentEntity>
+
+    @Query("DELETE FROM bill_installments")
+    suspend fun deleteAll()
 }

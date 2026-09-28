@@ -26,4 +26,10 @@ interface FinancialAccountDao {
 
     @Query("DELETE FROM financial_accounts WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT * FROM financial_accounts")
+    suspend fun getAllList(): List<FinancialAccountEntity>
+
+    @Query("DELETE FROM financial_accounts")
+    suspend fun deleteAll()
 }

@@ -92,6 +92,7 @@ dependencies {
     // Rede e APIs com Retrofit / OkHttp
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.gson)
     implementation(libs.okhttp.logging)
 
     // Coroutines Assíncronas

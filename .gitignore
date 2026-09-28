@@ -48,4 +48,5 @@ temp/
 tmp/
 scratch/
 *:Zone.Identifier
+.vscode/
 *.Zone.Identifier

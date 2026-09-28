@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Badge
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,10 +42,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+import com.platform.app.BuildConfig
+import com.platform.app.presentation.navigation.Screen
+
 data class DrawerItem(
     val screen: Screen,
     val title: String,
-    val subtitle: String,
     val icon: ImageVector,
     val badgeText: String? = null
 )
@@ -70,42 +71,36 @@ fun AppDrawer(
                 DrawerItem(
                     screen = Screen.Dashboard,
                     title = "Início",
-                    subtitle = "Visão geral e balanço",
                     icon = Icons.Default.Home
                 ),
                 DrawerItem(
                     screen = Screen.Bills,
                     title = "Registros",
-                    subtitle = "Lançamentos e vencimentos",
                     icon = Icons.Default.ReceiptLong
                 ),
                 DrawerItem(
                     screen = Screen.RecurringInstallments,
                     title = "Recorrentes & Parcelados",
-                    subtitle = "Assinaturas e parcelamentos",
                     icon = Icons.Default.Repeat
                 )
             )
         ),
         DrawerSection(
-            sectionTitle = "PLANEJAMENTO & ANÁLISES",
+            sectionTitle = "PLANEJAMENTO",
             items = listOf(
                 DrawerItem(
                     screen = Screen.Statistics,
                     title = "Estatísticas",
-                    subtitle = "Análises, histórico e projeções",
                     icon = Icons.Default.BarChart
                 ),
                 DrawerItem(
                     screen = Screen.Budgets,
                     title = "Orçamentos",
-                    subtitle = "Tetos de gastos por categoria",
                     icon = Icons.Default.PieChart
                 ),
                 DrawerItem(
                     screen = Screen.Goals,
                     title = "Metas",
-                    subtitle = "Objetivos e reservas financeiras",
                     icon = Icons.Default.Flag
                 )
             )
@@ -116,14 +111,7 @@ fun AppDrawer(
                 DrawerItem(
                     screen = Screen.Contacts,
                     title = "Contatos",
-                    subtitle = "Favorecidos e beneficiários",
                     icon = Icons.Default.People
-                ),
-                DrawerItem(
-                    screen = Screen.Management,
-                    title = "Cadastros Base",
-                    subtitle = "Contas, cartões e categorias",
-                    icon = Icons.Default.Tune
                 )
             )
         ),
@@ -133,7 +121,6 @@ fun AppDrawer(
                 DrawerItem(
                     screen = Screen.Settings,
                     title = "Configurações",
-                    subtitle = "Biometria, tema e sobre",
                     icon = Icons.Default.Settings
                 )
             )
@@ -141,68 +128,68 @@ fun AppDrawer(
     )
 
     ModalDrawerSheet(
-        modifier = modifier.width(310.dp),
+        modifier = modifier.width(280.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(16.dp)
+                .padding(horizontal = 12.dp, vertical = 12.dp)
         ) {
-            // Header do Drawer
+            // Header compacto do Drawer
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f)
                             )
                         ),
-                        RoundedCornerShape(16.dp)
+                        RoundedCornerShape(12.dp)
                     )
-                    .padding(16.dp)
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        modifier = Modifier.size(44.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(36.dp),
+                        shape = RoundedCornerShape(10.dp),
                         color = MaterialTheme.colorScheme.primary
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "P",
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     Column {
                         Text(
                             text = "Platform",
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Gestão Financeira Pessoal",
+                            text = "Gestão Financeira",
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Column(
                 modifier = Modifier
@@ -211,15 +198,23 @@ fun AppDrawer(
             ) {
                 sections.forEachIndexed { sectionIndex, section ->
                     if (sectionIndex > 0) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        if (section.sectionTitle == "SISTEMA") {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
                     }
 
                     Text(
                         text = section.sectionTitle,
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
 
                     section.items.forEach { item ->
@@ -230,33 +225,25 @@ fun AppDrawer(
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.title,
+                                    modifier = Modifier.size(20.dp),
                                     tint = if (selected)
                                         MaterialTheme.colorScheme.primary
                                     else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                 )
                             },
                             label = {
-                                Column {
-                                    Text(
-                                        text = item.title,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = if (selected)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = item.subtitle,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Text(
+                                    text = item.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (selected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
+                                )
                             },
                             badge = item.badgeText?.let { badge ->
                                 {
@@ -275,28 +262,27 @@ fun AppDrawer(
                                     onNavigate(item.screen)
                                 }
                             },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             colors = NavigationDrawerItemDefaults.colors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 unselectedContainerColor = Color.Transparent
                             ),
-                            modifier = Modifier.padding(vertical = 2.dp)
+                            modifier = Modifier
+                                .height(44.dp)
+                                .padding(vertical = 1.dp)
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Rodapé do Drawer
+            // Rodapé minimalista do Drawer
             Text(
-                text = "Platform • Versão 1.0.0",
+                text = "Platform • v${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
             )
         }
     }

@@ -5,6 +5,15 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+val versionFile = rootProject.file("VERSION")
+val appVersionName = if (versionFile.exists()) versionFile.readText().trim() else "1.2.0"
+val versionParts = appVersionName.split(".").mapNotNull { it.toIntOrNull() }
+val appVersionCode = if (versionParts.size >= 3) {
+    versionParts[0] * 10000 + versionParts[1] * 100 + versionParts[2]
+} else {
+    10200
+}
+
 android {
     namespace = "com.platform.app"
     compileSdk = 34
@@ -13,8 +22,8 @@ android {
         applicationId = "com.platform.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

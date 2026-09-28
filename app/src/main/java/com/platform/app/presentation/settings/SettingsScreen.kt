@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
@@ -32,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,7 +76,9 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     biometricAuthManager: BiometricAuthManager,
     onOpenDrawer: () -> Unit,
-    onNavigateToManagement: () -> Unit = {}
+    onNavigateToAccounts: () -> Unit = {},
+    onNavigateToPaymentMethods: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -118,7 +123,7 @@ fun SettingsScreen(
         topBar = {
             PlatformAppBar(
                 title = "Configurações",
-                subtitle = "Cadastros, biometria e sobre",
+                subtitle = "Estrutura financeira, segurança e tema",
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -131,31 +136,57 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Seção de Cadastros Base (Contas, Formas de Pagamento e Categorias)
+            // Seção de Estrutura Financeira (Contas, Formas de Pagamento e Categorias)
             SectionCard(
-                title = "Cadastros Base",
-                icon = Icons.Default.Category
+                title = "Estrutura Financeira",
+                icon = Icons.Default.AccountBalance
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "Gerencie suas contas financeiras, formas de pagamento (Pix, cartões, boletos) e categorias/subcategorias personalizadas.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val accountsBadge = if (uiState.accountsCount > 0) {
+                        "${uiState.accountsCount} ${if (uiState.accountsCount == 1) "conta" else "contas"}"
+                    } else null
+
+                    SettingsNavigationTile(
+                        title = "Contas Bancárias & Carteiras",
+                        subtitle = "Bancos, saldos iniciais e carteiras de dinheiro",
+                        icon = Icons.Default.AccountBalance,
+                        badgeText = accountsBadge,
+                        onClick = onNavigateToAccounts
                     )
 
-                    Button(
-                        onClick = onNavigateToManagement,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Gerenciar Contas, Formas e Categorias")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    val methodsBadge = if (uiState.paymentMethodsCount > 0) {
+                        "${uiState.paymentMethodsCount} ${if (uiState.paymentMethodsCount == 1) "forma" else "formas"}"
+                    } else null
+
+                    SettingsNavigationTile(
+                        title = "Formas de Pagamento",
+                        subtitle = "Cartões de crédito, débito, Pix e boletos",
+                        icon = Icons.Default.CreditCard,
+                        badgeText = methodsBadge,
+                        onClick = onNavigateToPaymentMethods
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    val categoriesBadge = if (uiState.categoriesCount > 0) {
+                        "${uiState.categoriesCount} ${if (uiState.categoriesCount == 1) "categoria" else "categorias"}"
+                    } else null
+
+                    SettingsNavigationTile(
+                        title = "Categorias & Subcategorias",
+                        subtitle = "Classificação de receitas, despesas e tags",
+                        icon = Icons.Default.Category,
+                        badgeText = categoriesBadge,
+                        onClick = onNavigateToCategories
+                    )
                 }
             }
 
@@ -435,15 +466,15 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
-                    emoji = "⚡",
-                    title = "Edição com 1 Toque",
-                    description = "Edição instantânea de contas bancárias, formas de pagamento, categorias e subcategorias com um toque."
+                    emoji = "🏛️",
+                    title = "Gestão Financeira Direta",
+                    description = "Telas dedicadas e exclusivas para Contas, Formas de Pagamento e Categorias, sem menus misturados."
                 )
 
                 ReleaseNoteItem(
                     emoji = "✨",
-                    title = "Interface Despoluída",
-                    description = "Remoção de barras redundantes na parte inferior, unificação das configurações e navegação fluida."
+                    title = "Menu Lateral Minimalista",
+                    description = "Interface enxuta, proporções elegantes, remoção de subtítulos e navegação ágil."
                 )
             }
         },
@@ -511,6 +542,92 @@ fun SectionCard(
             }
             Spacer(modifier = Modifier.height(14.dp))
             content()
+        }
+    }
+}
+
+@Composable
+private fun SettingsNavigationTile(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    badgeText: String? = null,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = Color.Transparent,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        RoundedCornerShape(10.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (badgeText != null) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                        ) {
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.platform.app.BuildConfig
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.security.BiometricAuthManager
+import com.platform.app.domain.repository.FinancialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
-    private val biometricAuthManager: BiometricAuthManager
+    private val biometricAuthManager: BiometricAuthManager,
+    private val financialRepository: FinancialRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -37,7 +39,12 @@ class SettingsViewModel @Inject constructor(
     val uiEffect: Flow<SettingsUiEffect> = _effectChannel.receiveAsFlow()
 
     init {
+        observeData()
+    }
+
+    private fun observeData() {
         observePreferences()
+        observeEntityCounts()
     }
 
     private fun observePreferences() {
@@ -57,11 +64,27 @@ class SettingsViewModel @Inject constructor(
         }.launchIn(viewModelScope)
     }
 
+    private fun observeEntityCounts() {
+        combine(
+            financialRepository.getFinancialAccounts(),
+            financialRepository.getPaymentMethods(),
+            financialRepository.getCategories()
+        ) { accounts, paymentMethods, categories ->
+            _uiState.update { current ->
+                current.copy(
+                    accountsCount = accounts.size,
+                    paymentMethodsCount = paymentMethods.size,
+                    categoriesCount = categories.size
+                )
+            }
+        }.launchIn(viewModelScope)
+    }
+
     fun onAction(action: SettingsUiAction) {
         when (action) {
             is SettingsUiAction.ToggleBiometric -> handleToggleBiometric(action.enabled)
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
-            is SettingsUiAction.Refresh -> observePreferences()
+            is SettingsUiAction.Refresh -> observeData()
         }
     }
 

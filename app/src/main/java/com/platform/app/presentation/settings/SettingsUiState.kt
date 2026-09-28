@@ -9,5 +9,8 @@ data class SettingsUiState(
     val appVersionName: String = "1.0.0",
     val appVersionCode: Int = 1,
     val lastBackupTimestamp: Long = 0L,
+    val accountsCount: Int = 0,
+    val paymentMethodsCount: Int = 0,
+    val categoriesCount: Int = 0,
     val isLoading: Boolean = false
 ) : UiState

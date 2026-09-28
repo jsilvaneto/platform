@@ -3,6 +3,10 @@ package com.platform.app.presentation.settings
 import app.cash.turbine.test
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.security.BiometricAuthManager
+import com.platform.app.domain.model.Category
+import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.PaymentMethod
+import com.platform.app.domain.repository.FinancialRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,6 +30,7 @@ class SettingsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var biometricAuthManager: BiometricAuthManager
+    private lateinit var financialRepository: FinancialRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -33,11 +38,16 @@ class SettingsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         preferencesManager = mockk(relaxed = true)
         biometricAuthManager = mockk(relaxed = true)
+        financialRepository = mockk(relaxed = true)
 
         every { preferencesManager.isBiometricEnabled } returns flowOf(false)
         every { preferencesManager.isDarkMode } returns flowOf(null)
         every { preferencesManager.lastOfflineBackupTimestamp } returns flowOf(1700000000000L)
         every { biometricAuthManager.canAuthenticate() } returns true
+
+        every { financialRepository.getFinancialAccounts() } returns flowOf(emptyList())
+        every { financialRepository.getPaymentMethods() } returns flowOf(emptyList())
+        every { financialRepository.getCategories() } returns flowOf(emptyList())
     }
 
     @After
@@ -47,7 +57,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `initial state reflects preferences and biometric capability`() = runTest {
-        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager)
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -55,11 +65,33 @@ class SettingsViewModelTest {
         assertEquals(null, state.isDarkMode)
         assertEquals(1700000000000L, state.lastBackupTimestamp)
         assertTrue(state.isBiometricSupported)
+        assertEquals(0, state.accountsCount)
+        assertEquals(0, state.paymentMethodsCount)
+        assertEquals(0, state.categoriesCount)
+    }
+
+    @Test
+    fun `financial entity counts are reflected in uiState`() = runTest {
+        val fakeAccount = mockk<FinancialAccount>()
+        val fakeMethod = mockk<PaymentMethod>()
+        val fakeCategory = mockk<Category>()
+
+        every { financialRepository.getFinancialAccounts() } returns flowOf(listOf(fakeAccount, fakeAccount))
+        every { financialRepository.getPaymentMethods() } returns flowOf(listOf(fakeMethod))
+        every { financialRepository.getCategories() } returns flowOf(listOf(fakeCategory, fakeCategory, fakeCategory))
+
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(2, state.accountsCount)
+        assertEquals(1, state.paymentMethodsCount)
+        assertEquals(3, state.categoriesCount)
     }
 
     @Test
     fun `ToggleBiometric requests auth when biometric is supported`() = runTest {
-        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager)
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -73,7 +105,7 @@ class SettingsViewModelTest {
     @Test
     fun `ToggleBiometric shows snackbar error when biometric is not supported`() = runTest {
         every { biometricAuthManager.canAuthenticate() } returns false
-        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager)
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -87,7 +119,7 @@ class SettingsViewModelTest {
     @Test
     fun `confirmBiometricToggle updates preferences and emits confirmation snackbar`() = runTest {
         coEvery { preferencesManager.setBiometricEnabled(true) } returns Unit
-        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager)
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -104,7 +136,7 @@ class SettingsViewModelTest {
     @Test
     fun `SetThemeMode calls preferencesManager setDarkMode`() = runTest {
         coEvery { preferencesManager.setDarkMode(true) } returns Unit
-        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager)
+        viewModel = SettingsViewModel(preferencesManager, biometricAuthManager, financialRepository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(SettingsUiAction.SetThemeMode(true))

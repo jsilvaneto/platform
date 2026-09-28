@@ -24,8 +24,11 @@ import com.platform.app.presentation.dashboard.DashboardScreen
 import com.platform.app.presentation.dashboard.DashboardViewModel
 import com.platform.app.presentation.goals.GoalsScreen
 import com.platform.app.presentation.goals.GoalsViewModel
+import com.platform.app.presentation.management.AccountsScreen
+import com.platform.app.presentation.management.CategoriesScreen
 import com.platform.app.presentation.management.ManagementScreen
 import com.platform.app.presentation.management.ManagementViewModel
+import com.platform.app.presentation.management.PaymentMethodsScreen
 import com.platform.app.presentation.recurring.RecurringInstallmentsScreen
 import com.platform.app.presentation.recurring.RecurringInstallmentsViewModel
 import com.platform.app.presentation.settings.SettingsScreen
@@ -134,11 +137,45 @@ fun NavGraph(
             )
         }
 
-        composable(route = Screen.Management.route) {
+        composable(route = Screen.Accounts.route) {
+            val viewModel: ManagementViewModel = hiltViewModel()
+            AccountsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Screen.PaymentMethods.route) {
+            val viewModel: ManagementViewModel = hiltViewModel()
+            PaymentMethodsScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Screen.Categories.route) {
+            val viewModel: ManagementViewModel = hiltViewModel()
+            CategoriesScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Management.route,
+            arguments = listOf(
+                navArgument("tab") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                }
+            )
+        ) { backStackEntry ->
+            val tab = backStackEntry.arguments?.getInt("tab") ?: 0
             val viewModel: ManagementViewModel = hiltViewModel()
 
             ManagementScreen(
                 viewModel = viewModel,
+                initialTab = tab,
                 onOpenDrawer = onOpenDrawer,
                 onNavigateBack = { navController.popBackStack() }
             )
@@ -151,8 +188,14 @@ fun NavGraph(
                 viewModel = viewModel,
                 biometricAuthManager = biometricAuthManager,
                 onOpenDrawer = onOpenDrawer,
-                onNavigateToManagement = {
-                    navController.navigate(Screen.Management.route)
+                onNavigateToAccounts = {
+                    navController.navigate(Screen.Accounts.route)
+                },
+                onNavigateToPaymentMethods = {
+                    navController.navigate(Screen.PaymentMethods.route)
+                },
+                onNavigateToCategories = {
+                    navController.navigate(Screen.Categories.route)
                 }
             )
         }

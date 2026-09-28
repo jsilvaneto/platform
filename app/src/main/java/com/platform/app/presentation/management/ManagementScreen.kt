@@ -73,15 +73,76 @@ import com.platform.app.domain.model.Subcategory
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
+enum class ManagementSection {
+    ACCOUNTS,
+    PAYMENT_METHODS,
+    CATEGORIES
+}
+
+@Composable
+fun AccountsScreen(
+    viewModel: ManagementViewModel,
+    onNavigateBack: () -> Unit
+) {
+    ManagementScreen(
+        viewModel = viewModel,
+        forcedSection = ManagementSection.ACCOUNTS,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@Composable
+fun PaymentMethodsScreen(
+    viewModel: ManagementViewModel,
+    onNavigateBack: () -> Unit
+) {
+    ManagementScreen(
+        viewModel = viewModel,
+        forcedSection = ManagementSection.PAYMENT_METHODS,
+        onNavigateBack = onNavigateBack
+    )
+}
+
+@Composable
+fun CategoriesScreen(
+    viewModel: ManagementViewModel,
+    onNavigateBack: () -> Unit
+) {
+    ManagementScreen(
+        viewModel = viewModel,
+        forcedSection = ManagementSection.CATEGORIES,
+        onNavigateBack = onNavigateBack
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagementScreen(
     viewModel: ManagementViewModel,
+    initialTab: Int = 0,
+    forcedSection: ManagementSection? = null,
     onOpenDrawer: () -> Unit = {},
     onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val activeSection = forcedSection ?: when (uiState.selectedTab) {
+        0 -> ManagementSection.ACCOUNTS
+        1 -> ManagementSection.PAYMENT_METHODS
+        2 -> ManagementSection.CATEGORIES
+        else -> ManagementSection.ACCOUNTS
+    }
+
+    LaunchedEffect(forcedSection, initialTab) {
+        val targetTab = when (forcedSection) {
+            ManagementSection.ACCOUNTS -> 0
+            ManagementSection.PAYMENT_METHODS -> 1
+            ManagementSection.CATEGORIES -> 2
+            null -> initialTab.coerceIn(0, 2)
+        }
+        viewModel.onAction(ManagementUiAction.SelectTab(targetTab))
+    }
 
     var accountToEdit by remember { mutableStateOf<FinancialAccount?>(null) }
     var isNewAccountDialog by remember { mutableStateOf(false) }
@@ -113,18 +174,30 @@ fun ManagementScreen(
         }
     }
 
+    val (screenTitle, screenSubtitle) = when (activeSection) {
+        ManagementSection.ACCOUNTS -> "Contas Financeiras" to "Bancos, saldos iniciais e carteiras"
+        ManagementSection.PAYMENT_METHODS -> "Formas de Pagamento" to "Cartões de crédito, débito, Pix e boletos"
+        ManagementSection.CATEGORIES -> "Categorias & Subcategorias" to "Classificação de receitas e despesas"
+    }
+
+    val fabDescription = when (activeSection) {
+        ManagementSection.ACCOUNTS -> "Nova Conta Financeira"
+        ManagementSection.PAYMENT_METHODS -> "Nova Forma de Pagamento"
+        ManagementSection.CATEGORIES -> "Nova Categoria"
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "Cadastros Base",
+                            text = screenTitle,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Contas, formas de pagamento e categorias",
+                            text = screenSubtitle,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -150,16 +223,16 @@ fun ManagementScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    when (uiState.selectedTab) {
-                        0 -> isNewAccountDialog = true
-                        1 -> isNewMethodDialog = true
-                        2 -> isNewCategoryDialog = true
+                    when (activeSection) {
+                        ManagementSection.ACCOUNTS -> isNewAccountDialog = true
+                        ManagementSection.PAYMENT_METHODS -> isNewMethodDialog = true
+                        ManagementSection.CATEGORIES -> isNewCategoryDialog = true
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Novo Cadastro")
+                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription)
             }
         }
     ) { padding ->
@@ -168,26 +241,28 @@ fun ManagementScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            TabRow(
-                selectedTabIndex = uiState.selectedTab,
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.primary
-            ) {
-                Tab(
-                    selected = uiState.selectedTab == 0,
-                    onClick = { viewModel.onAction(ManagementUiAction.SelectTab(0)) },
-                    text = { Text("Contas") }
-                )
-                Tab(
-                    selected = uiState.selectedTab == 1,
-                    onClick = { viewModel.onAction(ManagementUiAction.SelectTab(1)) },
-                    text = { Text("Pagamentos") }
-                )
-                Tab(
-                    selected = uiState.selectedTab == 2,
-                    onClick = { viewModel.onAction(ManagementUiAction.SelectTab(2)) },
-                    text = { Text("Categorias") }
-                )
+            if (forcedSection == null) {
+                TabRow(
+                    selectedTabIndex = uiState.selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary
+                ) {
+                    Tab(
+                        selected = uiState.selectedTab == 0,
+                        onClick = { viewModel.onAction(ManagementUiAction.SelectTab(0)) },
+                        text = { Text("Contas") }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 1,
+                        onClick = { viewModel.onAction(ManagementUiAction.SelectTab(1)) },
+                        text = { Text("Pagamentos") }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 2,
+                        onClick = { viewModel.onAction(ManagementUiAction.SelectTab(2)) },
+                        text = { Text("Categorias") }
+                    )
+                }
             }
 
             if (uiState.isLoading) {
@@ -195,18 +270,18 @@ fun ManagementScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                when (uiState.selectedTab) {
-                    0 -> AccountsTab(
+                when (activeSection) {
+                    ManagementSection.ACCOUNTS -> AccountsTab(
                         accounts = uiState.accounts,
                         onEdit = { accountToEdit = it },
                         onDelete = { viewModel.onAction(ManagementUiAction.DeleteAccount(it)) }
                     )
-                    1 -> PaymentMethodsTab(
+                    ManagementSection.PAYMENT_METHODS -> PaymentMethodsTab(
                         methods = uiState.paymentMethods,
                         onEdit = { methodToEdit = it },
                         onDelete = { viewModel.onAction(ManagementUiAction.DeletePaymentMethod(it)) }
                     )
-                    2 -> CategoriesTab(
+                    ManagementSection.CATEGORIES -> CategoriesTab(
                         categories = uiState.categories,
                         subcategories = uiState.subcategories,
                         onEditCategory = { categoryToEdit = it },

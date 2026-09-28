@@ -50,6 +50,7 @@ object AppModule {
             PlatformDatabase::class.java,
             PlatformDatabase.DATABASE_NAME
         )
+        .addMigrations(PlatformDatabase.MIGRATION_4_5)
         .fallbackToDestructiveMigration()
         .build()
     }

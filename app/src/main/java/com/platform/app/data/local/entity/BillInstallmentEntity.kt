@@ -71,7 +71,11 @@ data class BillInstallmentEntity(
             amountCents = amountCents,
             dueDate = dueDate,
             paidAt = paidAt,
-            status = BillStatus.valueOf(status),
+            status = try {
+                BillStatus.valueOf(status)
+            } catch (e: Exception) {
+                BillStatus.PENDING
+            },
             type = billType
         )
     }

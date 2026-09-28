@@ -26,7 +26,11 @@ data class BillEntity(
             id = id,
             title = title,
             description = description,
-            type = BillType.valueOf(type),
+            type = try {
+                BillType.valueOf(type)
+            } catch (e: Exception) {
+                BillType.SINGLE
+            },
             totalAmountCents = totalAmountCents,
             categoryId = categoryId,
             subcategoryId = subcategoryId,

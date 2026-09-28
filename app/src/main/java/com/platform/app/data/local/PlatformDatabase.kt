@@ -2,6 +2,8 @@ package com.platform.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
@@ -33,7 +35,7 @@ import com.platform.app.data.local.entity.SubcategoryEntity
         GoalEntity::class,
         BudgetEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -49,6 +51,12 @@ abstract class PlatformDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "platform_db"
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS items")
+            }
+        }
     }
 }
 

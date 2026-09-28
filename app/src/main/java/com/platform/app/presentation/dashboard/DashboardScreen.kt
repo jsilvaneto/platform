@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.ShieldCheck
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff

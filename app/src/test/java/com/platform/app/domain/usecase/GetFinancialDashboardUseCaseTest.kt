@@ -78,6 +78,8 @@ class GetFinancialDashboardUseCaseTest {
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(monthInstallments)
         every { repository.getAllInstallments() } returns flowOf(allInstallments)
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
 
         useCase(currentMonthEpoch).test {
             val metrics = awaitItem()

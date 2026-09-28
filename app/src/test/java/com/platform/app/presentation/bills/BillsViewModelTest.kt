@@ -41,6 +41,7 @@ class BillsViewModelTest {
         togglePaymentUseCase = mockk(relaxed = true)
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
+        every { repository.getAllInstallments() } returns flowOf(emptyList())
         every { repository.getCategories() } returns flowOf(emptyList())
         every { repository.getAllSubcategories() } returns flowOf(emptyList())
         every { repository.getContacts() } returns flowOf(emptyList())
@@ -121,7 +122,7 @@ class BillsViewModelTest {
             installmentNumber = 1, totalInstallments = 1, amountCents = 35000L,
             dueDate = System.currentTimeMillis()
         )
-        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(inst1, inst2))
+        every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
         viewModel = BillsViewModel(repository, createBillUseCase, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()

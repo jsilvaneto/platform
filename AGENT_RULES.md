@@ -117,3 +117,34 @@ Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo
   - `coding_standards.md`: Convenções idiomáticas de Kotlin, imutabilidade e StateFlow.
   - `test_data_cleanup.md`: Política de Resíduo Zero.
   - `governance_and_versioning.md`: Regra mandatória de incremento de versão, changelog, status e atualização contínua de skills a cada entrega.
+
+---
+
+## 5. Diretrizes Mandatórias de Design System (Android Compose)
+
+Sempre que você criar, ajustar ou refatorar qualquer tela, componente ou ViewModel no projeto Android, siga estritamente as regras abaixo:
+
+1. **Governança e ADRs:**
+   - Respeite integralmente o `ADR-018` e os temas definidos em `com.platform.app.presentation.theme.*`.
+
+2. **Tema e Superfícies:**
+   - Suporte nativo a Tema Escuro e Claro via `MaterialTheme.colorScheme`.
+   - Cards e contêineres devem obrigatoriamente usar cantos arredondados de `16.dp`, fundo em `surface` e borda sutil de `1.dp` (`outline`).
+   - Evite sombras pesadas; priorize contraste de cor e borda.
+
+3. **Cores Semafóricas:**
+   - Use `UrgentRed` apenas para itens vencidos/atrasados.
+   - Use `WarningAmber` apenas para itens que vencem hoje.
+   - Use `SuccessGreen` para status pago ou liquidação concluída.
+   - Mantenha todo o restante em tons neutros (`onSurface` e `onSurfaceVariant`).
+
+4. **Regras Tipográficas e Textos:**
+   - **Nomes de Entidades/Categorias/Contas**: Obrigatório uso de Title Case (ex: "Energia Copel", "Cartão Santander"). Proibido salvar ou exibir em ALL CAPS.
+   - **Descrições de Despesas**: Sentence Case (ex: "Manutenção do ar condicionado").
+   - **Enums/Constantes Técnicas**: ALL CAPS restrito ao backend/Room (`PESSOAL`, `EMPRESA`, `PENDENTE`).
+   - **Valores**: Sempre formatados a partir de `Long` (centavos) com tipografia de destaque (`FontWeight.Bold` ou `FontWeight.SemiBold`).
+
+5. **Ergonomia e UX:**
+   - Formulários rápidos devem ter no máximo 3 campos obrigatórios (Descrição, Valor e Vencimento).
+   - Telas de listagem devem permitir marcar como pago em 1 toque diretamente no card.
+

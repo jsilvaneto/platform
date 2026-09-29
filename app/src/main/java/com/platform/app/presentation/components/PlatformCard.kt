@@ -13,21 +13,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
+import com.platform.app.presentation.theme.Dimens
 
 @Composable
 fun PlatformCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(12.dp),
+    shape: Shape = RoundedCornerShape(Dimens.cardCornerRadius),
     containerColor: Color = MaterialTheme.colorScheme.surface,
-    borderColor: Color? = MaterialTheme.colorScheme.outlineVariant,
+    borderColor: Color? = MaterialTheme.colorScheme.outline,
     onClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     Card(
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = borderColor?.let { BorderStroke(1.dp, it) },
+        border = borderColor?.let { BorderStroke(Dimens.cardBorderWidth, it) },
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)

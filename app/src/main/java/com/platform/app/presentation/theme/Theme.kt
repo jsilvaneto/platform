@@ -12,57 +12,27 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlue,
-    onPrimary = TextPrimaryDark,
-    primaryContainer = PrimaryBlueDark,
-    onPrimaryContainer = TextPrimaryDark,
-    secondary = InfoCyan,
-    onSecondary = TextPrimaryDark,
-    secondaryContainer = InfoCyanContainer,
-    onSecondaryContainer = TextPrimaryDark,
-    tertiary = SuccessGreen,
-    onTertiary = TextPrimaryDark,
-    tertiaryContainer = SuccessGreenContainer,
-    onTertiaryContainer = TextPrimaryDark,
-    background = SlateBackgroundDark,
-    onBackground = TextPrimaryDark,
-    surface = SlateSurfaceDark,
-    onSurface = TextPrimaryDark,
-    surfaceVariant = SlateSurfaceVariantDark,
-    onSurfaceVariant = TextSecondaryDark,
-    outline = SlateBorderDark,
-    outlineVariant = SlateSurfaceVariantDark,
-    error = ErrorRed,
-    onError = TextPrimaryDark,
-    errorContainer = ErrorRedContainer,
-    onErrorContainer = TextPrimaryDark
+    primary = BrandPrimary,
+    background = DarkBackground,
+    surface = DarkSurface,
+    surfaceVariant = DarkSurfaceVariant,
+    outline = DarkBorder,
+    onPrimary = DarkTextPrimary,
+    onBackground = DarkTextPrimary,
+    onSurface = DarkTextPrimary,
+    onSurfaceVariant = DarkTextSecondary
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryBlue,
-    onPrimary = SlateSurfaceLight,
-    primaryContainer = PrimaryBlueLight,
-    onPrimaryContainer = TextPrimaryLight,
-    secondary = InfoCyan,
-    onSecondary = SlateSurfaceLight,
-    secondaryContainer = InfoCyanLightContainer,
-    onSecondaryContainer = TextPrimaryLight,
-    tertiary = SuccessGreen,
-    onTertiary = SlateSurfaceLight,
-    tertiaryContainer = SuccessGreenLightContainer,
-    onTertiaryContainer = TextPrimaryLight,
-    background = SlateBackgroundLight,
-    onBackground = TextPrimaryLight,
-    surface = SlateSurfaceLight,
-    onSurface = TextPrimaryLight,
-    surfaceVariant = SlateSurfaceVariantLight,
-    onSurfaceVariant = TextSecondaryLight,
-    outline = SlateBorderLight,
-    outlineVariant = SlateBorderLight,
-    error = ErrorRed,
-    onError = SlateSurfaceLight,
-    errorContainer = ErrorRedLightContainer,
-    onErrorContainer = TextPrimaryLight
+    primary = BrandPrimary,
+    background = LightBackground,
+    surface = LightSurface,
+    surfaceVariant = LightSurfaceVariant,
+    outline = LightBorder,
+    onPrimary = LightTextPrimary,
+    onBackground = LightTextPrimary,
+    onSurface = LightTextPrimary,
+    onSurfaceVariant = LightTextSecondary
 )
 
 @Composable
@@ -92,3 +62,9 @@ fun PlatformTheme(
         content = content
     )
 }
+
+@Composable
+fun WalletTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) = PlatformTheme(darkTheme = darkTheme, content = content)

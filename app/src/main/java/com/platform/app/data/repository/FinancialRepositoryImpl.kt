@@ -21,6 +21,7 @@ import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.CardDependencies
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.CreditCard
@@ -246,6 +247,22 @@ class FinancialRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>> {
+        return installmentDao.getInstallmentsForInvoice(invoiceId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun getCardDependencies(cardId: String): CardDependencies {
+        val invCount = creditCardDao.countInvoicesForCard(cardId)
+        val instCount = installmentDao.countInstallmentsForCard(cardId)
+        return CardDependencies(
+            invoiceCount = invCount,
+            installmentCount = instCount,
+            hasActiveDependencies = invCount > 0 || instCount > 0
+        )
+    }
+
     // --- Contacts ---
     override fun getContacts(): Flow<List<Contact>> {
         return contactDao.getAll().map { list ->
@@ -263,6 +280,22 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun deleteContact(contactId: String) {
         contactDao.deleteById(contactId)
+    }
+
+    override suspend fun seedInitialContactsIfEmpty() {
+        if (contactDao.count() == 0) {
+            val initial = listOf(
+                Contact(id = UUID.randomUUID().toString(), name = "Supermercado"),
+                Contact(id = UUID.randomUUID().toString(), name = "Farmácia"),
+                Contact(id = UUID.randomUUID().toString(), name = "Posto de Combustível"),
+                Contact(id = UUID.randomUUID().toString(), name = "Restaurante"),
+                Contact(id = UUID.randomUUID().toString(), name = "Internet / Telefonia"),
+                Contact(id = UUID.randomUUID().toString(), name = "Energia Elétrica"),
+                Contact(id = UUID.randomUUID().toString(), name = "Água e Saneamento"),
+                Contact(id = UUID.randomUUID().toString(), name = "Diversos")
+            )
+            contactDao.insertAll(initial.map { ContactEntity.fromDomain(it) })
+        }
     }
 
     // --- Financial Accounts ---

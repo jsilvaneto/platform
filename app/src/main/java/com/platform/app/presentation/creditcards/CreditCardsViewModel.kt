@@ -2,9 +2,15 @@ package com.platform.app.presentation.creditcards
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.CardDependencies
+import com.platform.app.domain.model.CreditCard
+import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.CreditCardWithInvoiceSummary
+import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.domain.repository.FinancialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +19,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
 @HiltViewModel
 class CreditCardsViewModel @Inject constructor(
     private val repository: FinancialRepository
@@ -21,6 +26,8 @@ class CreditCardsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CreditCardsUiState())
     val uiState: StateFlow<CreditCardsUiState> = _uiState.asStateFlow()
+
+    private var invoiceDetailsJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -32,25 +39,88 @@ class CreditCardsViewModel @Inject constructor(
     fun onAction(action: CreditCardsUiAction) {
         when (action) {
             is CreditCardsUiAction.SelectCard -> {
-                _uiState.update { it.copy(selectedCardId = action.cardId) }
+                _uiState.update { it.copy(selectedCardId = action.cardId, selectedInvoiceForDetails = null) }
                 loadData()
             }
             is CreditCardsUiAction.SelectMonth -> {
                 _uiState.update { it.copy(selectedReferenceMonth = action.referenceMonth) }
             }
+            is CreditCardsUiAction.SelectInvoiceForDetails -> {
+                _uiState.update { it.copy(selectedInvoiceForDetails = action.invoice) }
+                invoiceDetailsJob?.cancel()
+                if (action.invoice != null) {
+                    invoiceDetailsJob = repository.getInstallmentsForInvoice(action.invoice.id)
+                        .combine(repository.getAllInstallments()) { invoiceInsts, _ ->
+                            invoiceInsts
+                        }
+                        .launchIn(viewModelScope)
+                    viewModelScope.launch {
+                        repository.getInstallmentsForInvoice(action.invoice.id).collect { insts ->
+                            _uiState.update { it.copy(installmentsForSelectedInvoice = insts) }
+                        }
+                    }
+                } else {
+                    _uiState.update { it.copy(installmentsForSelectedInvoice = emptyList()) }
+                }
+            }
+            is CreditCardsUiAction.SetInvoiceFilter -> {
+                _uiState.update { it.copy(invoiceFilter = action.filter) }
+            }
             is CreditCardsUiAction.SaveCard -> {
                 viewModelScope.launch {
                     repository.saveCreditCard(action.card)
+                    _uiState.update { it.copy(cardToEdit = null) }
                 }
             }
-            is CreditCardsUiAction.DeleteCard -> {
+            is CreditCardsUiAction.OpenEditCard -> {
+                _uiState.update { it.copy(cardToEdit = action.card) }
+            }
+            is CreditCardsUiAction.CloseEditCard -> {
+                _uiState.update { it.copy(cardToEdit = null) }
+            }
+            is CreditCardsUiAction.RequestDeleteCard -> {
                 viewModelScope.launch {
-                    repository.deleteCreditCard(action.cardId)
+                    val deps = repository.getCardDependencies(action.cardId)
+                    _uiState.update {
+                        it.copy(
+                            cardToDeleteId = action.cardId,
+                            pendingDeleteDependencies = deps
+                        )
+                    }
                 }
+            }
+            is CreditCardsUiAction.ConfirmDeleteCard -> {
+                val cardId = _uiState.value.cardToDeleteId
+                if (cardId != null) {
+                    viewModelScope.launch {
+                        repository.deleteCreditCard(cardId)
+                        val remaining = _uiState.value.cardsWithSummary.filter { it.card.id != cardId }
+                        _uiState.update {
+                            it.copy(
+                                cardToDeleteId = null,
+                                pendingDeleteDependencies = null,
+                                selectedCardId = remaining.firstOrNull()?.card?.id,
+                                selectedInvoiceForDetails = null
+                            )
+                        }
+                    }
+                }
+            }
+            is CreditCardsUiAction.CancelDeleteCard -> {
+                _uiState.update { it.copy(cardToDeleteId = null, pendingDeleteDependencies = null) }
             }
             is CreditCardsUiAction.PayInvoice -> {
                 viewModelScope.launch {
                     repository.payInvoice(action.invoiceId)
+                    // Se estiver com os detalhes da fatura aberta, atualiza
+                    val currentDetails = _uiState.value.selectedInvoiceForDetails
+                    if (currentDetails?.id == action.invoiceId) {
+                        _uiState.update {
+                            it.copy(
+                                selectedInvoiceForDetails = currentDetails.copy(status = InvoiceStatus.PAGA)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -66,16 +136,30 @@ class CreditCardsViewModel @Inject constructor(
         ) { cards, installments, allInvoices ->
             val currentSelected = _uiState.value.selectedCardId ?: cards.firstOrNull()?.id
             val cardInvoices = if (currentSelected != null) {
-                allInvoices.filter { it.creditCardId == currentSelected }.sortedByDescending { it.referenceMonth }
+                allInvoices.filter { it.creditCardId == currentSelected }
+                    .sortedByDescending { it.referenceMonth }
+                    .map { invoice ->
+                        val invTotal = installments
+                            .filter { it.invoiceId == invoice.id }
+                            .sumOf { it.amountCents }
+                        invoice.copy(totalAmountCents = invTotal)
+                    }
             } else emptyList()
 
-            val currentInvoice = cardInvoices.firstOrNull { it.status != com.platform.app.domain.model.InvoiceStatus.PAGA }
+            val currentInvoice = cardInvoices.firstOrNull { it.status != InvoiceStatus.PAGA }
                 ?: cardInvoices.firstOrNull()
 
             val summaries = cards.map { card ->
                 val activeInvoiceInsts = installments.filter { it.invoiceId != null && !it.isPaid }
-                val usedLimit = activeInvoiceInsts.sumOf { it.amountCents }
-                val cardInv = allInvoices.firstOrNull { it.creditCardId == card.id && it.status != com.platform.app.domain.model.InvoiceStatus.PAGA }
+                // Compras atreladas a faturas deste cartão
+                val cardInvoiceIds = allInvoices.filter { it.creditCardId == card.id }.map { it.id }.toSet()
+                val usedLimit = activeInvoiceInsts
+                    .filter { it.invoiceId in cardInvoiceIds }
+                    .sumOf { it.amountCents }
+
+                val cardInv = cardInvoices.firstOrNull { it.creditCardId == card.id && it.status != InvoiceStatus.PAGA }
+                    ?: cardInvoices.firstOrNull { it.creditCardId == card.id }
+
                 CreditCardWithInvoiceSummary(
                     card = card,
                     currentInvoice = cardInv,

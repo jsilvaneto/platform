@@ -162,6 +162,45 @@ interface BillInstallmentDao {
     )
     fun getPlannedInstallmentsByContact(contactId: String): Flow<List<InstallmentWithDetails>>
 
+    @Query(
+        """
+        SELECT 
+            i.*,
+            b.title AS bill_title,
+            b.type AS bill_type,
+            b.categoryId AS category_id,
+            c.name AS category_name,
+            c.colorHex AS category_color_hex,
+            c.nature AS category_nature,
+            ei.name AS item_name,
+            cont.name AS contact_name,
+            fa.name AS financial_account_name,
+            pm.name AS payment_method_name
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        LEFT JOIN categories c ON b.categoryId = c.id
+        LEFT JOIN expense_items ei ON (i.itemId = ei.id OR b.itemId = ei.id)
+        LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
+        LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
+        LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
+        WHERE i.invoiceId = :invoiceId
+        ORDER BY i.dueDate ASC
+        """
+    )
+    fun getInstallmentsForInvoice(invoiceId: String): Flow<List<InstallmentWithDetails>>
+
+    @Query("SELECT * FROM bill_installments WHERE invoiceId = :invoiceId")
+    suspend fun getInstallmentsListForInvoice(invoiceId: String): List<BillInstallmentEntity>
+
+    @Query(
+        """
+        SELECT COUNT(i.id) FROM bill_installments i
+        INNER JOIN credit_card_invoices inv ON i.invoiceId = inv.id
+        WHERE inv.creditCardId = :cardId
+        """
+    )
+    suspend fun countInstallmentsForCard(cardId: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(installments: List<BillInstallmentEntity>)
 

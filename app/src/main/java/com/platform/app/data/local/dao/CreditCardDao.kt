@@ -56,4 +56,7 @@ interface CreditCardDao {
 
     @Query("SELECT * FROM credit_card_invoices")
     suspend fun getAllInvoicesList(): List<CreditCardInvoiceEntity>
+
+    @Query("SELECT COUNT(*) FROM credit_card_invoices WHERE creditCardId = :cardId")
+    suspend fun countInvoicesForCard(cardId: String): Int
 }

@@ -2,6 +2,7 @@ package com.platform.app.domain.repository
 
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.CardDependencies
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.CreditCard
@@ -34,14 +35,17 @@ interface FinancialRepository {
     fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>>
     fun getAllCreditCardInvoices(): Flow<List<CreditCardInvoice>>
     fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>>
+    fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>>
     suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice
     suspend fun payInvoice(invoiceId: String)
+    suspend fun getCardDependencies(cardId: String): CardDependencies
 
     // Contacts
     fun getContacts(): Flow<List<Contact>>
     fun getContactById(contactId: String): Flow<Contact?>
     suspend fun saveContact(contact: Contact)
     suspend fun deleteContact(contactId: String)
+    suspend fun seedInitialContactsIfEmpty()
 
     // Financial Accounts
     fun getFinancialAccounts(): Flow<List<FinancialAccount>>

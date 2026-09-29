@@ -47,6 +47,9 @@ class HomeViewModel @Inject constructor(
             is HomeUiAction.CurrentMonth -> {
                 loadForecast(System.currentTimeMillis())
             }
+            is HomeUiAction.SelectMonth -> {
+                loadForecast(action.monthMillis)
+            }
             is HomeUiAction.PayBill -> {
                 viewModelScope.launch {
                     repository.toggleInstallmentPayment(

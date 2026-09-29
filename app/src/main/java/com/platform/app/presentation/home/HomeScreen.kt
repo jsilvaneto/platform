@@ -1,12 +1,7 @@
 package com.platform.app.presentation.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,8 +23,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
@@ -37,7 +35,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -53,27 +50,32 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
-import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
-import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.PayableItem
-import com.platform.app.domain.model.PayableUrgency
 import com.platform.app.domain.usecase.MonthlyForecastResult
 import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformProgressBar
+import com.platform.app.presentation.components.PlatformPrivacyToggle
+import com.platform.app.presentation.components.formatValueOrPrivate
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.UrgentRed
@@ -88,10 +90,18 @@ fun HomeScreen(
     onNavigateToNewExpense: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isPrivate by rememberSaveable { mutableStateOf(false) }
+    var showMonthPickerSheet by remember { mutableStateOf(false) }
+    val monthPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val haptic = LocalHapticFeedback.current
+
     Scaffold(
         topBar = {
             HomeTopBar(
                 monthLabel = uiState.forecastResult?.monthLabel ?: DateUtils.formatMonthYear(uiState.selectedMonthMillis),
+                isPrivate = isPrivate,
+                onTogglePrivacy = { isPrivate = !isPrivate },
+                onOpenMonthPicker = { showMonthPickerSheet = true },
                 onPreviousMonth = { onAction(HomeUiAction.PreviousMonth) },
                 onNextMonth = { onAction(HomeUiAction.NextMonth) },
                 onCurrentMonth = { onAction(HomeUiAction.CurrentMonth) },
@@ -129,6 +139,13 @@ fun HomeScreen(
             } else {
                 val forecast = uiState.forecastResult
                 if (forecast != null) {
+                    val isMonthFullyPaid = forecast.totalItemsCount > 0 &&
+                            forecast.overdueCount == 0 &&
+                            forecast.dueTodayCount == 0 &&
+                            forecast.next7DaysCount == 0 &&
+                            forecast.laterInMonthItems.isEmpty() &&
+                            forecast.paidCount > 0
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -137,34 +154,52 @@ fun HomeScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
                     ) {
-                        // 1. Card de Impacto: Total Previsto no Mês
+                        // 1. Executive Hero Card: Previsibilidade & Quitação do Mês
                         item {
                             ForecastImpactCard(
                                 totalForecastCents = forecast.totalForecastCents,
-                                totalPaidCents = forecast.totalPaidCents
+                                totalPaidCents = forecast.totalPaidCents,
+                                isPrivate = isPrivate
                             )
                         }
 
-                        // 2. Resumo Semafórico
+                        // 2. Resumo Semafórico em Chips
                         item {
-                            SemaphoricSummaryRow(forecast = forecast)
+                            SemaphoricSummaryRow(
+                                forecast = forecast,
+                                isPrivate = isPrivate
+                            )
                         }
 
-                        // 3. Seções de Urgência Semafórica
-                        // 3.1 🔴 Atrasadas
+                        // 3. Card Triunfante quando todas as contas do mês estiverem pagas
+                        if (isMonthFullyPaid) {
+                            item {
+                                MonthVictoryCard(
+                                    paidCount = forecast.paidCount,
+                                    paidTotalCents = forecast.paidTotalCents,
+                                    isPrivate = isPrivate
+                                )
+                            }
+                        }
+
+                        // 4. Seções de Urgência Semafórica
+                        // 4.1 🔴 Atrasadas
                         if (forecast.overdueItems.isNotEmpty()) {
                             item {
                                 UrgencySectionHeader(
                                     title = "Atrasadas",
                                     count = forecast.overdueCount,
                                     badgeColor = UrgentRed,
-                                    totalCents = forecast.overdueTotalCents
+                                    totalCents = forecast.overdueTotalCents,
+                                    isPrivate = isPrivate
                                 )
                             }
                             items(forecast.overdueItems, key = { it.id }) { item ->
                                 PayableItemCard(
                                     item = item,
+                                    isPrivate = isPrivate,
                                     onPay = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         when (item) {
                                             is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
                                             is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
@@ -174,20 +209,23 @@ fun HomeScreen(
                             }
                         }
 
-                        // 3.2 🟡 Vence Hoje
+                        // 4.2 🟡 Vence Hoje
                         if (forecast.dueTodayItems.isNotEmpty()) {
                             item {
                                 UrgencySectionHeader(
                                     title = "Vence Hoje",
                                     count = forecast.dueTodayCount,
                                     badgeColor = WarningAmber,
-                                    totalCents = forecast.dueTodayTotalCents
+                                    totalCents = forecast.dueTodayTotalCents,
+                                    isPrivate = isPrivate
                                 )
                             }
                             items(forecast.dueTodayItems, key = { it.id }) { item ->
                                 PayableItemCard(
                                     item = item,
+                                    isPrivate = isPrivate,
                                     onPay = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         when (item) {
                                             is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
                                             is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
@@ -197,20 +235,23 @@ fun HomeScreen(
                             }
                         }
 
-                        // 3.3 ⚪ Próximos 7 Dias
+                        // 4.3 ⚪ Próximos 7 Dias
                         if (forecast.next7DaysItems.isNotEmpty()) {
                             item {
                                 UrgencySectionHeader(
                                     title = "Próximos 7 Dias",
                                     count = forecast.next7DaysCount,
                                     badgeColor = MaterialTheme.colorScheme.primary,
-                                    totalCents = forecast.next7DaysTotalCents
+                                    totalCents = forecast.next7DaysTotalCents,
+                                    isPrivate = isPrivate
                                 )
                             }
                             items(forecast.next7DaysItems, key = { it.id }) { item ->
                                 PayableItemCard(
                                     item = item,
+                                    isPrivate = isPrivate,
                                     onPay = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         when (item) {
                                             is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
                                             is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
@@ -220,20 +261,23 @@ fun HomeScreen(
                             }
                         }
 
-                        // 3.4 Mais Adiante no Mês (se houver)
+                        // 4.4 Mais Adiante no Mês (se houver)
                         if (forecast.laterInMonthItems.isNotEmpty()) {
                             item {
                                 UrgencySectionHeader(
                                     title = "Mais Adiante no Mês",
                                     count = forecast.laterInMonthItems.size,
                                     badgeColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    totalCents = forecast.laterInMonthItems.sumOf { it.amountCents }
+                                    totalCents = forecast.laterInMonthItems.sumOf { it.amountCents },
+                                    isPrivate = isPrivate
                                 )
                             }
                             items(forecast.laterInMonthItems, key = { it.id }) { item ->
                                 PayableItemCard(
                                     item = item,
+                                    isPrivate = isPrivate,
                                     onPay = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         when (item) {
                                             is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
                                             is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
@@ -243,13 +287,14 @@ fun HomeScreen(
                             }
                         }
 
-                        // 3.5 🟢 Pagas no Mês (Seção Colapsável)
+                        // 4.5 🟢 Pagas no Mês (Seção Colapsável)
                         if (forecast.paidItems.isNotEmpty()) {
                             item {
                                 CollapsiblePaidHeader(
                                     isExpanded = uiState.isPaidSectionExpanded,
                                     count = forecast.paidCount,
                                     totalCents = forecast.paidTotalCents,
+                                    isPrivate = isPrivate,
                                     onToggle = { onAction(HomeUiAction.TogglePaidSection(!uiState.isPaidSectionExpanded)) }
                                 )
                             }
@@ -258,13 +303,14 @@ fun HomeScreen(
                                     PayableItemCard(
                                         item = item,
                                         isMuted = true,
+                                        isPrivate = isPrivate,
                                         onPay = null
                                     )
                                 }
                             }
                         }
 
-                        // Estado vazio do mês
+                        // Estado vazio geral do mês
                         if (forecast.totalItemsCount == 0) {
                             item {
                                 EmptyForecastCard(onAddExpense = onNavigateToNewExpense)
@@ -279,11 +325,25 @@ fun HomeScreen(
             }
         }
     }
+
+    if (showMonthPickerSheet) {
+        MonthPickerBottomSheet(
+            currentSelectedMillis = uiState.selectedMonthMillis,
+            sheetState = monthPickerSheetState,
+            onDismiss = { showMonthPickerSheet = false },
+            onMonthSelected = { monthMillis ->
+                onAction(HomeUiAction.SelectMonth(monthMillis))
+            }
+        )
+    }
 }
 
 @Composable
 fun HomeTopBar(
     monthLabel: String,
+    isPrivate: Boolean,
+    onTogglePrivacy: () -> Unit,
+    onOpenMonthPicker: () -> Unit,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onCurrentMonth: () -> Unit,
@@ -317,12 +377,32 @@ fun HomeTopBar(
                     )
                 }
 
-                Text(
-                    text = monthLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Cápsula Clicável do Mês (Abre BottomSheet em Grade)
+                Surface(
+                    onClick = onOpenMonthPicker,
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                    ) {
+                        Text(
+                            text = monthLabel,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Selecionar mês",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
 
                 IconButton(onClick = onNextMonth) {
                     Icon(
@@ -333,16 +413,23 @@ fun HomeTopBar(
                 }
             }
 
-            TextButton(
-                onClick = onCurrentMonth,
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
-            ) {
-                Text(
-                    text = "Hoje",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                PlatformPrivacyToggle(
+                    isPrivate = isPrivate,
+                    onToggle = onTogglePrivacy
                 )
+
+                TextButton(
+                    onClick = onCurrentMonth,
+                    shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                ) {
+                    Text(
+                        text = "Hoje",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }
@@ -351,8 +438,17 @@ fun HomeTopBar(
 @Composable
 fun ForecastImpactCard(
     totalForecastCents: Long,
-    totalPaidCents: Long
+    totalPaidCents: Long,
+    isPrivate: Boolean
 ) {
+    val totalMonthCents = totalForecastCents + totalPaidCents
+    val progress = if (totalMonthCents > 0L) {
+        totalPaidCents.toFloat() / totalMonthCents.toFloat()
+    } else {
+        0f
+    }
+    val percentage = (progress * 100).toInt()
+
     PlatformCard(
         shape = RoundedCornerShape(Dimens.cardCornerRadius)
     ) {
@@ -361,23 +457,53 @@ fun ForecastImpactCard(
                 .fillMaxWidth()
                 .padding(Dimens.spacingNormal)
         ) {
-            Text(
-                text = "Total Previsto no Mês",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column {
+                    Text(
+                        text = "Total Previsto no Mês",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = formatValueOrPrivate(totalForecastCents, isPrivate),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (percentage == 100 && totalMonthCents > 0) SuccessGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        text = "$percentage% quitado",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (percentage == 100 && totalMonthCents > 0) SuccessGreen else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Barra de Progresso de Quitação Elegante
+            PlatformProgressBar(
+                progress = progress,
+                height = 7.dp,
+                progressColor = if (percentage == 100 && totalMonthCents > 0) SuccessGreen else MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = CurrencyUtils.formatCentsToCurrency(totalForecastCents),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -392,16 +518,84 @@ fun ForecastImpactCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "Já Pago no Mês:",
+                        text = "Já Pago:",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formatValueOrPrivate(totalPaidCents, isPrivate),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SuccessGreen
+                    )
                 }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Total Geral:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formatValueOrPrivate(totalMonthCents, isPrivate),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MonthVictoryCard(
+    paidCount: Int,
+    paidTotalCents: Long,
+    isPrivate: Boolean
+) {
+    Surface(
+        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        color = SuccessGreen.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimens.spacingNormal),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(SuccessGreen.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = SuccessGreen,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = CurrencyUtils.formatCentsToCurrency(totalPaidCents),
+                    text = "Tudo em dia para este mês!",
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = SuccessGreen
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "$paidCount contas liquidadas · Total de ${formatValueOrPrivate(paidTotalCents, isPrivate)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -409,7 +603,10 @@ fun ForecastImpactCard(
 }
 
 @Composable
-fun SemaphoricSummaryRow(forecast: MonthlyForecastResult) {
+fun SemaphoricSummaryRow(
+    forecast: MonthlyForecastResult,
+    isPrivate: Boolean
+) {
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSmall)
     ) {
@@ -418,7 +615,8 @@ fun SemaphoricSummaryRow(forecast: MonthlyForecastResult) {
                 label = "Atrasadas",
                 count = forecast.overdueCount,
                 amountCents = forecast.overdueTotalCents,
-                accentColor = UrgentRed
+                accentColor = UrgentRed,
+                isPrivate = isPrivate
             )
         }
         item {
@@ -426,7 +624,8 @@ fun SemaphoricSummaryRow(forecast: MonthlyForecastResult) {
                 label = "Vence Hoje",
                 count = forecast.dueTodayCount,
                 amountCents = forecast.dueTodayTotalCents,
-                accentColor = WarningAmber
+                accentColor = WarningAmber,
+                isPrivate = isPrivate
             )
         }
         item {
@@ -434,7 +633,8 @@ fun SemaphoricSummaryRow(forecast: MonthlyForecastResult) {
                 label = "Próximos 7 Dias",
                 count = forecast.next7DaysCount,
                 amountCents = forecast.next7DaysTotalCents,
-                accentColor = MaterialTheme.colorScheme.primary
+                accentColor = MaterialTheme.colorScheme.primary,
+                isPrivate = isPrivate
             )
         }
         item {
@@ -442,7 +642,8 @@ fun SemaphoricSummaryRow(forecast: MonthlyForecastResult) {
                 label = "Pagas no Mês",
                 count = forecast.paidCount,
                 amountCents = forecast.paidTotalCents,
-                accentColor = SuccessGreen
+                accentColor = SuccessGreen,
+                isPrivate = isPrivate
             )
         }
     }
@@ -453,12 +654,13 @@ fun SemaphoricChip(
     label: String,
     count: Int,
     amountCents: Long,
-    accentColor: Color
+    accentColor: Color,
+    isPrivate: Boolean
 ) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
         modifier = Modifier.width(135.dp)
     ) {
         Column(
@@ -490,7 +692,7 @@ fun SemaphoricChip(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = CurrencyUtils.formatCentsToCurrency(amountCents),
+                text = formatValueOrPrivate(amountCents, isPrivate),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -506,7 +708,8 @@ fun UrgencySectionHeader(
     title: String,
     count: Int,
     badgeColor: Color,
-    totalCents: Long
+    totalCents: Long,
+    isPrivate: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -530,7 +733,7 @@ fun UrgencySectionHeader(
             )
         }
         Text(
-            text = CurrencyUtils.formatCentsToCurrency(totalCents),
+            text = formatValueOrPrivate(totalCents, isPrivate),
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -543,6 +746,7 @@ fun CollapsiblePaidHeader(
     isExpanded: Boolean,
     count: Int,
     totalCents: Long,
+    isPrivate: Boolean,
     onToggle: () -> Unit
 ) {
     Surface(
@@ -576,7 +780,7 @@ fun CollapsiblePaidHeader(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = CurrencyUtils.formatCentsToCurrency(totalCents),
+                    text = formatValueOrPrivate(totalCents, isPrivate),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium,
                     color = SuccessGreen
@@ -597,6 +801,7 @@ fun CollapsiblePaidHeader(
 fun PayableItemCard(
     item: PayableItem,
     isMuted: Boolean = false,
+    isPrivate: Boolean = false,
     onPay: (() -> Unit)? = null
 ) {
     val alphaModifier = if (isMuted) Modifier.alpha(0.75f) else Modifier
@@ -686,7 +891,7 @@ fun PayableItemCard(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = CurrencyUtils.formatCentsToCurrency(item.amountCents),
+                    text = formatValueOrPrivate(item.amountCents, isPrivate),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (item.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
@@ -695,7 +900,7 @@ fun PayableItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 if (onPay != null && !item.isPaid) {
-                    // Ação de Baixa com 1 Toque
+                    // Ação de Baixa com 1 Toque e feedback háptico
                     Button(
                         onClick = onPay,
                         colors = ButtonDefaults.buttonColors(

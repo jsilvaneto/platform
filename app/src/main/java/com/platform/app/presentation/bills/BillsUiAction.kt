@@ -28,5 +28,7 @@ sealed interface BillsUiAction : UiAction {
     data class StatusFilterChanged(val status: BillStatus?) : BillsUiAction
     data class PeriodFilterChanged(val period: BillPeriodFilter) : BillsUiAction
     data class MonthChanged(val monthMillis: Long) : BillsUiAction
+    data class PayBatch(val installmentIds: List<String>) : BillsUiAction
+    data class DeleteBatch(val billIds: List<String>) : BillsUiAction
     object Refresh : BillsUiAction
 }

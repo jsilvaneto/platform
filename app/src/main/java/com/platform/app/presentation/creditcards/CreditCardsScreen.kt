@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
@@ -74,6 +75,9 @@ import com.platform.app.domain.model.CreditCardWithInvoiceSummary
 import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformCreditCardView
+import com.platform.app.presentation.components.PlatformSegmentedTabs
+import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.components.PlatformStatusChip
 import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.Dimens
@@ -87,7 +91,8 @@ fun CreditCardsScreen(
     uiState: CreditCardsUiState,
     onAction: (CreditCardsUiAction) -> Unit,
     onOpenDrawer: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToNewExpense: () -> Unit = {}
 ) {
     var showAddCardSheet by remember { mutableStateOf(false) }
 
@@ -183,9 +188,9 @@ fun CreditCardsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
                             ) {
                                 items(uiState.cardsWithSummary, key = { it.card.id }) { summary ->
-                                    CreditCardItemCard(
+                                    PlatformCreditCardView(
                                         summary = summary,
-                                        isSelected = summary.card.id == uiState.selectedCardId,
+                                        isSelected = summary.card.id == (uiState.selectedCardId ?: uiState.cardsWithSummary.firstOrNull()?.card?.id),
                                         onClick = { onAction(CreditCardsUiAction.SelectCard(summary.card.id)) },
                                         onEdit = { onAction(CreditCardsUiAction.OpenEditCard(summary.card)) },
                                         onDelete = { onAction(CreditCardsUiAction.RequestDeleteCard(summary.card.id)) }
@@ -200,51 +205,112 @@ fun CreditCardsScreen(
                     if (selectedCardSummary != null) {
                         item {
                             Spacer(modifier = Modifier.height(Dimens.spacingSmall))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Faturas de ${selectedCardSummary.card.name}",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Corte: dia ${selectedCardSummary.card.closingDay} • Venc: dia ${selectedCardSummary.card.dueDay}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(Dimens.spacingSmall))
 
-                            // Filtros de Fatura
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            // Card Executivo do Ciclo: Melhor Dia de Compra & Atalho de Lançamento
+                            PlatformCard(
+                                shape = RoundedCornerShape(Dimens.cardCornerRadius)
                             ) {
-                                FilterChip(
-                                    selected = uiState.invoiceFilter == InvoiceFilter.ALL,
-                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.ALL)) },
-                                    label = { Text("Todas") }
-                                )
-                                FilterChip(
-                                    selected = uiState.invoiceFilter == InvoiceFilter.OPEN,
-                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.OPEN)) },
-                                    label = { Text("Abertas") }
-                                )
-                                FilterChip(
-                                    selected = uiState.invoiceFilter == InvoiceFilter.CLOSED,
-                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.CLOSED)) },
-                                    label = { Text("Fechadas") }
-                                )
-                                FilterChip(
-                                    selected = uiState.invoiceFilter == InvoiceFilter.PAID,
-                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.PAID)) },
-                                    label = { Text("Pagas") }
-                                )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(36.dp)
+                                                    .background(WarningAmber.copy(alpha = 0.15f), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.CalendarToday,
+                                                    contentDescription = null,
+                                                    tint = WarningAmber,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(10.dp))
+                                            Column {
+                                                Text(
+                                                    text = "Melhor Dia: dia ${selectedCardSummary.card.closingDay}",
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "Compras a partir deste dia caem na próxima fatura",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Button(
+                                        onClick = onNavigateToNewExpense,
+                                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(38.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Lançar Despesa com ${selectedCardSummary.card.name}",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
+
+                            Spacer(modifier = Modifier.height(Dimens.spacingMedium))
+
+                            // Seletor de Faturas em Segmented Tabs
+                            val allInvoices = uiState.invoicesForSelectedCard
+                            val openCount = allInvoices.count { it.status == InvoiceStatus.ABERTA }
+                            val closedCount = allInvoices.count { it.status == InvoiceStatus.FECHADA }
+                            val paidCount = allInvoices.count { it.status == InvoiceStatus.PAGA }
+
+                            val invoiceTabItems = listOf(
+                                SegmentedTabItem("Aberta", openCount),
+                                SegmentedTabItem("Fechadas", closedCount),
+                                SegmentedTabItem("Pagas", paidCount),
+                                SegmentedTabItem("Todas", allInvoices.size)
+                            )
+
+                            val selectedInvoiceTabIndex = when (uiState.invoiceFilter) {
+                                InvoiceFilter.OPEN -> 0
+                                InvoiceFilter.CLOSED -> 1
+                                InvoiceFilter.PAID -> 2
+                                InvoiceFilter.ALL -> 3
+                            }
+
+                            PlatformSegmentedTabs(
+                                items = invoiceTabItems,
+                                selectedIndex = selectedInvoiceTabIndex,
+                                onTabSelected = { index ->
+                                    when (index) {
+                                        0 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.OPEN))
+                                        1 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.CLOSED))
+                                        2 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.PAID))
+                                        3 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.ALL))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
 
                         val invoices = uiState.filteredInvoices

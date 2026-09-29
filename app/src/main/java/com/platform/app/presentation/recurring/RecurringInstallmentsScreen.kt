@@ -1,6 +1,7 @@
 package com.platform.app.presentation.recurring
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,14 +17,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
@@ -39,13 +44,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -54,6 +56,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -61,20 +64,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillType
+import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformProgressBar
+import com.platform.app.presentation.components.PlatformSegmentedTabs
+import com.platform.app.presentation.components.SegmentedTabItem
+import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 
@@ -88,6 +96,17 @@ fun RecurringInstallmentsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var planToViewDetails by remember { mutableStateOf<BillWithInstallments?>(null) }
+
+    // 0: Compras Parceladas, 1: Assinaturas & Custos Fixos
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+
+    val installmentItems = remember(uiState.items) {
+        uiState.items.filter { it.bill.type == BillType.INSTALLMENT }
+    }
+    val recurringItems = remember(uiState.items) {
+        uiState.items.filter { it.bill.type == BillType.RECURRING }
+    }
+    val currentTabItems = if (selectedTabIndex == 0) installmentItems else recurringItems
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -135,104 +154,164 @@ fun RecurringInstallmentsScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Cards de Resumo Consolidado
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = "Restante Parcelado",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
+            // 1. Segmented Tabs Superiores: Compras Parceladas vs Assinaturas
+            val tabItems = remember(installmentItems.size, recurringItems.size) {
+                listOf(
+                    SegmentedTabItem("Compras Parceladas", installmentItems.size),
+                    SegmentedTabItem("Assinaturas & Custos Fixos", recurringItems.size)
+                )
+            }
+
+            PlatformSegmentedTabs(
+                items = tabItems,
+                selectedIndex = selectedTabIndex,
+                onTabSelected = { selectedTabIndex = it },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 2. Resumo Consolidado Contextual
+            if (selectedTabIndex == 0) {
+                // Resumo de Compras Parceladas (Amortização Total)
+                val totalInstallmentOriginal = remember(installmentItems) {
+                    installmentItems.sumOf { it.bill.totalAmountCents }
+                }
+                val totalPaidInstallment = remember(installmentItems) {
+                    installmentItems.sumOf { it.totalPaidCents }
+                }
+                val amortizedProgress = if (totalInstallmentOriginal > 0L) {
+                    totalPaidInstallment.toFloat() / totalInstallmentOriginal.toFloat()
+                } else 0f
+
+                PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Saldo Devedor Restante",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(uiState.totalActiveInstallmentsCents),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = "${(amortizedProgress * 100).toInt()}% amortizado",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        PlatformProgressBar(
+                            progress = amortizedProgress,
+                            height = 6.dp,
+                            progressColor = MaterialTheme.colorScheme.primary
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = CurrencyUtils.formatCentsToCurrency(uiState.totalActiveInstallmentsCents),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Já quitado: ${CurrencyUtils.formatCentsToCurrency(totalPaidInstallment)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = SuccessGreen,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "Total financiado: ${CurrencyUtils.formatCentsToCurrency(totalInstallmentOriginal)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
+            } else {
+                // Resumo de Assinaturas & Custos Fixos
+                PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Compromisso Mensal Fixo",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen
+                            )
+                        }
 
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp),
-                    color = SuccessGreen.copy(alpha = 0.12f)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = "Recorrente / Mês",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = SuccessGreen,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = SuccessGreen
-                        )
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Projeção Anual",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents * 12),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filtros rápidos
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item {
-                    FilterChip(
-                        selected = uiState.selectedFilter == null,
-                        onClick = { viewModel.onAction(RecurringInstallmentsUiAction.SelectFilter(null)) },
-                        label = { Text("Todos (${uiState.items.size})") }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = uiState.selectedFilter == BillType.INSTALLMENT,
-                        onClick = { viewModel.onAction(RecurringInstallmentsUiAction.SelectFilter(BillType.INSTALLMENT)) },
-                        label = {
-                            Text("Parcelamentos (${uiState.items.count { it.bill.type == BillType.INSTALLMENT }})")
-                        }
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = uiState.selectedFilter == BillType.RECURRING,
-                        onClick = { viewModel.onAction(RecurringInstallmentsUiAction.SelectFilter(BillType.RECURRING)) },
-                        label = {
-                            Text("Recorrentes (${uiState.items.count { it.bill.type == BillType.RECURRING }})")
-                        }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
             if (uiState.isLoading && uiState.items.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-            } else if (uiState.filteredItems.isEmpty()) {
-                EmptyRecurringView()
+            } else if (currentTabItems.isEmpty()) {
+                EmptyRecurringView(isInstallmentTab = selectedTabIndex == 0)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 84.dp)
                 ) {
-                    items(uiState.filteredItems, key = { it.bill.id }) { item ->
+                    items(currentTabItems, key = { it.bill.id }) { item ->
                         BillPlanCard(
                             item = item,
                             onClick = { planToViewDetails = item }
@@ -267,17 +346,17 @@ fun BillPlanCard(
     val bill = item.bill
     val isInstallment = bill.type == BillType.INSTALLMENT
 
-    Card(
+    val lastDueDate = item.installments.maxByOrNull { it.dueDate }?.dueDate
+    val lastDueLabel = lastDueDate?.let { "Término em ${DateUtils.formatMonthYear(it)}" }
+
+    PlatformCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
+        shape = RoundedCornerShape(Dimens.cardCornerRadius)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            // Header do Card
+            // Header: Ícone, Título e Valor
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -285,7 +364,7 @@ fun BillPlanCard(
                 Surface(
                     shape = CircleShape,
                     color = if (isInstallment)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     else
                         SuccessGreen.copy(alpha = 0.15f),
                     modifier = Modifier.size(40.dp)
@@ -314,11 +393,11 @@ fun BillPlanCard(
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = if (isInstallment)
-                            "${item.paidInstallmentsCount}/${bill.totalInstallments} parcelas pagas"
+                            "${item.paidInstallmentsCount}/${bill.totalInstallments} pagas"
                         else
-                            "Assinatura Recorrente Mensal",
+                            "Assinatura Contínua",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -335,12 +414,18 @@ fun BillPlanCard(
                         Text(
                             text = "Resta: ${CurrencyUtils.formatCentsToCurrency(item.remainingCents)}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "${CurrencyUtils.formatCentsToCurrency(bill.totalAmountCents * 12)}/ano",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
@@ -350,35 +435,66 @@ fun BillPlanCard(
                 )
             }
 
+            // Amortização com PlatformProgressBar (apenas para compras parceladas)
             if (isInstallment) {
                 Spacer(modifier = Modifier.height(10.dp))
-                LinearProgressIndicator(
-                    progress = { item.progress },
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
+                PlatformProgressBar(
+                    progress = item.progress,
+                    height = 6.dp,
+                    progressColor = if (item.progress >= 1f) SuccessGreen else MaterialTheme.colorScheme.primary
                 )
-            }
 
-            item.nextInstallment?.let { next ->
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
+                    if (lastDueLabel != null) {
                         Text(
-                            text = "Próx. vencimento: ${DateUtils.formatDate(next.dueDate)}",
+                            text = lastDueLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    item.nextInstallment?.let { next ->
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                        ) {
+                            Text(
+                                text = "Próx: ${DateUtils.formatDate(next.dueDate)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Indicador de próxima cobrança de assinatura
+                item.nextInstallment?.let { next ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = SuccessGreen.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = "Próximo débito: ${DateUtils.formatDate(next.dueDate)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = SuccessGreen,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -422,7 +538,7 @@ fun RecurringDetailBottomSheet(
                 Surface(
                     shape = CircleShape,
                     color = if (isInstallment)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     else
                         SuccessGreen.copy(alpha = 0.15f),
                     modifier = Modifier.size(46.dp)
@@ -448,46 +564,48 @@ fun RecurringDetailBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (isInstallment) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else SuccessGreen.copy(alpha = 0.12f)
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (isInstallment)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            else
+                                SuccessGreen.copy(alpha = 0.15f)
                         ) {
                             Text(
-                                text = if (isInstallment) "Parcelamento" else "Recorrente Mensal",
+                                text = if (isInstallment) "Parcelamento" else "Recorrente",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isInstallment) MaterialTheme.colorScheme.primary else SuccessGreen,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
 
                         if (isInstallment) {
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = if (isAllPaid) SuccessGreen.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (isAllPaid) SuccessGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(
-                                    text = if (isAllPaid) "Totalmente Liquidado" else "${item.paidInstallmentsCount}/${bill.totalInstallments} pagas",
+                                    text = if (isAllPaid) "Totalmente Quitado" else "${item.paidInstallmentsCount}/${bill.totalInstallments} pagas",
                                     style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Medium,
                                     color = if (isAllPaid) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
                     }
                 }
 
-                // Canto Superior Direito: 3 Pontos com Opção de Excluir
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Mais opções",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            contentDescription = "Opções",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -515,22 +633,18 @@ fun RecurringDetailBottomSheet(
                 }
             }
 
-            // Hero Card: Resumo dos Valores
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            // Hero Card: Resumo dos Valores com PlatformProgressBar
+            PlatformCard(
+                shape = RoundedCornerShape(Dimens.cardCornerRadius)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = if (isInstallment) "Valor Total do Contrato / Compra" else "Valor Recorrente Mensal",
+                        text = if (isInstallment) "Valor Total da Compra / Contrato" else "Valor Recorrente Mensal",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Text(
@@ -541,13 +655,10 @@ fun RecurringDetailBottomSheet(
                     )
 
                     if (isInstallment) {
-                        LinearProgressIndicator(
-                            progress = { item.progress },
-                            color = if (isAllPaid) SuccessGreen else MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
+                        PlatformProgressBar(
+                            progress = item.progress,
+                            height = 7.dp,
+                            progressColor = if (isAllPaid) SuccessGreen else MaterialTheme.colorScheme.primary
                         )
 
                         Row(
@@ -559,7 +670,7 @@ fun RecurringDetailBottomSheet(
                                 Text(
                                     text = "Total Pago",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = CurrencyUtils.formatCentsToCurrency(item.totalPaidCents),
@@ -573,7 +684,7 @@ fun RecurringDetailBottomSheet(
                                 Text(
                                     text = "Restante",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = CurrencyUtils.formatCentsToCurrency(item.remainingCents),
@@ -587,170 +698,46 @@ fun RecurringDetailBottomSheet(
                 }
             }
 
-            // Card: Próximo Vencimento
-            item.nextInstallment?.let { next ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "Próximo Vencimento",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = DateUtils.formatDate(next.dueDate),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
+            // Cronograma de Parcelas
+            if (isInstallment && item.installments.isNotEmpty()) {
+                Text(
+                    text = "Cronograma de Parcelas (${item.installments.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                        Text(
-                            text = CurrencyUtils.formatCentsToCurrency(next.amountCents),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item.installments.forEach { inst ->
+                        InstallmentRow(
+                            installment = inst,
+                            onTogglePayment = { onTogglePayment(inst.id, inst.isPaid) }
                         )
                     }
                 }
             }
 
-            // Card com a lista de todas as parcelas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Vencimentos & Parcelas (${item.installments.size})",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-
-                    item.installments.forEach { inst ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconButton(
-                                onClick = { onTogglePayment(inst.id, inst.isPaid) },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (inst.isPaid) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                                    contentDescription = if (inst.isPaid) "Pago" else "Pendente",
-                                    tint = if (inst.isPaid) SuccessGreen else MaterialTheme.colorScheme.outline
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(8.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (isInstallment)
-                                        "Parcela ${inst.installmentNumber}/${inst.totalInstallments} • ${DateUtils.formatDate(inst.dueDate)}"
-                                    else
-                                        "Vencimento: ${DateUtils.formatDate(inst.dueDate)}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (inst.isPaid)
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                    else
-                                        MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (inst.isPaid) "Liquidado" else "Pendente",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (inst.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
-
-                            Text(
-                                text = CurrencyUtils.formatCentsToCurrency(inst.amountCents),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (inst.isPaid)
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                                else
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
     if (showDeleteConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
-            title = {
-                Text(
-                    text = "Excluir Lançamento",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            text = {
-                Text(
-                    text = "Deseja realmente excluir '${bill.title}' e todas as suas parcelas associadas?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
+            title = { Text("Excluir Lançamento") },
+            text = { Text("Deseja realmente excluir '${bill.title}' e todas as suas parcelas?") },
             confirmButton = {
-                Button(
+                TextButton(
                     onClick = {
                         showDeleteConfirmDialog = false
-                        onDismiss()
                         onDelete()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                    }
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    Text("Excluir", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                OutlinedButton(
-                    onClick = { showDeleteConfirmDialog = false },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
+                TextButton(onClick = { showDeleteConfirmDialog = false }) {
                     Text("Cancelar")
                 }
             }
@@ -759,28 +746,110 @@ fun RecurringDetailBottomSheet(
 }
 
 @Composable
-fun EmptyRecurringView() {
-    Column(
+fun InstallmentRow(
+    installment: com.platform.app.domain.model.BillInstallment,
+    onTogglePayment: () -> Unit
+) {
+    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
+
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onTogglePayment,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = if (installment.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
+                        contentDescription = if (installment.isPaid) "Marcar como pendente" else "Marcar como paga",
+                        tint = if (installment.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Column {
+                    Text(
+                        text = "Parcela ${installment.installmentNumber}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Vencimento: ${DateUtils.formatDate(installment.dueDate)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Text(
+                text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = if (installment.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+fun EmptyRecurringView(isInstallmentTab: Boolean = true) {
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(top = 40.dp),
+        contentAlignment = Alignment.TopCenter
     ) {
-        Text("💳", style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Nenhum compromisso recorrente ou parcelado",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "Cadastre contas do tipo 'Parcelada' ou 'Recorrente' no menu Registros para acompanhá-las aqui.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isInstallmentTab) Icons.Default.CreditCard else Icons.Default.Autorenew,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = if (isInstallmentTab) "Nenhuma Compra Parcelada" else "Nenhuma Assinatura Cadastrada",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = if (isInstallmentTab)
+                    "Cadastre compras parceladas para acompanhar o progresso da amortização."
+                else
+                    "Cadastre despesas contínuas como streaming e condomínio.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
     }
 }

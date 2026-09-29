@@ -62,9 +62,41 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
             is BillsUiAction.PeriodFilterChanged -> handlePeriodFilter(action.period)
             is BillsUiAction.MonthChanged -> handleMonthChanged(action.monthMillis)
+            is BillsUiAction.PayBatch -> handlePayBatch(action.installmentIds)
+            is BillsUiAction.DeleteBatch -> handleDeleteBatch(action.billIds)
             is BillsUiAction.Refresh -> {
                 loadAuxiliaryData()
                 loadInstallments()
+            }
+        }
+    }
+
+    private fun handlePayBatch(installmentIds: List<String>) {
+        viewModelScope.launch {
+            try {
+                installmentIds.forEach { id ->
+                    repository.toggleInstallmentPayment(
+                        installmentId = id,
+                        isPaid = true,
+                        paidTimestamp = System.currentTimeMillis()
+                    )
+                }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("${installmentIds.size} conta(s) marcada(s) como paga(s)!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro no pagamento em lote: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleDeleteBatch(billIds: List<String>) {
+        viewModelScope.launch {
+            try {
+                billIds.distinct().forEach { id ->
+                    repository.deleteBill(id)
+                }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("${billIds.distinct().size} conta(s) excluída(s) com sucesso."))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro na exclusão em lote: ${e.message}"))
             }
         }
     }

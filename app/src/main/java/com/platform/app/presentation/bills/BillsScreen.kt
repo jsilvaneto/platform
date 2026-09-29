@@ -69,6 +69,9 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformEmptyState
+import com.platform.app.presentation.components.PlatformSegmentedTabs
+import com.platform.app.presentation.components.SegmentedTabItem
+import com.platform.app.presentation.components.PlatformBatchActionBar
 import kotlinx.coroutines.flow.Flow
 
 import androidx.compose.animation.AnimatedVisibility
@@ -76,10 +79,13 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
@@ -123,6 +129,11 @@ fun BillsScreen(
     val focusRequester = remember { FocusRequester() }
     var installmentToViewDetails by remember { mutableStateOf<BillInstallment?>(null) }
 
+    // Estado do modo de seleção múltipla em lote
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
+    var showBatchDeleteDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(isSearchExpanded) {
         if (isSearchExpanded) {
             focusRequester.requestFocus()
@@ -145,7 +156,7 @@ fun BillsScreen(
                 title = {
                     if (!isSearchExpanded) {
                         Text(
-                            text = "Registros",
+                            text = if (isSelectionMode) "${selectedInstallmentIds.size} selecionado(s)" else "Registros",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -154,8 +165,20 @@ fun BillsScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                    IconButton(
+                        onClick = {
+                            if (isSelectionMode) {
+                                isSelectionMode = false
+                                selectedInstallmentIds = emptySet()
+                            } else {
+                                onOpenDrawer()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isSelectionMode) Icons.Default.Close else Icons.Default.Menu,
+                            contentDescription = if (isSelectionMode) "Fechar seleção" else "Menu lateral"
+                        )
                     }
                 },
                 actions = {
@@ -199,7 +222,7 @@ fun BillsScreen(
                                     }
                                 },
                                 modifier = Modifier
-                                    .width(230.dp)
+                                    .width(210.dp)
                                     .height(46.dp)
                                     .focusRequester(focusRequester)
                                     .padding(end = 4.dp)
@@ -220,6 +243,21 @@ fun BillsScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+
+                        IconButton(
+                            onClick = {
+                                isSelectionMode = !isSelectionMode
+                                if (!isSelectionMode) {
+                                    selectedInstallmentIds = emptySet()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Checklist,
+                                contentDescription = "Modo de seleção múltipla",
+                                tint = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -231,13 +269,15 @@ fun BillsScreen(
             SnackbarHost(hostState = snackbarHostState)
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNavigateToNewExpense,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Despesa")
+            if (!isSelectionMode) {
+                FloatingActionButton(
+                    onClick = onNavigateToNewExpense,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Despesa")
+                }
             }
         },
         modifier = modifier
@@ -248,15 +288,79 @@ fun BillsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Filtros de Período, Tipo e Status
+            // 1. Segmented Tabs Superiores: A Pagar | Pagas | Todas
+            val pendingCount = remember(uiState.installments) { uiState.installments.count { !it.isPaid } }
+            val paidCount = remember(uiState.installments) { uiState.installments.count { it.isPaid } }
+            val totalCount = remember(uiState.installments) { uiState.installments.size }
+
+            val tabItems = remember(pendingCount, paidCount, totalCount) {
+                listOf(
+                    SegmentedTabItem("A Pagar", pendingCount),
+                    SegmentedTabItem("Pagas", paidCount),
+                    SegmentedTabItem("Todas", totalCount)
+                )
+            }
+
+            val selectedTabIndex = when (uiState.statusFilter) {
+                BillStatus.PENDING -> 0
+                BillStatus.PAID -> 1
+                null -> 2
+                else -> 0
+            }
+
+            PlatformSegmentedTabs(
+                items = tabItems,
+                selectedIndex = selectedTabIndex,
+                onTabSelected = { index ->
+                    when (index) {
+                        0 -> onAction(BillsUiAction.StatusFilterChanged(BillStatus.PENDING))
+                        1 -> onAction(BillsUiAction.StatusFilterChanged(BillStatus.PAID))
+                        2 -> onAction(BillsUiAction.StatusFilterChanged(null))
+                    }
+                },
+                modifier = Modifier.padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
+            )
+
+            // 2. Filtros Secundários Refinados: Período e Tipo
             FilterChipsRow(
                 periodFilter = uiState.periodFilter,
                 typeFilter = uiState.typeFilter,
-                statusFilter = uiState.statusFilter,
                 onPeriodFilterChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
-                onTypeFilterChange = { onAction(BillsUiAction.TypeFilterChanged(it)) },
-                onStatusFilterChange = { onAction(BillsUiAction.StatusFilterChanged(it)) }
+                onTypeFilterChange = { onAction(BillsUiAction.TypeFilterChanged(it)) }
             )
+
+            // 3. Banner de Totais Filtrados
+            val filteredTotalCents = remember(uiState.filteredInstallments) {
+                uiState.filteredInstallments.sumOf { it.amountCents }
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimens.spacingNormal, vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${uiState.filteredInstallments.size} ${if (uiState.filteredInstallments.size == 1) "registro" else "registros"}",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Total: ${CurrencyUtils.formatCentsToCurrency(filteredTotalCents)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
@@ -275,22 +379,74 @@ fun BillsScreen(
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             items(uiState.filteredInstallments, key = { it.id }) { installment ->
+                                val isSelected = installment.id in selectedInstallmentIds
+
                                 BillInstallmentItemCard(
                                     installment = installment,
+                                    isSelectionMode = isSelectionMode,
+                                    isSelected = isSelected,
+                                    onToggleSelect = {
+                                        selectedInstallmentIds = if (isSelected) {
+                                            selectedInstallmentIds - installment.id
+                                        } else {
+                                            selectedInstallmentIds + installment.id
+                                        }
+                                    },
+                                    onLongClick = {
+                                        isSelectionMode = true
+                                        selectedInstallmentIds = selectedInstallmentIds + installment.id
+                                    },
                                     onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
-                                    onSelectInstallment = { installmentToViewDetails = installment }
+                                    onSelectInstallment = {
+                                        if (isSelectionMode) {
+                                            selectedInstallmentIds = if (isSelected) {
+                                                selectedInstallmentIds - installment.id
+                                            } else {
+                                                selectedInstallmentIds + installment.id
+                                            }
+                                        } else {
+                                            installmentToViewDetails = installment
+                                        }
+                                    }
                                 )
                             }
                             item {
-                                Spacer(modifier = Modifier.height(72.dp))
+                                Spacer(modifier = Modifier.height(84.dp))
                             }
                         }
                     }
                 }
+
+                // 4. Barra Flutuante de Ações em Lote
+                val selectedTotalCents = remember(selectedInstallmentIds, uiState.installments) {
+                    uiState.installments
+                        .filter { it.id in selectedInstallmentIds }
+                        .sumOf { it.amountCents }
+                }
+
+                PlatformBatchActionBar(
+                    visible = isSelectionMode && selectedInstallmentIds.isNotEmpty(),
+                    selectedCount = selectedInstallmentIds.size,
+                    totalCents = selectedTotalCents,
+                    onPayBatch = {
+                        val idsToPay = selectedInstallmentIds.toList()
+                        onAction(BillsUiAction.PayBatch(idsToPay))
+                        selectedInstallmentIds = emptySet()
+                        isSelectionMode = false
+                    },
+                    onDeleteBatch = {
+                        showBatchDeleteDialog = true
+                    },
+                    onClearSelection = {
+                        selectedInstallmentIds = emptySet()
+                        isSelectionMode = false
+                    },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
 
                 installmentToViewDetails?.let { inst ->
                     val currentInstallment = uiState.installments.find { it.id == inst.id } ?: inst
@@ -309,21 +465,59 @@ fun BillsScreen(
             }
         }
     }
+
+    if (showBatchDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showBatchDeleteDialog = false },
+            title = {
+                Text(
+                    text = "Excluir Selecionadas",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Tem certeza de que deseja excluir as ${selectedInstallmentIds.size} contas selecionadas?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val billIds = uiState.installments
+                            .filter { it.id in selectedInstallmentIds }
+                            .map { it.billId }
+                        onAction(BillsUiAction.DeleteBatch(billIds))
+                        selectedInstallmentIds = emptySet()
+                        isSelectionMode = false
+                        showBatchDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Excluir")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showBatchDeleteDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 fun FilterChipsRow(
     periodFilter: BillPeriodFilter,
     typeFilter: BillType?,
-    statusFilter: BillStatus?,
     onPeriodFilterChange: (BillPeriodFilter) -> Unit,
-    onTypeFilterChange: (BillType?) -> Unit,
-    onStatusFilterChange: (BillStatus?) -> Unit
+    onTypeFilterChange: (BillType?) -> Unit
 ) {
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Período
@@ -352,23 +546,7 @@ fun FilterChipsRow(
             FilterChip(
                 selected = periodFilter == BillPeriodFilter.ALL,
                 onClick = { onPeriodFilterChange(BillPeriodFilter.ALL) },
-                label = { Text("Todas as Contas") }
-            )
-        }
-
-        // Status
-        item {
-            FilterChip(
-                selected = statusFilter == BillStatus.PENDING,
-                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PENDING) null else BillStatus.PENDING) },
-                label = { Text("A Pagar") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = statusFilter == BillStatus.PAID,
-                onClick = { onStatusFilterChange(if (statusFilter == BillStatus.PAID) null else BillStatus.PAID) },
-                label = { Text("Pagas") }
+                label = { Text("Todo Período") }
             )
         }
 
@@ -397,9 +575,14 @@ fun FilterChipsRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun BillInstallmentItemCard(
     installment: BillInstallment,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelect: () -> Unit = {},
+    onLongClick: () -> Unit = {},
     onTogglePayment: () -> Unit,
     onSelectInstallment: () -> Unit
 ) {
@@ -414,19 +597,29 @@ fun BillInstallmentItemCard(
         }
     }
 
+    val cardBorder = if (isSelected) {
+        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+    } else {
+        BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    }
+
+    val cardColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        installment.isPaid -> MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+        else -> MaterialTheme.colorScheme.surface
+    }
+
     Card(
         shape = RoundedCornerShape(Dimens.cardCornerRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = if (installment.isPaid)
-                MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
-            else
-                MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        border = cardBorder,
         elevation = CardDefaults.cardElevation(defaultElevation = Dimens.defaultElevation),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onSelectInstallment() }
+            .combinedClickable(
+                onClick = onSelectInstallment,
+                onLongClick = onLongClick
+            )
     ) {
         Row(
             modifier = Modifier
@@ -434,14 +627,25 @@ fun BillInstallmentItemCard(
                 .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                checked = installment.isPaid,
-                onCheckedChange = { onTogglePayment() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = SuccessGreen,
-                    uncheckedColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onToggleSelect() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
+            } else {
+                Checkbox(
+                    checked = installment.isPaid,
+                    onCheckedChange = { onTogglePayment() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = SuccessGreen,
+                        uncheckedColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.width(6.dp))
 

@@ -51,4 +51,27 @@ object DateUtils {
         }
         return cal.timeInMillis
     }
+
+    fun getYear(epochMillis: Long): Int {
+        val cal = Calendar.getInstance().apply { timeInMillis = epochMillis }
+        return cal.get(Calendar.YEAR)
+    }
+
+    fun getMonth(epochMillis: Long): Int {
+        val cal = Calendar.getInstance().apply { timeInMillis = epochMillis }
+        return cal.get(Calendar.MONTH)
+    }
+
+    fun createMonthMillis(year: Int, month: Int): Long {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.YEAR, year)
+            set(Calendar.MONTH, month)
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return cal.timeInMillis
+    }
 }

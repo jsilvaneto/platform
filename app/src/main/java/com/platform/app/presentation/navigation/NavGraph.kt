@@ -116,7 +116,8 @@ fun NavGraph(
             CreditCardsScreen(
                 uiState = uiState,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
             )
         }
 

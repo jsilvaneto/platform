@@ -3,6 +3,34 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.4.1] - 2026-09-29
+
+### 💎 Grande Update das 4 Telas Centrais (Obsidian & Porcelain Minimalist)
+- **1. Tela Inicial (`HomeScreen`)**:
+  - **Executive Hero Card**: Adição de barra de progresso horizontal (`PlatformProgressBar`) com cantos arredondados indicando o percentual de quitação do mês (ex: *"68% quitado"*) e métricas de Já Quitado e Total Geral.
+  - **Modo Privacidade (`PlatformPrivacyToggle`)**: Alternador com ícone de olho para mascarar valores confidenciais (`R$ ••••••`) em locais públicos.
+  - **Seletor de Mês Rápido em Grade (`MonthPickerBottomSheet`)**: Grade visual de meses e seletor de ano direto no título do mês, eliminando cliques repetitivos em setas.
+  - **Empty State Triunfante (`MonthVictoryCard`)**: Card comemorativo esmeralda quando todas as contas do mês estiverem 100% quitadas.
+  - **Micro-interações Hápticas**: Vibração suave ao efetuar a baixa de contas na lista.
+- **2. Tela de Registros (`BillsScreen`)**:
+  - **Segmented Tabs no Topo (`PlatformSegmentedTabs`)**: Divisão em 3 abas especializadas (`A Pagar`, `Pagas`, `Todas` com contadores numéricos).
+  - **Banner de Totais Filtrados**: Resumo instantâneo do valor total e quantidade de registros visíveis.
+  - **Ações em Lote (`PlatformBatchActionBar`)**: Modo de seleção múltipla (toque longo ou botão no TopBar) para liquidar ou excluir várias contas com 1 confirmação.
+- **3. Tela de Recorrentes & Parcelados (`RecurringInstallmentsScreen`)**:
+  - **Separação por Abas**: Divisão nítida entre `Compras Parceladas` (amortização com data final) e `Assinaturas & Custos Fixos` (compromisso mensal contínuo).
+  - **Card de Amortização Estilo Financiamento**: Progresso visual com `PlatformProgressBar`, projeção de data de quitação final (*"Término em Mês/Ano"*) e saldo devedor restante.
+  - **Cronograma de Parcelas**: Acompanhamento detalhado de cada parcela com baixa direta.
+  - **Projeção Anual de Assinaturas**: Exibição do custo anual consolidado (*"R$ Y/ano"*).
+- **4. Tela de Cartões de Crédito (`CreditCardsScreen`)**:
+  - **Design Virtual Apple Card / Revolut (`PlatformCreditCardView`)**: Proporção bancária exata (`1.586f`), chip EMV vetorial metálico, gradiente acetinado e termômetro de limite inteligente semafórico integrado.
+  - **Ciclo de 3 Faturas**: Alternância de abas entre `Aberta`, `Fechadas`, `Pagas` e `Todas`.
+  - **Destaque do Melhor Dia de Compra**: Orientação visual do dia de corte para compras com até 40 dias de prazo.
+  - **Atalho de Nova Compra**: Botão direto no extrato para lançar despesa pré-selecionando o cartão.
+- **5. Novos Componentes Reutilizáveis**:
+  - `PlatformProgressBar.kt`, `PlatformPrivacyToggle.kt`, `PlatformSegmentedTabs.kt`, `PlatformBatchActionBar.kt`, `PlatformCreditCardView.kt`.
+- **6. Validação e Qualidade**:
+  - 100% da suíte `./gradlew testDebugUnitTest` aprovada e build limpo em 4 segundos.
+
 ---
 
 ## [1.4.0] - 2026-09-29

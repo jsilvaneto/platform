@@ -3,6 +3,32 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.4.2] - 2026-09-29
+
+### 📊 Inteligência Financeira 360° & Refatoração da Tela de Estatísticas
+- **Visão Temporal Integrada em 3 Eixos (Passado, Presente e Futuro)**:
+  - Navegação fluida via `PlatformSegmentedTabs` (`Passado`, `Presente`, `Futuro`) com suporte nativo ao **Modo Privacidade** (`PlatformPrivacyToggle`).
+- **1. Eixo Passado (Histórico & Tendências — Onde estivemos)**:
+  - **Média Histórica Mensal**: Baseline de custo de vida para guiar novos planejamentos.
+  - **Evolução dos Últimos 6 Meses**: Barras comparativas mês a mês de valor devido vs valor liquidado, com taxa de quitação individual e atalho de salto direto para o mês.
+  - **Comparativo com o Mês Anterior**: Variação em R$ e % com badges semafóricos de alta/baixa.
+  - **Picos e Vales Históricos**: Identificação do mês mais pesado vs mês mais econômico.
+  - **Ranking de Top Destinatários / Fornecedores**: Contatos que mais absorveram recursos.
+- **2. Eixo Presente (Raio-X do Mês Selecionado — Onde estamos)**:
+  - **Hero Card de Execução Orçamentária**: Total devido, valor pago, pendente e atrasado com termômetro semafórico `PlatformProgressBar`.
+  - **Rigidez Orçamentária (Regra 50/30/20 & Natureza dos Gastos)**: Classificação em `Obrigatório`, `Necessário`, `Deseja` e `Nenhum` com card de diagnóstico estratégico inteligente (*Alerta de Orçamento Engessado* caso Obrigatório > 55%).
+  - **Meio de Liquidação & Crédito**: Barra bifurcada e percentuais de exposição entre Cartão de Crédito vs Débito/Pix/Dinheiro.
+  - **Top Categorias & Contas Bancárias**: Distribuição visual dos gastos e concentração institucional.
+- **3. Eixo Futuro (Previsibilidade & Tomada de Decisão — Para onde vamos)**:
+  - **Curva de Desoneração (Próximos 6 Meses)**: Evolução decrescente dos desembolsos com destaque para o mês de maior pico e o mês de maior folga financeira.
+  - **Desoneração & Término de Parcelas**: Cronograma de compras parceladas ativas que chegam ao fim, com cálculo de alívio mensal gerado (*"+R$ X/mês livre"*).
+  - **Cockpit de Tomada de Decisão (Smart Advisor)**: Consultoria contextual em tempo real para responder *"Posso assumir uma nova compra parcelada agora?"*.
+- **4. Domínio & Testes Automatizados**:
+  - Modelos enriquecidos em `FinancialDashboardMetrics.kt` e agregação performática em `GetFinancialDashboardUseCase.kt`.
+  - 100% da suíte unitária aprovada (`./gradlew testDebugUnitTest`).
+
+---
+
 ## [1.4.1] - 2026-09-29
 
 ### 💎 Grande Update das 4 Telas Centrais (Obsidian & Porcelain Minimalist)

@@ -105,6 +105,18 @@ class GetFinancialDashboardUseCaseTest {
             assertEquals(40000L, metrics.categoryDistribution.first().amountCents)
             assertEquals(100f, metrics.categoryDistribution.first().percentage, 0.01f)
 
+            // Past History (6 months)
+            assertEquals(6, metrics.pastMonthsHistory.size)
+            val currentInHistory = metrics.pastMonthsHistory.last()
+            assertEquals(40000L, currentInHistory.totalDueCents)
+            assertEquals(15000L, currentInHistory.totalPaidCents)
+            assertEquals(37, currentInHistory.paidRate) // 15000 / 40000 = 37.5% -> 37%
+
+            // Payment Methods Breakdown (neither has invoiceId, so 0 card and 40000 nonCard)
+            assertEquals(0L, metrics.creditCardSpendCents)
+            assertEquals(40000L, metrics.nonCardSpendCents)
+            assertEquals(0f, metrics.creditCardPercentage, 0.01f)
+
             cancelAndIgnoreRemainingEvents()
         }
     }

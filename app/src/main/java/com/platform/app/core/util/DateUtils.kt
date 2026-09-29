@@ -20,6 +20,12 @@ object DateUtils {
         return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
     }
 
+    fun formatShortMonthYear(epochMillis: Long): String {
+        val shortFmt = SimpleDateFormat("MMM/yy", ptBrLocale)
+        val formatted = shortFmt.format(Date(epochMillis))
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
+    }
+
     fun getStartOfMonth(epochMillis: Long): Long {
         val cal = Calendar.getInstance().apply {
             timeInMillis = epochMillis

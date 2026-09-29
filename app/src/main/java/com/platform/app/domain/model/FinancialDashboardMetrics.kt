@@ -22,7 +22,44 @@ data class FinancialDashboardMetrics(
     val activeRecurringCount: Int = 0,
     val totalInstallmentsRemainingCents: Long = 0L,
     val activeInstallmentsCount: Int = 0,
-    val accountsDistribution: List<AccountSpend> = emptyList()
+    val accountsDistribution: List<AccountSpend> = emptyList(),
+    // Visão Panorâmica do Passado
+    val pastMonthsHistory: List<PastMonthHistory> = emptyList(),
+    val historicalMonthlyAverageCents: Long = 0L,
+    val highestSpendMonthLabel: String = "",
+    val highestSpendMonthCents: Long = 0L,
+    val lowestSpendMonthLabel: String = "",
+    val lowestSpendMonthCents: Long = 0L,
+    // Visão do Presente (Meios de Pagamento e Contatos)
+    val creditCardSpendCents: Long = 0L,
+    val nonCardSpendCents: Long = 0L,
+    val creditCardPercentage: Float = 0f,
+    val topContactsSpend: List<ContactSpend> = emptyList(),
+    // Visão do Futuro (Previsibilidade e Liberação de Caixa)
+    val nextCompletingInstallments: List<CompletingInstallmentSummary> = emptyList(),
+    val projectedFreedMonthlyFlowCents: Long = 0L
+)
+
+data class PastMonthHistory(
+    val monthMillis: Long,
+    val monthLabel: String,
+    val totalDueCents: Long,
+    val totalPaidCents: Long,
+    val paidRate: Int
+)
+
+data class ContactSpend(
+    val contactName: String,
+    val amountCents: Long,
+    val percentage: Float
+)
+
+data class CompletingInstallmentSummary(
+    val title: String,
+    val finalInstallmentNumber: Int,
+    val totalInstallments: Int,
+    val completionMonthLabel: String,
+    val freedMonthlyAmountCents: Long
 )
 
 data class CategorySpend(
@@ -49,5 +86,7 @@ data class FutureMonthProjection(
     val monthMillis: Long,
     val monthLabel: String,
     val totalCommittedCents: Long,
-    val installmentsCount: Int
+    val installmentsCount: Int,
+    val fixedRecurringCents: Long = 0L,
+    val installmentsCents: Long = 0L
 )

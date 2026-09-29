@@ -15,7 +15,11 @@ sealed class Screen(val route: String, val title: String) {
     object ExpenseItems : Screen("expense_items_screen", "Itens de Despesa")
     object Management : Screen("management_screen", "Estrutura Financeira")
     object Settings : Screen("settings_screen", "Configurações")
-    object NewExpense : Screen("new_expense_screen", "Nova Despesa")
+    object NewExpense : Screen("new_expense_screen?duplicateBillId={duplicateBillId}", "Nova Despesa") {
+        fun createRoute(duplicateBillId: String? = null): String {
+            return if (duplicateBillId != null) "new_expense_screen?duplicateBillId=$duplicateBillId" else "new_expense_screen"
+        }
+    }
     object Home : Screen("dashboard_screen", "Início")
     object ContactDetail : Screen("contact_detail/{contactId}", "Detalhe do Contato") {
         fun createRoute(contactId: String) = "contact_detail/$contactId"

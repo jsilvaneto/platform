@@ -94,6 +94,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -122,7 +123,8 @@ fun BillsScreen(
     onAction: (BillsUiAction) -> Unit,
     modifier: Modifier = Modifier,
     onOpenDrawer: () -> Unit = {},
-    onNavigateToNewExpense: () -> Unit = {}
+    onNavigateToNewExpense: () -> Unit = {},
+    onNavigateToDuplicate: (String) -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isSearchExpanded by remember { mutableStateOf(false) }
@@ -456,6 +458,10 @@ fun BillsScreen(
                         onTogglePayment = {
                             onAction(BillsUiAction.TogglePayment(currentInstallment))
                         },
+                        onDuplicate = { billId ->
+                            installmentToViewDetails = null
+                            onNavigateToDuplicate(billId)
+                        },
                         onDelete = { billId ->
                             installmentToViewDetails = null
                             onAction(BillsUiAction.DeleteBill(billId))
@@ -731,6 +737,7 @@ fun BillInstallmentDetailBottomSheet(
     installment: BillInstallment,
     onDismiss: () -> Unit,
     onTogglePayment: () -> Unit,
+    onDuplicate: (String) -> Unit,
     onDelete: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -851,6 +858,22 @@ fun BillInstallmentDetailBottomSheet(
                             onClick = {
                                 showMenu = false
                                 onTogglePayment()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Duplicar Despesa")
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onDuplicate(installment.billId)
                             }
                         )
                         DropdownMenuItem(

@@ -38,6 +38,7 @@ interface FinancialRepository {
     fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>>
     suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice
     suspend fun payInvoice(invoiceId: String)
+    suspend fun reopenInvoice(invoiceId: String)
     suspend fun getCardDependencies(cardId: String): CardDependencies
 
     // Contacts
@@ -61,6 +62,7 @@ interface FinancialRepository {
 
     // Bills & Installments
     fun getBills(): Flow<List<Bill>>
+    suspend fun getBillById(billId: String): Bill?
     fun getBillsByContact(contactId: String): Flow<List<Bill>>
     fun getInstallmentsByContact(contactId: String): Flow<List<BillInstallment>>
     fun getPlannedInstallmentsByContact(contactId: String): Flow<List<BillInstallment>>

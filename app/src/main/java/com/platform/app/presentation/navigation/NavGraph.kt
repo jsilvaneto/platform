@@ -1,5 +1,10 @@
 package com.platform.app.presentation.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -53,7 +58,31 @@ fun NavGraph(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = Modifier.padding(paddingValues)
+        modifier = Modifier.padding(paddingValues),
+        enterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(260))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(260))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(260))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(260))
+        }
     ) {
         composable(route = Screen.Dashboard.route) {
             val viewModel: HomeViewModel = hiltViewModel()
@@ -61,13 +90,23 @@ fun NavGraph(
 
             HomeScreen(
                 uiState = uiState,
+                uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
                 onOpenDrawer = onOpenDrawer,
-                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) }
             )
         }
 
-        composable(route = Screen.NewExpense.route) {
+        composable(
+            route = Screen.NewExpense.route,
+            arguments = listOf(
+                navArgument("duplicateBillId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) {
             val viewModel: NewExpenseViewModel = hiltViewModel()
             NewExpenseScreen(
                 viewModel = viewModel,
@@ -95,7 +134,8 @@ fun NavGraph(
                 uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
                 onOpenDrawer = onOpenDrawer,
-                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) },
+                onNavigateToDuplicate = { billId -> navController.navigate(Screen.NewExpense.createRoute(billId)) }
             )
         }
 

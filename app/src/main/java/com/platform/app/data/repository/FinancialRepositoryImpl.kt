@@ -247,6 +247,17 @@ class FinancialRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun reopenInvoice(invoiceId: String) {
+        database.withTransaction {
+            creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.ABERTA.name)
+            val allInsts = installmentDao.getAllInstallmentsList()
+            val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
+            invoiceInsts.forEach { inst ->
+                installmentDao.updatePayment(inst.id, null, "PENDING")
+            }
+        }
+    }
+
     override fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>> {
         return installmentDao.getInstallmentsForInvoice(invoiceId).map { list ->
             list.map { it.toDomain() }
@@ -359,6 +370,10 @@ class FinancialRepositoryImpl @Inject constructor(
         return billDao.getAll().map { list ->
             list.map { it.toDomain() }
         }
+    }
+
+    override suspend fun getBillById(billId: String): Bill? {
+        return billDao.getById(billId)?.toDomain()
     }
 
     override fun getBillsByContact(contactId: String): Flow<List<Bill>> {

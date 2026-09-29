@@ -17,7 +17,8 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 | **Fase 7: Wallet 100% Pessoal, Contas a Pagar & Cartões** | Contexto pessoal único, ExpenseNature, Itens de despesa, Forecast semafórico e Faturas | **100% CONCLUÍDO** (v1.4.0) |
 | **Fase 8: Grande Update das 4 Telas Centrais** | Hero Executivo, Privacidade, SegmentedTabs, Batch Actions, Apple Card View e Cronogramas | **100% CONCLUÍDO** (v1.4.1) |
 | **Fase 9: Estatísticas & Inteligência Financeira 360°** | 3 Eixos Temporais (Passado, Presente e Futuro), Curva de Desoneração, Rigidez Orçamentária e Tomada de Decisão | **100% CONCLUÍDO** (v1.4.2) |
-| **Fase 10: Sincronização em Nuvem (API Bidirecional)** | Backend remoto, motor de sync offline-first, backup automático no banco de dados | **PLANEJADA (Fase 2)** |
+| **Fase 10: Excelência Operacional, UX & Lembretes Locais** | Transições Cinemáticas, Desfazer Baixa (Undo), Duplicação de Despesas e Notificações de Vencimento | **100% CONCLUÍDO** (v1.4.3) |
+| **Fase 11: Sincronização em Nuvem (API Bidirecional)** | Backend remoto, motor de sync offline-first, backup automático no banco de dados | **PLANEJADA (Fase 2)** |
 
 ---
 
@@ -64,6 +65,14 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] Compartilhamento direto com mensageiros via `FileProvider` (`file_paths.xml`).
 - [x] Painel de status com indicador de data/hora do último backup e diálogo de advertência prévia para restaurações.
 
+### Excelência Operacional, UX & Lembretes Locais (v1.4.3)
+- [x] **Transições Cinemáticas no NavGraph**: Animações fluidas entre destinos (`slideIntoContainer` + `fadeIn`/`fadeOut`).
+- [x] **Mecanismo de Desfazer (Undo)**: Reversão imediata de pagamentos de contas e faturas com 1 clique na `HomeScreen`.
+- [x] **Reabertura Atômica de Faturas (`reopenInvoice`)**: Restauração consistente de faturas e parcelas vinculadas no Room.
+- [x] **Duplicação Ágil de Despesas**: Ação no menu do BottomSheet de detalhes clonando todos os dados da despesa na `NewExpenseScreen`.
+- [x] **Notificações Locais Offline de Vencimentos**: Lembretes inteligentes para despesas e faturas que vencem no dia (`DueReminderManager`, `DueReminderReceiver`).
+- [x] **Suíte de Testes Automatizados**: Novos testes `HomeViewModelTest` e `NewExpenseViewModelTest` com 100% de sucesso.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).
@@ -72,4 +81,4 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 ---
 
 ## 🎯 Próximos Passos
-- [ ] Fase 8: Estruturação da API remota e sincronização bidirecional offline-first com banco em nuvem.
+- [ ] Fase 11: Estruturação da API remota e sincronização bidirecional offline-first com banco em nuvem.

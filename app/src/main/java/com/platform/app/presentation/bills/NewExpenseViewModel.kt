@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.platform.app.core.util.DateUtils
@@ -115,7 +116,8 @@ sealed interface NewExpenseUiEffect {
 @HiltViewModel
 class NewExpenseViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val calculateInstallmentsUseCase: CalculateInstallmentsUseCase
+    private val calculateInstallmentsUseCase: CalculateInstallmentsUseCase,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NewExpenseUiState())
@@ -125,6 +127,29 @@ class NewExpenseViewModel @Inject constructor(
     val uiEffect: SharedFlow<NewExpenseUiEffect> = _uiEffect.asSharedFlow()
 
     init {
+        val duplicateBillId: String? = savedStateHandle.get<String>("duplicateBillId")
+        if (duplicateBillId != null) {
+            viewModelScope.launch {
+                val originalBill = repository.getBillById(duplicateBillId)
+                if (originalBill != null) {
+                    _uiState.update { current ->
+                        current.copy(
+                            description = originalBill.description,
+                            amountCents = originalBill.totalAmountCents,
+                            selectedCategoryId = originalBill.categoryId,
+                            selectedItemId = originalBill.itemId,
+                            selectedContactId = originalBill.contactId,
+                            selectedFinancialAccountId = originalBill.financialAccountId,
+                            selectedPaymentMethodId = originalBill.paymentMethodId,
+                            expenseType = originalBill.type,
+                            installmentsCount = originalBill.totalInstallments,
+                            isCreditCard = originalBill.invoiceId != null
+                        )
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch {
             repository.seedInitialCategoriesIfEmpty()
             repository.seedInitialExpenseItemsIfEmpty()

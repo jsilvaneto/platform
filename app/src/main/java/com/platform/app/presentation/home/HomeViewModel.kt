@@ -6,8 +6,11 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CalculateMonthlyForecastUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
@@ -15,6 +18,14 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+sealed interface HomeUiEffect {
+    data class ShowUndoSnackbar(
+        val message: String,
+        val actionLabel: String = "Desfazer",
+        val undoAction: HomeUiAction
+    ) : HomeUiEffect
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -24,6 +35,9 @@ class HomeViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _uiEffect = MutableSharedFlow<HomeUiEffect>()
+    val uiEffect: SharedFlow<HomeUiEffect> = _uiEffect.asSharedFlow()
 
     init {
         viewModelScope.launch {
@@ -57,11 +71,37 @@ class HomeViewModel @Inject constructor(
                         isPaid = true,
                         paidTimestamp = System.currentTimeMillis()
                     )
+                    _uiEffect.emit(
+                        HomeUiEffect.ShowUndoSnackbar(
+                            message = "Conta marcada como paga!",
+                            undoAction = HomeUiAction.UndoPayBill(action.installmentId)
+                        )
+                    )
+                }
+            }
+            is HomeUiAction.UndoPayBill -> {
+                viewModelScope.launch {
+                    repository.toggleInstallmentPayment(
+                        installmentId = action.installmentId,
+                        isPaid = false,
+                        paidTimestamp = null
+                    )
                 }
             }
             is HomeUiAction.PayInvoice -> {
                 viewModelScope.launch {
                     repository.payInvoice(action.invoiceId)
+                    _uiEffect.emit(
+                        HomeUiEffect.ShowUndoSnackbar(
+                            message = "Fatura marcada como paga!",
+                            undoAction = HomeUiAction.UndoPayInvoice(action.invoiceId)
+                        )
+                    )
+                }
+            }
+            is HomeUiAction.UndoPayInvoice -> {
+                viewModelScope.launch {
+                    repository.reopenInvoice(action.invoiceId)
                 }
             }
             is HomeUiAction.TogglePaidSection -> {

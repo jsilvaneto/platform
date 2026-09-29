@@ -3,6 +3,35 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.4.3] - 2026-09-29
+
+### 🚀 Pacote de Excelência Operacional & UX (Visual, Ações, Funções e Sistema)
+
+- **1. Visual: Transições de Tela Cinemáticas e Fluidas (`NavGraph.kt`)**:
+  - Implementação de transições animadas nativas no `NavHost` (`slideIntoContainer` horizontal + `fadeIn`/`fadeOut` interpolados com `tween(260ms)`).
+  - Experiência visual contínua sem saltos abruptos de layout ao transitar entre Dashboard, Registros, Cartões, Recorrentes e Estatísticas.
+
+- **2. Ações (UX): Mecanismo de Desfazer (`Undo`) para Baixa de Contas e Faturas**:
+  - Integração de `SnackbarHost` e canal de efeitos `HomeUiEffect.ShowUndoSnackbar` na `HomeScreen`.
+  - Ao quitar uma conta avulsa ou fatura com 1 toque, é exibido um Snackbar com ação **"Desfazer"**, permitindo reversão imediata de cliques acidentais.
+  - Adicionado `reopenInvoice` em `FinancialRepositoryImpl.kt` com transação atômica (`database.withTransaction`), restaurando o status da fatura para `ABERTA` e suas parcelas vinculadas para `PENDING`.
+
+- **3. Funções: Duplicação Inteligente de Despesas (`duplicateBillId`)**:
+  - Nova opção **"Duplicar Despesa"** no menu de contexto (`DropdownMenu`) do BottomSheet de detalhes da parcela (`BillsScreen.kt`).
+  - Navegação para `NewExpenseScreen` carregando a despesa original via `SavedStateHandle` no `NewExpenseViewModel`, clonando valor, categoria, item, contato, conta bancária, forma de pagamento e tipo, acelerando cadastros repetitivos.
+
+- **4. Sistema: Lembretes e Notificações Locais de Vencimento Offline**:
+  - Criação do canal e gerenciador `DueReminderManager.kt` (`com.platform.app.core.notification`) de alta prioridade.
+  - `DueReminderReceiver.kt`: BroadcastReceiver com `@AndroidEntryPoint` e injeção Hilt para checagem diária programada via `AlarmManager`.
+  - Verificação inteligente na `MainActivity`: Notifica o usuário de forma offline e discreta caso existam contas ou faturas com vencimento no próprio dia.
+  - Permissão `POST_NOTIFICATIONS` declarada no `AndroidManifest.xml`.
+
+- **5. Qualidade e Testes Unitários**:
+  - Novos testes automatizados: `HomeViewModelTest.kt` (ações de pagamento, undo de contas e faturas) e `NewExpenseViewModelTest.kt` (pré-carregamento por duplicação).
+  - 100% dos testes unitários validados e aprovados com sucesso (`./gradlew testDebugUnitTest`).
+
+---
+
 ## [1.4.2] - 2026-09-29
 
 ### 📊 Inteligência Financeira 360° & Refatoração da Tela de Estatísticas

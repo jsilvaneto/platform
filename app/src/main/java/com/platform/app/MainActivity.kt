@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.platform.app.core.notification.DueReminderManager
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.security.BiometricAuthManager
+import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.presentation.navigation.AppDrawer
 import com.platform.app.presentation.navigation.NavGraph
 import com.platform.app.presentation.navigation.Screen
@@ -41,8 +43,12 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var biometricAuthManager: BiometricAuthManager
 
+    @Inject
+    lateinit var financialRepository: FinancialRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DueReminderManager.scheduleDailyReminder(this)
         setContent {
             val isDarkModePref by preferencesManager.isDarkMode.collectAsState(initial = null)
             val isDarkTheme = isDarkModePref ?: isSystemInDarkTheme()
@@ -53,6 +59,13 @@ class MainActivity : FragmentActivity() {
                 var unlockError by rememberSaveable { mutableStateOf<String?>(null) }
 
                 val isLocked = isBiometricEnabled && !isUnlocked
+
+                // Notificações locais de contas/faturas vencendo hoje após desbloqueio
+                LaunchedEffect(isLocked) {
+                    if (!isLocked) {
+                        DueReminderManager.checkAndNotifyDueExpenses(this@MainActivity, financialRepository)
+                    }
+                }
 
                 // Aciona a autenticação caso a proteção esteja habilitada e a tela bloqueada
                 LaunchedEffect(isBiometricEnabled) {

@@ -1420,7 +1420,7 @@ fun CategoryDetailBottomSheet(
                         color = catColor.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "Categoria",
+                            text = "Categoria • ${category.nature.displayName}",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = catColor,
@@ -2024,7 +2024,7 @@ fun AddEditCategoryDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
-                                        .background(Color.White, CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface, CircleShape)
                                         .align(Alignment.Center)
                                 )
                             }

@@ -44,4 +44,16 @@ interface CreditCardDao {
 
     @Query("DELETE FROM credit_card_invoices WHERE id = :id")
     suspend fun deleteInvoiceById(id: String)
+
+    @Query("SELECT * FROM credit_card_invoices ORDER BY dueDate ASC")
+    fun getAllInvoices(): Flow<List<CreditCardInvoiceEntity>>
+
+    @Query("SELECT * FROM credit_card_invoices WHERE referenceMonth = :referenceMonth")
+    fun getInvoicesForReferenceMonth(referenceMonth: String): Flow<List<CreditCardInvoiceEntity>>
+
+    @Query("SELECT * FROM credit_card_invoices WHERE dueDate BETWEEN :startDate AND :endDate ORDER BY dueDate ASC")
+    fun getInvoicesForDueDateRange(startDate: Long, endDate: Long): Flow<List<CreditCardInvoiceEntity>>
+
+    @Query("SELECT * FROM credit_card_invoices")
+    suspend fun getAllInvoicesList(): List<CreditCardInvoiceEntity>
 }

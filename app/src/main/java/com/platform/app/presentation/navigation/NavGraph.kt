@@ -15,6 +15,8 @@ import androidx.navigation.navArgument
 import com.platform.app.core.security.BiometricAuthManager
 import com.platform.app.presentation.bills.BillsScreen
 import com.platform.app.presentation.bills.BillsViewModel
+import com.platform.app.presentation.bills.NewExpenseScreen
+import com.platform.app.presentation.bills.NewExpenseViewModel
 import com.platform.app.presentation.budgets.BudgetsScreen
 import com.platform.app.presentation.budgets.BudgetsViewModel
 import com.platform.app.presentation.contacts.ContactDetailScreen
@@ -28,6 +30,8 @@ import com.platform.app.presentation.expenseitems.ExpenseItemsScreen
 import com.platform.app.presentation.expenseitems.ExpenseItemsViewModel
 import com.platform.app.presentation.goals.GoalsScreen
 import com.platform.app.presentation.goals.GoalsViewModel
+import com.platform.app.presentation.home.HomeScreen
+import com.platform.app.presentation.home.HomeViewModel
 import com.platform.app.presentation.management.AccountsScreen
 import com.platform.app.presentation.management.CategoriesScreen
 import com.platform.app.presentation.management.ManagementScreen
@@ -53,13 +57,22 @@ fun NavGraph(
         modifier = Modifier.padding(paddingValues)
     ) {
         composable(route = Screen.Dashboard.route) {
-            val viewModel: DashboardViewModel = hiltViewModel()
+            val viewModel: HomeViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
 
-            DashboardScreen(
+            HomeScreen(
                 uiState = uiState,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
+            )
+        }
+
+        composable(route = Screen.NewExpense.route) {
+            val viewModel: NewExpenseViewModel = hiltViewModel()
+            NewExpenseScreen(
+                viewModel = viewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

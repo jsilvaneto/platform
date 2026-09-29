@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
@@ -67,7 +67,7 @@ fun AppDrawer(
 ) {
     val sections = listOf(
         DrawerSection(
-            sectionTitle = "OPERACIONAL",
+            sectionTitle = "Operacional",
             items = listOf(
                 DrawerItem(
                     screen = Screen.Dashboard,
@@ -77,7 +77,7 @@ fun AppDrawer(
                 DrawerItem(
                     screen = Screen.Bills,
                     title = "Registros",
-                    icon = Icons.Default.ReceiptLong
+                    icon = Icons.AutoMirrored.Filled.ReceiptLong
                 ),
                 DrawerItem(
                     screen = Screen.RecurringInstallments,
@@ -92,7 +92,7 @@ fun AppDrawer(
             )
         ),
         DrawerSection(
-            sectionTitle = "PLANEJAMENTO",
+            sectionTitle = "Planejamento",
             items = listOf(
                 DrawerItem(
                     screen = Screen.Statistics,
@@ -112,7 +112,7 @@ fun AppDrawer(
             )
         ),
         DrawerSection(
-            sectionTitle = "CADASTROS",
+            sectionTitle = "Cadastros",
             items = listOf(
                 DrawerItem(
                     screen = Screen.Contacts,
@@ -122,7 +122,7 @@ fun AppDrawer(
             )
         ),
         DrawerSection(
-            sectionTitle = "SISTEMA",
+            sectionTitle = "Sistema",
             items = listOf(
                 DrawerItem(
                     screen = Screen.Settings,

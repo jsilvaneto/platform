@@ -195,6 +195,64 @@ fun CreditCardsScreen(
                                 }
                             }
                         }
+
+                        // Extrato de Faturas do Cartão
+                        if (uiState.invoicesForSelectedCard.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(Dimens.spacingSmall))
+                                Text(
+                                    text = "Extrato de Faturas",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            items(uiState.invoicesForSelectedCard, key = { it.id }) { invoice ->
+                                PlatformCard(
+                                    shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(Dimens.spacingNormal),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "Fatura ${invoice.referenceMonth}",
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = "Vencimento: ${com.platform.app.core.util.DateUtils.formatDate(invoice.dueDate)}",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text(
+                                                text = CurrencyUtils.formatCentsToCurrency(invoice.totalAmountCents),
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (invoice.status == com.platform.app.domain.model.InvoiceStatus.PAGA) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            val (statusLabel, chipType) = when (invoice.status) {
+                                                com.platform.app.domain.model.InvoiceStatus.PAGA -> Pair("Paga", StatusChipType.SUCCESS)
+                                                com.platform.app.domain.model.InvoiceStatus.FECHADA -> Pair("Fechada", StatusChipType.WARNING)
+                                                com.platform.app.domain.model.InvoiceStatus.ABERTA -> Pair("Aberta", StatusChipType.INFO)
+                                            }
+                                            PlatformStatusChip(text = statusLabel, type = chipType)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -248,14 +306,14 @@ fun CreditCardItemCard(
                     text = card.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Icon(
                     imageVector = Icons.Default.CreditCard,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.8f),
+                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -264,18 +322,18 @@ fun CreditCardItemCard(
                 Text(
                     text = "Limite Disponível",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                 )
                 Text(
                     text = CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
                 Text(
                     text = "Limite Total: ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)} • Venc. dia ${card.dueDay}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                 )
             }
         }

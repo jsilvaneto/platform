@@ -14,7 +14,8 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 | **Fase 4: Saneamento Arquitetural & Skills de IA** | Limpeza de código zumbi/boilerplate, correção de bugs de recorrência, transações e skills | **100% CONCLUÍDO** |
 | **Fase 5: Backup Local & Exportação de Dados** | Exportação e restauração local via JSON com SAF, transações atômicas Room e ShareSheet | **100% CONCLUÍDO** (v1.3.0) |
 | **Fase 6: Harmonização Visual Global (4 Etapas)** | Padrão de Detalhes com BottomSheet, 3 pontos, sem botões inline e blocos ergonômicos | **100% CONCLUÍDO** (v1.3.1) |
-| **Fase 7: Sincronização em Nuvem (API Bidirecional)** | Backend remoto, motor de sync offline-first, backup automático no banco de dados | **PLANEJADA (Fase 2)** |
+| **Fase 7: Wallet 100% Pessoal, Contas a Pagar & Cartões** | Contexto pessoal único, ExpenseNature, Itens de despesa, Forecast semafórico e Faturas | **100% CONCLUÍDO** (v1.4.0) |
+| **Fase 8: Sincronização em Nuvem (API Bidirecional)** | Backend remoto, motor de sync offline-first, backup automático no banco de dados | **PLANEJADA (Fase 2)** |
 
 ---
 
@@ -27,26 +28,26 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] Padrão **MVI (Model-View-Intent)** implementado com `UiState`, `UiAction` e `UiEffect` (Channel bufferizado).
 - [x] Operação **100% Offline-First**: O Room Database é a única fonte da verdade e o app opera sem internet.
 - [x] Injeção de dependências com Dagger Hilt (`@HiltAndroidApp`, `AppModule`, `RepositoryModule`).
-- [x] Persistência local com Room Database (`PlatformDatabase`) com transações atômicas (`database.withTransaction`).
+- [x] Persistência local com Room Database (`PlatformDatabase` v7) com transações atômicas (`database.withTransaction`).
 - [x] Persistência de configurações e preferências via **AndroidX DataStore** (`PreferencesManager`).
 - [x] Bloqueio e segurança com **AndroidX Biometric** (`BiometricAuthManager`, `BiometricLockOverlay`).
 - [x] Design System Material 3 com Dark Mode nativo (`PlatformTheme`, `Color`, `Type`).
 - [x] Navegação moderna com Navigation Compose e menu lateral despoluído (`AppDrawer.kt`, `NavGraph.kt`).
 
-### Módulo de Contas a Pagar e Despesas
-- [x] Gestão monetária estrita em inteiros de centavos (`amountCents: Long`) via `CurrencyUtils`.
-- [x] Utilitário de manipulação temporal e competências mensais via `DateUtils`.
-- [x] Modelagem relacional no Room: `BillEntity`, `BillInstallmentEntity`, `CategoryEntity`, `SubcategoryEntity`, `ContactEntity`, `FinancialAccountEntity`, `PaymentMethodEntity`, `BudgetEntity`, `GoalEntity`.
-- [x] Auto-seeding inteligente de categorias, formas de pagamento e contas de referência.
-- [x] Divisão matemática precisa de centavos com resto na primeira parcela (`CalculateInstallmentsUseCase`).
-- [x] Tela **Dashboard Financeiro**: KPIs macro (Custo Fixo Recorrente, Saldo Devedor Parcelado, Próximos 7 Dias e Pontualidade), visualização preditiva e diagnóstico.
-- [x] Tela **Registros (Bills)**: Cards minimalistas, chips de períodos rápidos, busca inline e BottomSheet completo de vínculos e liquidação.
-- [x] Tela **Recorrentes e Parcelados**: Cards limpos de contratos e BottomSheet com amortização e quitação interativa por parcela.
-- [x] Tela **Estatísticas**: Histórico de pagamentos e pontualidade.
-- [x] Tela **Orçamentos (Budgets)**: BottomSheet de comparação teto vs realizado e ajuste rápido de limites.
-- [x] Tela **Metas (Goals)**: BottomSheet de objetivos com indicador visual de aportes e progresso.
-- [x] Tela **Contatos**: Detalhes do contato com busca automática de CEP, histórico financeiro e exclusão segura nos 3 pontos.
-- [x] Telas **Contas, Formas de Pagamento e Categorias**: Acessos diretos independentes no menu lateral e em Configurações, com BottomSheets de detalhes.
+### Wallet 100% Pessoal & Contas a Pagar (v1.4.0)
+- [x] **Contexto Único Pessoal**: Remoção de qualquer seletor ou campo de perfil corporativo (`profileType`, `PESSOAL`/`EMPRESA`).
+- [x] **Foco em Contas a Pagar**: Cadastro ágil com 3 campos mandatórios (Descrição, Valor em centavos `Long`, Vencimento `Long`), com Categoria/Item opcionais (`NewExpenseScreen`).
+- [x] **Natureza do Gasto (ExpenseNature)**: 4 pilares (`OBRIGATORIO`, `NECESSARIO`, `DESEJA`, `NENHUM`), herança estrita da categoria para o item de despesa.
+- [x] **Itens de Despesa**: Depreciação de subcategorias e adoção de `expense_items` vinculados à categoria mãe, com tela dedicada `ExpenseItemsScreen`.
+- [x] **Dashboard com Efeito Cascata em Tempo Real**: `Total Previsto = Contas Pendentes + Faturas Abertas/Fechadas do Mês` calculado via Flow reativo (`CalculateMonthlyForecastUseCase`).
+- [x] **Agrupamento Semafórico de Urgência**: 🔴 Atrasadas, 🟡 Vence Hoje, ⚪ Próximos 7 Dias e 🟢 Pagas no Mês (colapsável).
+- [x] **Baixa com 1 Toque**: Ação direta de pagamento na conta/fatura com alteração de status para `PAGO` no banco e dedução instantânea do Total Previsto via Flow.
+- [x] **Gestão de Cartões de Crédito & Extrato de Faturas**: Cálculo de limite disponível (`CreditCardCalculator`), fechamento por dia de corte (`closingDay`), status de faturas e liquidação em 1 toque na `CreditCardsScreen`.
+- [x] **Entidade de Transações**: Criação de `TransactionEntity` e `TransactionDao` no Room v7 (`MIGRATION_6_7`).
+- [x] **Validação com Testes Unitários Locais**:
+  - `BillCalculationTest`: Agregação de Total Previsto, dedução em tempo real e prevenção de dupla contagem de cartões.
+  - `ExpenseItemNatureTest`: Herança e preservação dos 4 pilares de ExpenseNature.
+  - `InvoiceClosingTest`: Fechamento de fatura baseado no dia de corte e cálculo de limite disponível.
 
 ### Backup & Recuperação de Dados (v1.3.0)
 - [x] DTO unificado `BackupDataDto` com versionamento e timestamp.
@@ -55,13 +56,12 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] Compartilhamento direto com mensageiros via `FileProvider` (`file_paths.xml`).
 - [x] Painel de status com indicador de data/hora do último backup e diálogo de advertência prévia para restaurações.
 
-### Governança e Skills de IA
-- [x] Saneamento completo de código zumbi/legado.
-- [x] Catálogo de 10 skills ativas em `.agents/skills/`.
-- [x] Script de versionamento móvel corrigido e automatizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).
+### Governança e Testes Automatizados
+- [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
+- [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).
 - [x] Regra mandatória de governança e sincronização de versão em `.agents/rules/governance_and_versioning.md`.
 
 ---
 
 ## 🎯 Próximos Passos
-- [ ] Fase 2: Estruturação da API remota e sincronização bidirecional offline-first com banco em nuvem.
+- [ ] Fase 8: Estruturação da API remota e sincronização bidirecional offline-first com banco em nuvem.

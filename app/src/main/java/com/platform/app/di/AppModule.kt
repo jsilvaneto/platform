@@ -20,6 +20,7 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
+import com.platform.app.data.local.dao.TransactionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -60,7 +61,11 @@ object AppModule {
             PlatformDatabase::class.java,
             PlatformDatabase.DATABASE_NAME
         )
-        .addMigrations(PlatformDatabase.MIGRATION_4_5, PlatformDatabase.MIGRATION_5_6)
+        .addMigrations(
+            PlatformDatabase.MIGRATION_4_5,
+            PlatformDatabase.MIGRATION_5_6,
+            PlatformDatabase.MIGRATION_6_7
+        )
         .fallbackToDestructiveMigration()
         .build()
     }
@@ -123,6 +128,12 @@ object AppModule {
     @Singleton
     fun provideBudgetDao(db: PlatformDatabase): BudgetDao {
         return db.budgetDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideTransactionDao(db: PlatformDatabase): TransactionDao {
+        return db.transactionDao
     }
 
     @Provides

@@ -181,6 +181,7 @@ fun ExpenseItemRow(
     onDelete: () -> Unit
 ) {
     val categoryColor = try { Color(item.categoryColorHex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(item.categoryName)
 
     PlatformCard {
         Row(
@@ -191,9 +192,17 @@ fun ExpenseItemRow(
         ) {
             Box(
                 modifier = Modifier
-                    .size(10.dp)
-                    .background(categoryColor, CircleShape)
-            )
+                    .size(36.dp)
+                    .background(categoryColor.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = functionalIcon,
+                    contentDescription = null,
+                    tint = categoryColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Spacer(modifier = Modifier.width(Dimens.spacingMedium))
 
             Column(modifier = Modifier.weight(1f)) {
@@ -298,6 +307,29 @@ fun AddExpenseItemBottomSheet(
                             }
                         )
                     }
+                }
+            }
+
+            selectedCategory?.let { cat ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Natureza Herdada:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    PlatformStatusChip(
+                        text = cat.nature.displayName,
+                        type = when (cat.nature.name) {
+                            "OBRIGATORIO" -> StatusChipType.ERROR
+                            "NECESSARIO" -> StatusChipType.WARNING
+                            "DESEJA" -> StatusChipType.INFO
+                            else -> StatusChipType.NEUTRAL
+                        }
+                    )
                 }
             }
 

@@ -32,6 +32,8 @@ interface FinancialRepository {
     suspend fun seedInitialCreditCardsIfEmpty()
 
     fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>>
+    fun getAllCreditCardInvoices(): Flow<List<CreditCardInvoice>>
+    fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>>
     suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice
     suspend fun payInvoice(invoiceId: String)
 

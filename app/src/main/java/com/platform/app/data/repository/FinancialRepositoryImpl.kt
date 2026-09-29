@@ -176,6 +176,26 @@ class FinancialRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getAllCreditCardInvoices(): Flow<List<CreditCardInvoice>> {
+        return combine(creditCardDao.getAllInvoices(), getAllInstallments()) { invoices, installments ->
+            invoices.map { invEntity ->
+                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
+                val totalCents = invoiceInsts.sumOf { it.amountCents }
+                invEntity.toDomain(totalAmountCents = totalCents)
+            }
+        }
+    }
+
+    override fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>> {
+        return combine(creditCardDao.getInvoicesForDueDateRange(startMillis, endMillis), getAllInstallments()) { invoices, installments ->
+            invoices.map { invEntity ->
+                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
+                val totalCents = invoiceInsts.sumOf { it.amountCents }
+                invEntity.toDomain(totalAmountCents = totalCents)
+            }
+        }
+    }
+
     override suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice {
         val existing = creditCardDao.getInvoiceByMonth(cardId, referenceMonth)
         if (existing != null) {

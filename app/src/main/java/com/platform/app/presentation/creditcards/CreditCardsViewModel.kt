@@ -61,22 +61,34 @@ class CreditCardsViewModel @Inject constructor(
 
         combine(
             repository.getCreditCards(),
-            repository.getAllInstallments()
-        ) { cards, installments ->
+            repository.getAllInstallments(),
+            repository.getAllCreditCardInvoices()
+        ) { cards, installments, allInvoices ->
+            val currentSelected = _uiState.value.selectedCardId ?: cards.firstOrNull()?.id
+            val cardInvoices = if (currentSelected != null) {
+                allInvoices.filter { it.creditCardId == currentSelected }.sortedByDescending { it.referenceMonth }
+            } else emptyList()
+
+            val currentInvoice = cardInvoices.firstOrNull { it.status != com.platform.app.domain.model.InvoiceStatus.PAGA }
+                ?: cardInvoices.firstOrNull()
+
             val summaries = cards.map { card ->
                 val activeInvoiceInsts = installments.filter { it.invoiceId != null && !it.isPaid }
                 val usedLimit = activeInvoiceInsts.sumOf { it.amountCents }
+                val cardInv = allInvoices.firstOrNull { it.creditCardId == card.id && it.status != com.platform.app.domain.model.InvoiceStatus.PAGA }
                 CreditCardWithInvoiceSummary(
                     card = card,
-                    currentInvoice = null,
+                    currentInvoice = cardInv,
                     usedLimitCents = usedLimit
                 )
             }
-            val currentSelected = _uiState.value.selectedCardId ?: cards.firstOrNull()?.id
+
             _uiState.update {
                 it.copy(
                     cardsWithSummary = summaries,
                     selectedCardId = currentSelected,
+                    invoicesForSelectedCard = cardInvoices,
+                    currentInvoice = currentInvoice,
                     isLoading = false
                 )
             }

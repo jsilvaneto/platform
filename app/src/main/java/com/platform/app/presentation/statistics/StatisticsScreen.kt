@@ -44,6 +44,7 @@ import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.presentation.components.PlatformAppBar
+import java.util.Locale
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.dashboard.DashboardUiAction
 import com.platform.app.presentation.dashboard.DashboardUiState
@@ -411,7 +412,7 @@ fun CategorySpendRow(catSpend: CategorySpend) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "${CurrencyUtils.formatCentsToCurrency(catSpend.amountCents)} (${String.format("%.1f", catSpend.percentage)}%)",
+                    text = "${CurrencyUtils.formatCentsToCurrency(catSpend.amountCents)} (${String.format(Locale.getDefault(), "%.1f", catSpend.percentage)}%)",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

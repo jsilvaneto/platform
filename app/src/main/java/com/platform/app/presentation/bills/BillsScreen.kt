@@ -44,6 +44,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -110,8 +111,8 @@ fun BillsScreen(
     uiState: BillsUiState,
     uiEffect: Flow<BillsUiEffect>,
     onAction: (BillsUiAction) -> Unit,
-    onOpenDrawer: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
@@ -1079,7 +1080,7 @@ fun AddBillBottomSheet(
     var selectedContactId by remember { mutableStateOf<String?>(null) }
     var selectedAccountId by remember { mutableStateOf<String?>(financialAccounts.firstOrNull()?.id) }
     var selectedPaymentMethodId by remember { mutableStateOf<String?>(paymentMethods.firstOrNull()?.id) }
-    var dueDateMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    var dueDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var showValidationError by remember { mutableStateOf(false) }
 
     val filteredSubcategories = remember(selectedCategoryId, subcategories) {

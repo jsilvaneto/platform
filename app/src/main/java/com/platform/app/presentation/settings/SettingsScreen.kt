@@ -178,11 +178,12 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Menu individual: Contas
             SettingActionCard(
                 title = "Contas",
+                subtitle = "Bancos, carteiras e contas de referência",
                 icon = Icons.Default.AccountBalance,
                 onClick = onNavigateToAccounts
             )
@@ -190,6 +191,7 @@ fun SettingsScreen(
             // Menu individual: Formas de Pagamento
             SettingActionCard(
                 title = "Formas de Pagamento",
+                subtitle = "Cartão, PIX, dinheiro e métodos de quitação",
                 icon = Icons.Default.CreditCard,
                 onClick = onNavigateToPaymentMethods
             )
@@ -197,6 +199,7 @@ fun SettingsScreen(
             // Menu individual: Categorias
             SettingActionCard(
                 title = "Categorias",
+                subtitle = "Classificação de despesas e subcategorias",
                 icon = Icons.Default.Category,
                 onClick = onNavigateToCategories
             )
@@ -659,8 +662,8 @@ fun ReleaseNotesDialog(
 
                 ReleaseNoteItem(
                     emoji = "🏛️",
-                    title = "Estrutura Financeira Direta",
-                    description = "Acesso direto e despoluído a Contas, Formas de Pagamento e Categorias tanto no menu lateral quanto em Configurações."
+                    title = "Estrutura Financeira Confortável",
+                    description = "Acesso direto a Contas, Formas de Pagamento e Categorias no menu lateral e em Configurações com blocos ergonômicos, ícones destacados e subtítulos informativos."
                 )
             }
         },
@@ -743,23 +746,23 @@ private fun SettingActionCard(
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(44.dp)
                     .background(
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        RoundedCornerShape(8.dp)
+                        RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -767,11 +770,11 @@ private fun SettingActionCard(
                     imageVector = icon,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f),
@@ -779,16 +782,16 @@ private fun SettingActionCard(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (!subtitle.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -798,8 +801,8 @@ private fun SettingActionCard(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
-                modifier = Modifier.size(16.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
             )
         }
     }

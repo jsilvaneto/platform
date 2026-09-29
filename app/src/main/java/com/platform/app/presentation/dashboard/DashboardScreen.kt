@@ -67,6 +67,7 @@ import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.ErrorRed
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.WarningAmber
+import java.util.Locale
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -944,9 +945,9 @@ fun CategorySpendRow(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (isBalanceVisible)
-                        "${CurrencyUtils.formatCentsToCurrency(catSpend.amountCents)} (${String.format("%.1f", catSpend.percentage)}%)"
+                        "${CurrencyUtils.formatCentsToCurrency(catSpend.amountCents)} (${String.format(Locale.getDefault(), "%.1f", catSpend.percentage)}%)"
                     else
-                        "R$ ••• (${String.format("%.1f", catSpend.percentage)}%)",
+                        "R$ ••• (${String.format(Locale.getDefault(), "%.1f", catSpend.percentage)}%)",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

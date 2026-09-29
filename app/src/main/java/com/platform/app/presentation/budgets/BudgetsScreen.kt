@@ -76,6 +76,8 @@ import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.Budget
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
@@ -118,7 +120,8 @@ fun BudgetsScreen(
             FloatingActionButton(
                 onClick = { isNewBudgetOpen = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Novo Orçamento")
             }
@@ -202,16 +205,16 @@ fun BudgetsSummaryCard(
     progress: Float
 ) {
     val isOverLimit = totalSpentCents > totalLimitCents && totalLimitCents > 0L
-    val barColor = if (isOverLimit) MaterialTheme.colorScheme.error else if (progress > 0.8f) Color(0xFFF59E0B) else Color(0xFF10B981)
+    val barColor = if (isOverLimit) MaterialTheme.colorScheme.error else if (progress > 0.8f) WarningAmber else SuccessGreen
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -305,7 +308,7 @@ fun BudgetCard(
 ) {
     val budget = item.budget
     val color = remember(budget.colorHex) {
-        try { Color(android.graphics.Color.parseColor(budget.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(budget.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
     val progressColor = if (item.isExceeded)
         MaterialTheme.colorScheme.error
@@ -316,17 +319,12 @@ fun BudgetCard(
 
     val remainingCents = budget.limitAmountCents - item.spentCents
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (item.isExceeded)
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
+    PlatformCard(
+        onClick = onClick,
+        containerColor = if (item.isExceeded)
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+        else
+            MaterialTheme.colorScheme.surface
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -434,7 +432,7 @@ fun BudgetDetailBottomSheet(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val color = remember(budget.colorHex) {
-        try { Color(android.graphics.Color.parseColor(budget.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(budget.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
     val progressColor = if (item.isExceeded)
         MaterialTheme.colorScheme.error

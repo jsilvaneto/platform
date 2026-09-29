@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -209,7 +210,7 @@ fun SettingsScreen(
             SettingActionCard(
                 title = "Itens de Despesa",
                 subtitle = "Substitui subcategorias e vincula à Categoria",
-                icon = Icons.Default.Category,
+                icon = Icons.Default.ShoppingBag,
                 onClick = onNavigateToExpenseItems
             )
 
@@ -482,7 +483,7 @@ fun SettingsScreen(
                             text = "P",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
 

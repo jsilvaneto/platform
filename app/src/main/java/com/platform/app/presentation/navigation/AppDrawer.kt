@@ -204,7 +204,7 @@ fun AppDrawer(
             ) {
                 sections.forEachIndexed { sectionIndex, section ->
                     if (sectionIndex > 0) {
-                        if (section.sectionTitle == "SISTEMA") {
+                        if (section.sectionTitle.equals("Sistema", ignoreCase = true)) {
                             Spacer(modifier = Modifier.height(6.dp))
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),

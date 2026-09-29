@@ -46,14 +46,16 @@ import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.domain.model.NatureSpend
 import androidx.core.graphics.toColorInt
 import com.platform.app.presentation.components.PlatformAppBar
-import java.util.Locale
 import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformEmptyState
+import java.util.Locale
 import com.platform.app.presentation.dashboard.DashboardUiAction
 import com.platform.app.presentation.dashboard.DashboardUiState
 import com.platform.app.presentation.theme.ErrorRed
 import com.platform.app.presentation.theme.SuccessGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun StatisticsScreen(
     uiState: DashboardUiState,
@@ -500,29 +502,9 @@ fun CategorySpendRow(catSpend: CategorySpend) {
 
 @Composable
 fun EmptyStatisticsState() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "📈", style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Sem dados para estatísticas no período",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "Insira lançamentos para gerar o histórico e as projeções do app.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
+    PlatformEmptyState(
+        icon = Icons.Default.Timeline,
+        title = "Sem dados estatísticos no período",
+        message = "Insira lançamentos para gerar o histórico e as projeções do app."
+    )
 }

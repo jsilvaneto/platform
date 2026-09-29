@@ -43,11 +43,17 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Agrupamento Semafórico de Urgência**: 🔴 Atrasadas, 🟡 Vence Hoje, ⚪ Próximos 7 Dias e 🟢 Pagas no Mês (colapsável).
 - [x] **Baixa com 1 Toque**: Ação direta de pagamento na conta/fatura com alteração de status para `PAGO` no banco e dedução instantânea do Total Previsto via Flow.
 - [x] **Gestão de Cartões de Crédito & Extrato de Faturas**: Cálculo de limite disponível (`CreditCardCalculator`), fechamento por dia de corte (`closingDay`), status de faturas e liquidação em 1 toque na `CreditCardsScreen`.
-- [x] **Entidade de Transações**: Criação de `TransactionEntity` e `TransactionDao` no Room v7 (`MIGRATION_6_7`).
+- [x] **Lançamento Focado em Itens (Item-Centric Form)**: Item de despesa como protagonista (1º campo obrigatório), herança automática de título e descrição convertida em observações adicionais opcionais no final do formulário (`NewExpenseScreen`).
+- [x] **Design System Premium Minimalista**:
+  - Eliminação de elevação tonal com `surfaceTint = Color.Transparent` em Dark e Light Mode (zero vazamento de roxo/lavanda default M3).
+  - Remoção de 100% das cores literais hardcoded em telas (`Color.White`, `Color.Black`, hexadecimais soltos), substituídas por tokens semânticos de `Theme.kt`, `Color.kt` e `MaterialTheme.colorScheme`.
+  - Simetria rigorosa (grid 4/8/12/16/20/24 dp, cantos de 16.dp para cards e 10.dp para botões/inputs).
+  - Unificação de FABs 100% circular (`CircleShape`) em todas as 9 telas financeiras e componentes centrais reutilizáveis (`PlatformEmptyState`, `PlatformAvatar`).
+  - Higienização visual estrita: remoção de botões de exclusão inline, eliminação de emojis informais e substituição do código zumbi `DashboardScreen.kt`.
 - [x] **Validação com Testes Unitários Locais**:
-  - `BillCalculationTest`: Agregação de Total Previsto, dedução em tempo real e prevenção de dupla contagem de cartões.
-  - `ExpenseItemNatureTest`: Herança e preservação dos 4 pilares de ExpenseNature.
-  - `InvoiceClosingTest`: Fechamento de fatura baseado no dia de corte e cálculo de limite disponível.
+  - `NewExpenseValidationTest`: 6 testes unitários aprovados (campos obrigatórios, herança de título pelo item, cálculo de parcelas e natureza).
+  - `CreditCardManagementTest`: 4 testes aprovados (fechamento, limites e dependências de exclusão).
+  - `BillCalculationTest`, `ExpenseItemNatureTest`, `InvoiceClosingTest`: Todos aprovados com 100% de sucesso.
 
 ### Backup & Recuperação de Dados (v1.3.0)
 - [x] DTO unificado `BackupDataDto` com versionamento e timestamp.

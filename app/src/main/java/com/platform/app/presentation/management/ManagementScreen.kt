@@ -83,6 +83,8 @@ import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
+import com.platform.app.presentation.theme.BrandPrimaryDark
+import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
@@ -236,12 +238,11 @@ fun ManagementScreen(
                         ManagementSection.CATEGORIES -> isNewCategoryDialog = true
                     }
                 },
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(14.dp),
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription, modifier = Modifier.size(22.dp))
+                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription)
             }
         }
     ) { padding ->
@@ -406,7 +407,7 @@ fun AccountsTab(
         ) {
             items(accounts, key = { it.id }) { account ->
                 val color = remember(account.colorHex) {
-                    try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+                    try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
                 }
 
                 Card(
@@ -489,7 +490,7 @@ fun AccountDetailBottomSheet(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val accountColor = remember(account.colorHex) {
-        try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
 
     val linkedInstallments = remember(installments, account.id) {
@@ -1157,7 +1158,7 @@ fun PaymentMethodDetailBottomSheet(
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color(0xFF10B981),
+                                        tint = SuccessGreen,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -1172,7 +1173,7 @@ fun PaymentMethodDetailBottomSheet(
                                     text = CurrencyUtils.formatCentsToCurrency(paidCents),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF10B981)
+                                    color = SuccessGreen
                                 )
                             }
                         }
@@ -1274,7 +1275,7 @@ fun CategoriesTab(
         ) {
             items(categories, key = { it.id }) { cat ->
                 val color = remember(cat.colorHex) {
-                    try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+                    try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
                 }
 
                 Card(
@@ -1355,7 +1356,7 @@ fun CategoryDetailBottomSheet(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val catColor = remember(category.colorHex) {
-        try { Color(android.graphics.Color.parseColor(category.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(category.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
 
     val linkedInstallments = remember(installments, category.id) {
@@ -1560,7 +1561,7 @@ fun CategoryDetailBottomSheet(
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = Color(0xFF10B981),
+                                        tint = SuccessGreen,
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -1575,7 +1576,7 @@ fun CategoryDetailBottomSheet(
                                     text = CurrencyUtils.formatCentsToCurrency(paidCents),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF10B981)
+                                    color = SuccessGreen
                                 )
                             }
                         }
@@ -1777,7 +1778,7 @@ fun AddEditAccountDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(8.dp)
-                                        .background(Color.White, CircleShape)
+                                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
                                 )
                             }
                         }

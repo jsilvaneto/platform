@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
+import com.platform.app.presentation.theme.Dimens
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -66,6 +68,7 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.components.PlatformEmptyState
 import kotlinx.coroutines.flow.Flow
 
 import androidx.compose.animation.AnimatedVisibility
@@ -81,7 +84,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -112,13 +115,12 @@ fun BillsScreen(
     uiEffect: Flow<BillsUiEffect>,
     onAction: (BillsUiAction) -> Unit,
     modifier: Modifier = Modifier,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToNewExpense: () -> Unit = {}
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    var showAddSheet by remember { mutableStateOf(false) }
     var isSearchExpanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var installmentToViewDetails by remember { mutableStateOf<BillInstallment?>(null) }
 
     LaunchedEffect(isSearchExpanded) {
@@ -230,11 +232,12 @@ fun BillsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddSheet = true },
+                onClick = onNavigateToNewExpense,
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Conta")
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Despesa")
             }
         },
         modifier = modifier
@@ -287,36 +290,6 @@ fun BillsScreen(
                             }
                         }
                     }
-                }
-
-                if (showAddSheet) {
-                    AddBillBottomSheet(
-                        categories = uiState.categories,
-                        expenseItems = uiState.expenseItems,
-                        contacts = uiState.contacts,
-                        financialAccounts = uiState.financialAccounts,
-                        paymentMethods = uiState.paymentMethods,
-                        sheetState = sheetState,
-                        onDismiss = { showAddSheet = false },
-                        onConfirm = { title, desc, type, totalCents, catId, itemId, contactId, accountId, paymentMethodId, totalInst, dueDate ->
-                            onAction(
-                                BillsUiAction.CreateBill(
-                                    title = title,
-                                    description = desc,
-                                    type = type,
-                                    totalAmountCents = totalCents,
-                                    categoryId = catId,
-                                    itemId = itemId,
-                                    contactId = contactId,
-                                    financialAccountId = accountId,
-                                    paymentMethodId = paymentMethodId,
-                                    totalInstallments = totalInst,
-                                    firstDueDate = dueDate
-                                )
-                            )
-                            showAddSheet = false
-                        }
-                    )
                 }
 
                 installmentToViewDetails?.let { inst ->
@@ -432,23 +405,25 @@ fun BillInstallmentItemCard(
 ) {
     val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
 
-    val catColor = remember(installment.categoryColorHex) {
+    val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val catColor = remember(installment.categoryColorHex, fallbackColor) {
         try {
             Color(android.graphics.Color.parseColor(installment.categoryColorHex))
         } catch (e: Exception) {
-            Color(0xFF64748B)
+            fallbackColor
         }
     }
 
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(Dimens.cardCornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = if (installment.isPaid)
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
             else
                 MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = if (installment.isPaid) 0.dp else 1.5.dp),
+        border = BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.defaultElevation),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSelectInstallment() }
@@ -456,7 +431,7 @@ fun BillInstallmentItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -560,11 +535,12 @@ fun BillInstallmentDetailBottomSheet(
 
     val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
 
-    val catColor = remember(installment.categoryColorHex) {
+    val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val catColor = remember(installment.categoryColorHex, fallbackColor) {
         try {
             Color(android.graphics.Color.parseColor(installment.categoryColorHex))
         } catch (e: Exception) {
-            Color(0xFF64748B)
+            fallbackColor
         }
     }
 
@@ -592,7 +568,7 @@ fun BillInstallmentDetailBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.ReceiptLong,
+                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
                         contentDescription = null,
                         tint = catColor,
                         modifier = Modifier.size(24.dp)
@@ -1031,8 +1007,8 @@ fun BillInstallmentDetailBottomSheet(
 fun InstallmentBadge(installment: BillInstallment) {
     val (label, bg, fg) = when (installment.type) {
         BillType.SINGLE -> Triple("Avulsa", MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f), MaterialTheme.colorScheme.secondary)
-        BillType.INSTALLMENT -> Triple("${installment.installmentNumber}/${installment.totalInstallments}", Color(0xFFF59E0B).copy(alpha = 0.15f), Color(0xFFD97706))
-        BillType.RECURRING -> Triple("Recorrente", Color(0xFF8B5CF6).copy(alpha = 0.15f), Color(0xFF7C3AED))
+        BillType.INSTALLMENT -> Triple("${installment.installmentNumber}/${installment.totalInstallments}", WarningAmber.copy(alpha = 0.15f), WarningAmber)
+        BillType.RECURRING -> Triple("Recorrente", MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.colorScheme.primary)
     }
 
     Surface(shape = RoundedCornerShape(6.dp), color = bg) {
@@ -1046,519 +1022,12 @@ fun InstallmentBadge(installment: BillInstallment) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddBillBottomSheet(
-    categories: List<Category>,
-    expenseItems: List<ExpenseItem>,
-    contacts: List<Contact>,
-    financialAccounts: List<FinancialAccount>,
-    paymentMethods: List<PaymentMethod>,
-    sheetState: androidx.compose.material3.SheetState,
-    onDismiss: () -> Unit,
-    onConfirm: (
-        title: String,
-        description: String,
-        type: BillType,
-        amountCents: Long,
-        categoryId: String?,
-        itemId: String?,
-        contactId: String?,
-        accountId: String?,
-        paymentMethodId: String?,
-        totalInstallments: Int,
-        dueDate: Long
-    ) -> Unit
-) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var rawAmount by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(BillType.SINGLE) }
-    var installmentsCountText by remember { mutableStateOf("2") }
-    var selectedCategoryId by remember { mutableStateOf<String?>(categories.firstOrNull()?.id) }
-    var selectedItemId by remember { mutableStateOf<String?>(null) }
-    var selectedContactId by remember { mutableStateOf<String?>(null) }
-    var selectedAccountId by remember { mutableStateOf<String?>(financialAccounts.firstOrNull()?.id) }
-    var selectedPaymentMethodId by remember { mutableStateOf<String?>(paymentMethods.firstOrNull()?.id) }
-    var dueDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var showValidationError by remember { mutableStateOf(false) }
-
-    val filteredItems = remember(selectedCategoryId, expenseItems) {
-        if (selectedCategoryId == null) expenseItems
-        else expenseItems.filter { it.categoryId == selectedCategoryId }
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Header Elegante
-            Column {
-                Text(
-                    text = "Nova Despesa",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Preencha as informações para organizar seus pagamentos",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
-            }
-
-            // CARD 1: Identificação
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "1. Identificação",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = {
-                            title = it
-                            showValidationError = false
-                        },
-                        label = { Text("Nome da Despesa *") },
-                        placeholder = { Text("Ex: Aluguel, Internet, Supermercado...") },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Default.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        },
-                        isError = showValidationError && title.isBlank(),
-                        supportingText = if (showValidationError && title.isBlank()) {
-                            { Text("O nome da conta é obrigatório", color = MaterialTheme.colorScheme.error) }
-                        } else null,
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Observações (opcional)") },
-                        placeholder = { Text("Notas, código de barras ou detalhes adicionais...") },
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = false,
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
-
-            // CARD 2: Valor e Condição de Cobrança
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "2. Valor & Tipo",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    OutlinedTextField(
-                        value = rawAmount,
-                        onValueChange = {
-                            rawAmount = it
-                            showValidationError = false
-                        },
-                        label = { Text("Valor Total (R$) *") },
-                        placeholder = { Text("Ex: 150,00 ou 2500") },
-                        prefix = {
-                            Text(
-                                text = "R$ ",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        isError = showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L,
-                        supportingText = if (showValidationError && CurrencyUtils.parseInputToCents(rawAmount) <= 0L) {
-                            { Text("Informe um valor maior que zero", color = MaterialTheme.colorScheme.error) }
-                        } else null,
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Text(
-                        text = "Tipo de Despesa:",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        BillType.values().forEach { type ->
-                            FilterChip(
-                                selected = selectedType == type,
-                                onClick = { selectedType = type },
-                                label = { Text(type.label) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    if (selectedType == BillType.INSTALLMENT) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Número de Parcelas:",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium
-                            )
-                            val commonInstallments = listOf("2", "3", "6", "10", "12")
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                commonInstallments.forEach { count ->
-                                    FilterChip(
-                                        selected = installmentsCountText == count,
-                                        onClick = { installmentsCountText = count },
-                                        label = { Text("${count}x") }
-                                    )
-                                }
-                            }
-
-                            OutlinedTextField(
-                                value = installmentsCountText,
-                                onValueChange = { installmentsCountText = it.filter { c -> c.isDigit() } },
-                                label = { Text("Outra quantidade de parcelas (ex: 18)") },
-                                shape = RoundedCornerShape(12.dp),
-                                singleLine = true,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-
-            // CARD 3: Vencimento & Planejamento
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "3. Vencimento",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text(
-                                    text = "Primeiro Vencimento",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = DateUtils.formatDate(dueDateMillis),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-
-                    // Atalhos rápidos
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val now = System.currentTimeMillis()
-                        item {
-                            FilterChip(
-                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(now),
-                                onClick = { dueDateMillis = now },
-                                label = { Text("Hoje") }
-                            )
-                        }
-                        item {
-                            val plus7 = now + 7L * 24 * 3600 * 1000
-                            FilterChip(
-                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus7),
-                                onClick = { dueDateMillis = plus7 },
-                                label = { Text("+7 dias") }
-                            )
-                        }
-                        item {
-                            val plus15 = now + 15L * 24 * 3600 * 1000
-                            FilterChip(
-                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus15),
-                                onClick = { dueDateMillis = plus15 },
-                                label = { Text("+15 dias") }
-                            )
-                        }
-                        item {
-                            val plus30 = now + 30L * 24 * 3600 * 1000
-                            FilterChip(
-                                selected = DateUtils.formatDate(dueDateMillis) == DateUtils.formatDate(plus30),
-                                onClick = { dueDateMillis = plus30 },
-                                label = { Text("+30 dias") }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // CARD 4: Vínculos e Classificação
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = "4. Classificação & Origem",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    // Categoria
-                    Text(
-                        text = "Categoria:",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(categories, key = { it.id }) { cat ->
-                            FilterChip(
-                                selected = selectedCategoryId == cat.id,
-                                onClick = {
-                                    selectedCategoryId = cat.id
-                                    selectedItemId = null
-                                },
-                                label = { Text(cat.name) }
-                            )
-                        }
-                    }
-
-                    // Item de Despesa
-                    if (filteredItems.isNotEmpty()) {
-                        Text(
-                            text = "Item de Despesa:",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                FilterChip(
-                                    selected = selectedItemId == null,
-                                    onClick = { selectedItemId = null },
-                                    label = { Text("Nenhum") }
-                                )
-                            }
-                            items(filteredItems, key = { it.id }) { item ->
-                                FilterChip(
-                                    selected = selectedItemId == item.id,
-                                    onClick = {
-                                        selectedItemId = item.id
-                                        selectedCategoryId = item.categoryId
-                                    },
-                                    label = { Text(item.name) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Contato
-                    if (contacts.isNotEmpty()) {
-                        Text(
-                            text = "Contato / Favorecido:",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                FilterChip(
-                                    selected = selectedContactId == null,
-                                    onClick = { selectedContactId = null },
-                                    label = { Text("Nenhum") }
-                                )
-                            }
-                            items(contacts, key = { it.id }) { c ->
-                                FilterChip(
-                                    selected = selectedContactId == c.id,
-                                    onClick = { selectedContactId = c.id },
-                                    label = { Text(c.name) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Conta de Saída
-                    if (financialAccounts.isNotEmpty()) {
-                        Text(
-                            text = "Conta de Débito:",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                FilterChip(
-                                    selected = selectedAccountId == null,
-                                    onClick = { selectedAccountId = null },
-                                    label = { Text("Nenhuma") }
-                                )
-                            }
-                            items(financialAccounts, key = { it.id }) { acc ->
-                                FilterChip(
-                                    selected = selectedAccountId == acc.id,
-                                    onClick = { selectedAccountId = acc.id },
-                                    label = { Text(acc.name) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Forma de Pagamento
-                    if (paymentMethods.isNotEmpty()) {
-                        Text(
-                            text = "Forma de Pagamento:",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium
-                        )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            item {
-                                FilterChip(
-                                    selected = selectedPaymentMethodId == null,
-                                    onClick = { selectedPaymentMethodId = null },
-                                    label = { Text("Nenhuma") }
-                                )
-                            }
-                            items(paymentMethods, key = { it.id }) { pm ->
-                                FilterChip(
-                                    selected = selectedPaymentMethodId == pm.id,
-                                    onClick = { selectedPaymentMethodId = pm.id },
-                                    label = { Text(pm.name) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Ações / Botões
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.height(52.dp)
-                ) {
-                    Text("Cancelar", style = MaterialTheme.typography.titleMedium)
-                }
-
-                Button(
-                    onClick = {
-                        val amountCents = CurrencyUtils.parseInputToCents(rawAmount)
-                        val totalInst = if (selectedType == BillType.INSTALLMENT)
-                            installmentsCountText.toIntOrNull()?.coerceAtLeast(2) ?: 2
-                        else
-                            1
-
-                        if (title.isBlank() || amountCents <= 0L) {
-                            showValidationError = true
-                        } else {
-                            onConfirm(
-                                title.trim(),
-                                description.trim(),
-                                selectedType,
-                                amountCents,
-                                selectedCategoryId,
-                                selectedItemId,
-                                selectedContactId,
-                                selectedAccountId,
-                                selectedPaymentMethodId,
-                                totalInst,
-                                dueDateMillis
-                            )
-                        }
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                ) {
-                    Text(
-                        text = "Cadastrar Conta",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(28.dp))
-        }
-    }
-}
 
 @Composable
 fun EmptyBillsState() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "💳", style = MaterialTheme.typography.headlineLarge)
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Nenhuma conta encontrada",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(
-            text = "Toque no botão '+' abaixo para cadastrar sua primeira conta avulsa, parcelada ou recorrente.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-    }
+    PlatformEmptyState(
+        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+        title = "Nenhuma conta encontrada",
+        message = "Toque no botão '+' abaixo para cadastrar sua primeira conta avulsa, parcelada ou recorrente."
+    )
 }

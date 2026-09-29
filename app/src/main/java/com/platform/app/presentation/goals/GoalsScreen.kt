@@ -31,7 +31,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Savings
-import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -76,6 +76,7 @@ import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.Goal
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
@@ -118,7 +119,8 @@ fun GoalsScreen(
             FloatingActionButton(
                 onClick = { isNewGoalOpen = true },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Meta")
             }
@@ -264,7 +266,7 @@ fun GoalsSummaryCard(
 
             LinearProgressIndicator(
                 progress = { progress },
-                color = Color(0xFF10B981),
+                color = SuccessGreen,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -281,13 +283,13 @@ fun GoalsSummaryCard(
                     Text(
                         text = "Total Guardado",
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF10B981)
+                        color = SuccessGreen
                     )
                     Text(
                         text = CurrencyUtils.formatCentsToCurrency(totalSavedCents),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981)
+                        color = SuccessGreen
                     )
                 }
 
@@ -315,7 +317,7 @@ fun GoalCard(
     onClick: () -> Unit
 ) {
     val color = remember(goal.colorHex) {
-        try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
 
     Card(
@@ -420,7 +422,7 @@ fun GoalDetailBottomSheet(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
     val color = remember(goal.colorHex) {
-        try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
+        try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
 
     ModalBottomSheet(
@@ -496,7 +498,7 @@ fun GoalDetailBottomSheet(
                             text = { Text("Adicionar Aporte") },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.TrendingUp,
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
@@ -725,7 +727,7 @@ fun GoalDetailBottomSheet(
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Default.TrendingUp,
+                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )

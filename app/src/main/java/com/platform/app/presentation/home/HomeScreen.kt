@@ -372,7 +372,7 @@ fun ForecastImpactCard(
 
             Text(
                 text = CurrencyUtils.formatCentsToCurrency(totalForecastCents),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )

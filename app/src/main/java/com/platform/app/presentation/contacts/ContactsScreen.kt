@@ -56,6 +56,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.platform.app.presentation.components.PlatformAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -71,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.Contact
+import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -214,7 +216,8 @@ fun ContactsScreen(
                     isBottomSheetOpen = true
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
             ) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Adicionar Contato")
             }
@@ -292,21 +295,11 @@ fun ContactCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar Inicial
-            Surface(
-                modifier = Modifier.size(42.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    val initial = contact.name.trim().take(1).uppercase()
-                    Text(
-                        text = if (initial.isNotBlank()) initial else "?",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
+            PlatformAvatar(
+                name = contact.name,
+                size = 42.dp,
+                color = MaterialTheme.colorScheme.primary
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -553,7 +546,7 @@ fun AddContactBottomSheet(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "CEP válido",
-                            tint = Color(0xFF10B981)
+                            tint = SuccessGreen
                         )
                     }
                 },

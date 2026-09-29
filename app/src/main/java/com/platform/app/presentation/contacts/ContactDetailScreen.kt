@@ -40,6 +40,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.platform.app.presentation.components.PlatformAvatar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -58,6 +59,7 @@ import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.usecase.ContactDetails
+import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 
 import androidx.compose.material.icons.filled.Delete
@@ -99,7 +101,6 @@ fun ContactDetailScreen(
                     isEditDialogOpen = false
                     viewModel.loadContactDetails(contactId)
                 }
-                else -> Unit
             }
         }
     }
@@ -301,21 +302,11 @@ fun ContactHeaderCard(details: ContactDetails) {
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    modifier = Modifier.size(44.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        val initial = contact.name.trim().take(1).uppercase()
-                        Text(
-                            text = if (initial.isNotBlank()) initial else "?",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
+                PlatformAvatar(
+                    name = contact.name,
+                    size = 44.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -411,19 +402,19 @@ fun ContactHeaderCard(details: ContactDetails) {
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.15f)
+                    color = SuccessGreen.copy(alpha = 0.15f)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(
                             text = "Total Já Pago",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF10B981)
+                            color = SuccessGreen
                         )
                         Text(
                             text = CurrencyUtils.formatCentsToCurrency(details.totalPaidAmountCents),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
+                            color = SuccessGreen
                         )
                     }
                 }
@@ -562,7 +553,7 @@ fun PlannedInstallmentsTab(
                             Icon(
                                 imageVector = if (inst.isPaid) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
                                 contentDescription = if (inst.isPaid) "Pago" else "Pendente",
-                                tint = if (inst.isPaid) Color(0xFF10B981) else MaterialTheme.colorScheme.outline
+                                tint = if (inst.isPaid) SuccessGreen else MaterialTheme.colorScheme.outline
                             )
                         }
 

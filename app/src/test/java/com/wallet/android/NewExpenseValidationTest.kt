@@ -127,4 +127,26 @@ class NewExpenseValidationTest {
 
         assertEquals(ExpenseNature.OBRIGATORIO, state.inheritedNature)
     }
+
+    @Test
+    fun `should permit empty description when expense item is selected and use item as effective title`() {
+        val item = ExpenseItem(
+            id = "item-mercado",
+            name = "Compras de Supermercado",
+            categoryId = "cat-alim",
+            categoryName = "Alimentação",
+            nature = ExpenseNature.NECESSARIO
+        )
+
+        val stateWithoutDescription = NewExpenseUiState(
+            description = "",
+            amountCents = 15000L,
+            selectedItemId = "item-mercado",
+            selectedContactId = "contact-1",
+            allExpenseItems = listOf(item)
+        )
+
+        assertTrue("Mesmo com descrição vazia, deve ser válido pois o item foi selecionado", stateWithoutDescription.isValid)
+        assertEquals("Compras de Supermercado", stateWithoutDescription.effectiveTitle)
+    }
 }

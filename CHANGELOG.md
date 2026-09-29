@@ -33,10 +33,34 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
   - Proibição de cores literais nos componentes; uso estrito de `MaterialTheme.colorScheme`.
   - Tipografia em Title Case (sem ALL CAPS em textos de tela).
   - Ícones funcionais do Material Icons substituindo formas abstratas.
+- **Lançamento Focado em Itens (Item-Centric Expenses)**:
+  - O Item de Despesa (`selectedItemId`) assumiu o protagonismo absoluto no formulário: primeiro campo de seleção com preview de Natureza Financeira e Categoria.
+  - A descrição passa a ser campo de "Observações Adicionais (Opcional)", herdando o nome do item selecionado como título padrão caso não preenchida.
+  - Reorganização do formulário em 5 blocos harmônicos e simétricos com cards e divisões semânticas.
+- **Design System Premium Minimalista & Simetria Cirúrgica**:
+  - Paletas Dark e Light purificadas: Dark Obsidian (`#0A0D14` / `#141923`) e Light Porcelain (`#F8FAFC` / `#FFFFFF`).
+  - Anulação estrita de elevação tonal com `surfaceTint = Color.Transparent` em ambos os temas, eliminando 100% qualquer vazamento roxo/lavanda default do Material 3.
+  - Erradicação completa de cores literais hardcoded (`Color.White`, `Color.Black`, hexadecimais soltos) em todas as telas, adotando exclusivamente tokens de `Theme.kt`, `Color.kt` e `MaterialTheme.colorScheme`.
+  - Anti-gigantismo e harmonia visual: ajuste da tipografia do impacto financeiro na HomeScreen de `headlineLarge` para `titleLarge` semibold/bold.
+  - Alinhamentos milimétricos com cantos uniformes de 16.dp para cards, 10.dp para botões/inputs e bordas finas de 1.dp com `outlineVariant`.
+  - **Padronização Global dos FABs (100% Circular)**: Unificação dos FloatingActionButtons de todas as 9 telas financeiras (incluindo `RecurringInstallmentsScreen`) com `shape = CircleShape`, container `primary` e conteúdo `onPrimary`.
+  - **Unificação Absoluta de Fluxos de Despesa**: Remoção do modal legado `AddBillBottomSheet` em `BillsScreen`. Tanto a tela Inicial quanto a tela de Registros navegam para a mesma `NewExpenseScreen` com o formulário em 5 blocos harmônicos focado em itens.
+  - **Componentes Centrais Reutilizáveis (`PlatformEmptyState` e `PlatformAvatar`)**:
+    - `PlatformEmptyState`: Eliminação definitiva de emojis informais (`💳`, `📈`) em telas vazias, substituídos por containers vetoriais com fundo translúcido a 12% e tipografia proporcional `titleLarge` semibold.
+    - `PlatformAvatar`: Eliminação de código duplicado de cálculo de iniciais e renderização visual homogênea em `ContactsScreen` e `ContactDetailScreen`.
+  - **Higienização Visual Estrita (Zero Ações Inline Não Seguras)**:
+    - `ExpenseItemsScreen`: Remoção de botões de exclusão inline em cards, substituídos por navegação sutil com chevron e `AlertDialog` de confirmação seguro.
+    - `BudgetsScreen`: Migração de `BudgetCard` para `PlatformCard` com raio de 16.dp e contorno suave.
+    - `CreditCardsScreen`: Ajuste de contraste do botão "Liquidar Fatura" (`onPrimary` garantindo legibilidade perfeita no Tema Escuro e Claro).
+    - `SettingsScreen`: Distinção de ícone para Itens de Despesa com `Icons.Default.ShoppingBag`.
+    - `AppDrawer`: Correção do divisor de seções com verificação insensível a maiúsculas/minúsculas (`ignoreCase = true`).
+  - **Eliminação de Código Zumbi & Depreciações**:
+    - Remoção do arquivo zumbi `DashboardScreen.kt` (-1.073 linhas de código morto).
+    - Migração de todos os ícones deprecados para `Icons.AutoMirrored.Filled` (`ReceiptLong` e `TrendingUp`), zerando warnings de compilação.
 - **Cobertura de Testes Automatizados**:
-  - `BillCalculationTest`: Agregação de Total Previsto, dedução após pagamento e prevenção de dupla contagem de compras de cartão.
-  - `ExpenseItemNatureTest`: Herança e preservação dos 4 pilares de natureza entre categoria e item.
-  - `InvoiceClosingTest`: Fechamento de faturas, datas de vencimento e cálculo de limite disponível.
+  - `NewExpenseValidationTest`: 6 testes automatizados validando campos obrigatórios (Item e Contato), herança de natureza, cálculo de parcelas e preenchimento de título a partir do item.
+  - `CreditCardManagementTest`: Validação de fechamento, limite e integridade de faturas.
+  - `BillCalculationTest`, `ExpenseItemNatureTest`, `InvoiceClosingTest`: Todos aprovados com 100% de sucesso.
 
 ---
 

@@ -17,12 +17,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +71,7 @@ fun ExpenseItemsScreen(
     modifier: Modifier = Modifier
 ) {
     var showAddItemSheet by remember { mutableStateOf(false) }
+    var itemToDelete by remember { mutableStateOf<ExpenseItem?>(null) }
 
     Scaffold(
         topBar = {
@@ -155,7 +159,7 @@ fun ExpenseItemsScreen(
                     items(uiState.filteredItems, key = { it.id }) { item ->
                         ExpenseItemRow(
                             item = item,
-                            onDelete = { onAction(ExpenseItemsUiAction.DeleteItem(item.id)) }
+                            onClick = { itemToDelete = item }
                         )
                     }
                 }
@@ -172,18 +176,58 @@ fun ExpenseItemsScreen(
                 }
             )
         }
+
+        if (itemToDelete != null) {
+            val target = itemToDelete!!
+            AlertDialog(
+                onDismissRequest = { itemToDelete = null },
+                title = {
+                    Text(
+                        text = "Excluir Item",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Deseja excluir o item de despesa '${target.name}'? Registros anteriores manterão o nome original, mas ele não aparecerá em novos lançamentos.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            onAction(ExpenseItemsUiAction.DeleteItem(target.id))
+                            itemToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Excluir")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { itemToDelete = null }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun ExpenseItemRow(
     item: ExpenseItem,
-    onDelete: () -> Unit
+    onClick: () -> Unit
 ) {
     val categoryColor = try { Color(item.categoryColorHex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
     val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(item.categoryName)
 
-    PlatformCard {
+    PlatformCard(onClick = onClick) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -233,13 +277,14 @@ fun ExpenseItemRow(
                 }
             )
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
-            }
+            Spacer(modifier = Modifier.width(Dimens.spacingSmall))
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

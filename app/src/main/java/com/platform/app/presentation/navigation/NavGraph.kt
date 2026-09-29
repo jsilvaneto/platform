@@ -24,7 +24,6 @@ import com.platform.app.presentation.contacts.ContactsScreen
 import com.platform.app.presentation.contacts.ContactsViewModel
 import com.platform.app.presentation.creditcards.CreditCardsScreen
 import com.platform.app.presentation.creditcards.CreditCardsViewModel
-import com.platform.app.presentation.dashboard.DashboardScreen
 import com.platform.app.presentation.dashboard.DashboardViewModel
 import com.platform.app.presentation.expenseitems.ExpenseItemsScreen
 import com.platform.app.presentation.expenseitems.ExpenseItemsViewModel
@@ -95,7 +94,8 @@ fun NavGraph(
                 uiState = uiState,
                 uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
             )
         }
 
@@ -104,7 +104,8 @@ fun NavGraph(
 
             RecurringInstallmentsScreen(
                 viewModel = viewModel,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
             )
         }
 

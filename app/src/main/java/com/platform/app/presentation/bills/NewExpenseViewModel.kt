@@ -96,8 +96,11 @@ data class NewExpenseUiState(
             amountCents
         }
 
+    val effectiveTitle: String
+        get() = if (description.isNotBlank()) description.trim() else (selectedItem?.name ?: if (selectedItemId != null) "Despesa" else "")
+
     val isValid: Boolean
-        get() = description.isNotBlank() &&
+        get() = effectiveTitle.isNotBlank() &&
                 amountCents > 0L &&
                 selectedItemId != null &&
                 selectedContactId != null &&
@@ -281,10 +284,10 @@ class NewExpenseViewModel @Inject constructor(
         val state = _uiState.value
         if (!state.isValid) {
             val error = when {
-                state.description.isBlank() -> "Informe a descrição da despesa."
-                state.amountCents <= 0L -> "Informe um valor válido maior que R$ 0,00."
                 state.selectedItemId == null -> "Selecione o Item da despesa (obrigatório)."
+                state.amountCents <= 0L -> "Informe um valor válido maior que R$ 0,00."
                 state.selectedContactId == null -> "Selecione o Contato / Fornecedor (obrigatório)."
+                state.effectiveTitle.isBlank() -> "Selecione um item ou informe a descrição."
                 state.isCreditCard && state.selectedCreditCardId == null -> "Selecione o Cartão de Crédito."
                 else -> "Preencha todos os campos obrigatórios."
             }
@@ -300,6 +303,9 @@ class NewExpenseViewModel @Inject constructor(
                     BillType.INSTALLMENT -> state.installmentsCount.coerceAtLeast(2)
                     BillType.RECURRING -> 12
                 }
+
+                val finalTitle = state.effectiveTitle
+                val finalDescription = if (state.description.isNotBlank()) state.description.trim() else finalTitle
 
                 if (state.isCreditCard && state.selectedCreditCardId != null) {
                     val card = state.selectedCreditCard ?: repository.getCreditCards().let { null }
@@ -327,7 +333,7 @@ class NewExpenseViewModel @Inject constructor(
                             BillInstallment(
                                 id = UUID.randomUUID().toString(),
                                 billId = billId,
-                                billTitle = state.description.trim(),
+                                billTitle = finalTitle,
                                 categoryId = state.selectedCategoryId,
                                 categoryName = state.selectedCategory?.name ?: "Geral",
                                 categoryColorHex = state.selectedCategory?.colorHex ?: "#64748B",
@@ -354,8 +360,8 @@ class NewExpenseViewModel @Inject constructor(
 
                     val bill = Bill(
                         id = billId,
-                        title = state.description.trim(),
-                        description = state.description.trim(),
+                        title = finalTitle,
+                        description = finalDescription,
                         type = state.expenseType,
                         totalAmountCents = if (state.expenseType == BillType.RECURRING) state.amountCents else state.amountCents,
                         categoryId = state.selectedCategoryId,
@@ -373,8 +379,8 @@ class NewExpenseViewModel @Inject constructor(
                     // Sem cartão de crédito
                     val bill = Bill(
                         id = billId,
-                        title = state.description.trim(),
-                        description = state.description.trim(),
+                        title = finalTitle,
+                        description = finalDescription,
                         type = state.expenseType,
                         totalAmountCents = state.amountCents,
                         categoryId = state.selectedCategoryId,

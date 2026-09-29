@@ -139,7 +139,7 @@ fun NewExpenseScreen(
                 .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
             verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
         ) {
-            // 1. DADOS OBRIGATÓRIOS DO LANÇAMENTO
+            // 1. ITEM DE DESPESA E VALOR (OBRIGATÓRIO & PROTAGONISTA)
             PlatformCard(
                 shape = RoundedCornerShape(Dimens.cardCornerRadius)
             ) {
@@ -150,51 +150,10 @@ fun NewExpenseScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "Dados Principais *",
+                        text = "1. Item & Valor *",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // Descrição
-                    OutlinedTextField(
-                        value = uiState.description,
-                        onValueChange = viewModel::onDescriptionChange,
-                        label = { Text("Descrição da Despesa *") },
-                        placeholder = { Text("Ex: Supermercado, Aluguel, Farmácia") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.EditNote,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Valor
-                    val displayCurrency = CurrencyUtils.formatCentsToCurrency(uiState.amountCents)
-                    OutlinedTextField(
-                        value = displayCurrency,
-                        onValueChange = { newValue ->
-                            val cleanDigits = newValue.filter { it.isDigit() }
-                            val cents = cleanDigits.toLongOrNull() ?: 0L
-                            viewModel.onAmountChange(cents)
-                        },
-                        label = { Text("Valor da Despesa *") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Payments,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                        modifier = Modifier.fillMaxWidth()
                     )
 
                     // SELETOR DE ITEM DE DESPESA (OBRIGATÓRIO)
@@ -208,9 +167,16 @@ fun NewExpenseScreen(
                             readOnly = true,
                             label = { Text("Item de Despesa * (Obrigatório)") },
                             placeholder = { Text("Selecione o item categorizado") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Payments,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = itemDropdownExpanded) },
-                            isError = uiState.selectedItemId == null && uiState.description.isNotBlank(),
-                            supportingText = if (uiState.selectedItemId == null && uiState.description.isNotBlank()) {
+                            isError = uiState.selectedItemId == null && uiState.amountCents > 0L,
+                            supportingText = if (uiState.selectedItemId == null && uiState.amountCents > 0L) {
                                 { Text("Item é obrigatório para classificar a despesa", color = MaterialTheme.colorScheme.error) }
                             } else null,
                             shape = RoundedCornerShape(Dimens.buttonCornerRadius),
@@ -253,7 +219,8 @@ fun NewExpenseScreen(
                     if (uiState.selectedItem != null) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -261,7 +228,7 @@ fun NewExpenseScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Natureza Financeira:",
+                                    text = "Natureza:",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -282,6 +249,48 @@ fun NewExpenseScreen(
                         }
                     }
 
+                    // Valor
+                    val displayCurrency = CurrencyUtils.formatCentsToCurrency(uiState.amountCents)
+                    OutlinedTextField(
+                        value = displayCurrency,
+                        onValueChange = { newValue ->
+                            val cleanDigits = newValue.filter { it.isDigit() }
+                            val cents = cleanDigits.toLongOrNull() ?: 0L
+                            viewModel.onAmountChange(cents)
+                        },
+                        label = { Text("Valor da Despesa *") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // 2. DESTINATÁRIO E VENCIMENTO (OBRIGATÓRIO)
+            PlatformCard(
+                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spacingNormal),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "2. Destinatário & Vencimento *",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
                     // SELETOR DE CONTATO / FORNECEDOR (OBRIGATÓRIO)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -296,7 +305,7 @@ fun NewExpenseScreen(
                                 value = uiState.selectedContact?.name ?: "",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Contato / Fornecedor * (Obrigatório)") },
+                                label = { Text("Contato / Fornecedor *") },
                                 placeholder = { Text("Selecione o favorecido") },
                                 leadingIcon = {
                                     Icon(
@@ -306,8 +315,8 @@ fun NewExpenseScreen(
                                     )
                                 },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = contactDropdownExpanded) },
-                                isError = uiState.selectedContactId == null && uiState.description.isNotBlank(),
-                                supportingText = if (uiState.selectedContactId == null && uiState.description.isNotBlank()) {
+                                isError = uiState.selectedContactId == null && uiState.amountCents > 0L,
+                                supportingText = if (uiState.selectedContactId == null && uiState.amountCents > 0L) {
                                     { Text("Contato é obrigatório no lançamento", color = MaterialTheme.colorScheme.error) }
                                 } else null,
                                 shape = RoundedCornerShape(Dimens.buttonCornerRadius),
@@ -792,6 +801,49 @@ fun NewExpenseScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // 5. OBSERVAÇÕES COMPLEMENTARES (OPCIONAL)
+            PlatformCard(
+                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spacingNormal),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "5. Observações Adicionais (Opcional)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = viewModel::onDescriptionChange,
+                        label = { Text("Descrição / Detalhe Específico") },
+                        placeholder = { Text("Ex: Compras no Carrefour, troca de filtro") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.EditNote,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        supportingText = {
+                            Text(
+                                text = "Opcional. Padrão: ${uiState.selectedItem?.name ?: "Nome do item selecionado"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 

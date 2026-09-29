@@ -40,6 +40,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,7 +82,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun RecurringInstallmentsScreen(
     viewModel: RecurringInstallmentsViewModel,
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: () -> Unit,
+    onNavigateToNewExpense: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -114,6 +117,16 @@ fun RecurringInstallmentsScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onNavigateToNewExpense,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = CircleShape
+            ) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Despesa")
+            }
         }
     ) { padding ->
         Column(
@@ -154,13 +167,13 @@ fun RecurringInstallmentsScreen(
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.12f)
+                    color = SuccessGreen.copy(alpha = 0.12f)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Text(
                             text = "Recorrente / Mês",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF10B981),
+                            color = SuccessGreen,
                             fontWeight = FontWeight.Medium
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -168,7 +181,7 @@ fun RecurringInstallmentsScreen(
                             text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
+                            color = SuccessGreen
                         )
                     }
                 }

@@ -60,6 +60,8 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
+import com.platform.app.domain.model.NatureSpend
+import androidx.core.graphics.toColorInt
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformStatusChip
@@ -175,6 +177,26 @@ fun DashboardScreen(
                                 items(metrics.categoryDistribution, key = { it.categoryName }) { catSpend ->
                                     CategorySpendRow(
                                         catSpend = catSpend,
+                                        isBalanceVisible = isBalanceVisible
+                                    )
+                                }
+                            }
+
+                            if (metrics.natureDistribution.isNotEmpty()) {
+                                item {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "Distribuição por Natureza (Regra 50-30-20)",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                items(metrics.natureDistribution, key = { it.nature.name }) { natureSpend ->
+                                    NatureSpendRow(
+                                        natureSpend = natureSpend,
                                         isBalanceVisible = isBalanceVisible
                                     )
                                 }
@@ -960,6 +982,58 @@ fun CategorySpendRow(
                 progress = { (catSpend.percentage / 100f).coerceIn(0f, 1f) },
                 color = barColor,
                 trackColor = barColor.copy(alpha = 0.15f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun NatureSpendRow(
+    natureSpend: NatureSpend,
+    isBalanceVisible: Boolean
+) {
+    val natureColor = try { Color(natureSpend.nature.colorHex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+
+    PlatformCard(
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = natureSpend.nature.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isBalanceVisible)
+                        "${CurrencyUtils.formatCentsToCurrency(natureSpend.amountCents)} (${String.format(Locale.getDefault(), "%.1f", natureSpend.percentage)}%)"
+                    else
+                        "R$ ••• (${String.format(Locale.getDefault(), "%.1f", natureSpend.percentage)}%)",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = { (natureSpend.percentage / 100f).coerceIn(0f, 1f) },
+                color = natureColor,
+                trackColor = natureColor.copy(alpha = 0.15f),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(6.dp)

@@ -7,17 +7,18 @@ import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
 import com.platform.app.data.local.dao.CategoryDao
 import com.platform.app.data.local.dao.ContactDao
+import com.platform.app.data.local.dao.CreditCardDao
+import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.SubcategoryDao
 import com.platform.app.data.local.entity.CategoryEntity
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -40,7 +41,8 @@ class BackupRepositoryImplTest {
 
     private lateinit var database: PlatformDatabase
     private lateinit var categoryDao: CategoryDao
-    private lateinit var subcategoryDao: SubcategoryDao
+    private lateinit var expenseItemDao: ExpenseItemDao
+    private lateinit var creditCardDao: CreditCardDao
     private lateinit var financialAccountDao: FinancialAccountDao
     private lateinit var paymentMethodDao: PaymentMethodDao
     private lateinit var contactDao: ContactDao
@@ -55,7 +57,8 @@ class BackupRepositoryImplTest {
         Dispatchers.setMain(testDispatcher)
         database = mockk(relaxed = true)
         categoryDao = mockk(relaxed = true)
-        subcategoryDao = mockk(relaxed = true)
+        expenseItemDao = mockk(relaxed = true)
+        creditCardDao = mockk(relaxed = true)
         financialAccountDao = mockk(relaxed = true)
         paymentMethodDao = mockk(relaxed = true)
         contactDao = mockk(relaxed = true)
@@ -67,7 +70,8 @@ class BackupRepositoryImplTest {
         repository = BackupRepositoryImpl(
             database = database,
             categoryDao = categoryDao,
-            subcategoryDao = subcategoryDao,
+            expenseItemDao = expenseItemDao,
+            creditCardDao = creditCardDao,
             financialAccountDao = financialAccountDao,
             paymentMethodDao = paymentMethodDao,
             contactDao = contactDao,
@@ -93,13 +97,15 @@ class BackupRepositoryImplTest {
             iconName = "Restaurant"
         )
         coEvery { categoryDao.getAllList() } returns listOf(sampleCategory)
+        coEvery { expenseItemDao.getAll() } returns flowOf(emptyList())
+        coEvery { creditCardDao.getAllCards() } returns flowOf(emptyList())
 
         val result = repository.exportBackupJson()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(result.isSuccess)
         val json = result.getOrThrow()
-        assertTrue(json.contains("\"version\": 1"))
+        assertTrue(json.contains("\"version\": 2"))
         assertTrue(json.contains("Alimentação"))
     }
 

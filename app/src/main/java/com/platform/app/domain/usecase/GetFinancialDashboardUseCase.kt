@@ -7,6 +7,7 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
+import com.platform.app.domain.model.NatureSpend
 import com.platform.app.domain.repository.FinancialRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -59,6 +60,13 @@ class GetFinancialDashboardUseCase @Inject constructor(
                     amountCents = amount,
                     percentage = percentage
                 )
+            }.sortedByDescending { it.amountCents }
+
+            val natureMap = installments.groupBy { it.nature }
+            val natureDistribution = natureMap.map { (nature, instList) ->
+                val amount = instList.sumOf { it.amountCents }
+                val percentage = if (totalDue > 0) (amount.toFloat() / totalDue.toFloat()) * 100f else 0f
+                NatureSpend(nature = nature, amountCents = amount, percentage = percentage)
             }.sortedByDescending { it.amountCents }
 
             val upcoming = installments
@@ -148,6 +156,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 upcomingInstallments = upcoming,
                 upcomingWeekInstallments = upcomingWeek,
                 categoryDistribution = categoryDistribution,
+                natureDistribution = natureDistribution,
                 futureMonthsProjections = futureProjections,
                 totalCommittedFutureCents = totalCommittedFuture,
                 futureInstallmentsCount = futureInstallmentsCount,

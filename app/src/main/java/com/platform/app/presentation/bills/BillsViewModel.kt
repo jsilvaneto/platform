@@ -72,15 +72,15 @@ class BillsViewModel @Inject constructor(
     private fun loadAuxiliaryData() {
         combine(
             repository.getCategories(),
-            repository.getAllSubcategories(),
+            repository.getExpenseItems(),
             repository.getContacts(),
             repository.getFinancialAccounts(),
             repository.getPaymentMethods()
-        ) { categories, subcategories, contacts, accounts, methods ->
+        ) { categories, expenseItems, contacts, accounts, methods ->
             _uiState.update {
                 it.copy(
                     categories = categories,
-                    subcategories = subcategories,
+                    expenseItems = expenseItems,
                     contacts = contacts,
                     financialAccounts = accounts,
                     paymentMethods = methods
@@ -130,7 +130,8 @@ class BillsViewModel @Inject constructor(
                     type = action.type,
                     totalAmountCents = action.totalAmountCents,
                     categoryId = action.categoryId,
-                    subcategoryId = action.subcategoryId,
+                    itemId = action.itemId,
+                    invoiceId = action.invoiceId,
                     contactId = action.contactId,
                     financialAccountId = action.financialAccountId,
                     paymentMethodId = action.paymentMethodId,

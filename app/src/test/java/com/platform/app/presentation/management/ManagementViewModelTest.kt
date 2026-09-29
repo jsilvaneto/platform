@@ -35,7 +35,6 @@ class ManagementViewModelTest {
         every { repository.getFinancialAccounts() } returns flowOf(emptyList())
         every { repository.getPaymentMethods() } returns flowOf(emptyList())
         every { repository.getCategories() } returns flowOf(emptyList())
-        every { repository.getAllSubcategories() } returns flowOf(emptyList())
         every { repository.getAllInstallments() } returns flowOf(emptyList())
     }
 

@@ -4,9 +4,11 @@ import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.CreditCard
+import com.platform.app.domain.model.CreditCardInvoice
+import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
 import kotlinx.coroutines.flow.Flow
 
 interface FinancialRepository {
@@ -16,11 +18,22 @@ interface FinancialRepository {
     suspend fun deleteCategory(categoryId: String)
     suspend fun seedInitialCategoriesIfEmpty()
 
-    // Subcategories
-    fun getSubcategories(categoryId: String): Flow<List<Subcategory>>
-    fun getAllSubcategories(): Flow<List<Subcategory>>
-    suspend fun saveSubcategory(subcategory: Subcategory)
-    suspend fun deleteSubcategory(subcategoryId: String)
+    // Expense Items (replaces Subcategories)
+    fun getExpenseItems(): Flow<List<ExpenseItem>>
+    fun getExpenseItemsByCategory(categoryId: String): Flow<List<ExpenseItem>>
+    suspend fun saveExpenseItem(item: ExpenseItem)
+    suspend fun deleteExpenseItem(itemId: String)
+    suspend fun seedInitialExpenseItemsIfEmpty()
+
+    // Credit Cards & Invoices
+    fun getCreditCards(): Flow<List<CreditCard>>
+    suspend fun saveCreditCard(card: CreditCard)
+    suspend fun deleteCreditCard(cardId: String)
+    suspend fun seedInitialCreditCardsIfEmpty()
+
+    fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>>
+    suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice
+    suspend fun payInvoice(invoiceId: String)
 
     // Contacts
     fun getContacts(): Flow<List<Contact>>

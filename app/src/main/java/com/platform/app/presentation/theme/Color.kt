@@ -2,32 +2,32 @@ package com.platform.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark Palette
-val DarkBackground = Color(0xFF0F1117)
-val DarkSurface = Color(0xFF1A1F2B)
-val DarkSurfaceVariant = Color(0xFF222938)
-val DarkBorder = Color(0xFF283042)
+// Dark Palette (Deep Night)
+val DarkBackground = Color(0xFF0A0D14)
+val DarkSurface = Color(0xFF141923)
+val DarkSurfaceVariant = Color(0xFF1E2636)
+val DarkBorder = Color(0xFF222B3D)
 val DarkTextPrimary = Color(0xFFF1F5F9)
-val DarkTextSecondary = Color(0xFF94A3B8)
+val DarkTextSecondary = Color(0xFF8E9BAE)
 
-// Light Palette
-val LightBackground = Color(0xFFF8FAFC)
+// Light Palette (Clean Premium)
+val LightBackground = Color(0xFFF4F6F9)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFF1F5F9)
 val LightBorder = Color(0xFFE2E8F0)
 val LightTextPrimary = Color(0xFF0F172A)
 val LightTextSecondary = Color(0xFF64748B)
 
-// Semantic Alertas (Compartilhados)
-val UrgentRed = Color(0xFFEF5350)
-val UrgentRedContainer = Color(0x2BEF5350)
-val WarningAmber = Color(0xFFFFB74D)
-val WarningAmberContainer = Color(0x2BFFB74D)
-val SuccessGreen = Color(0xFF66BB6A)
-val SuccessGreenContainer = Color(0x2B66BB6A)
-val BrandPrimary = Color(0xFF3B82F6)
+// Sinalização Semafórica Funcional
+val UrgentRed = Color(0xFFEF4444)
+val UrgentRedContainer = Color(0x2BEF4444)
+val WarningAmber = Color(0xFFF59E0B)
+val WarningAmberContainer = Color(0x2BF59E0B)
+val SuccessGreen = Color(0xFF43A047)
+val SuccessGreenContainer = Color(0x2B43A047)
+val BrandPrimary = Color(0xFF2563EB)
 
-// Aliases de Compatibilidade de Componentes Existentes
+// Aliases para compatibilidade de componentes
 val ErrorRed = UrgentRed
 val ErrorRedContainer = UrgentRedContainer
 val SuccessGreenLightContainer = SuccessGreenContainer

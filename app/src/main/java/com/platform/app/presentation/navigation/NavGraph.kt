@@ -20,8 +20,12 @@ import com.platform.app.presentation.budgets.BudgetsViewModel
 import com.platform.app.presentation.contacts.ContactDetailScreen
 import com.platform.app.presentation.contacts.ContactsScreen
 import com.platform.app.presentation.contacts.ContactsViewModel
+import com.platform.app.presentation.creditcards.CreditCardsScreen
+import com.platform.app.presentation.creditcards.CreditCardsViewModel
 import com.platform.app.presentation.dashboard.DashboardScreen
 import com.platform.app.presentation.dashboard.DashboardViewModel
+import com.platform.app.presentation.expenseitems.ExpenseItemsScreen
+import com.platform.app.presentation.expenseitems.ExpenseItemsViewModel
 import com.platform.app.presentation.goals.GoalsScreen
 import com.platform.app.presentation.goals.GoalsViewModel
 import com.platform.app.presentation.management.AccountsScreen
@@ -88,6 +92,28 @@ fun NavGraph(
             RecurringInstallmentsScreen(
                 viewModel = viewModel,
                 onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        composable(route = Screen.CreditCards.route) {
+            val viewModel: CreditCardsViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            CreditCardsScreen(
+                uiState = uiState,
+                onAction = viewModel::onAction,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        composable(route = Screen.ExpenseItems.route) {
+            val viewModel: ExpenseItemsViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsState()
+
+            ExpenseItemsScreen(
+                uiState = uiState,
+                onAction = viewModel::onAction,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -196,6 +222,9 @@ fun NavGraph(
                 },
                 onNavigateToCategories = {
                     navController.navigate(Screen.Categories.route)
+                },
+                onNavigateToExpenseItems = {
+                    navController.navigate(Screen.ExpenseItems.route)
                 }
             )
         }

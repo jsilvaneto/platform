@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
+import com.platform.app.domain.model.ExpenseNature
 
 @Entity(
     tableName = "bill_installments",
@@ -22,7 +23,9 @@ import com.platform.app.domain.model.BillType
         Index("billId"),
         Index("dueDate"),
         Index("contactId"),
-        Index("financialAccountId")
+        Index("financialAccountId"),
+        Index("itemId"),
+        Index("invoiceId")
     ]
 )
 data class BillInstallmentEntity(
@@ -35,7 +38,8 @@ data class BillInstallmentEntity(
     val dueDate: Long,
     val paidAt: Long?,
     val status: String,
-    val subcategoryId: String? = null,
+    val itemId: String? = null,
+    val invoiceId: String? = null,
     val contactId: String? = null,
     val financialAccountId: String? = null,
     val paymentMethodId: String? = null
@@ -45,7 +49,8 @@ data class BillInstallmentEntity(
         categoryId: String?,
         categoryName: String,
         categoryColorHex: String,
-        subcategoryName: String?,
+        nature: ExpenseNature = ExpenseNature.NECESSARIO,
+        itemName: String?,
         contactName: String?,
         financialAccountName: String?,
         paymentMethodName: String?,
@@ -58,8 +63,10 @@ data class BillInstallmentEntity(
             categoryId = categoryId,
             categoryName = categoryName,
             categoryColorHex = categoryColorHex,
-            subcategoryId = subcategoryId,
-            subcategoryName = subcategoryName,
+            nature = nature,
+            itemId = itemId,
+            itemName = itemName,
+            invoiceId = invoiceId,
             contactId = contactId,
             contactName = contactName,
             financialAccountId = financialAccountId,
@@ -91,7 +98,8 @@ data class BillInstallmentEntity(
                 dueDate = installment.dueDate,
                 paidAt = installment.paidAt,
                 status = installment.status.name,
-                subcategoryId = installment.subcategoryId,
+                itemId = installment.itemId,
+                invoiceId = installment.invoiceId,
                 contactId = installment.contactId,
                 financialAccountId = installment.financialAccountId,
                 paymentMethodId = installment.paymentMethodId

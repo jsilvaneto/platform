@@ -10,11 +10,13 @@ import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
 import com.platform.app.data.local.dao.CategoryDao
 import com.platform.app.data.local.dao.ContactDao
+import com.platform.app.data.local.dao.CreditCardDao
+import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.SubcategoryDao
 import com.platform.app.domain.repository.BackupRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,7 +25,8 @@ import javax.inject.Singleton
 class BackupRepositoryImpl @Inject constructor(
     private val database: PlatformDatabase,
     private val categoryDao: CategoryDao,
-    private val subcategoryDao: SubcategoryDao,
+    private val expenseItemDao: ExpenseItemDao,
+    private val creditCardDao: CreditCardDao,
     private val financialAccountDao: FinancialAccountDao,
     private val paymentMethodDao: PaymentMethodDao,
     private val contactDao: ContactDao,
@@ -42,7 +45,8 @@ class BackupRepositoryImpl @Inject constructor(
                 version = BackupDataDto.CURRENT_VERSION,
                 exportedAt = System.currentTimeMillis(),
                 categories = categoryDao.getAllList(),
-                subcategories = subcategoryDao.getAllList(),
+                expenseItems = expenseItemDao.getAll().first(),
+                creditCards = creditCardDao.getAllCards().first(),
                 financialAccounts = financialAccountDao.getAllList(),
                 paymentMethods = paymentMethodDao.getAllList(),
                 contacts = contactDao.getAllList(),
@@ -65,7 +69,7 @@ class BackupRepositoryImpl @Inject constructor(
             }
 
             database.withTransaction {
-                // Limpeza ordenada respeitando constraints de chaves estrangeiras (filhos primeiro)
+                // Limpeza ordenada respeitando constraints de chaves estrangeiras
                 billInstallmentDao.deleteAll()
                 billDao.deleteAll()
                 budgetDao.deleteAll()
@@ -73,15 +77,20 @@ class BackupRepositoryImpl @Inject constructor(
                 contactDao.deleteAll()
                 financialAccountDao.deleteAll()
                 paymentMethodDao.deleteAll()
-                subcategoryDao.deleteAll()
                 categoryDao.deleteAll()
 
-                // Restauração ordenada (pais primeiro)
+                // Restauração ordenada
                 if (payload.categories.isNotEmpty()) {
                     categoryDao.insertAll(payload.categories)
                 }
-                if (payload.subcategories.isNotEmpty()) {
-                    subcategoryDao.insertAll(payload.subcategories)
+                if (payload.expenseItems.isNotEmpty()) {
+                    expenseItemDao.insertAll(payload.expenseItems)
+                }
+                if (payload.creditCards.isNotEmpty()) {
+                    payload.creditCards.forEach { creditCardDao.insertCard(it) }
+                }
+                if (payload.creditCardInvoices.isNotEmpty()) {
+                    payload.creditCardInvoices.forEach { creditCardDao.insertInvoice(it) }
                 }
                 if (payload.financialAccounts.isNotEmpty()) {
                     financialAccountDao.insertAll(payload.financialAccounts)

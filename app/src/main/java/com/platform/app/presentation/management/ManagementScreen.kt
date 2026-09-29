@@ -80,9 +80,9 @@ import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.Category
+import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
@@ -169,9 +169,6 @@ fun ManagementScreen(
     var categoryToEdit by remember { mutableStateOf<Category?>(null) }
     var isNewCategoryDialog by remember { mutableStateOf(false) }
 
-    var subcategoryTargetCategory by remember { mutableStateOf<Category?>(null) }
-    var subcategoryToEdit by remember { mutableStateOf<Pair<Subcategory, Category>?>(null) }
-
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
             when (effect) {
@@ -186,8 +183,6 @@ fun ManagementScreen(
                     categoryToViewDetails = null
                     categoryToEdit = null
                     isNewCategoryDialog = false
-                    subcategoryTargetCategory = null
-                    subcategoryToEdit = null
                 }
             }
         }
@@ -295,7 +290,6 @@ fun ManagementScreen(
                     )
                     ManagementSection.CATEGORIES -> CategoriesTab(
                         categories = uiState.categories,
-                        subcategories = uiState.subcategories,
                         onSelectCategory = { categoryToViewDetails = it }
                     )
                 }
@@ -338,26 +332,6 @@ fun ManagementScreen(
             )
         }
 
-        // Nova Subcategoria
-        subcategoryTargetCategory?.let { targetCat ->
-            AddEditSubcategoryDialog(
-                subcategory = null,
-                category = targetCat,
-                onDismiss = { subcategoryTargetCategory = null },
-                onConfirm = { sub -> viewModel.onAction(ManagementUiAction.SaveSubcategory(sub)) }
-            )
-        }
-
-        // Editar Subcategoria existente
-        subcategoryToEdit?.let { (sub, targetCat) ->
-            AddEditSubcategoryDialog(
-                subcategory = sub,
-                category = targetCat,
-                onDismiss = { subcategoryToEdit = null },
-                onConfirm = { updatedSub -> viewModel.onAction(ManagementUiAction.SaveSubcategory(updatedSub)) }
-            )
-        }
-
         // Detalhes da Conta (Bottom Sheet)
         accountToViewDetails?.let { account ->
             AccountDetailBottomSheet(
@@ -396,7 +370,6 @@ fun ManagementScreen(
         categoryToViewDetails?.let { category ->
             CategoryDetailBottomSheet(
                 category = category,
-                subcategories = uiState.subcategories,
                 installments = uiState.installments,
                 onDismiss = { categoryToViewDetails = null },
                 onEdit = {
@@ -406,15 +379,6 @@ fun ManagementScreen(
                 onDelete = { categoryId ->
                     categoryToViewDetails = null
                     viewModel.onAction(ManagementUiAction.DeleteCategory(categoryId))
-                },
-                onAddSubcategory = { cat ->
-                    subcategoryTargetCategory = cat
-                },
-                onEditSubcategory = { sub, cat ->
-                    subcategoryToEdit = Pair(sub, cat)
-                },
-                onDeleteSubcategory = { subId ->
-                    viewModel.onAction(ManagementUiAction.DeleteSubcategory(subId))
                 }
             )
         }
@@ -1292,7 +1256,6 @@ fun PaymentMethodDetailBottomSheet(
 @Composable
 fun CategoriesTab(
     categories: List<Category>,
-    subcategories: List<Subcategory>,
     onSelectCategory: (Category) -> Unit
 ) {
     if (categories.isEmpty()) {
@@ -1310,10 +1273,6 @@ fun CategoriesTab(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(categories, key = { it.id }) { cat ->
-                val subsCount = remember(subcategories, cat.id) {
-                    subcategories.count { it.categoryId == cat.id }
-                }
-
                 val color = remember(cat.colorHex) {
                     try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
                 }
@@ -1360,7 +1319,7 @@ fun CategoriesTab(
                                 color = color.copy(alpha = 0.12f)
                             ) {
                                 Text(
-                                    text = if (subsCount == 1) "1 subcategoria" else "$subsCount subcategorias",
+                                    text = "Natureza: ${cat.nature.displayName}",
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Medium,
                                     color = color,
@@ -1386,26 +1345,17 @@ fun CategoriesTab(
 @Composable
 fun CategoryDetailBottomSheet(
     category: Category,
-    subcategories: List<Subcategory>,
     installments: List<BillInstallment>,
     onDismiss: () -> Unit,
     onEdit: (Category) -> Unit,
-    onDelete: (String) -> Unit,
-    onAddSubcategory: (Category) -> Unit,
-    onEditSubcategory: (Subcategory, Category) -> Unit,
-    onDeleteSubcategory: (String) -> Unit
+    onDelete: (String) -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var subcategoryToDelete by remember { mutableStateOf<Subcategory?>(null) }
 
     val catColor = remember(category.colorHex) {
         try { Color(android.graphics.Color.parseColor(category.colorHex)) } catch (e: Exception) { Color(0xFF3B82F6) }
-    }
-
-    val categorySubs = remember(subcategories, category.id) {
-        subcategories.filter { it.categoryId == category.id }
     }
 
     val linkedInstallments = remember(installments, category.id) {
@@ -1506,20 +1456,6 @@ fun CategoryDetailBottomSheet(
                                 showMenu = false
                                 onDismiss()
                                 onEdit(category)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Nova Subcategoria") },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            onClick = {
-                                showMenu = false
-                                onAddSubcategory(category)
                             }
                         )
                         DropdownMenuItem(
@@ -1676,109 +1612,6 @@ fun CategoryDetailBottomSheet(
                 }
             }
 
-            // Card / Seção de Subcategorias
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Subcategorias Vinculadas",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        TextButton(
-                            onClick = { onAddSubcategory(category) },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Adicionar", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (categorySubs.isEmpty()) {
-                        Text(
-                            text = "Nenhuma subcategoria vinculada a esta categoria.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    } else {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            categorySubs.forEach { sub ->
-                                Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.surface,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(catColor, CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(10.dp))
-                                        Text(
-                                            text = sub.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.weight(1f)
-                                        )
-
-                                        IconButton(
-                                            onClick = { onEditSubcategory(sub, category) },
-                                            modifier = Modifier.size(30.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Edit,
-                                                contentDescription = "Editar Subcategoria",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-
-                                        IconButton(
-                                            onClick = { subcategoryToDelete = sub },
-                                            modifier = Modifier.size(30.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Delete,
-                                                contentDescription = "Excluir Subcategoria",
-                                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
@@ -1796,7 +1629,7 @@ fun CategoryDetailBottomSheet(
             },
             text = {
                 Text(
-                    text = "Deseja realmente excluir a categoria '${category.name}'? Todas as ${categorySubs.size} subcategorias vinculadas também serão removidas. Os lançamentos manterão seus valores financeiros, mas perderão a categorização.",
+                    text = "Deseja realmente excluir a categoria '${category.name}'? Os lançamentos manterão seus valores financeiros, mas perderão a categorização.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -1817,46 +1650,6 @@ fun CategoryDetailBottomSheet(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
-    // Diálogo de confirmação para exclusão de Subcategoria
-    subcategoryToDelete?.let { sub ->
-        AlertDialog(
-            onDismissRequest = { subcategoryToDelete = null },
-            title = {
-                Text(
-                    text = "Excluir Subcategoria",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            text = {
-                Text(
-                    text = "Deseja excluir a subcategoria '${sub.name}' de '${category.name}'?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val idToDelete = sub.id
-                        subcategoryToDelete = null
-                        onDeleteSubcategory(idToDelete)
-                    },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { subcategoryToDelete = null }) {
                     Text("Cancelar")
                 }
             }
@@ -2172,6 +1965,7 @@ fun AddEditPaymentMethodDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditCategoryDialog(
     category: Category?,
@@ -2181,6 +1975,7 @@ fun AddEditCategoryDialog(
     var name by remember { mutableStateOf(category?.name ?: "") }
     val colors = listOf("#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#EC4899", "#6366F1", "#64748B")
     var selectedColor by remember { mutableStateOf(category?.colorHex ?: colors[0]) }
+    var selectedNature by remember { mutableStateOf(category?.nature ?: ExpenseNature.NECESSARIO) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -2201,6 +1996,17 @@ fun AddEditCategoryDialog(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Text("Natureza do Gasto:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(ExpenseNature.entries.toTypedArray()) { natureOption ->
+                        FilterChip(
+                            selected = selectedNature == natureOption,
+                            onClick = { selectedNature = natureOption },
+                            label = { Text(natureOption.displayName, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
 
                 Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2236,7 +2042,8 @@ fun AddEditCategoryDialog(
                                 id = category?.id ?: UUID.randomUUID().toString(),
                                 name = name.trim(),
                                 colorHex = selectedColor,
-                                iconName = category?.iconName ?: "category"
+                                iconName = category?.iconName ?: "category",
+                                nature = selectedNature
                             )
                         )
                     }
@@ -2253,60 +2060,4 @@ fun AddEditCategoryDialog(
     )
 }
 
-@Composable
-fun AddEditSubcategoryDialog(
-    subcategory: Subcategory?,
-    category: Category,
-    onDismiss: () -> Unit,
-    onConfirm: (Subcategory) -> Unit
-) {
-    var name by remember { mutableStateOf(subcategory?.name ?: "") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (subcategory == null)
-                    "Nova Subcategoria em '${category.name}'"
-                else
-                    "Editar Subcategoria em '${category.name}'",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome da Subcategoria (ex: Farmácia)", style = MaterialTheme.typography.bodySmall) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onConfirm(
-                            Subcategory(
-                                id = subcategory?.id ?: UUID.randomUUID().toString(),
-                                categoryId = category.id,
-                                name = name.trim()
-                            )
-                        )
-                    }
-                },
-                shape = RoundedCornerShape(8.dp),
-                enabled = name.isNotBlank()
-            ) {
-                Text(if (subcategory == null) "Adicionar" else "Atualizar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
-    )
-}

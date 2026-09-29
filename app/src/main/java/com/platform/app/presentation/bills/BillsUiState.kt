@@ -6,9 +6,9 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
 
 enum class BillPeriodFilter {
     THIS_MONTH,
@@ -23,7 +23,7 @@ data class BillsUiState(
     val installments: List<BillInstallment> = emptyList(),
     val filteredInstallments: List<BillInstallment> = emptyList(),
     val categories: List<Category> = emptyList(),
-    val subcategories: List<Subcategory> = emptyList(),
+    val expenseItems: List<ExpenseItem> = emptyList(),
     val contacts: List<Contact> = emptyList(),
     val financialAccounts: List<FinancialAccount> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),

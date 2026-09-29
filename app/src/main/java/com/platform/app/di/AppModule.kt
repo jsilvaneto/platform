@@ -10,6 +10,16 @@ import com.platform.app.core.dispatcher.DispatcherProvider
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.preferences.PreferencesManagerImpl
 import com.platform.app.data.local.PlatformDatabase
+import com.platform.app.data.local.dao.BillDao
+import com.platform.app.data.local.dao.BillInstallmentDao
+import com.platform.app.data.local.dao.BudgetDao
+import com.platform.app.data.local.dao.CategoryDao
+import com.platform.app.data.local.dao.ContactDao
+import com.platform.app.data.local.dao.CreditCardDao
+import com.platform.app.data.local.dao.ExpenseItemDao
+import com.platform.app.data.local.dao.FinancialAccountDao
+import com.platform.app.data.local.dao.GoalDao
+import com.platform.app.data.local.dao.PaymentMethodDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -50,62 +60,68 @@ object AppModule {
             PlatformDatabase::class.java,
             PlatformDatabase.DATABASE_NAME
         )
-        .addMigrations(PlatformDatabase.MIGRATION_4_5)
+        .addMigrations(PlatformDatabase.MIGRATION_4_5, PlatformDatabase.MIGRATION_5_6)
         .fallbackToDestructiveMigration()
         .build()
     }
 
     @Provides
     @Singleton
-    fun provideCategoryDao(db: PlatformDatabase): com.platform.app.data.local.dao.CategoryDao {
+    fun provideCategoryDao(db: PlatformDatabase): CategoryDao {
         return db.categoryDao
     }
 
     @Provides
     @Singleton
-    fun provideSubcategoryDao(db: PlatformDatabase): com.platform.app.data.local.dao.SubcategoryDao {
-        return db.subcategoryDao
+    fun provideExpenseItemDao(db: PlatformDatabase): ExpenseItemDao {
+        return db.expenseItemDao
     }
 
     @Provides
     @Singleton
-    fun provideContactDao(db: PlatformDatabase): com.platform.app.data.local.dao.ContactDao {
+    fun provideCreditCardDao(db: PlatformDatabase): CreditCardDao {
+        return db.creditCardDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideContactDao(db: PlatformDatabase): ContactDao {
         return db.contactDao
     }
 
     @Provides
     @Singleton
-    fun provideFinancialAccountDao(db: PlatformDatabase): com.platform.app.data.local.dao.FinancialAccountDao {
+    fun provideFinancialAccountDao(db: PlatformDatabase): FinancialAccountDao {
         return db.financialAccountDao
     }
 
     @Provides
     @Singleton
-    fun providePaymentMethodDao(db: PlatformDatabase): com.platform.app.data.local.dao.PaymentMethodDao {
+    fun providePaymentMethodDao(db: PlatformDatabase): PaymentMethodDao {
         return db.paymentMethodDao
     }
 
     @Provides
     @Singleton
-    fun provideBillDao(db: PlatformDatabase): com.platform.app.data.local.dao.BillDao {
+    fun provideBillDao(db: PlatformDatabase): BillDao {
         return db.billDao
     }
 
     @Provides
     @Singleton
-    fun provideBillInstallmentDao(db: PlatformDatabase): com.platform.app.data.local.dao.BillInstallmentDao {
+    fun provideBillInstallmentDao(db: PlatformDatabase): BillInstallmentDao {
         return db.billInstallmentDao
     }
 
     @Provides
     @Singleton
-    fun provideGoalDao(db: PlatformDatabase): com.platform.app.data.local.dao.GoalDao {
+    fun provideGoalDao(db: PlatformDatabase): GoalDao {
         return db.goalDao
     }
 
     @Provides
     @Singleton
-    fun provideBudgetDao(db: PlatformDatabase): com.platform.app.data.local.dao.BudgetDao {
+    fun provideBudgetDao(db: PlatformDatabase): BudgetDao {
         return db.budgetDao
     }
 

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
 import com.platform.app.domain.repository.FinancialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -51,8 +49,6 @@ class ManagementViewModel @Inject constructor(
             is ManagementUiAction.DeletePaymentMethod -> handleDeletePaymentMethod(action.methodId)
             is ManagementUiAction.SaveCategory -> handleSaveCategory(action.category)
             is ManagementUiAction.DeleteCategory -> handleDeleteCategory(action.categoryId)
-            is ManagementUiAction.SaveSubcategory -> handleSaveSubcategory(action.subcategory)
-            is ManagementUiAction.DeleteSubcategory -> handleDeleteSubcategory(action.subcategoryId)
             is ManagementUiAction.Refresh -> loadData()
         }
     }
@@ -64,15 +60,13 @@ class ManagementViewModel @Inject constructor(
             repository.getFinancialAccounts(),
             repository.getPaymentMethods(),
             repository.getCategories(),
-            repository.getAllSubcategories(),
             repository.getAllInstallments()
-        ) { accounts, methods, categories, subcategories, installments ->
+        ) { accounts, methods, categories, installments ->
             _uiState.update {
                 it.copy(
                     accounts = accounts,
                     paymentMethods = methods,
                     categories = categories,
-                    subcategories = subcategories,
                     installments = installments,
                     isLoading = false,
                     errorMessage = null
@@ -153,29 +147,6 @@ class ManagementViewModel @Inject constructor(
                 _effectChannel.send(ManagementUiEffect.ShowSnackbar("Categoria excluída."))
             } catch (e: Exception) {
                 _effectChannel.send(ManagementUiEffect.ShowSnackbar("Erro ao excluir categoria: ${e.message}"))
-            }
-        }
-    }
-
-    private fun handleSaveSubcategory(subcategory: Subcategory) {
-        viewModelScope.launch {
-            try {
-                repository.saveSubcategory(subcategory)
-                _effectChannel.send(ManagementUiEffect.ShowSnackbar("Subcategoria '${subcategory.name}' salva!"))
-                _effectChannel.send(ManagementUiEffect.ItemSaved)
-            } catch (e: Exception) {
-                _effectChannel.send(ManagementUiEffect.ShowSnackbar("Erro ao salvar subcategoria: ${e.message}"))
-            }
-        }
-    }
-
-    private fun handleDeleteSubcategory(subcategoryId: String) {
-        viewModelScope.launch {
-            try {
-                repository.deleteSubcategory(subcategoryId)
-                _effectChannel.send(ManagementUiEffect.ShowSnackbar("Subcategoria excluída."))
-            } catch (e: Exception) {
-                _effectChannel.send(ManagementUiEffect.ShowSnackbar("Erro ao excluir subcategoria: ${e.message}"))
             }
         }
     }

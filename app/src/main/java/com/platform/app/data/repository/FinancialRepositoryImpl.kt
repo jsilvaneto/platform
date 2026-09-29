@@ -1,38 +1,49 @@
 package com.platform.app.data.repository
 
+import androidx.room.withTransaction
+import com.platform.app.data.local.PlatformDatabase
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.CategoryDao
 import com.platform.app.data.local.dao.ContactDao
+import com.platform.app.data.local.dao.CreditCardDao
+import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.SubcategoryDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.data.local.entity.CategoryEntity
 import com.platform.app.data.local.entity.ContactEntity
+import com.platform.app.data.local.entity.CreditCardEntity
+import com.platform.app.data.local.entity.CreditCardInvoiceEntity
+import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
-import com.platform.app.data.local.entity.SubcategoryEntity
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.CreditCard
+import com.platform.app.domain.model.CreditCardInvoice
+import com.platform.app.domain.model.ExpenseItem
+import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
 import com.platform.app.domain.repository.FinancialRepository
-import androidx.room.withTransaction
-import com.platform.app.data.local.PlatformDatabase
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
 class FinancialRepositoryImpl @Inject constructor(
     private val database: PlatformDatabase,
     private val categoryDao: CategoryDao,
-    private val subcategoryDao: SubcategoryDao,
+    private val expenseItemDao: ExpenseItemDao,
+    private val creditCardDao: CreditCardDao,
     private val contactDao: ContactDao,
     private val financialAccountDao: FinancialAccountDao,
     private val paymentMethodDao: PaymentMethodDao,
@@ -58,38 +69,161 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun seedInitialCategoriesIfEmpty() {
         if (categoryDao.count() == 0) {
             val defaults = listOf(
-                Category(id = UUID.randomUUID().toString(), name = "Moradia", colorHex = "#3B82F6", iconName = "home"),
-                Category(id = UUID.randomUUID().toString(), name = "Alimentação", colorHex = "#10B981", iconName = "shopping_cart"),
-                Category(id = UUID.randomUUID().toString(), name = "Transporte", colorHex = "#F59E0B", iconName = "directions_car"),
-                Category(id = UUID.randomUUID().toString(), name = "Assinaturas & Serviços", colorHex = "#8B5CF6", iconName = "subscriptions"),
-                Category(id = UUID.randomUUID().toString(), name = "Saúde", colorHex = "#EF4444", iconName = "medical_services"),
-                Category(id = UUID.randomUUID().toString(), name = "Lazer", colorHex = "#EC4899", iconName = "sports_esports"),
-                Category(id = UUID.randomUUID().toString(), name = "Educação", colorHex = "#6366F1", iconName = "school"),
-                Category(id = UUID.randomUUID().toString(), name = "Outros", colorHex = "#64748B", iconName = "more_horiz")
+                Category(id = UUID.randomUUID().toString(), name = "Moradia", colorHex = "#3B82F6", iconName = "home", nature = ExpenseNature.OBRIGATORIO),
+                Category(id = UUID.randomUUID().toString(), name = "Alimentação", colorHex = "#10B981", iconName = "shopping_cart", nature = ExpenseNature.NECESSARIO),
+                Category(id = UUID.randomUUID().toString(), name = "Transporte", colorHex = "#F59E0B", iconName = "directions_car", nature = ExpenseNature.NECESSARIO),
+                Category(id = UUID.randomUUID().toString(), name = "Assinaturas & Serviços", colorHex = "#8B5CF6", iconName = "subscriptions", nature = ExpenseNature.DESEJA),
+                Category(id = UUID.randomUUID().toString(), name = "Saúde", colorHex = "#EF4444", iconName = "medical_services", nature = ExpenseNature.OBRIGATORIO),
+                Category(id = UUID.randomUUID().toString(), name = "Lazer", colorHex = "#EC4899", iconName = "sports_esports", nature = ExpenseNature.DESEJA),
+                Category(id = UUID.randomUUID().toString(), name = "Educação", colorHex = "#6366F1", iconName = "school", nature = ExpenseNature.OBRIGATORIO),
+                Category(id = UUID.randomUUID().toString(), name = "Outros", colorHex = "#64748B", iconName = "more_horiz", nature = ExpenseNature.NENHUM)
             )
             categoryDao.insertAll(defaults.map { CategoryEntity.fromDomain(it) })
         }
     }
 
-    // --- Subcategories ---
-    override fun getSubcategories(categoryId: String): Flow<List<Subcategory>> {
-        return subcategoryDao.getByCategory(categoryId).map { list ->
+    // --- Expense Items ---
+    override fun getExpenseItems(): Flow<List<ExpenseItem>> {
+        return combine(expenseItemDao.getAll(), getCategories()) { items, categories ->
+            val categoryMap = categories.associateBy { it.id }
+            items.map { item ->
+                val cat = categoryMap[item.categoryId]
+                item.toDomain(
+                    categoryName = cat?.name ?: "Geral",
+                    categoryColorHex = cat?.colorHex ?: "#64748B",
+                    nature = cat?.nature ?: ExpenseNature.NECESSARIO
+                )
+            }
+        }
+    }
+
+    override fun getExpenseItemsByCategory(categoryId: String): Flow<List<ExpenseItem>> {
+        return combine(expenseItemDao.getByCategoryId(categoryId), getCategories()) { items, categories ->
+            val cat = categories.find { it.id == categoryId }
+            items.map { item ->
+                item.toDomain(
+                    categoryName = cat?.name ?: "Geral",
+                    categoryColorHex = cat?.colorHex ?: "#64748B",
+                    nature = cat?.nature ?: ExpenseNature.NECESSARIO
+                )
+            }
+        }
+    }
+
+    override suspend fun saveExpenseItem(item: ExpenseItem) {
+        expenseItemDao.insert(ExpenseItemEntity.fromDomain(item))
+    }
+
+    override suspend fun deleteExpenseItem(itemId: String) {
+        expenseItemDao.deleteById(itemId)
+    }
+
+    override suspend fun seedInitialExpenseItemsIfEmpty() {
+        if (expenseItemDao.count() == 0) {
+            val categories = getCategories().first()
+            if (categories.isNotEmpty()) {
+                val moradia = categories.find { it.name == "Moradia" }?.id ?: categories[0].id
+                val alimentacao = categories.find { it.name == "Alimentação" }?.id ?: categories[0].id
+                val transporte = categories.find { it.name == "Transporte" }?.id ?: categories[0].id
+
+                val defaults = listOf(
+                    ExpenseItem(name = "Aluguel / Condomínio", categoryId = moradia),
+                    ExpenseItem(name = "Energia Elétrica", categoryId = moradia),
+                    ExpenseItem(name = "Água & Saneamento", categoryId = moradia),
+                    ExpenseItem(name = "Supermercado", categoryId = alimentacao),
+                    ExpenseItem(name = "Feira & Hortifruti", categoryId = alimentacao),
+                    ExpenseItem(name = "Combustível", categoryId = transporte),
+                    ExpenseItem(name = "Manutenção Veicular", categoryId = transporte)
+                )
+                expenseItemDao.insertAll(defaults.map { ExpenseItemEntity.fromDomain(it) })
+            }
+        }
+    }
+
+    // --- Credit Cards & Invoices ---
+    override fun getCreditCards(): Flow<List<CreditCard>> {
+        return creditCardDao.getAllCards().map { list ->
             list.map { it.toDomain() }
         }
     }
 
-    override fun getAllSubcategories(): Flow<List<Subcategory>> {
-        return subcategoryDao.getAll().map { list ->
-            list.map { it.toDomain() }
+    override suspend fun saveCreditCard(card: CreditCard) {
+        creditCardDao.insertCard(CreditCardEntity.fromDomain(card))
+    }
+
+    override suspend fun deleteCreditCard(cardId: String) {
+        creditCardDao.deleteCardById(cardId)
+    }
+
+    override suspend fun seedInitialCreditCardsIfEmpty() {
+        if (creditCardDao.countCards() == 0) {
+            val defaults = listOf(
+                CreditCard(name = "Cartão Principal", totalLimitCents = 1000000L, closingDay = 25, dueDay = 5, colorHex = "#2563EB"),
+                CreditCard(name = "Cartão Secundário", totalLimitCents = 500000L, closingDay = 15, dueDay = 25, colorHex = "#8B5CF6")
+            )
+            creditCardDao.insertCard(CreditCardEntity.fromDomain(defaults[0]))
+            creditCardDao.insertCard(CreditCardEntity.fromDomain(defaults[1]))
         }
     }
 
-    override suspend fun saveSubcategory(subcategory: Subcategory) {
-        subcategoryDao.insert(SubcategoryEntity.fromDomain(subcategory))
+    override fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>> {
+        return combine(creditCardDao.getInvoicesForCard(cardId), getAllInstallments()) { invoices, installments ->
+            invoices.map { invEntity ->
+                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
+                val totalCents = invoiceInsts.sumOf { it.amountCents }
+                invEntity.toDomain(totalAmountCents = totalCents)
+            }
+        }
     }
 
-    override suspend fun deleteSubcategory(subcategoryId: String) {
-        subcategoryDao.deleteById(subcategoryId)
+    override suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice {
+        val existing = creditCardDao.getInvoiceByMonth(cardId, referenceMonth)
+        if (existing != null) {
+            return existing.toDomain()
+        }
+
+        val card = creditCardDao.getCardById(cardId) ?: return CreditCardInvoice(
+            creditCardId = cardId,
+            referenceMonth = referenceMonth,
+            closingDate = System.currentTimeMillis(),
+            dueDate = System.currentTimeMillis()
+        )
+
+        val cal = Calendar.getInstance()
+        val parts = referenceMonth.split("-")
+        val year = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(Calendar.YEAR)
+        val month = (parts.getOrNull(1)?.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
+
+        cal.set(year, month, card.closingDay, 23, 59, 59)
+        val closingDate = cal.timeInMillis
+
+        cal.set(year, month, card.dueDay, 23, 59, 59)
+        if (card.dueDay <= card.closingDay) {
+            cal.add(Calendar.MONTH, 1)
+        }
+        val dueDate = cal.timeInMillis
+
+        val newInvoice = CreditCardInvoice(
+            creditCardId = cardId,
+            referenceMonth = referenceMonth,
+            closingDate = closingDate,
+            dueDate = dueDate,
+            status = InvoiceStatus.ABERTA
+        )
+        creditCardDao.insertInvoice(CreditCardInvoiceEntity.fromDomain(newInvoice))
+        return newInvoice
+    }
+
+    override suspend fun payInvoice(invoiceId: String) {
+        database.withTransaction {
+            creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.PAGA.name)
+            val allInsts = installmentDao.getAllInstallmentsList()
+            val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
+            val now = System.currentTimeMillis()
+            invoiceInsts.forEach { inst ->
+                installmentDao.updatePayment(inst.id, now, "PAID")
+            }
+        }
     }
 
     // --- Contacts ---

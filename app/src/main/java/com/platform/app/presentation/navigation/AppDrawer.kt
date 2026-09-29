@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
@@ -82,6 +83,11 @@ fun AppDrawer(
                     screen = Screen.RecurringInstallments,
                     title = "Recorrentes & Parcelados",
                     icon = Icons.Default.Repeat
+                ),
+                DrawerItem(
+                    screen = Screen.CreditCards,
+                    title = "Cartões de Crédito",
+                    icon = Icons.Default.CreditCard
                 )
             )
         ),

@@ -14,6 +14,7 @@ data class FinancialDashboardMetrics(
     val upcomingInstallments: List<BillInstallment> = emptyList(),
     val upcomingWeekInstallments: List<BillInstallment> = emptyList(),
     val categoryDistribution: List<CategorySpend> = emptyList(),
+    val natureDistribution: List<NatureSpend> = emptyList(),
     val futureMonthsProjections: List<FutureMonthProjection> = emptyList(),
     val totalCommittedFutureCents: Long = 0L,
     val futureInstallmentsCount: Int = 0,
@@ -27,6 +28,12 @@ data class FinancialDashboardMetrics(
 data class CategorySpend(
     val categoryName: String,
     val colorHex: String,
+    val amountCents: Long,
+    val percentage: Float
+)
+
+data class NatureSpend(
+    val nature: ExpenseNature,
     val amountCents: Long,
     val percentage: Float
 )

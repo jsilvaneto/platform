@@ -43,6 +43,8 @@ import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
+import com.platform.app.domain.model.NatureSpend
+import androidx.core.graphics.toColorInt
 import com.platform.app.presentation.components.PlatformAppBar
 import java.util.Locale
 import com.platform.app.presentation.components.PlatformCard
@@ -98,7 +100,24 @@ fun StatisticsScreen(
                             FuturePlanningSection(metrics = metrics)
                         }
 
-                        // 3. Distribuição por Categorias
+                        // 3. Distribuição por Natureza (Regra 50-30-20)
+                        if (metrics.natureDistribution.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Distribuição por Natureza (Regra 50-30-20)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            items(metrics.natureDistribution, key = { it.nature.name }) { natureSpend ->
+                                NatureSpendRow(natureSpend = natureSpend)
+                            }
+                        }
+
+                        // 4. Distribuição por Categorias
                         if (metrics.categoryDistribution.isNotEmpty()) {
                             item {
                                 Text(
@@ -378,6 +397,52 @@ fun FutureMonthCard(projection: FutureMonthProjection) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+fun NatureSpendRow(natureSpend: NatureSpend) {
+    val natureColor = try { Color(natureSpend.nature.colorHex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+
+    PlatformCard(
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = natureSpend.nature.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${CurrencyUtils.formatCentsToCurrency(natureSpend.amountCents)} (${String.format(Locale.getDefault(), "%.1f", natureSpend.percentage)}%)",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = { (natureSpend.percentage / 100f).coerceIn(0f, 1f) },
+                color = natureColor,
+                trackColor = natureColor.copy(alpha = 0.15f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
             )
         }
     }

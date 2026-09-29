@@ -93,7 +93,8 @@ fun SettingsScreen(
     onOpenDrawer: () -> Unit,
     onNavigateToAccounts: () -> Unit = {},
     onNavigateToPaymentMethods: () -> Unit = {},
-    onNavigateToCategories: () -> Unit = {}
+    onNavigateToCategories: () -> Unit = {},
+    onNavigateToExpenseItems: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -199,9 +200,17 @@ fun SettingsScreen(
             // Menu individual: Categorias
             SettingActionCard(
                 title = "Categorias",
-                subtitle = "Classificação de despesas e subcategorias",
+                subtitle = "Classificação de despesas e natureza do gasto",
                 icon = Icons.Default.Category,
                 onClick = onNavigateToCategories
+            )
+
+            // Menu individual: Itens de Despesa
+            SettingActionCard(
+                title = "Itens de Despesa",
+                subtitle = "Substitui subcategorias e vincula à Categoria",
+                icon = Icons.Default.Category,
+                onClick = onNavigateToExpenseItems
             )
 
             // Seção de Segurança

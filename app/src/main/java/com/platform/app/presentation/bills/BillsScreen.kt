@@ -56,7 +56,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
-import com.platform.app.domain.model.Subcategory
+import com.platform.app.domain.model.ExpenseItem
 import java.util.Calendar
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
@@ -292,13 +292,13 @@ fun BillsScreen(
                 if (showAddSheet) {
                     AddBillBottomSheet(
                         categories = uiState.categories,
-                        subcategories = uiState.subcategories,
+                        expenseItems = uiState.expenseItems,
                         contacts = uiState.contacts,
                         financialAccounts = uiState.financialAccounts,
                         paymentMethods = uiState.paymentMethods,
                         sheetState = sheetState,
                         onDismiss = { showAddSheet = false },
-                        onConfirm = { title, desc, type, totalCents, catId, subcatId, contactId, accountId, paymentMethodId, totalInst, dueDate ->
+                        onConfirm = { title, desc, type, totalCents, catId, itemId, contactId, accountId, paymentMethodId, totalInst, dueDate ->
                             onAction(
                                 BillsUiAction.CreateBill(
                                     title = title,
@@ -306,7 +306,7 @@ fun BillsScreen(
                                     type = type,
                                     totalAmountCents = totalCents,
                                     categoryId = catId,
-                                    subcategoryId = subcatId,
+                                    itemId = itemId,
                                     contactId = contactId,
                                     financialAccountId = accountId,
                                     paymentMethodId = paymentMethodId,
@@ -822,8 +822,8 @@ fun BillInstallmentDetailBottomSheet(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = if (!installment.subcategoryName.isNullOrBlank())
-                                    "${installment.categoryName} (${installment.subcategoryName})"
+                                text = if (!installment.itemName.isNullOrBlank())
+                                    "${installment.categoryName} (${installment.itemName})"
                                 else
                                     installment.categoryName,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -1050,7 +1050,7 @@ fun InstallmentBadge(installment: BillInstallment) {
 @Composable
 fun AddBillBottomSheet(
     categories: List<Category>,
-    subcategories: List<Subcategory>,
+    expenseItems: List<ExpenseItem>,
     contacts: List<Contact>,
     financialAccounts: List<FinancialAccount>,
     paymentMethods: List<PaymentMethod>,
@@ -1062,7 +1062,7 @@ fun AddBillBottomSheet(
         type: BillType,
         amountCents: Long,
         categoryId: String?,
-        subcategoryId: String?,
+        itemId: String?,
         contactId: String?,
         accountId: String?,
         paymentMethodId: String?,
@@ -1076,16 +1076,16 @@ fun AddBillBottomSheet(
     var selectedType by remember { mutableStateOf(BillType.SINGLE) }
     var installmentsCountText by remember { mutableStateOf("2") }
     var selectedCategoryId by remember { mutableStateOf<String?>(categories.firstOrNull()?.id) }
-    var selectedSubcategoryId by remember { mutableStateOf<String?>(null) }
+    var selectedItemId by remember { mutableStateOf<String?>(null) }
     var selectedContactId by remember { mutableStateOf<String?>(null) }
     var selectedAccountId by remember { mutableStateOf<String?>(financialAccounts.firstOrNull()?.id) }
     var selectedPaymentMethodId by remember { mutableStateOf<String?>(paymentMethods.firstOrNull()?.id) }
     var dueDateMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var showValidationError by remember { mutableStateOf(false) }
 
-    val filteredSubcategories = remember(selectedCategoryId, subcategories) {
-        if (selectedCategoryId == null) emptyList()
-        else subcategories.filter { it.categoryId == selectedCategoryId }
+    val filteredItems = remember(selectedCategoryId, expenseItems) {
+        if (selectedCategoryId == null) expenseItems
+        else expenseItems.filter { it.categoryId == selectedCategoryId }
     }
 
     ModalBottomSheet(
@@ -1365,33 +1365,36 @@ fun AddBillBottomSheet(
                                 selected = selectedCategoryId == cat.id,
                                 onClick = {
                                     selectedCategoryId = cat.id
-                                    selectedSubcategoryId = null
+                                    selectedItemId = null
                                 },
                                 label = { Text(cat.name) }
                             )
                         }
                     }
 
-                    // Subcategoria
-                    if (filteredSubcategories.isNotEmpty()) {
+                    // Item de Despesa
+                    if (filteredItems.isNotEmpty()) {
                         Text(
-                            text = "Subcategoria:",
+                            text = "Item de Despesa:",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Medium
                         )
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             item {
                                 FilterChip(
-                                    selected = selectedSubcategoryId == null,
-                                    onClick = { selectedSubcategoryId = null },
-                                    label = { Text("Nenhuma") }
+                                    selected = selectedItemId == null,
+                                    onClick = { selectedItemId = null },
+                                    label = { Text("Nenhum") }
                                 )
                             }
-                            items(filteredSubcategories, key = { it.id }) { sub ->
+                            items(filteredItems, key = { it.id }) { item ->
                                 FilterChip(
-                                    selected = selectedSubcategoryId == sub.id,
-                                    onClick = { selectedSubcategoryId = sub.id },
-                                    label = { Text(sub.name) }
+                                    selected = selectedItemId == item.id,
+                                    onClick = {
+                                        selectedItemId = item.id
+                                        selectedCategoryId = item.categoryId
+                                    },
+                                    label = { Text(item.name) }
                                 )
                             }
                         }
@@ -1506,7 +1509,7 @@ fun AddBillBottomSheet(
                                 selectedType,
                                 amountCents,
                                 selectedCategoryId,
-                                selectedSubcategoryId,
+                                selectedItemId,
                                 selectedContactId,
                                 selectedAccountId,
                                 selectedPaymentMethodId,

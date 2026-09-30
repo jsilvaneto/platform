@@ -73,6 +73,12 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Notificações Locais Offline de Vencimentos**: Lembretes inteligentes para despesas e faturas que vencem no dia (`DueReminderManager`, `DueReminderReceiver`).
 - [x] **Suíte de Testes Automatizados**: Novos testes `HomeViewModelTest` e `NewExpenseViewModelTest` com 100% de sucesso.
 
+### Gestão & Edição de Itens de Despesa (v1.4.4)
+- [x] **Edição Completa de Itens de Despesa**: Fluxo reativo para alteração de nome e categoria vinculada (`AddEditExpenseItemBottomSheet`).
+- [x] **Padrão de Detalhes Universal (`ExpenseItemDetailBottomSheet`)**: ModalBottomSheet de detalhes acionado por toque no card com avatar, vínculos de categoria, badge de natureza e menu de 3 pontos (`MoreVert`).
+- [x] **Acesso Direto à Edição em Nova Despesa (`NewExpenseScreen`)**: Atalho "Gerenciar Itens (Criar / Editar)" no menu dropdown e botão de edição rápida de 1 toque no chip de natureza herdada.
+- [x] **Suíte de Testes Automatizados**: Novos testes unitários aprovados em `ExpenseItemsViewModelTest.kt` cobrindo carga, filtros, salvamento de edição e exclusão.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

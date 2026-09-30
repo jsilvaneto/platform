@@ -110,7 +110,8 @@ fun NavGraph(
             val viewModel: NewExpenseViewModel = hiltViewModel()
             NewExpenseScreen(
                 viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToExpenseItems = { navController.navigate(Screen.ExpenseItems.route) }
             )
         }
 

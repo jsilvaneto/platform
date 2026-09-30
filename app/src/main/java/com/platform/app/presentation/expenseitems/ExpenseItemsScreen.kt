@@ -22,11 +22,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -61,6 +67,7 @@ import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformStatusChip
 import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.Dimens
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +77,9 @@ fun ExpenseItemsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showAddItemSheet by remember { mutableStateOf(false) }
+    var showAddOrEditSheet by remember { mutableStateOf(false) }
+    var itemToEdit by remember { mutableStateOf<ExpenseItem?>(null) }
+    var itemToViewDetails by remember { mutableStateOf<ExpenseItem?>(null) }
     var itemToDelete by remember { mutableStateOf<ExpenseItem?>(null) }
 
     Scaffold(
@@ -87,7 +96,10 @@ fun ExpenseItemsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddItemSheet = true },
+                onClick = {
+                    itemToEdit = null
+                    showAddOrEditSheet = true
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
@@ -159,24 +171,48 @@ fun ExpenseItemsScreen(
                     items(uiState.filteredItems, key = { it.id }) { item ->
                         ExpenseItemRow(
                             item = item,
-                            onClick = { itemToDelete = item }
+                            onClick = { itemToViewDetails = item }
                         )
                     }
                 }
             }
         }
 
-        if (showAddItemSheet) {
-            AddExpenseItemBottomSheet(
-                categories = uiState.categories,
-                onDismiss = { showAddItemSheet = false },
-                onSave = { newItem ->
-                    onAction(ExpenseItemsUiAction.SaveItem(newItem))
-                    showAddItemSheet = false
+        // BottomSheet de Detalhes com opções de Editar e Excluir
+        itemToViewDetails?.let { targetItem ->
+            ExpenseItemDetailBottomSheet(
+                item = targetItem,
+                onDismiss = { itemToViewDetails = null },
+                onEdit = {
+                    itemToViewDetails = null
+                    itemToEdit = targetItem
+                    showAddOrEditSheet = true
+                },
+                onDelete = {
+                    itemToViewDetails = null
+                    itemToDelete = targetItem
                 }
             )
         }
 
+        // BottomSheet para Adicionar ou Editar Item
+        if (showAddOrEditSheet || itemToEdit != null) {
+            AddEditExpenseItemBottomSheet(
+                itemToEdit = itemToEdit,
+                categories = uiState.categories,
+                onDismiss = {
+                    showAddOrEditSheet = false
+                    itemToEdit = null
+                },
+                onSave = { savedItem ->
+                    onAction(ExpenseItemsUiAction.SaveItem(savedItem))
+                    showAddOrEditSheet = false
+                    itemToEdit = null
+                }
+            )
+        }
+
+        // Diálogo de confirmação para exclusão
         if (itemToDelete != null) {
             val target = itemToDelete!!
             AlertDialog(
@@ -204,7 +240,7 @@ fun ExpenseItemsScreen(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(Dimens.buttonCornerRadius)
                     ) {
                         Text("Excluir")
                     }
@@ -291,13 +327,233 @@ fun ExpenseItemRow(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExpenseItemBottomSheet(
+fun ExpenseItemDetailBottomSheet(
+    item: ExpenseItem,
+    onDismiss: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showMenu by remember { mutableStateOf(false) }
+    val categoryColor = try {
+        Color(item.categoryColorHex.toColorInt())
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.primary
+    }
+    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(item.categoryName)
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall)
+        ) {
+            // Header Row: Ícone, Título, Subtítulo e Menu 3 Pontos
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(categoryColor.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = functionalIcon,
+                        contentDescription = null,
+                        tint = categoryColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(Dimens.spacingMedium))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Item de Despesa",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                // 3 Pontos com Menu de Opções
+                Box {
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Mais opções",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Editar Item") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onEdit()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text("Excluir Item", color = MaterialTheme.colorScheme.error)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onDelete()
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.spacingNormal))
+
+            // Card Contextual de Vínculos
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Dimens.spacingMedium),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingSmall)
+                ) {
+                    // Categoria Vinculada
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Categoria Vinculada",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(categoryColor, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = item.categoryName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    // Natureza Herdada
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Natureza do Gasto",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        PlatformStatusChip(
+                            text = item.nature.displayName,
+                            type = when (item.nature.name) {
+                                "OBRIGATORIO" -> StatusChipType.ERROR
+                                "NECESSARIO" -> StatusChipType.WARNING
+                                "DESEJA" -> StatusChipType.INFO
+                                else -> StatusChipType.NEUTRAL
+                            }
+                        )
+                    }
+
+                    // Descrição da Natureza
+                    val natureDescription = when (item.nature.name) {
+                        "OBRIGATORIO" -> "Gastos indispensáveis para sobrevivência ou compromissos jurídicos inegociáveis."
+                        "NECESSARIO" -> "Gastos essenciais para a rotina diária, saúde, trabalho e conforto básico."
+                        "DESEJA" -> "Gastos de estilo de vida, lazer, supérfluos e compras por desejo pessoal."
+                        else -> "Classificação financeira sem restrição específica."
+                    }
+                    Text(
+                        text = natureDescription,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.spacingNormal))
+
+            // Ação Principal: Botão Editar Item
+            Button(
+                onClick = onEdit,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(Dimens.spacingSmall))
+                Text("Editar Item")
+            }
+
+            Spacer(modifier = Modifier.height(Dimens.spacingMedium))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddEditExpenseItemBottomSheet(
+    itemToEdit: ExpenseItem? = null,
     categories: List<Category>,
     onDismiss: () -> Unit,
     onSave: (ExpenseItem) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(categories.firstOrNull()) }
+    val isEditing = itemToEdit != null
+    var name by remember(itemToEdit) { mutableStateOf(itemToEdit?.name ?: "") }
+    var selectedCategory by remember(itemToEdit, categories) {
+        mutableStateOf(
+            itemToEdit?.let { editItem -> categories.find { it.id == editItem.categoryId } }
+                ?: categories.firstOrNull()
+        )
+    }
     var expandedCategoryMenu by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -313,7 +569,7 @@ fun AddExpenseItemBottomSheet(
             verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
         ) {
             Text(
-                text = "Novo Item de Despesa",
+                text = if (isEditing) "Editar Item de Despesa" else "Novo Item de Despesa",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -324,7 +580,8 @@ fun AddExpenseItemBottomSheet(
                 onValueChange = { name = it },
                 label = { Text("Nome do Item (ex: Supermercado, Internet)") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
             )
 
             ExposedDropdownMenuBox(
@@ -337,6 +594,7 @@ fun AddExpenseItemBottomSheet(
                     readOnly = true,
                     label = { Text("Categoria") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategoryMenu) },
+                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
                     modifier = Modifier.menuAnchor().fillMaxWidth()
                 )
                 ExposedDropdownMenu(
@@ -394,6 +652,7 @@ fun AddExpenseItemBottomSheet(
                         if (name.isNotBlank() && cat != null) {
                             onSave(
                                 ExpenseItem(
+                                    id = itemToEdit?.id ?: UUID.randomUUID().toString(),
                                     name = name.trim(),
                                     categoryId = cat.id,
                                     categoryName = cat.name,
@@ -403,11 +662,13 @@ fun AddExpenseItemBottomSheet(
                             )
                         }
                     },
+                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
                     enabled = name.isNotBlank() && selectedCategory != null
                 ) {
-                    Text("Salvar")
+                    Text(if (isEditing) "Salvar Alterações" else "Salvar")
                 }
             }
         }
     }
 }
+

@@ -641,39 +641,33 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
-                    emoji = "💾",
-                    title = "Backup e Restauração de Dados",
-                    description = "Exporte todos os seus dados em JSON para o Google Drive ou arquivos locais via SAF e restaure com transação segura atômica."
+                    emoji = "✏️",
+                    title = "Edição Completa de Itens de Despesa",
+                    description = "Agora você pode editar qualquer item de despesa existente, alterando seu nome ou categoria vinculada com atualização instantânea da natureza."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "📤",
-                    title = "Compartilhamento Instantâneo",
-                    description = "Envie arquivos de backup diretamente para WhatsApp, Telegram ou e-mail com 1 toque."
+                    emoji = "📋",
+                    title = "Detalhes do Item com BottomSheet",
+                    description = "Toque em qualquer item na listagem para visualizar seus vínculos, natureza financeira e acessar as ações de edição e exclusão segura."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "✨",
-                    title = "Padrão de Detalhes Universal",
-                    description = "Cards limpos sem botões redundantes. Toque no card para abrir painel inferior (BottomSheet) com métricas e detalhes completos."
+                    emoji = "⚡",
+                    title = "Atalhos em Nova Despesa",
+                    description = "Acesso direto para gerenciar e editar itens a partir do seletor e chip de natureza no formulário de Nova Despesa."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "🛡️",
-                    title = "Ações Seguras nos 3 Pontos",
-                    description = "Opções de edição e exclusão organizadas no menu superior direito com confirmação obrigatória para evitar perdas acidentais."
+                    emoji = "🎬",
+                    title = "Transições Cinemáticas",
+                    description = "Navegação suave e fluida entre todas as telas principais do aplicativo com animações integradas."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "🎨",
-                    title = "Seletores Nativos e Cores",
-                    description = "Campos com opções pré-definidas agora utilizam dropdown nativo e as paletas de cores possuem indicador circular de seleção."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🏛️",
-                    title = "Estrutura Financeira Confortável",
-                    description = "Acesso direto a Contas, Formas de Pagamento e Categorias no menu lateral e em Configurações com blocos ergonômicos, ícones destacados e subtítulos informativos."
+                    emoji = "↩️",
+                    title = "Desfazer Pagamento Instantâneo",
+                    description = "Reverta baixas de contas e faturas acidentais com um único toque no Snackbar de confirmação."
                 )
             }
         },

@@ -22,8 +22,10 @@ interface PreferencesManager {
     val isDarkMode: Flow<Boolean?>
     val isBiometricEnabled: Flow<Boolean>
     val lastOfflineBackupTimestamp: Flow<Long>
+    val appIcon: Flow<String>
     suspend fun setDarkMode(enabled: Boolean?)
     suspend fun setBiometricEnabled(enabled: Boolean)
+    suspend fun setAppIcon(iconKey: String)
     suspend fun updateLastOfflineBackupTimestamp(timestamp: Long)
 }
 
@@ -36,6 +38,7 @@ class PreferencesManagerImpl @Inject constructor(
         val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
         val IS_BIOMETRIC_ENABLED = booleanPreferencesKey("is_biometric_enabled")
         val LAST_BACKUP_TIMESTAMP = longPreferencesKey("last_backup_timestamp")
+        val APP_ICON = androidx.datastore.preferences.core.stringPreferencesKey("app_icon")
     }
 
     override val isDarkMode: Flow<Boolean?> = context.dataStore.data
@@ -87,6 +90,24 @@ class PreferencesManagerImpl @Inject constructor(
     override suspend fun setBiometricEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] = enabled
+        }
+    }
+
+    override val appIcon: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.APP_ICON] ?: "classic"
+        }
+
+    override suspend fun setAppIcon(iconKey: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.APP_ICON] = iconKey
         }
     }
 

@@ -45,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -62,7 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.ExpenseItem
-import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.components.PlatformSearchTopBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformStatusChip
 import com.platform.app.presentation.components.StatusChipType
@@ -77,6 +78,7 @@ fun ExpenseItemsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var isSearchExpanded by remember { mutableStateOf(false) }
     var showAddOrEditSheet by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ExpenseItem?>(null) }
     var itemToViewDetails by remember { mutableStateOf<ExpenseItem?>(null) }
@@ -84,14 +86,14 @@ fun ExpenseItemsScreen(
 
     Scaffold(
         topBar = {
-            PlatformAppBar(
+            PlatformSearchTopBar(
                 title = "Itens de Despesa",
-                subtitle = "Substitui Subcategorias",
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
-                    }
-                }
+                searchQuery = uiState.searchQuery,
+                isSearchActive = isSearchExpanded,
+                onSearchQueryChange = { onAction(ExpenseItemsUiAction.SearchQueryChanged(it)) },
+                onSearchActiveChange = { isSearchExpanded = it },
+                placeholder = "Buscar item de despesa...",
+                onNavigateBack = onNavigateBack
             )
         },
         floatingActionButton = {
@@ -115,40 +117,54 @@ fun ExpenseItemsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Campo de Pesquisa
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { onAction(ExpenseItemsUiAction.SearchQueryChanged(it)) },
-                placeholder = { Text("Buscar item de despesa...") },
-                leadingIcon = { Icon(imageVector = Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall)
-            )
-
-            // Chips de Filtro por Categoria
+            // Chips de Filtro por Categoria Refatorados (com ponto de cor e contagem)
+            val totalItemsCount = uiState.items.size
             LazyRow(
-                contentPadding = PaddingValues(horizontal = Dimens.spacingNormal),
+                contentPadding = PaddingValues(horizontal = Dimens.spacingNormal, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSmall)
             ) {
                 item {
                     FilterChip(
                         selected = uiState.selectedCategoryId == null,
                         onClick = { onAction(ExpenseItemsUiAction.CategoryFilterChanged(null)) },
-                        label = { Text("Todas Categorias") }
+                        label = { Text("Todas ($totalItemsCount)") }
                     )
                 }
                 items(uiState.categories, key = { it.id }) { cat ->
+                    val count = remember(uiState.items, cat.id) {
+                        uiState.items.count { it.categoryId == cat.id }
+                    }
+                    val catColor = remember(cat.colorHex) {
+                        try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+                    }
                     FilterChip(
                         selected = uiState.selectedCategoryId == cat.id,
                         onClick = { onAction(ExpenseItemsUiAction.CategoryFilterChanged(cat.id)) },
-                        label = { Text(cat.name) }
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(catColor, CircleShape)
+                            )
+                        },
+                        label = { Text("${cat.name} ($count)") }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(Dimens.spacingSmall))
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Agrupamento Hierárquico por Categoria
+            val groupedItemsByCategory = remember(uiState.filteredItems, uiState.categories) {
+                val categoryMap = uiState.categories.associateBy { it.id }
+                uiState.filteredItems
+                    .groupBy { it.categoryId }
+                    .mapNotNull { (catId, items) ->
+                        val cat = categoryMap[catId]
+                        if (cat != null) cat to items else null
+                    }
+                    .sortedBy { (cat, _) -> cat.name }
+            }
 
             if (uiState.isLoading && uiState.items.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -166,13 +182,24 @@ fun ExpenseItemsScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingSmall)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.filteredItems, key = { it.id }) { item ->
-                        ExpenseItemRow(
-                            item = item,
-                            onClick = { itemToViewDetails = item }
-                        )
+                    groupedItemsByCategory.forEach { (cat, catItems) ->
+                        item(key = "header_${cat.id}") {
+                            CategorySectionHeader(
+                                category = cat,
+                                itemsCount = catItems.size
+                            )
+                        }
+                        items(catItems, key = { it.id }) { item ->
+                            HierarchicalExpenseItemRow(
+                                item = item,
+                                onClick = { itemToViewDetails = item }
+                            )
+                        }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
@@ -256,48 +283,89 @@ fun ExpenseItemsScreen(
 }
 
 @Composable
-fun ExpenseItemRow(
+fun CategorySectionHeader(
+    category: Category,
+    itemsCount: Int
+) {
+    val categoryColor = remember(category.colorHex) {
+        try { Color(category.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+    }
+    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(category.name)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(30.dp)
+                .background(categoryColor.copy(alpha = 0.15f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = functionalIcon,
+                contentDescription = null,
+                tint = categoryColor,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = category.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ) {
+            Text(
+                text = "$itemsCount ${if (itemsCount == 1) "item" else "itens"}",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun HierarchicalExpenseItemRow(
     item: ExpenseItem,
     onClick: () -> Unit
 ) {
-    val categoryColor = try { Color(item.categoryColorHex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(item.categoryName)
-
-    PlatformCard(onClick = onClick) {
+    PlatformCard(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 12.dp)
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(Dimens.spacingMedium),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
-                    .background(categoryColor.copy(alpha = 0.15f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = functionalIcon,
-                    contentDescription = null,
-                    tint = categoryColor,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(Dimens.spacingMedium))
+                    .size(6.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.7f), CircleShape)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = item.categoryName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 

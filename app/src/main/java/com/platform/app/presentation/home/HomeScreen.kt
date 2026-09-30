@@ -755,7 +755,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderPanoramaView(
         }
     }
 
-    // 3. Próximos Desembolsos Imediatos
+    // 3. Próximos Pagamentos
     item {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -763,7 +763,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderPanoramaView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Próximos Desembolsos Imediatos",
+                text = "Próximos Pagamentos",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -2085,7 +2085,7 @@ fun EmptyForecastCard(onAddExpense: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Cadastre suas contas a pagar para planejar desembolsos.",
+                text = "Cadastre suas contas a pagar para planejar seus pagamentos.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

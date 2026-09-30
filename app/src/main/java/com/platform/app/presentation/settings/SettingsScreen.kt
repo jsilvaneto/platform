@@ -6,8 +6,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,11 +34,13 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
@@ -54,7 +59,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -104,6 +111,7 @@ fun SettingsScreen(
 
     var showReleaseNotesDialog by remember { mutableStateOf(false) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showAppearanceSheet by remember { mutableStateOf(false) }
 
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -209,9 +217,17 @@ fun SettingsScreen(
             // Menu individual: Itens de Despesa
             SettingActionCard(
                 title = "Itens de Despesa",
-                subtitle = "Substitui subcategorias e vincula à Categoria",
+                subtitle = "Subitens e produtos organizados por categoria",
                 icon = Icons.Default.ShoppingBag,
                 onClick = onNavigateToExpenseItems
+            )
+
+            // Menu individual: Aparência
+            SettingActionCard(
+                title = "Aparência",
+                subtitle = "Tema do sistema, modo escuro e ícones do aplicativo",
+                icon = Icons.Default.Palette,
+                onClick = { showAppearanceSheet = true }
             )
 
             // Seção de Segurança
@@ -267,43 +283,6 @@ fun SettingsScreen(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
                             checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                         )
-                    )
-                }
-            }
-
-            // Seção de Tema / Aparência
-            SectionCard(
-                title = "Aparência",
-                icon = Icons.Default.DarkMode
-            ) {
-                Text(
-                    text = "Tema do Aplicativo",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FilterChip(
-                        selected = uiState.isDarkMode == null,
-                        onClick = { viewModel.onAction(SettingsUiAction.SetThemeMode(null)) },
-                        label = { Text("Automático", style = MaterialTheme.typography.bodySmall) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = uiState.isDarkMode == false,
-                        onClick = { viewModel.onAction(SettingsUiAction.SetThemeMode(false)) },
-                        label = { Text("Claro", style = MaterialTheme.typography.bodySmall) },
-                        modifier = Modifier.weight(1f)
-                    )
-                    FilterChip(
-                        selected = uiState.isDarkMode == true,
-                        onClick = { viewModel.onAction(SettingsUiAction.SetThemeMode(true)) },
-                        label = { Text("Escuro", style = MaterialTheme.typography.bodySmall) },
-                        modifier = Modifier.weight(1f)
                     )
                 }
             }
@@ -539,6 +518,23 @@ fun SettingsScreen(
                 versionName = uiState.appVersionName,
                 onDismiss = { showReleaseNotesDialog = false }
             )
+        }
+
+        if (showAppearanceSheet) {
+            val appearanceSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            ModalBottomSheet(
+                onDismissRequest = { showAppearanceSheet = false },
+                sheetState = appearanceSheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                AppearanceBottomSheetContent(
+                    uiState = uiState,
+                    onSetThemeMode = { viewModel.onAction(SettingsUiAction.SetThemeMode(it)) },
+                    onSetAppIcon = { viewModel.onAction(SettingsUiAction.SetAppIcon(it)) },
+                    onClose = { showAppearanceSheet = false }
+                )
+            }
         }
 
         if (showRestoreConfirmDialog) {
@@ -811,4 +807,303 @@ private fun SettingActionCard(
         }
     }
 }
+
+@Composable
+fun AppIconPreviewCard(
+    title: String,
+    tag: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    iconContent: @Composable () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = if (isSelected)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        else
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = BorderStroke(
+            width = if (isSelected) 1.8.dp else 1.dp,
+            color = if (isSelected)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        ),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(54.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                iconContent()
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = if (isSelected)
+                    MaterialTheme.colorScheme.onPrimary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            ) {
+                Text(
+                    text = if (isSelected) "Em uso" else tag,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ClassicIconPreview() {
+    Box(
+        modifier = Modifier
+            .size(54.dp)
+            .background(Color(0xFF0B132B), RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        // Miniatura da carteira clássica com cartão
+        Box(
+            modifier = Modifier
+                .size(34.dp, 26.dp)
+                .background(Color(0xFF2563EB), RoundedCornerShape(5.dp))
+        ) {
+            // Faixa de cartão
+            Box(
+                modifier = Modifier
+                    .size(34.dp, 10.dp)
+                    .background(Color(0xFF3B82F6), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+            )
+            // Chip esmeralda
+            Box(
+                modifier = Modifier
+                    .size(10.dp, 8.dp)
+                    .padding(start = 2.dp, top = 2.dp)
+                    .background(Color(0xFF10B981), RoundedCornerShape(2.dp))
+            )
+            // Moeda branca
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 2.dp, bottom = 2.dp)
+                    .background(Color.White, CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
+fun ModernV2IconPreview() {
+    Box(
+        modifier = Modifier
+            .size(54.dp)
+            .background(Color(0xFF0A0F1D), RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        // Miniatura moderna do monograma P com pilares de crescimento
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(4.dp)
+        ) {
+            // Pilar base do P
+            Box(
+                modifier = Modifier
+                    .size(7.dp, 28.dp)
+                    .background(Color(0xFF2563EB), RoundedCornerShape(2.dp))
+            )
+            // Arco superior / laço do P
+            Box(
+                modifier = Modifier
+                    .size(14.dp, 14.dp)
+                    .align(Alignment.Top)
+                    .background(Color(0xFF3B82F6), RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+            ) {
+                // Nó esmeralda central
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .align(Alignment.Center)
+                        .background(Color(0xFF10B981), CircleShape)
+                )
+            }
+            // Pilar de crescimento cyan
+            Box(
+                modifier = Modifier
+                    .size(6.dp, 20.dp)
+                    .background(Color(0xFF06B6D4), RoundedCornerShape(2.dp))
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppearanceBottomSheetContent(
+    uiState: SettingsUiState,
+    onSetThemeMode: (Boolean?) -> Unit,
+    onSetAppIcon: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Column {
+                    Text(
+                        text = "Aparência",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Personalize o tema e os ícones do sistema",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Fechar",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Tema do Aplicativo",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = uiState.isDarkMode == null,
+                onClick = { onSetThemeMode(null) },
+                label = { Text("Automático", style = MaterialTheme.typography.bodySmall) },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = uiState.isDarkMode == false,
+                onClick = { onSetThemeMode(false) },
+                label = { Text("Claro", style = MaterialTheme.typography.bodySmall) },
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = uiState.isDarkMode == true,
+                onClick = { onSetThemeMode(true) },
+                label = { Text("Escuro", style = MaterialTheme.typography.bodySmall) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Ícone do Aplicativo",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = "Escolha o estilo visual para o ícone do sistema na tela inicial",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AppIconPreviewCard(
+                title = "Clássico",
+                tag = "Original",
+                isSelected = uiState.appIcon == "classic",
+                onClick = { onSetAppIcon("classic") },
+                modifier = Modifier.weight(1f)
+            ) {
+                ClassicIconPreview()
+            }
+
+            AppIconPreviewCard(
+                title = "Modern V2",
+                tag = "Novo",
+                isSelected = uiState.appIcon == "modern",
+                onClick = { onSetAppIcon("modern") },
+                modifier = Modifier.weight(1f)
+            ) {
+                ModernV2IconPreview()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(28.dp))
+    }
+}
+
 

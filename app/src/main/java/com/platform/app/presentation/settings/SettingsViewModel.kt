@@ -60,13 +60,15 @@ class SettingsViewModel @Inject constructor(
         combine(
             preferencesManager.isBiometricEnabled,
             preferencesManager.isDarkMode,
-            preferencesManager.lastOfflineBackupTimestamp
-        ) { isBioEnabled, isDark, lastBackup ->
+            preferencesManager.lastOfflineBackupTimestamp,
+            preferencesManager.appIcon
+        ) { isBioEnabled, isDark, lastBackup, icon ->
             _uiState.update { current ->
                 current.copy(
                     isBiometricEnabled = isBioEnabled,
                     isDarkMode = isDark,
                     lastBackupTimestamp = lastBackup,
+                    appIcon = icon,
                     isBiometricSupported = biometricAuthManager.canAuthenticate()
                 )
             }
@@ -93,10 +95,20 @@ class SettingsViewModel @Inject constructor(
         when (action) {
             is SettingsUiAction.ToggleBiometric -> handleToggleBiometric(action.enabled)
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
+            is SettingsUiAction.SetAppIcon -> handleSetAppIcon(action.iconKey)
             is SettingsUiAction.ExportBackupToUri -> handleExportBackupToUri(action.uri)
             is SettingsUiAction.RestoreBackupFromUri -> handleRestoreBackupFromUri(action.uri)
             is SettingsUiAction.ShareBackup -> handleShareBackup()
             is SettingsUiAction.Refresh -> observeData()
+        }
+    }
+
+    private fun handleSetAppIcon(iconKey: String) {
+        viewModelScope.launch {
+            preferencesManager.setAppIcon(iconKey)
+            com.platform.app.core.util.AppIconManager.applyIcon(context, iconKey)
+            val iconLabel = if (iconKey == "modern") "Modern V2" else "Clássico"
+            _effectChannel.send(SettingsUiEffect.ShowSnackbar("Ícone alterado para $iconLabel!"))
         }
     }
 

@@ -57,6 +57,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.platform.app.presentation.components.PlatformAvatar
+import com.platform.app.presentation.components.PlatformSearchTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -125,88 +126,14 @@ fun ContactsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    if (!isSearchExpanded) {
-                        Text(
-                            text = "Contatos",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onOpenDrawer) {
-                        Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
-                    }
-                },
-                actions = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(end = 4.dp)
-                    ) {
-                        AnimatedVisibility(
-                            visible = isSearchExpanded,
-                            enter = fadeIn() + expandHorizontally(),
-                            exit = fadeOut() + shrinkHorizontally()
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.searchQuery,
-                                onValueChange = { viewModel.onAction(ContactsUiAction.SearchQueryChanged(it)) },
-                                placeholder = {
-                                    Text(
-                                        text = "Buscar contato...",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                shape = RoundedCornerShape(10.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                                ),
-                                trailingIcon = {
-                                    if (uiState.searchQuery.isNotBlank()) {
-                                        IconButton(
-                                            onClick = { viewModel.onAction(ContactsUiAction.SearchQueryChanged("")) },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Limpar busca",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(220.dp)
-                                    .height(46.dp)
-                                    .focusRequester(focusRequester)
-                                    .padding(end = 4.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                isSearchExpanded = !isSearchExpanded
-                                if (!isSearchExpanded) {
-                                    viewModel.onAction(ContactsUiAction.SearchQueryChanged(""))
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = if (isSearchExpanded) "Fechar busca" else "Buscar contato",
-                                tint = if (isSearchExpanded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+            PlatformSearchTopBar(
+                title = "Contatos",
+                searchQuery = uiState.searchQuery,
+                isSearchActive = isSearchExpanded,
+                onSearchQueryChange = { viewModel.onAction(ContactsUiAction.SearchQueryChanged(it)) },
+                onSearchActiveChange = { isSearchExpanded = it },
+                placeholder = "Buscar contato...",
+                onOpenDrawer = onOpenDrawer
             )
         },
         floatingActionButton = {

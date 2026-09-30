@@ -63,6 +63,7 @@ class SettingsViewModelTest {
         every { preferencesManager.isBiometricEnabled } returns flowOf(false)
         every { preferencesManager.isDarkMode } returns flowOf(null)
         every { preferencesManager.lastOfflineBackupTimestamp } returns flowOf(1700000000000L)
+        every { preferencesManager.appIcon } returns flowOf("classic")
         every { biometricAuthManager.canAuthenticate() } returns true
 
         every { financialRepository.getFinancialAccounts() } returns flowOf(emptyList())
@@ -163,6 +164,18 @@ class SettingsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { preferencesManager.setDarkMode(true) }
+    }
+
+    @Test
+    fun `SetAppIcon calls preferencesManager setAppIcon`() = runTest {
+        coEvery { preferencesManager.setAppIcon("modern") } returns Unit
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(SettingsUiAction.SetAppIcon("modern"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { preferencesManager.setAppIcon("modern") }
     }
 
     @Test

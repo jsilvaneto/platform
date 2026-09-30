@@ -71,6 +71,7 @@ import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformEmptyState
 import com.platform.app.presentation.components.PlatformSegmentedTabs
 import com.platform.app.presentation.components.SegmentedTabItem
+import com.platform.app.presentation.components.PlatformSearchTopBar
 import com.platform.app.presentation.components.PlatformBatchActionBar
 import kotlinx.coroutines.flow.Flow
 
@@ -156,117 +157,46 @@ fun BillsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    if (!isSearchExpanded) {
-                        Text(
-                            text = if (isSelectionMode) "${selectedInstallmentIds.size} selecionado(s)" else "Registros",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (isSelectionMode) {
+            PlatformSearchTopBar(
+                title = if (isSelectionMode) "${selectedInstallmentIds.size} selecionado(s)" else "Registros",
+                searchQuery = uiState.searchQuery,
+                isSearchActive = isSearchExpanded,
+                onSearchQueryChange = { onAction(BillsUiAction.SearchQueryChanged(it)) },
+                onSearchActiveChange = { isSearchExpanded = it },
+                placeholder = "Buscar conta ou categoria...",
+                navigationIcon = if (isSelectionMode) {
+                    {
+                        IconButton(
+                            onClick = {
                                 isSelectionMode = false
                                 selectedInstallmentIds = emptySet()
-                            } else {
-                                onOpenDrawer()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Fechar seleção",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                } else null,
+                onOpenDrawer = onOpenDrawer,
+                actions = {
+                    IconButton(
+                        onClick = {
+                            isSelectionMode = !isSelectionMode
+                            if (!isSelectionMode) {
+                                selectedInstallmentIds = emptySet()
                             }
                         }
                     ) {
                         Icon(
-                            imageVector = if (isSelectionMode) Icons.Default.Close else Icons.Default.Menu,
-                            contentDescription = if (isSelectionMode) "Fechar seleção" else "Menu lateral"
+                            imageVector = Icons.Default.Checklist,
+                            contentDescription = "Modo de seleção múltipla",
+                            tint = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                },
-                actions = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(end = 4.dp)
-                    ) {
-                        AnimatedVisibility(
-                            visible = isSearchExpanded,
-                            enter = fadeIn() + expandHorizontally(),
-                            exit = fadeOut() + shrinkHorizontally()
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.searchQuery,
-                                onValueChange = { onAction(BillsUiAction.SearchQueryChanged(it)) },
-                                placeholder = {
-                                    Text(
-                                        text = "Buscar conta ou categoria...",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyMedium,
-                                shape = RoundedCornerShape(10.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                                ),
-                                trailingIcon = {
-                                    if (uiState.searchQuery.isNotBlank()) {
-                                        IconButton(
-                                            onClick = { onAction(BillsUiAction.SearchQueryChanged("")) },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Clear,
-                                                contentDescription = "Limpar busca",
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .width(210.dp)
-                                    .height(46.dp)
-                                    .focusRequester(focusRequester)
-                                    .padding(end = 4.dp)
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                isSearchExpanded = !isSearchExpanded
-                                if (!isSearchExpanded) {
-                                    onAction(BillsUiAction.SearchQueryChanged(""))
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = if (isSearchExpanded) "Fechar busca" else "Buscar contas",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                isSelectionMode = !isSelectionMode
-                                if (!isSelectionMode) {
-                                    selectedInstallmentIds = emptySet()
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Checklist,
-                                contentDescription = "Modo de seleção múltipla",
-                                tint = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                }
             )
         },
         snackbarHost = {
@@ -371,7 +301,7 @@ fun BillsScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             groupedByMonth.forEach { (monthLabel, monthItems) ->
                                 item(key = "header_$monthLabel") {
@@ -921,20 +851,21 @@ fun BillInstallmentItemCard(
         }
     }
 
-    val cardBorder = if (isSelected) {
-        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-    } else {
-        BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+    val cardBorder = when {
+        isSelected -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        installment.isPaid -> BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
+        isOverdue -> BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
+        else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     }
 
     val cardColor = when {
         isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        installment.isPaid -> MaterialTheme.colorScheme.surface.copy(alpha = 0.65f)
+        installment.isPaid -> MaterialTheme.colorScheme.surface
         else -> MaterialTheme.colorScheme.surface
     }
 
     Card(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         border = cardBorder,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -948,7 +879,7 @@ fun BillInstallmentItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Checkbox ou Botão Circular de Pagamento
@@ -960,19 +891,19 @@ fun BillInstallmentItemCard(
                         checkedColor = MaterialTheme.colorScheme.primary,
                         uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(34.dp)
                 )
             } else {
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(34.dp)
                         .clickable(onClick = onTogglePayment),
                     contentAlignment = Alignment.Center
                 ) {
                     if (installment.isPaid) {
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
+                                .size(24.dp)
                                 .background(SuccessGreen, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
@@ -980,19 +911,19 @@ fun BillInstallmentItemCard(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Pago",
                                 tint = Color.White,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         }
                     } else {
                         Box(
                             modifier = Modifier
-                                .size(22.dp)
+                                .size(24.dp)
                                 .background(
                                     if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else Color.Transparent,
                                     CircleShape
                                 )
                                 .border(
-                                    width = 1.5.dp,
+                                    width = 1.6.dp,
                                     color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
                                     shape = CircleShape
                                 )
@@ -1001,7 +932,7 @@ fun BillInstallmentItemCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Informações Centrais
             Column(modifier = Modifier.weight(1f)) {
@@ -1011,19 +942,15 @@ fun BillInstallmentItemCard(
                 ) {
                     Text(
                         text = installment.billTitle,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None,
-                        color = if (installment.isPaid)
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                        else
-                            MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
-                    // Apenas exibe indicador se for parcelamento real (totalInstallments > 1)
+                    // Indicador de parcelamento se for parcelamento real (totalInstallments > 1)
                     if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
@@ -1034,73 +961,89 @@ fun BillInstallmentItemCard(
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
+                // Categoria
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Box(modifier = Modifier.size(6.dp).background(catColor, CircleShape))
+                    Box(modifier = Modifier.size(7.dp).background(catColor, CircleShape))
                     Text(
                         text = installment.categoryName,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.75f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "•",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-                    )
-                    Text(
-                        text = when {
-                            installment.isPaid -> "Pago"
-                            isOverdue -> "Venceu em ${DateUtils.formatDate(installment.dueDate)}"
-                            DateUtils.isToday(installment.dueDate) -> "Vence hoje"
-                            else -> "Vence em ${DateUtils.formatDate(installment.dueDate)}"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isOverdue || DateUtils.isToday(installment.dueDate)) FontWeight.SemiBold else FontWeight.Normal,
-                        color = when {
-                            installment.isPaid -> SuccessGreen
-                            isOverdue -> MaterialTheme.colorScheme.error
-                            DateUtils.isToday(installment.dueDate) -> WarningAmber
-                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
-                        }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            // Valor e Ícone Indicador
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            // Lado Direito: Valor e Vencimento / Status
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None,
-                    color = if (installment.isPaid)
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-                    else
-                        MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Editar",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                    modifier = Modifier.size(14.dp)
-                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                if (installment.isPaid) {
+                    // Badge moderna e positiva "Pago" com micro ícone
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = SuccessGreen.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(10.dp)
+                            )
+                            Text(
+                                text = "Pago",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen
+                            )
+                        }
+                    }
+                } else {
+                    Text(
+                        text = when {
+                            isOverdue -> "Venceu ${DateUtils.formatDate(installment.dueDate)}"
+                            DateUtils.isToday(installment.dueDate) -> "Vence hoje"
+                            else -> "Vence ${DateUtils.formatDate(installment.dueDate)}"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (isOverdue || DateUtils.isToday(installment.dueDate)) FontWeight.SemiBold else FontWeight.Normal,
+                        color = when {
+                            isOverdue -> MaterialTheme.colorScheme.error
+                            DateUtils.isToday(installment.dueDate) -> WarningAmber
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
             }
         }
     }

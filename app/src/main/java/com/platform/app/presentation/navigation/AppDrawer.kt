@@ -134,51 +134,51 @@ fun AppDrawer(
     )
 
     ModalDrawerSheet(
-        modifier = modifier.width(280.dp),
+        modifier = modifier.width(324.dp),
         drawerContainerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
             modifier = Modifier
                 .fillMaxHeight()
-                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
-            // Header compacto do Drawer
+            // Header proporcional e elegante do Drawer
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.06f)
                             )
                         ),
-                        RoundedCornerShape(12.dp)
+                        RoundedCornerShape(14.dp)
                     )
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                    .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        modifier = Modifier.size(36.dp),
-                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.size(42.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.primary
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "P",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column {
                         Text(
                             text = "Platform",
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -186,16 +186,16 @@ fun AppDrawer(
                         )
                         Text(
                             text = "Gestão Financeira",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Column(
                 modifier = Modifier
@@ -205,13 +205,13 @@ fun AppDrawer(
                 sections.forEachIndexed { sectionIndex, section ->
                     if (sectionIndex > 0) {
                         if (section.sectionTitle.equals("Sistema", ignoreCase = true)) {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                         } else {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
 
@@ -220,7 +220,7 @@ fun AppDrawer(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                     )
 
                     section.items.forEach { item ->
@@ -231,18 +231,18 @@ fun AppDrawer(
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = item.title,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(22.dp),
                                     tint = if (selected)
                                         MaterialTheme.colorScheme.primary
                                     else
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
                                 )
                             },
                             label = {
                                 Text(
                                     text = item.title,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     color = if (selected)
@@ -268,27 +268,27 @@ fun AppDrawer(
                                     onNavigate(item.screen)
                                 }
                             },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = NavigationDrawerItemDefaults.colors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 unselectedContainerColor = Color.Transparent
                             ),
                             modifier = Modifier
-                                .height(44.dp)
-                                .padding(vertical = 1.dp)
+                                .height(48.dp)
+                                .padding(vertical = 2.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Rodapé minimalista do Drawer
             Text(
                 text = "Platform • v${BuildConfig.VERSION_NAME}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
             )
         }
     }

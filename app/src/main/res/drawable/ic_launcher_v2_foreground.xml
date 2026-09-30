@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.72"
+        android:scaleY="0.72"
+        android:translateX="15.12"
+        android:translateY="15.12">
+        <!-- Main 'P' Backbone / Foundation Pillar (Electric Blue) -->
+        <path
+            android:fillColor="#2563EB"
+            android:pathData="M32,24 C28.69,24 26,26.69 26,30 L26,78 C26,81.31 28.69,84 32,84 L40,84 C43.31,84 46,81.31 46,78 L46,30 C46,26.69 43.31,24 40,24 Z" />
+
+        <!-- Upward Financial Growth Loop of 'P' (Vibrant Cyan-Blue) -->
+        <path
+            android:fillColor="#3B82F6"
+            android:pathData="M44,24 L62,24 C73.05,24 82,32.95 82,44 C82,55.05 73.05,64 62,64 L44,64 Z M46,36 L46,52 L60,52 C64.42,52 68,48.42 68,44 C68,39.58 64.42,36 60,36 Z" />
+
+        <!-- Financial Growth Rising Pillar (Cyan Accent) -->
+        <path
+            android:fillColor="#06B6D4"
+            android:pathData="M52,42 C49.79,42 48,43.79 48,46 L48,78 C48,80.21 49.79,82 52,82 L58,82 C60.21,82 62,80.21 62,78 L62,46 C62,43.79 60.21,42 58,42 Z" />
+
+        <!-- Wealth Peak Emerald Node (Success Accent) -->
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M68,62 C65.79,62 64,63.79 64,66 L64,78 C64,80.21 65.79,82 68,82 L74,82 C76.21,82 78,80.21 78,78 L78,66 C78,63.79 76.21,62 74,62 Z" />
+
+        <!-- Central Spark Dot inside Loop (Clean White Node) -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M60,40 C57.79,40 56,41.79 56,44 C56,46.21 57.79,48 60,48 C62.21,48 64,46.21 64,44 C64,41.79 62.21,40 60,40 Z" />
+    </group>
+</vector>

@@ -31,4 +31,5 @@ sealed interface BillsUiAction : UiAction {
         val paymentMethodId: String?
     ) : BillsUiAction
     object Refresh : BillsUiAction
+    object ResetFilters : BillsUiAction
 }

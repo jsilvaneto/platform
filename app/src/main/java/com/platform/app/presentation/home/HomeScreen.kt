@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
@@ -300,8 +301,8 @@ fun HomeViewModeSelector(
                 onClick = { onModeSelected(HomeViewMode.PANORAMA) }
             )
             ModeChip(
-                label = "Calendário",
-                icon = Icons.Default.CalendarMonth,
+                label = "Cronograma",
+                icon = Icons.Default.Schedule,
                 isSelected = selectedMode == HomeViewMode.CALENDAR,
                 modifier = Modifier.weight(1f),
                 onClick = { onModeSelected(HomeViewMode.CALENDAR) }
@@ -646,30 +647,14 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderPanoramaView(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Custo Fixo Mensal",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = SuccessGreen.copy(alpha = 0.15f)
-                        ) {
-                            Text(
-                                text = "∞ Contínuo",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = SuccessGreen,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            )
-                        }
-                    }
-
                     Text(
-                        text = "${dashboard?.activeRecurringCount ?: 0} assinaturas e despesas operacionais fixas",
+                        text = "Despesas Fixas e Assinaturas",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "${dashboard?.activeRecurringCount ?: 0} contas e serviços cadastrados",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -815,19 +800,111 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderCalendarView(
     onSelectDay: (Long?) -> Unit,
     onPay: (PayableItem) -> Unit
 ) {
-    // 1. Faixa Horizontal Interativa de Dias do Mês (Calendar Strip)
-    item {
-        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
-            Column(modifier = Modifier.padding(vertical = Dimens.spacingNormal)) {
+    val activeDays = uiState.calendarDays.filter { it.itemsCount > 0 }
+    val peakDay = activeDays.maxByOrNull { it.totalAmountCents }
+
+    // 1. Detector de Picos Financeiros (Stress de Caixa)
+    if (peakDay != null && peakDay.totalAmountCents > 0L) {
+        item {
+            PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = Dimens.spacingNormal),
+                        .padding(Dimens.spacingNormal),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(WarningAmber.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = WarningAmber,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Pico de Pagamentos: Dia ${peakDay.dayOfMonth}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = WarningAmber.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "Maior Volume",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WarningAmber,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = "${peakDay.itemsCount} conta(s) somando ${formatValueOrPrivate(peakDay.totalAmountCents, isPrivate)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Distribuição por Semanas do Mês (Ciclos Semanais de Caixa)
+    item {
+        val week1Cents = activeDays.filter { it.dayOfMonth in 1..7 }.sumOf { it.totalAmountCents }
+        val week2Cents = activeDays.filter { it.dayOfMonth in 8..14 }.sumOf { it.totalAmountCents }
+        val week3Cents = activeDays.filter { it.dayOfMonth in 15..21 }.sumOf { it.totalAmountCents }
+        val week4Cents = activeDays.filter { it.dayOfMonth >= 22 }.sumOf { it.totalAmountCents }
+
+        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
+                Text(
+                    text = "Demanda de Caixa por Semana",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    WeekDemandColumn(title = "Sem 1 (1-7)", amountCents = week1Cents, isPrivate = isPrivate, modifier = Modifier.weight(1f))
+                    WeekDemandColumn(title = "Sem 2 (8-14)", amountCents = week2Cents, isPrivate = isPrivate, modifier = Modifier.weight(1f))
+                    WeekDemandColumn(title = "Sem 3 (15-21)", amountCents = week3Cents, isPrivate = isPrivate, modifier = Modifier.weight(1f))
+                    WeekDemandColumn(title = "Sem 4 (22+)", amountCents = week4Cents, isPrivate = isPrivate, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+
+    // 3. Carrossel Inteligente: Dias com Vencimento Agendado
+    if (activeDays.isNotEmpty()) {
+        item {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Vencimentos de ${uiState.forecastResult?.monthLabel ?: ""}",
+                        text = "Dias com Vencimento (${activeDays.size})",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -845,25 +922,26 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderCalendarView(
                             )
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
-                                text = "Ver Todos",
+                                text = "Ver Todas",
                                 style = MaterialTheme.typography.labelSmall
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // Carrossel de Dias do Mês
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = Dimens.spacingNormal),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(uiState.calendarDays, key = { it.dateMillis }) { dayItem ->
+                    items(activeDays, key = { it.dateMillis }) { dayItem ->
                         val isSelected = uiState.selectedCalendarDayMillis == dayItem.dateMillis
-                        CalendarDayCard(
+                        val isPeak = peakDay?.dateMillis == dayItem.dateMillis
+                        ActiveDayCard(
                             dayItem = dayItem,
                             isSelected = isSelected,
+                            isPeak = isPeak,
+                            isPrivate = isPrivate,
                             onClick = {
                                 if (isSelected) {
                                     onSelectDay(null)
@@ -997,6 +1075,100 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderCalendarView(
 }
 
 @Composable
+fun WeekDemandColumn(
+    title: String,
+    amountCents: Long,
+    isPrivate: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = formatValueOrPrivate(amountCents, isPrivate),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = if (amountCents > 0L) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
+    }
+}
+
+@Composable
+fun ActiveDayCard(
+    dayItem: CalendarDayItem,
+    isSelected: Boolean,
+    isPeak: Boolean,
+    isPrivate: Boolean,
+    onClick: () -> Unit
+) {
+    val cal = Calendar.getInstance().apply { timeInMillis = System.currentTimeMillis() }
+    val isToday = dayItem.dayOfMonth == cal.get(Calendar.DAY_OF_MONTH) &&
+            DateUtils.getMonth(dayItem.dateMillis) == cal.get(Calendar.MONTH) &&
+            DateUtils.getYear(dayItem.dateMillis) == cal.get(Calendar.YEAR)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = when {
+            isSelected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            isPeak -> WarningAmber.copy(alpha = 0.10f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        },
+        border = BorderStroke(
+            1.dp,
+            when {
+                isSelected -> MaterialTheme.colorScheme.primary
+                isPeak -> WarningAmber.copy(alpha = 0.5f)
+                isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            }
+        ),
+        modifier = Modifier
+            .width(72.dp)
+            .height(78.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = dayItem.dayOfWeekLabel,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = "${dayItem.dayOfMonth}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = formatValueOrPrivate(dayItem.totalAmountCents, isPrivate),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else if (isPeak) WarningAmber else MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
 fun CalendarDayCard(
     dayItem: CalendarDayItem,
     isSelected: Boolean,
@@ -1050,7 +1222,6 @@ fun CalendarDayCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Thermal dots de status
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically

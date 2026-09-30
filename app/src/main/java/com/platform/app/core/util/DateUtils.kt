@@ -130,4 +130,22 @@ object DateUtils {
         }
         return cal.timeInMillis
     }
+
+    fun getStartOfDay(epochMillis: Long): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return cal.timeInMillis
+    }
+
+    fun isToday(epochMillis: Long): Boolean {
+        val today = Calendar.getInstance()
+        val target = Calendar.getInstance().apply { timeInMillis = epochMillis }
+        return today.get(Calendar.YEAR) == target.get(Calendar.YEAR) &&
+                today.get(Calendar.DAY_OF_YEAR) == target.get(Calendar.DAY_OF_YEAR)
+    }
 }

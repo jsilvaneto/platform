@@ -68,6 +68,29 @@ class BillsViewModel @Inject constructor(
                 loadAuxiliaryData()
                 loadInstallments()
             }
+            is BillsUiAction.ResetFilters -> handleResetFilters()
+        }
+    }
+
+    private fun handleResetFilters() {
+        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+        _uiState.update { current ->
+            val filtered = applyFilters(
+                installments = current.installments,
+                query = "",
+                typeFilter = null,
+                statusFilter = null,
+                periodFilter = BillPeriodFilter.ALL,
+                selectedYear = currentYear
+            )
+            recalculateMetrics(current, filtered).copy(
+                selectedYear = currentYear,
+                periodFilter = BillPeriodFilter.ALL,
+                typeFilter = null,
+                statusFilter = null,
+                searchQuery = "",
+                filteredInstallments = filtered
+            )
         }
     }
 

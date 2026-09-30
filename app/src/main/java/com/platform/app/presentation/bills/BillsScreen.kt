@@ -91,6 +91,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
@@ -129,7 +132,6 @@ fun BillsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var isSearchExpanded by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-    var installmentToViewDetails by remember { mutableStateOf<BillInstallment?>(null) }
 
     // Estado do modo de seleção múltipla em lote
     var isSelectionMode by remember { mutableStateOf(false) }
@@ -323,148 +325,27 @@ fun BillsScreen(
                 modifier = Modifier.padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
             )
 
-            // 2. Seletor Dinâmico de Ano (Ano atual selecionado por padrão)
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                item {
-                    FilterChip(
-                        selected = uiState.selectedYear == null,
-                        onClick = { onAction(BillsUiAction.YearChanged(null)) },
-                        label = { Text("Todos os Anos") },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-                items(uiState.availableYears) { year ->
-                    val isCurrent = year == Calendar.getInstance().get(Calendar.YEAR)
-                    FilterChip(
-                        selected = uiState.selectedYear == year,
-                        onClick = { onAction(BillsUiAction.YearChanged(year)) },
-                        label = {
-                            Text(if (isCurrent) "$year (Atual)" else "$year")
-                        },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-            }
-
-            // 3. Filtros Secundários: Período e Tipo
-            FilterChipsRow(
+            // 2. Barra de Filtros Compactos e Interativos (Ano, Período, Tipo + Limpar)
+            BillsFilterBar(
+                selectedYear = uiState.selectedYear,
+                availableYears = uiState.availableYears,
                 periodFilter = uiState.periodFilter,
                 typeFilter = uiState.typeFilter,
-                onPeriodFilterChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
-                onTypeFilterChange = { onAction(BillsUiAction.TypeFilterChanged(it)) }
+                onYearChange = { onAction(BillsUiAction.YearChanged(it)) },
+                onPeriodChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
+                onTypeChange = { onAction(BillsUiAction.TypeFilterChanged(it)) },
+                onResetFilters = { onAction(BillsUiAction.ResetFilters) }
             )
 
-            // 4. Hero KPI Card Executivo com Métricas do Período/Ano
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = if (uiState.selectedYear != null) "Total no Ano de ${uiState.selectedYear}" else "Total Geral Filtrado",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalPeriodCents),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                text = "${uiState.filteredInstallments.size} ${if (uiState.filteredInstallments.size == 1) "registro" else "registros"}",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Pago
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = SuccessGreen.copy(alpha = 0.12f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                                Text("Pago", style = MaterialTheme.typography.labelSmall, color = SuccessGreen)
-                                Text(
-                                    text = CurrencyUtils.formatCentsToCurrency(uiState.paidPeriodCents),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = SuccessGreen
-                                )
-                            }
-                        }
-
-                        // A Pagar
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                                Text("A Pagar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                Text(
-                                    text = CurrencyUtils.formatCentsToCurrency(uiState.pendingPeriodCents),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        // Atrasado (se houver)
-                        if (uiState.overduePeriodCents > 0L) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                                    Text("Atrasado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-                                    Text(
-                                        text = CurrencyUtils.formatCentsToCurrency(uiState.overduePeriodCents),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            // 3. Mini KPI Strip Proporcional e Elegante
+            BillsMiniKpiBar(
+                totalCents = uiState.totalPeriodCents,
+                paidCents = uiState.paidPeriodCents,
+                pendingCents = uiState.pendingPeriodCents,
+                overdueCents = uiState.overduePeriodCents,
+                count = uiState.filteredInstallments.size,
+                year = uiState.selectedYear
+            )
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
@@ -666,69 +547,354 @@ fun BillsScreen(
 }
 
 @Composable
-fun FilterChipsRow(
+fun BillsFilterBar(
+    selectedYear: Int?,
+    availableYears: List<Int>,
     periodFilter: BillPeriodFilter,
     typeFilter: BillType?,
-    onPeriodFilterChange: (BillPeriodFilter) -> Unit,
-    onTypeFilterChange: (BillType?) -> Unit
+    onYearChange: (Int?) -> Unit,
+    onPeriodChange: (BillPeriodFilter) -> Unit,
+    onTypeChange: (BillType?) -> Unit,
+    onResetFilters: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    var yearMenuExpanded by remember { mutableStateOf(false) }
+    var periodMenuExpanded by remember { mutableStateOf(false) }
+    var typeMenuExpanded by remember { mutableStateOf(false) }
+
+    val currentYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
+    val isYearFiltered = selectedYear != currentYear
+    val isPeriodFiltered = periodFilter != BillPeriodFilter.ALL
+    val isTypeFiltered = typeFilter != null
+    val hasActiveFilters = isYearFiltered || isPeriodFiltered || isTypeFiltered
+
     LazyRow(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Período
+        // 1. Dropdown de Ano
         item {
-            FilterChip(
-                selected = periodFilter == BillPeriodFilter.THIS_MONTH,
-                onClick = { onPeriodFilterChange(BillPeriodFilter.THIS_MONTH) },
-                label = { Text("Este Mês") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = periodFilter == BillPeriodFilter.NEXT_30_DAYS,
-                onClick = { onPeriodFilterChange(BillPeriodFilter.NEXT_30_DAYS) },
-                label = { Text("Próximos 30d") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = periodFilter == BillPeriodFilter.OVERDUE,
-                onClick = { onPeriodFilterChange(BillPeriodFilter.OVERDUE) },
-                label = { Text("Atrasadas") }
-            )
-        }
-        item {
-            FilterChip(
-                selected = periodFilter == BillPeriodFilter.ALL,
-                onClick = { onPeriodFilterChange(BillPeriodFilter.ALL) },
-                label = { Text("Todo Período") }
-            )
+            FilterDropdownChip(
+                label = if (selectedYear != null) "$selectedYear" else "Ano: Todos",
+                isSelected = isYearFiltered,
+                onClick = { yearMenuExpanded = true }
+            ) {
+                DropdownMenu(
+                    expanded = yearMenuExpanded,
+                    onDismissRequest = { yearMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Todos os Anos") },
+                        onClick = {
+                            onYearChange(null)
+                            yearMenuExpanded = false
+                        }
+                    )
+                    availableYears.forEach { year ->
+                        val isCurrent = year == currentYear
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (isCurrent) "$year (Atual)" else "$year",
+                                    fontWeight = if (year == selectedYear) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (year == selectedYear) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                onYearChange(year)
+                                yearMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
 
-        // Tipo
+        // 2. Dropdown de Período
         item {
-            FilterChip(
-                selected = typeFilter == BillType.SINGLE,
-                onClick = { onTypeFilterChange(if (typeFilter == BillType.SINGLE) null else BillType.SINGLE) },
-                label = { Text("Avulsas") }
-            )
+            FilterDropdownChip(
+                label = periodFilter.label,
+                isSelected = isPeriodFiltered,
+                onClick = { periodMenuExpanded = true }
+            ) {
+                DropdownMenu(
+                    expanded = periodMenuExpanded,
+                    onDismissRequest = { periodMenuExpanded = false }
+                ) {
+                    BillPeriodFilter.values().forEach { filter ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = filter.label,
+                                    fontWeight = if (filter == periodFilter) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (filter == periodFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            },
+                            onClick = {
+                                onPeriodChange(filter)
+                                periodMenuExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
         }
+
+        // 3. Dropdown de Tipo
         item {
-            FilterChip(
-                selected = typeFilter == BillType.INSTALLMENT,
-                onClick = { onTypeFilterChange(if (typeFilter == BillType.INSTALLMENT) null else BillType.INSTALLMENT) },
-                label = { Text("Parceladas") }
-            )
+            val typeLabel = when (typeFilter) {
+                BillType.SINGLE -> "Avulsas"
+                BillType.INSTALLMENT -> "Parceladas"
+                BillType.RECURRING -> "Recorrentes"
+                null -> "Todos os Tipos"
+            }
+
+            FilterDropdownChip(
+                label = typeLabel,
+                isSelected = isTypeFiltered,
+                onClick = { typeMenuExpanded = true }
+            ) {
+                DropdownMenu(
+                    expanded = typeMenuExpanded,
+                    onDismissRequest = { typeMenuExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Todos os Tipos",
+                                fontWeight = if (typeFilter == null) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            onTypeChange(null)
+                            typeMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Avulsas",
+                                fontWeight = if (typeFilter == BillType.SINGLE) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            onTypeChange(BillType.SINGLE)
+                            typeMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Parceladas",
+                                fontWeight = if (typeFilter == BillType.INSTALLMENT) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            onTypeChange(BillType.INSTALLMENT)
+                            typeMenuExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = "Recorrentes",
+                                fontWeight = if (typeFilter == BillType.RECURRING) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        onClick = {
+                            onTypeChange(BillType.RECURRING)
+                            typeMenuExpanded = false
+                        }
+                    )
+                }
+            }
         }
-        item {
-            FilterChip(
-                selected = typeFilter == BillType.RECURRING,
-                onClick = { onTypeFilterChange(if (typeFilter == BillType.RECURRING) null else BillType.RECURRING) },
-                label = { Text("Recorrentes") }
-            )
+
+        // 4. Botão Limpar Filtros Ativos
+        if (hasActiveFilters) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
+                    modifier = Modifier.clickable(onClick = onResetFilters)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Limpar filtros",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Limpar",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FilterDropdownChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = modifier) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            border = BorderStroke(
+                width = 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            ),
+            modifier = Modifier.clickable(onClick = onClick)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+        content()
+    }
+}
+
+@Composable
+fun BillsMiniKpiBar(
+    totalCents: Long,
+    paidCents: Long,
+    pendingCents: Long,
+    overdueCents: Long,
+    count: Int,
+    year: Int?,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 3.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = if (year != null) "Total no ano ($year):" else "Total geral:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = CurrencyUtils.formatCentsToCurrency(totalCents),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                        text = "$count ${if (count == 1) "registro" else "registros"}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Pago
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(SuccessGreen, CircleShape))
+                    Text(
+                        text = "Pago: ${CurrencyUtils.formatCentsToCurrency(paidCents)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = SuccessGreen
+                    )
+                }
+
+                // Pendente
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                    Text(
+                        text = "Pendente: ${CurrencyUtils.formatCentsToCurrency(pendingCents)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Atrasado (se houver)
+                if (overdueCents > 0L) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(modifier = Modifier.size(6.dp).background(MaterialTheme.colorScheme.error, CircleShape))
+                        Text(
+                            text = "Atrasado: ${CurrencyUtils.formatCentsToCurrency(overdueCents)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -758,7 +924,7 @@ fun BillInstallmentItemCard(
     val cardBorder = if (isSelected) {
         BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
     } else {
-        BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        BorderStroke(Dimens.cardBorderWidth, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     }
 
     val cardColor = when {
@@ -768,10 +934,10 @@ fun BillInstallmentItemCard(
     }
 
     Card(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = cardColor),
         border = cardBorder,
-        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.defaultElevation),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -782,9 +948,10 @@ fun BillInstallmentItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Checkbox ou Botão Circular de Pagamento
             if (isSelectionMode) {
                 Checkbox(
                     checked = isSelected,
@@ -792,26 +959,59 @@ fun BillInstallmentItemCard(
                     colors = CheckboxDefaults.colors(
                         checkedColor = MaterialTheme.colorScheme.primary,
                         uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    ),
+                    modifier = Modifier.size(32.dp)
                 )
             } else {
-                Checkbox(
-                    checked = installment.isPaid,
-                    onCheckedChange = { onTogglePayment() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = SuccessGreen,
-                        uncheckedColor = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                )
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clickable(onClick = onTogglePayment),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (installment.isPaid) {
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .background(SuccessGreen, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Pago",
+                                tint = Color.White,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .background(
+                                    if (isOverdue) MaterialTheme.colorScheme.error.copy(alpha = 0.1f) else Color.Transparent,
+                                    CircleShape
+                                )
+                                .border(
+                                    width = 1.5.dp,
+                                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
+            // Informações Centrais
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
                         text = installment.billTitle,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -819,17 +1019,34 @@ fun BillInstallmentItemCard(
                         color = if (installment.isPaid)
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                         else
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    InstallmentBadge(installment)
+
+                    // Apenas exibe indicador se for parcelamento real (totalInstallments > 1)
+                    if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ) {
+                            Text(
+                                text = "${installment.installmentNumber}/${installment.totalInstallments}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).background(catColor, CircleShape))
-                    Spacer(modifier = Modifier.width(6.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(catColor, CircleShape))
                     Text(
                         text = installment.categoryName,
                         style = MaterialTheme.typography.bodySmall,
@@ -838,22 +1055,24 @@ fun BillInstallmentItemCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = " • ",
+                        text = "•",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
                     )
                     Text(
                         text = when {
                             installment.isPaid -> "Pago"
                             isOverdue -> "Venceu em ${DateUtils.formatDate(installment.dueDate)}"
+                            DateUtils.isToday(installment.dueDate) -> "Vence hoje"
                             else -> "Vence em ${DateUtils.formatDate(installment.dueDate)}"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = if (isOverdue || DateUtils.isToday(installment.dueDate)) FontWeight.SemiBold else FontWeight.Normal,
                         color = when {
                             installment.isPaid -> SuccessGreen
                             isOverdue -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            DateUtils.isToday(installment.dueDate) -> WarningAmber
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                         }
                     )
                 }
@@ -861,546 +1080,31 @@ fun BillInstallmentItemCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Valor e Ícone Indicador
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
+                    textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None,
                     color = if (installment.isPaid)
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
                     else
                         MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Ver detalhes",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    modifier = Modifier.size(16.dp)
+                    contentDescription = "Editar",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.size(14.dp)
                 )
             }
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun BillInstallmentDetailBottomSheet(
-    installment: BillInstallment,
-    onDismiss: () -> Unit,
-    onTogglePayment: () -> Unit,
-    onDuplicate: (String) -> Unit,
-    onDelete: (String) -> Unit
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var showMenu by remember { mutableStateOf(false) }
-    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-
-    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
-
-    val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val catColor = remember(installment.categoryColorHex, fallbackColor) {
-        try {
-            Color(android.graphics.Color.parseColor(installment.categoryColorHex))
-        } catch (e: Exception) {
-            fallbackColor
-        }
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Header: Avatar com cor da categoria, Título, Badges e Menu de 3 Pontos no Canto Superior Direito
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(46.dp)
-                        .background(catColor.copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                        contentDescription = null,
-                        tint = catColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(14.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = installment.billTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textDecoration = if (installment.isPaid) TextDecoration.LineThrough else TextDecoration.None
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        InstallmentBadge(installment)
-
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = when {
-                                installment.isPaid -> SuccessGreen.copy(alpha = 0.12f)
-                                isOverdue -> MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)
-                            }
-                        ) {
-                            Text(
-                                text = when {
-                                    installment.isPaid -> "Pago"
-                                    isOverdue -> "Atrasado"
-                                    else -> "A Pagar"
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = when {
-                                    installment.isPaid -> SuccessGreen
-                                    isOverdue -> MaterialTheme.colorScheme.error
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                // Canto Superior Direito: 3 Pontos com Opção de Alternar Pagamento e Excluir
-                Box {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Mais opções",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text(if (installment.isPaid) "Marcar como Pendente" else "Marcar como Pago")
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = if (installment.isPaid) Icons.Default.Schedule else Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = if (installment.isPaid) MaterialTheme.colorScheme.tertiary else SuccessGreen
-                                )
-                            },
-                            onClick = {
-                                showMenu = false
-                                onTogglePayment()
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text("Duplicar Despesa")
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            onClick = {
-                                showMenu = false
-                                onDuplicate(installment.billId)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = {
-                                Text("Excluir Lançamento", color = MaterialTheme.colorScheme.error)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            },
-                            onClick = {
-                                showMenu = false
-                                showDeleteConfirmDialog = true
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Hero Card: Valor e Situação do Vencimento
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Valor do Lançamento",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-
-                    Text(
-                        text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (installment.isPaid)
-                            SuccessGreen
-                        else if (isOverdue)
-                            MaterialTheme.colorScheme.error
-                        else
-                            MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Vencimento: ${DateUtils.formatDate(installment.dueDate)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-                            )
-                        }
-
-                        if (installment.isPaid && installment.paidAt != null) {
-                            Text(
-                                text = "Liquidado em ${DateUtils.formatDate(installment.paidAt)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = SuccessGreen
-                            )
-                        }
-                    }
-
-                    if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        val progress = (installment.installmentNumber.toFloat() / installment.totalInstallments.toFloat()).coerceIn(0f, 1f)
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Progresso do Parcelamento",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                                Text(
-                                    text = "${installment.installmentNumber} de ${installment.totalInstallments}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            LinearProgressIndicator(
-                                progress = { progress },
-                                modifier = Modifier.fillMaxWidth().height(6.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Card: Detalhes e Relações Vinculadas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Vínculos & Classificação",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // Categoria & Subcategoria
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Categoria",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .background(catColor, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (!installment.itemName.isNullOrBlank())
-                                    "${installment.categoryName} (${installment.itemName})"
-                                else
-                                    installment.categoryName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    // Conta Financeira
-                    if (!installment.financialAccountName.isNullOrBlank()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Conta Vinculada",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.AccountBalance,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = installment.financialAccountName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-
-                    // Forma de Pagamento
-                    if (!installment.paymentMethodName.isNullOrBlank()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Forma de Pagamento",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.CreditCard,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.tertiary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = installment.paymentMethodName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-
-                    // Favorecido / Contato
-                    if (!installment.contactName.isNullOrBlank()) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Favorecido / Fornecedor",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = installment.contactName,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-
-                    // Tipo de Operação
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Modalidade",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                        Text(
-                            text = when (installment.type) {
-                                BillType.SINGLE -> "Lançamento Avulso"
-                                BillType.INSTALLMENT -> "Parcelado (${installment.totalInstallments}x)"
-                                BillType.RECURRING -> "Assinatura / Recorrente"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-
-            // Ação Rápida no Rodapé: Marcar Pago ou Reabrir
-            Button(
-                onClick = {
-                    onTogglePayment()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (installment.isPaid)
-                        MaterialTheme.colorScheme.surfaceVariant
-                    else
-                        SuccessGreen,
-                    contentColor = if (installment.isPaid)
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    else
-                        MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    imageVector = if (installment.isPaid) Icons.Default.Schedule else Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (installment.isPaid) "Reabrir Pagamento" else "Confirmar Pagamento",
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-    }
-
-    if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = {
-                Text(
-                    text = "Excluir Lançamento",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            },
-            text = {
-                Text(
-                    text = "Deseja realmente excluir o lançamento '${installment.billTitle}'? Esta ação removerá a conta e suas parcelas associadas.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirmDialog = false
-                        onDismiss()
-                        onDelete(installment.billId)
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showDeleteConfirmDialog = false },
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun InstallmentBadge(installment: BillInstallment) {
-    val (label, bg, fg) = when (installment.type) {
-        BillType.SINGLE -> Triple("Avulsa", MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f), MaterialTheme.colorScheme.secondary)
-        BillType.INSTALLMENT -> Triple("${installment.installmentNumber}/${installment.totalInstallments}", WarningAmber.copy(alpha = 0.15f), WarningAmber)
-        BillType.RECURRING -> Triple("Recorrente", MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.colorScheme.primary)
-    }
-
-    Surface(shape = RoundedCornerShape(6.dp), color = bg) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = fg,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-        )
-    }
-}
-
 
 @Composable
 fun EmptyBillsState() {

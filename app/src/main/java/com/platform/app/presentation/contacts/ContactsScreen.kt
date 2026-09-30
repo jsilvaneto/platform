@@ -102,14 +102,7 @@ fun ContactsScreen(
     var isBottomSheetOpen by remember { mutableStateOf(false) }
     var contactToEdit by remember { mutableStateOf<Contact?>(null) }
     var isSearchExpanded by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    LaunchedEffect(isSearchExpanded) {
-        if (isSearchExpanded) {
-            focusRequester.requestFocus()
-        }
-    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->

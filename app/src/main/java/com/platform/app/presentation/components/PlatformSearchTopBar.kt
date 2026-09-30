@@ -38,6 +38,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+import kotlinx.coroutines.delay
+
 /**
  * Barra superior padronizada com pesquisa em linha contínua, elegante e minimalista.
  * Quando a pesquisa é ativada, a barra transforma-se em uma linha limpa de entrada de texto
@@ -63,7 +65,10 @@ fun PlatformSearchTopBar(
 
     LaunchedEffect(isSearchActive) {
         if (isSearchActive) {
-            focusRequester.requestFocus()
+            runCatching {
+                delay(100)
+                focusRequester.requestFocus()
+            }
         }
     }
 

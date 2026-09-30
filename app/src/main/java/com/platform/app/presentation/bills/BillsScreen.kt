@@ -132,18 +132,11 @@ fun BillsScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isSearchExpanded by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
 
     // Estado do modo de seleção múltipla em lote
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isSearchExpanded) {
-        if (isSearchExpanded) {
-            focusRequester.requestFocus()
-        }
-    }
 
     LaunchedEffect(uiEffect) {
         uiEffect.collect { effect ->

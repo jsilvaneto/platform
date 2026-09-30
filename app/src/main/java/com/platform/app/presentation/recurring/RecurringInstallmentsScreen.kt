@@ -119,7 +119,6 @@ fun RecurringInstallmentsScreen(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     var isSearchExpanded by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
 
     val installmentItems = remember(uiState.filteredItems) {
         uiState.filteredItems.filter { it.bill.type == BillType.INSTALLMENT }
@@ -128,12 +127,6 @@ fun RecurringInstallmentsScreen(
         uiState.filteredItems.filter { it.bill.type == BillType.RECURRING }
     }
     val currentTabItems = if (selectedTabIndex == 0) installmentItems else recurringItems
-
-    LaunchedEffect(isSearchExpanded) {
-        if (isSearchExpanded) {
-            focusRequester.requestFocus()
-        }
-    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->

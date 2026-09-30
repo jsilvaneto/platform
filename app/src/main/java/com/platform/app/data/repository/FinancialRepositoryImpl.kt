@@ -422,6 +422,71 @@ class FinancialRepositoryImpl @Inject constructor(
         installmentDao.updatePayment(installmentId, paidTimestamp, status)
     }
 
+    override suspend fun updateInstallment(
+        installmentId: String,
+        newAmountCents: Long,
+        newDueDate: Long
+    ) {
+        database.withTransaction {
+            installmentDao.updateInstallmentAmountAndDate(installmentId, newAmountCents, newDueDate)
+            val entity = installmentDao.getEntityById(installmentId)
+            if (entity != null) {
+                // Se for parcela única, atualiza o valor total da conta também
+                val bill = billDao.getById(entity.billId)
+                if (bill != null && bill.totalInstallments == 1) {
+                    billDao.updateBillDetails(
+                        id = bill.id,
+                        title = bill.title,
+                        description = bill.description,
+                        totalAmountCents = newAmountCents,
+                        categoryId = bill.categoryId,
+                        itemId = bill.itemId,
+                        contactId = bill.contactId,
+                        financialAccountId = bill.financialAccountId,
+                        paymentMethodId = bill.paymentMethodId
+                    )
+                }
+            }
+        }
+    }
+
+    override suspend fun updateBillAndInstallment(
+        installmentId: String,
+        billId: String,
+        title: String,
+        description: String,
+        amountCents: Long,
+        dueDate: Long,
+        categoryId: String?,
+        itemId: String?,
+        contactId: String?,
+        financialAccountId: String?,
+        paymentMethodId: String?
+    ) {
+        database.withTransaction {
+            billDao.updateBillDetails(
+                id = billId,
+                title = title.trim(),
+                description = description.trim(),
+                totalAmountCents = amountCents,
+                categoryId = categoryId,
+                itemId = itemId,
+                contactId = contactId,
+                financialAccountId = financialAccountId,
+                paymentMethodId = paymentMethodId
+            )
+            installmentDao.updateInstallmentDetails(
+                id = installmentId,
+                amountCents = amountCents,
+                dueDate = dueDate,
+                itemId = itemId,
+                contactId = contactId,
+                financialAccountId = financialAccountId,
+                paymentMethodId = paymentMethodId
+            )
+        }
+    }
+
     override suspend fun deleteBill(billId: String) {
         billDao.deleteById(billId)
     }

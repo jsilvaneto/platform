@@ -1,8 +1,10 @@
 package com.platform.app.presentation.home
 
 import app.cash.turbine.test
+import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CalculateMonthlyForecastUseCase
+import com.platform.app.domain.usecase.GetFinancialDashboardUseCase
 import com.platform.app.domain.usecase.MonthlyForecastResult
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,6 +28,7 @@ class HomeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FinancialRepository
     private lateinit var calculateMonthlyForecastUseCase: CalculateMonthlyForecastUseCase
+    private lateinit var getFinancialDashboardUseCase: GetFinancialDashboardUseCase
     private lateinit var viewModel: HomeViewModel
 
     @Before
@@ -33,6 +36,7 @@ class HomeViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
         calculateMonthlyForecastUseCase = mockk(relaxed = true)
+        getFinancialDashboardUseCase = mockk(relaxed = true)
 
         val dummyForecast = MonthlyForecastResult(
             monthMillis = System.currentTimeMillis(),
@@ -40,7 +44,16 @@ class HomeViewModelTest {
             totalForecastCents = 10000L,
             totalPaidCents = 0L
         )
+        val dummyDashboard = FinancialDashboardMetrics(
+            monthMillis = System.currentTimeMillis(),
+            currentMonthLabel = "Setembro 2026"
+        )
+
         every { calculateMonthlyForecastUseCase(any()) } returns flowOf(dummyForecast)
+        every { getFinancialDashboardUseCase(any()) } returns flowOf(dummyDashboard)
+        every { repository.getAllInstallments() } returns flowOf(emptyList())
+        every { repository.getAllCreditCardInvoices() } returns flowOf(emptyList())
+        every { repository.getCreditCards() } returns flowOf(emptyList())
     }
 
     @After
@@ -50,7 +63,7 @@ class HomeViewModelTest {
 
     @Test
     fun `PayBill action should toggle payment and emit ShowUndoSnackbar effect`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -74,7 +87,7 @@ class HomeViewModelTest {
 
     @Test
     fun `UndoPayBill action should revert installment payment to unpaid`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(HomeUiAction.UndoPayBill("inst-123"))
@@ -91,7 +104,7 @@ class HomeViewModelTest {
 
     @Test
     fun `PayInvoice action should call payInvoice and emit ShowUndoSnackbar effect`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -109,7 +122,7 @@ class HomeViewModelTest {
 
     @Test
     fun `UndoPayInvoice action should reopen invoice in repository`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(HomeUiAction.UndoPayInvoice("inv-456"))

@@ -207,6 +207,32 @@ interface BillInstallmentDao {
     @Query("UPDATE bill_installments SET paidAt = :paidAt, status = :status WHERE id = :id")
     suspend fun updatePayment(id: String, paidAt: Long?, status: String)
 
+    @Query("UPDATE bill_installments SET amountCents = :newAmountCents, dueDate = :newDueDate WHERE id = :id")
+    suspend fun updateInstallmentAmountAndDate(id: String, newAmountCents: Long, newDueDate: Long)
+
+    @Query("""
+        UPDATE bill_installments 
+        SET amountCents = :amountCents, 
+            dueDate = :dueDate, 
+            itemId = :itemId, 
+            contactId = :contactId, 
+            financialAccountId = :financialAccountId, 
+            paymentMethodId = :paymentMethodId 
+        WHERE id = :id
+    """)
+    suspend fun updateInstallmentDetails(
+        id: String,
+        amountCents: Long,
+        dueDate: Long,
+        itemId: String?,
+        contactId: String?,
+        financialAccountId: String?,
+        paymentMethodId: String?
+    )
+
+    @Query("SELECT * FROM bill_installments WHERE id = :id LIMIT 1")
+    suspend fun getEntityById(id: String): BillInstallmentEntity?
+
     @Query("DELETE FROM bill_installments WHERE billId = :billId")
     suspend fun deleteByBillId(billId: String)
 

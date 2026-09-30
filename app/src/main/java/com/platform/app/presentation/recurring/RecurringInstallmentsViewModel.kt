@@ -38,9 +38,34 @@ class RecurringInstallmentsViewModel @Inject constructor(
     fun onAction(action: RecurringInstallmentsUiAction) {
         when (action) {
             is RecurringInstallmentsUiAction.SelectFilter -> handleSelectFilter(action.type)
+            is RecurringInstallmentsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
+            is RecurringInstallmentsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is RecurringInstallmentsUiAction.TogglePayment -> handleTogglePayment(action.installmentId, action.currentPaid)
             is RecurringInstallmentsUiAction.DeleteBill -> handleDeleteBill(action.billId)
+            is RecurringInstallmentsUiAction.OpenAdjustInstallment -> {
+                _uiState.update { it.copy(installmentToAdjust = action.installment) }
+            }
+            is RecurringInstallmentsUiAction.DismissAdjustInstallment -> {
+                _uiState.update { it.copy(installmentToAdjust = null) }
+            }
+            is RecurringInstallmentsUiAction.SaveAdjustInstallment -> handleSaveAdjustInstallment(action)
             is RecurringInstallmentsUiAction.Refresh -> loadData()
+        }
+    }
+
+    private fun handleSaveAdjustInstallment(action: RecurringInstallmentsUiAction.SaveAdjustInstallment) {
+        viewModelScope.launch {
+            try {
+                repository.updateInstallment(
+                    installmentId = action.installmentId,
+                    newAmountCents = action.newAmountCents,
+                    newDueDate = action.newDueDate
+                )
+                _uiState.update { it.copy(installmentToAdjust = null) }
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Parcela ajustada com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao ajustar parcela: ${e.message}"))
+            }
         }
     }
 
@@ -75,6 +100,10 @@ class RecurringInstallmentsViewModel @Inject constructor(
                     (totalPaid.toFloat() / bill.totalAmountCents.toFloat()).coerceIn(0f, 1f)
                 } else 0f
 
+                val estimatedPayoff = if (bill.type == BillType.INSTALLMENT) {
+                    insts.maxOfOrNull { it.dueDate }
+                } else null
+
                 BillWithInstallments(
                     bill = bill,
                     installments = insts,
@@ -82,7 +111,8 @@ class RecurringInstallmentsViewModel @Inject constructor(
                     totalPaidCents = totalPaid,
                     remainingCents = remaining,
                     progress = progress,
-                    nextInstallment = nextInst
+                    nextInstallment = nextInst,
+                    estimatedPayoffDate = estimatedPayoff
                 )
             }
 
@@ -94,7 +124,12 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 .filter { it.bill.type == BillType.RECURRING }
                 .sumOf { it.bill.totalAmountCents }
 
-            val filtered = applyFilter(items, _uiState.value.selectedFilter)
+            val filtered = applyFilter(
+                items = items,
+                typeFilter = _uiState.value.selectedFilter,
+                statusFilter = _uiState.value.statusFilter,
+                query = _uiState.value.searchQuery
+            )
 
             _uiState.update {
                 it.copy(
@@ -110,7 +145,7 @@ class RecurringInstallmentsViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    errorMessage = error.localizedMessage ?: "Erro ao carregar recorrentes e parcelados."
+                    errorMessage = error.localizedMessage ?: "Erro ao carregar pagamentos planejados."
                 )
             }
         }.launchIn(viewModelScope)
@@ -118,16 +153,50 @@ class RecurringInstallmentsViewModel @Inject constructor(
 
     private fun handleSelectFilter(type: BillType?) {
         _uiState.update {
-            val filtered = applyFilter(it.items, type)
+            val filtered = applyFilter(it.items, type, it.statusFilter, it.searchQuery)
             it.copy(selectedFilter = type, filteredItems = filtered)
         }
     }
 
-    private fun applyFilter(items: List<BillWithInstallments>, filter: BillType?): List<BillWithInstallments> {
-        return if (filter == null) {
-            items
-        } else {
-            items.filter { it.bill.type == filter }
+    private fun handleStatusFilter(status: RecurringStatusFilter) {
+        _uiState.update {
+            val filtered = applyFilter(it.items, it.selectedFilter, status, it.searchQuery)
+            it.copy(statusFilter = status, filteredItems = filtered)
+        }
+    }
+
+    private fun handleSearchQuery(query: String) {
+        _uiState.update {
+            val filtered = applyFilter(it.items, it.selectedFilter, it.statusFilter, query)
+            it.copy(searchQuery = query, filteredItems = filtered)
+        }
+    }
+
+    private fun applyFilter(
+        items: List<BillWithInstallments>,
+        typeFilter: BillType?,
+        statusFilter: RecurringStatusFilter,
+        query: String
+    ): List<BillWithInstallments> {
+        return items.filter { item ->
+            val matchesType = typeFilter == null || item.bill.type == typeFilter
+
+            val isCompleted = if (item.bill.type == BillType.INSTALLMENT) {
+                item.paidInstallmentsCount == item.installments.size && item.installments.isNotEmpty()
+            } else false
+
+            val matchesStatus = when (statusFilter) {
+                RecurringStatusFilter.ALL -> true
+                RecurringStatusFilter.ACTIVE -> !isCompleted
+                RecurringStatusFilter.COMPLETED -> isCompleted
+            }
+
+            val matchesQuery = query.isBlank() ||
+                    item.bill.title.contains(query, ignoreCase = true) ||
+                    (item.installments.firstOrNull()?.categoryName?.contains(query, ignoreCase = true) == true) ||
+                    (item.installments.firstOrNull()?.contactName?.contains(query, ignoreCase = true) == true)
+
+            matchesType && matchesStatus && matchesQuery
         }
     }
 

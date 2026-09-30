@@ -1,5 +1,6 @@
 package com.platform.app.presentation.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,16 +19,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
@@ -38,6 +45,9 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -63,10 +73,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import kotlinx.coroutines.flow.SharedFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -75,8 +83,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
+import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.PayableItem
+import com.platform.app.domain.model.PayableUrgency
 import com.platform.app.domain.usecase.MonthlyForecastResult
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
@@ -86,6 +97,8 @@ import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.UrgentRed
 import com.platform.app.presentation.theme.WarningAmber
+import kotlinx.coroutines.flow.SharedFlow
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +137,7 @@ fun HomeScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             HomeTopBar(
+                viewMode = uiState.viewMode,
                 monthLabel = uiState.forecastResult?.monthLabel ?: DateUtils.formatMonthYear(uiState.selectedMonthMillis),
                 isPrivate = isPrivate,
                 onTogglePrivacy = { isPrivate = !isPrivate },
@@ -155,7 +169,13 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (uiState.isLoading && uiState.forecastResult == null) {
+            // Seletor de Modo: [ Panorama Geral | Calendário | Visão Mensal ]
+            HomeViewModeSelector(
+                selectedMode = uiState.viewMode,
+                onModeSelected = { mode -> onAction(HomeUiAction.ChangeViewMode(mode)) }
+            )
+
+            if (uiState.isLoading && uiState.forecastResult == null && uiState.dashboardMetrics == null) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -163,189 +183,79 @@ fun HomeScreen(
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else {
-                val forecast = uiState.forecastResult
-                if (forecast != null) {
-                    val isMonthFullyPaid = forecast.totalItemsCount > 0 &&
-                            forecast.overdueCount == 0 &&
-                            forecast.dueTodayCount == 0 &&
-                            forecast.next7DaysCount == 0 &&
-                            forecast.laterInMonthItems.isEmpty() &&
-                            forecast.paidCount > 0
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            horizontal = Dimens.spacingNormal,
-                            vertical = Dimens.spacingSmall
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
-                    ) {
-                        // 1. Executive Hero Card: Previsibilidade & Quitação do Mês
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        horizontal = Dimens.spacingNormal,
+                        vertical = Dimens.spacingSmall
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
+                ) {
+                    // Item 5: Banner Global de Contas Atrasadas (visível em todas as telas se houver atrasos)
+                    if (uiState.globalOverdueItems.isNotEmpty()) {
                         item {
-                            ForecastImpactCard(
-                                totalForecastCents = forecast.totalForecastCents,
-                                totalPaidCents = forecast.totalPaidCents,
-                                isPrivate = isPrivate
-                            )
-                        }
-
-                        // 2. Resumo Semafórico em Chips
-                        item {
-                            SemaphoricSummaryRow(
-                                forecast = forecast,
-                                isPrivate = isPrivate
-                            )
-                        }
-
-                        // 3. Card Triunfante quando todas as contas do mês estiverem pagas
-                        if (isMonthFullyPaid) {
-                            item {
-                                MonthVictoryCard(
-                                    paidCount = forecast.paidCount,
-                                    paidTotalCents = forecast.paidTotalCents,
-                                    isPrivate = isPrivate
-                                )
-                            }
-                        }
-
-                        // 4. Seções de Urgência Semafórica
-                        // 4.1 🔴 Atrasadas
-                        if (forecast.overdueItems.isNotEmpty()) {
-                            item {
-                                UrgencySectionHeader(
-                                    title = "Atrasadas",
-                                    count = forecast.overdueCount,
-                                    badgeColor = UrgentRed,
-                                    totalCents = forecast.overdueTotalCents,
-                                    isPrivate = isPrivate
-                                )
-                            }
-                            items(forecast.overdueItems, key = { it.id }) { item ->
-                                PayableItemCard(
-                                    item = item,
-                                    isPrivate = isPrivate,
-                                    onPay = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        when (item) {
-                                            is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                            is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                        }
+                            GlobalOverdueAlertBanner(
+                                overdueItems = uiState.globalOverdueItems,
+                                totalOverdueCents = uiState.globalOverdueTotalCents,
+                                isExpanded = uiState.isOverdueBannerExpanded,
+                                isPrivate = isPrivate,
+                                onToggleExpanded = {
+                                    onAction(HomeUiAction.ToggleOverdueBanner(!uiState.isOverdueBannerExpanded))
+                                },
+                                onPayItem = { item ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    when (item) {
+                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
                                     }
-                                )
-                            }
-                        }
-
-                        // 4.2 🟡 Vence Hoje
-                        if (forecast.dueTodayItems.isNotEmpty()) {
-                            item {
-                                UrgencySectionHeader(
-                                    title = "Vence Hoje",
-                                    count = forecast.dueTodayCount,
-                                    badgeColor = WarningAmber,
-                                    totalCents = forecast.dueTodayTotalCents,
-                                    isPrivate = isPrivate
-                                )
-                            }
-                            items(forecast.dueTodayItems, key = { it.id }) { item ->
-                                PayableItemCard(
-                                    item = item,
-                                    isPrivate = isPrivate,
-                                    onPay = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        when (item) {
-                                            is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                            is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-                        // 4.3 ⚪ Próximos 7 Dias
-                        if (forecast.next7DaysItems.isNotEmpty()) {
-                            item {
-                                UrgencySectionHeader(
-                                    title = "Próximos 7 Dias",
-                                    count = forecast.next7DaysCount,
-                                    badgeColor = MaterialTheme.colorScheme.primary,
-                                    totalCents = forecast.next7DaysTotalCents,
-                                    isPrivate = isPrivate
-                                )
-                            }
-                            items(forecast.next7DaysItems, key = { it.id }) { item ->
-                                PayableItemCard(
-                                    item = item,
-                                    isPrivate = isPrivate,
-                                    onPay = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        when (item) {
-                                            is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                            is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-                        // 4.4 Mais Adiante no Mês (se houver)
-                        if (forecast.laterInMonthItems.isNotEmpty()) {
-                            item {
-                                UrgencySectionHeader(
-                                    title = "Mais Adiante no Mês",
-                                    count = forecast.laterInMonthItems.size,
-                                    badgeColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    totalCents = forecast.laterInMonthItems.sumOf { it.amountCents },
-                                    isPrivate = isPrivate
-                                )
-                            }
-                            items(forecast.laterInMonthItems, key = { it.id }) { item ->
-                                PayableItemCard(
-                                    item = item,
-                                    isPrivate = isPrivate,
-                                    onPay = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        when (item) {
-                                            is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                            is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                        }
-                                    }
-                                )
-                            }
-                        }
-
-                        // 4.5 🟢 Pagas no Mês (Seção Colapsável)
-                        if (forecast.paidItems.isNotEmpty()) {
-                            item {
-                                CollapsiblePaidHeader(
-                                    isExpanded = uiState.isPaidSectionExpanded,
-                                    count = forecast.paidCount,
-                                    totalCents = forecast.paidTotalCents,
-                                    isPrivate = isPrivate,
-                                    onToggle = { onAction(HomeUiAction.TogglePaidSection(!uiState.isPaidSectionExpanded)) }
-                                )
-                            }
-                            if (uiState.isPaidSectionExpanded) {
-                                items(forecast.paidItems, key = { it.id }) { item ->
-                                    PayableItemCard(
-                                        item = item,
-                                        isMuted = true,
-                                        isPrivate = isPrivate,
-                                        onPay = null
-                                    )
                                 }
-                            }
+                            )
                         }
+                    }
 
-                        // Estado vazio geral do mês
-                        if (forecast.totalItemsCount == 0) {
-                            item {
-                                EmptyForecastCard(onAddExpense = onNavigateToNewExpense)
-                            }
+                    // Renderização de acordo com o modo selecionado
+                    when (uiState.viewMode) {
+                        HomeViewMode.PANORAMA -> {
+                            renderPanoramaView(
+                                uiState = uiState,
+                                isPrivate = isPrivate,
+                                onPay = { item ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    when (item) {
+                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                                    }
+                                },
+                                onAddExpense = onNavigateToNewExpense
+                            )
                         }
+                        HomeViewMode.CALENDAR -> {
+                            renderCalendarView(
+                                uiState = uiState,
+                                isPrivate = isPrivate,
+                                onSelectDay = { dayMillis -> onAction(HomeUiAction.SelectCalendarDay(dayMillis)) },
+                                onPay = { item ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    when (item) {
+                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                                    }
+                                }
+                            )
+                        }
+                        HomeViewMode.MONTHLY -> {
+                            renderMonthlyView(
+                                uiState = uiState,
+                                isPrivate = isPrivate,
+                                onAction = onAction,
+                                onAddExpense = onNavigateToNewExpense,
+                                haptic = haptic
+                            )
+                        }
+                    }
 
-                        item {
-                            Spacer(modifier = Modifier.height(72.dp))
-                        }
+                    item {
+                        Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
@@ -364,8 +274,999 @@ fun HomeScreen(
     }
 }
 
+// -------------------------------------------------------------
+// Seletor de Modo de Exibição
+// -------------------------------------------------------------
+@Composable
+fun HomeViewModeSelector(
+    selectedMode: HomeViewMode,
+    onModeSelected: (HomeViewMode) -> Unit
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.spacingNormal, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ModeChip(
+                label = "Panorama Geral",
+                icon = Icons.Default.Timeline,
+                isSelected = selectedMode == HomeViewMode.PANORAMA,
+                modifier = Modifier.weight(1f),
+                onClick = { onModeSelected(HomeViewMode.PANORAMA) }
+            )
+            ModeChip(
+                label = "Calendário",
+                icon = Icons.Default.CalendarMonth,
+                isSelected = selectedMode == HomeViewMode.CALENDAR,
+                modifier = Modifier.weight(1f),
+                onClick = { onModeSelected(HomeViewMode.CALENDAR) }
+            )
+            ModeChip(
+                label = "Visão Mensal",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                isSelected = selectedMode == HomeViewMode.MONTHLY,
+                modifier = Modifier.weight(1f),
+                onClick = { onModeSelected(HomeViewMode.MONTHLY) }
+            )
+        }
+    }
+}
+
+@Composable
+fun ModeChip(
+    label: String,
+    icon: ImageVector,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.height(34.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// Item 5: Banner Global de Contas Atrasadas
+// -------------------------------------------------------------
+@Composable
+fun GlobalOverdueAlertBanner(
+    overdueItems: List<PayableItem>,
+    totalOverdueCents: Long,
+    isExpanded: Boolean,
+    isPrivate: Boolean,
+    onToggleExpanded: () -> Unit,
+    onPayItem: (PayableItem) -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        color = UrgentRed.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.35f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(UrgentRed.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = UrgentRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column {
+                        Text(
+                            text = "${overdueItems.size} Contas Atrasadas Acumuladas",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = UrgentRed
+                        )
+                        Text(
+                            text = "Total vencido: ${formatValueOrPrivate(totalOverdueCents, isPrivate)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                TextButton(
+                    onClick = onToggleExpanded,
+                    shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                ) {
+                    Text(
+                        text = if (isExpanded) "Ocultar" else "Ver Todas",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = UrgentRed
+                    )
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = UrgentRed,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    overdueItems.forEach { item ->
+                        val daysLate = ((System.currentTimeMillis() - item.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.2f)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.title,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = UrgentRed.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = "Atrasada há $daysLate dia${if (daysLate > 1) "s" else ""}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = UrgentRed,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Venceu em ${DateUtils.formatDate(item.dueDate)}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = formatValueOrPrivate(item.amountCents, isPrivate),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = UrgentRed
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Button(
+                                        onClick = { onPayItem(item) },
+                                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = SuccessGreen.copy(alpha = 0.15f),
+                                            contentColor = SuccessGreen
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(28.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = "Pagar",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// Item 3 & 7: Panorama Geral das Finanças
+// -------------------------------------------------------------
+fun androidx.compose.foundation.lazy.LazyListScope.renderPanoramaView(
+    uiState: HomeUiState,
+    isPrivate: Boolean,
+    onPay: (PayableItem) -> Unit,
+    onAddExpense: () -> Unit
+) {
+    val forecast = uiState.forecastResult
+    val dashboard = uiState.dashboardMetrics
+
+    // 1. Radar de Desembolso / Liquidez Imediata
+    item {
+        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
+                Text(
+                    text = "Radar de Desembolso & Liquidez",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Vence Hoje",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = WarningAmber
+                        )
+                        Text(
+                            text = formatValueOrPrivate(forecast?.dueTodayTotalCents ?: 0L, isPrivate),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${forecast?.dueTodayCount ?: 0} contas",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Próximos 7 Dias",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = formatValueOrPrivate(forecast?.next7DaysTotalCents ?: 0L, isPrivate),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${forecast?.next7DaysCount ?: 0} contas",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "Próximos 30 Dias",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = formatValueOrPrivate(uiState.next30DaysTotalCents, isPrivate),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${uiState.next30DaysItems.size} lançamentos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Pilares Estruturais do Orçamento (Item 7: Recorrentes Perpétuas e Parcelamentos)
+    item {
+        Text(
+            text = "Pilares Estruturais das Finanças",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    // Pilar 1: Custo Fixo Recorrente Contínuo ("Para Sempre")
+    item {
+        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(Dimens.spacingNormal),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(SuccessGreen.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Autorenew,
+                        contentDescription = null,
+                        tint = SuccessGreen,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Custo Fixo Mensal",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = SuccessGreen.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "∞ Contínuo",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "${dashboard?.activeRecurringCount ?: 0} assinaturas e despesas operacionais fixas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Text(
+                    text = "${formatValueOrPrivate(dashboard?.fixedMonthlyTotalCents ?: 0L, isPrivate)}/mês",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = SuccessGreen
+                )
+            }
+        }
+    }
+
+    // Pilar 2: Passivo Total em Parcelamentos
+    item {
+        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Passivo em Parcelamentos",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${dashboard?.activeInstallmentsCount ?: 0} compras ativas em amortização",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = formatValueOrPrivate(dashboard?.totalInstallmentsRemainingCents ?: 0L, isPrivate),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Saldo restante",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Liberação de Caixa Futura
+                val nextCompleting = dashboard?.nextCompletingInstallments?.firstOrNull()
+                if (nextCompleting != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Próxima quitação: '${nextCompleting.title}' em ${nextCompleting.completionMonthLabel} (+${formatValueOrPrivate(nextCompleting.freedMonthlyAmountCents, isPrivate)}/mês de alívio)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Próximos Desembolsos Imediatos
+    item {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Próximos Desembolsos Imediatos",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "${uiState.next30DaysItems.size} próximos",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    if (uiState.next30DaysItems.isEmpty()) {
+        item {
+            EmptyForecastCard(onAddExpense = onAddExpense)
+        }
+    } else {
+        items(uiState.next30DaysItems.take(8), key = { it.id }) { item ->
+            PayableItemCard(
+                item = item,
+                isPrivate = isPrivate,
+                onPay = { onPay(item) }
+            )
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// Item 6: Visão de Calendário / Agenda de Vencimentos
+// -------------------------------------------------------------
+fun androidx.compose.foundation.lazy.LazyListScope.renderCalendarView(
+    uiState: HomeUiState,
+    isPrivate: Boolean,
+    onSelectDay: (Long?) -> Unit,
+    onPay: (PayableItem) -> Unit
+) {
+    // 1. Faixa Horizontal Interativa de Dias do Mês (Calendar Strip)
+    item {
+        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            Column(modifier = Modifier.padding(vertical = Dimens.spacingNormal)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Dimens.spacingNormal),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Vencimentos de ${uiState.forecastResult?.monthLabel ?: ""}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (uiState.selectedCalendarDayMillis != null) {
+                        TextButton(
+                            onClick = { onSelectDay(null) },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Limpar",
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = "Ver Todos",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Carrossel de Dias do Mês
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = Dimens.spacingNormal),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(uiState.calendarDays, key = { it.dateMillis }) { dayItem ->
+                        val isSelected = uiState.selectedCalendarDayMillis == dayItem.dateMillis
+                        CalendarDayCard(
+                            dayItem = dayItem,
+                            isSelected = isSelected,
+                            onClick = {
+                                if (isSelected) {
+                                    onSelectDay(null)
+                                } else {
+                                    onSelectDay(dayItem.dateMillis)
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Seção de Contas do Dia Selecionado ou Agenda do Mês
+    if (uiState.selectedCalendarDayMillis != null) {
+        val selectedDayDate = DateUtils.formatDate(uiState.selectedCalendarDayMillis)
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Vencimentos em $selectedDayDate (${uiState.daySelectedItems.size})",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = formatValueOrPrivate(uiState.daySelectedItems.sumOf { it.amountCents }, isPrivate),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+
+        if (uiState.daySelectedItems.isEmpty()) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Nenhuma conta agendada para este dia.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        } else {
+            items(uiState.daySelectedItems, key = { it.id }) { item ->
+                PayableItemCard(
+                    item = item,
+                    isPrivate = isPrivate,
+                    onPay = if (!item.isPaid) { { onPay(item) } } else null
+                )
+            }
+        }
+    } else {
+        // Exibe a Agenda Cronológica Completa
+        val forecast = uiState.forecastResult
+        if (forecast != null) {
+            if (forecast.dueTodayItems.isNotEmpty()) {
+                item {
+                    UrgencySectionHeader(
+                        title = "Vence Hoje",
+                        count = forecast.dueTodayCount,
+                        badgeColor = WarningAmber,
+                        totalCents = forecast.dueTodayTotalCents,
+                        isPrivate = isPrivate
+                    )
+                }
+                items(forecast.dueTodayItems, key = { it.id }) { item ->
+                    PayableItemCard(
+                        item = item,
+                        isPrivate = isPrivate,
+                        onPay = { onPay(item) }
+                    )
+                }
+            }
+
+            if (forecast.next7DaysItems.isNotEmpty()) {
+                item {
+                    UrgencySectionHeader(
+                        title = "Próximos 7 Dias",
+                        count = forecast.next7DaysCount,
+                        badgeColor = MaterialTheme.colorScheme.primary,
+                        totalCents = forecast.next7DaysTotalCents,
+                        isPrivate = isPrivate
+                    )
+                }
+                items(forecast.next7DaysItems, key = { it.id }) { item ->
+                    PayableItemCard(
+                        item = item,
+                        isPrivate = isPrivate,
+                        onPay = { onPay(item) }
+                    )
+                }
+            }
+
+            if (forecast.laterInMonthItems.isNotEmpty()) {
+                item {
+                    UrgencySectionHeader(
+                        title = "Mais Adiante no Mês",
+                        count = forecast.laterInMonthItems.size,
+                        badgeColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        totalCents = forecast.laterInMonthItems.sumOf { it.amountCents },
+                        isPrivate = isPrivate
+                    )
+                }
+                items(forecast.laterInMonthItems, key = { it.id }) { item ->
+                    PayableItemCard(
+                        item = item,
+                        isPrivate = isPrivate,
+                        onPay = { onPay(item) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CalendarDayCard(
+    dayItem: CalendarDayItem,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val cal = Calendar.getInstance().apply { timeInMillis = System.currentTimeMillis() }
+    val isToday = dayItem.dayOfMonth == cal.get(Calendar.DAY_OF_MONTH) &&
+            DateUtils.getMonth(dayItem.dateMillis) == cal.get(Calendar.MONTH) &&
+            DateUtils.getYear(dayItem.dateMillis) == cal.get(Calendar.YEAR)
+
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = when {
+            isSelected -> MaterialTheme.colorScheme.primary
+            isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        },
+        border = BorderStroke(
+            1.dp,
+            when {
+                isSelected -> MaterialTheme.colorScheme.primary
+                isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            }
+        ),
+        modifier = Modifier
+            .width(52.dp)
+            .height(72.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(4.dp)
+        ) {
+            Text(
+                text = dayItem.dayOfWeekLabel,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = "${dayItem.dayOfMonth}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Thermal dots de status
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                when {
+                    dayItem.hasOverdue -> {
+                        Box(modifier = Modifier.size(6.dp).background(UrgentRed, CircleShape))
+                    }
+                    dayItem.hasDueToday -> {
+                        Box(modifier = Modifier.size(6.dp).background(WarningAmber, CircleShape))
+                    }
+                    dayItem.hasPending -> {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                                    CircleShape
+                                )
+                        )
+                    }
+                    dayItem.isFullyPaid -> {
+                        Box(modifier = Modifier.size(6.dp).background(SuccessGreen, CircleShape))
+                    }
+                    else -> {
+                        Spacer(modifier = Modifier.size(6.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// Visão Mensal (Original Refinada)
+// -------------------------------------------------------------
+fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
+    uiState: HomeUiState,
+    isPrivate: Boolean,
+    onAction: (HomeUiAction) -> Unit,
+    onAddExpense: () -> Unit,
+    haptic: androidx.compose.ui.hapticfeedback.HapticFeedback
+) {
+    val forecast = uiState.forecastResult ?: return
+    val isMonthFullyPaid = forecast.totalItemsCount > 0 &&
+            forecast.overdueCount == 0 &&
+            forecast.dueTodayCount == 0 &&
+            forecast.next7DaysCount == 0 &&
+            forecast.laterInMonthItems.isEmpty() &&
+            forecast.paidCount > 0
+
+    // 1. Executive Hero Card: Previsibilidade & Quitação do Mês
+    item {
+        ForecastImpactCard(
+            totalForecastCents = forecast.totalForecastCents,
+            totalPaidCents = forecast.totalPaidCents,
+            isPrivate = isPrivate
+        )
+    }
+
+    // 2. Resumo Semafórico em Chips
+    item {
+        SemaphoricSummaryRow(
+            forecast = forecast,
+            isPrivate = isPrivate
+        )
+    }
+
+    // 3. Card Triunfante quando todas as contas do mês estiverem pagas
+    if (isMonthFullyPaid) {
+        item {
+            MonthVictoryCard(
+                paidCount = forecast.paidCount,
+                paidTotalCents = forecast.paidTotalCents,
+                isPrivate = isPrivate
+            )
+        }
+    }
+
+    // 4. Seções de Urgência Semafórica do Mês
+    if (forecast.overdueItems.isNotEmpty()) {
+        item {
+            UrgencySectionHeader(
+                title = "Atrasadas no Mês",
+                count = forecast.overdueCount,
+                badgeColor = UrgentRed,
+                totalCents = forecast.overdueTotalCents,
+                isPrivate = isPrivate
+            )
+        }
+        items(forecast.overdueItems, key = { it.id }) { item ->
+            PayableItemCard(
+                item = item,
+                isPrivate = isPrivate,
+                onPay = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    when (item) {
+                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                    }
+                }
+            )
+        }
+    }
+
+    if (forecast.dueTodayItems.isNotEmpty()) {
+        item {
+            UrgencySectionHeader(
+                title = "Vence Hoje",
+                count = forecast.dueTodayCount,
+                badgeColor = WarningAmber,
+                totalCents = forecast.dueTodayTotalCents,
+                isPrivate = isPrivate
+            )
+        }
+        items(forecast.dueTodayItems, key = { it.id }) { item ->
+            PayableItemCard(
+                item = item,
+                isPrivate = isPrivate,
+                onPay = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    when (item) {
+                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                    }
+                }
+            )
+        }
+    }
+
+    if (forecast.next7DaysItems.isNotEmpty()) {
+        item {
+            UrgencySectionHeader(
+                title = "Próximos 7 Dias",
+                count = forecast.next7DaysCount,
+                badgeColor = MaterialTheme.colorScheme.primary,
+                totalCents = forecast.next7DaysTotalCents,
+                isPrivate = isPrivate
+            )
+        }
+        items(forecast.next7DaysItems, key = { it.id }) { item ->
+            PayableItemCard(
+                item = item,
+                isPrivate = isPrivate,
+                onPay = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    when (item) {
+                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                    }
+                }
+            )
+        }
+    }
+
+    if (forecast.laterInMonthItems.isNotEmpty()) {
+        item {
+            UrgencySectionHeader(
+                title = "Mais Adiante no Mês",
+                count = forecast.laterInMonthItems.size,
+                badgeColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                totalCents = forecast.laterInMonthItems.sumOf { it.amountCents },
+                isPrivate = isPrivate
+            )
+        }
+        items(forecast.laterInMonthItems, key = { it.id }) { item ->
+            PayableItemCard(
+                item = item,
+                isPrivate = isPrivate,
+                onPay = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    when (item) {
+                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
+                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+                    }
+                }
+            )
+        }
+    }
+
+    // 5. Pagas no Mês (Seção Colapsável)
+    if (forecast.paidItems.isNotEmpty()) {
+        item {
+            CollapsiblePaidHeader(
+                isExpanded = uiState.isPaidSectionExpanded,
+                count = forecast.paidCount,
+                totalCents = forecast.paidTotalCents,
+                isPrivate = isPrivate,
+                onToggle = { onAction(HomeUiAction.TogglePaidSection(!uiState.isPaidSectionExpanded)) }
+            )
+        }
+        if (uiState.isPaidSectionExpanded) {
+            items(forecast.paidItems, key = { it.id }) { item ->
+                PayableItemCard(
+                    item = item,
+                    isMuted = true,
+                    isPrivate = isPrivate,
+                    onPay = null
+                )
+            }
+        }
+    }
+
+    if (forecast.totalItemsCount == 0) {
+        item {
+            EmptyForecastCard(onAddExpense = onAddExpense)
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// TopBar da Home
+// -------------------------------------------------------------
 @Composable
 fun HomeTopBar(
+    viewMode: HomeViewMode,
     monthLabel: String,
     isPrivate: Boolean,
     onTogglePrivacy: () -> Unit,
@@ -395,47 +1296,57 @@ fun HomeTopBar(
                     )
                 }
 
-                IconButton(onClick = onPreviousMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Mês Anterior",
-                        tint = MaterialTheme.colorScheme.onSurface
+                if (viewMode == HomeViewMode.PANORAMA) {
+                    Text(
+                        text = "Visão Panorâmica",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(start = 4.dp)
                     )
-                }
-
-                // Cápsula Clicável do Mês (Abre BottomSheet em Grade)
-                Surface(
-                    onClick = onOpenMonthPicker,
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 2.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                    ) {
-                        Text(
-                            text = monthLabel,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
+                } else {
+                    IconButton(onClick = onPreviousMonth) {
                         Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Selecionar mês",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "Mês Anterior",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
 
-                IconButton(onClick = onNextMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Próximo Mês",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                    // Cápsula Clicável do Mês
+                    Surface(
+                        onClick = onOpenMonthPicker,
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 2.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                text = monthLabel,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Selecionar mês",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    IconButton(onClick = onNextMonth) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Próximo Mês",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
 
@@ -445,16 +1356,18 @@ fun HomeTopBar(
                     onToggle = onTogglePrivacy
                 )
 
-                TextButton(
-                    onClick = onCurrentMonth,
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius)
-                ) {
-                    Text(
-                        text = "Hoje",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                if (viewMode != HomeViewMode.PANORAMA) {
+                    TextButton(
+                        onClick = onCurrentMonth,
+                        shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                    ) {
+                        Text(
+                            text = "Hoje",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -522,7 +1435,6 @@ fun ForecastImpactCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Barra de Progresso de Quitação Elegante
             PlatformProgressBar(
                 progress = progress,
                 height = 7.dp,
@@ -853,7 +1765,6 @@ fun PayableItemCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Ícone Funcional Material
                 Box(
                     modifier = Modifier
                         .size(40.dp)
@@ -891,7 +1802,6 @@ fun PayableItemCard(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // Badge da Natureza do Gasto
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = item.nature.let {
@@ -926,7 +1836,6 @@ fun PayableItemCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 if (onPay != null && !item.isPaid) {
-                    // Ação de Baixa com 1 Toque e feedback háptico
                     Button(
                         onClick = onPay,
                         colors = ButtonDefaults.buttonColors(
@@ -996,7 +1905,7 @@ fun EmptyForecastCard(onAddExpense: () -> Unit) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Nenhum Compromisso no Mês",
+                text = "Nenhum Compromisso Imediato",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface

@@ -14,13 +14,23 @@ data class BillWithInstallments(
     val totalPaidCents: Long,
     val remainingCents: Long,
     val progress: Float,
-    val nextInstallment: BillInstallment?
+    val nextInstallment: BillInstallment?,
+    val estimatedPayoffDate: Long? = null
 )
+
+enum class RecurringStatusFilter(val label: String) {
+    ALL("Todas"),
+    ACTIVE("Em Andamento"),
+    COMPLETED("Concluídas")
+}
 
 data class RecurringInstallmentsUiState(
     val selectedFilter: BillType? = null, // null = Todos, INSTALLMENT, RECURRING
+    val statusFilter: RecurringStatusFilter = RecurringStatusFilter.ALL,
+    val searchQuery: String = "",
     val items: List<BillWithInstallments> = emptyList(),
     val filteredItems: List<BillWithInstallments> = emptyList(),
+    val installmentToAdjust: BillInstallment? = null,
     val totalActiveInstallmentsCents: Long = 0L,
     val totalMonthlyRecurringCents: Long = 0L,
     val isLoading: Boolean = false,
@@ -29,8 +39,17 @@ data class RecurringInstallmentsUiState(
 
 sealed interface RecurringInstallmentsUiAction : UiAction {
     data class SelectFilter(val type: BillType?) : RecurringInstallmentsUiAction
+    data class StatusFilterChanged(val status: RecurringStatusFilter) : RecurringInstallmentsUiAction
+    data class SearchQueryChanged(val query: String) : RecurringInstallmentsUiAction
     data class TogglePayment(val installmentId: String, val currentPaid: Boolean) : RecurringInstallmentsUiAction
     data class DeleteBill(val billId: String) : RecurringInstallmentsUiAction
+    data class OpenAdjustInstallment(val installment: BillInstallment) : RecurringInstallmentsUiAction
+    object DismissAdjustInstallment : RecurringInstallmentsUiAction
+    data class SaveAdjustInstallment(
+        val installmentId: String,
+        val newAmountCents: Long,
+        val newDueDate: Long
+    ) : RecurringInstallmentsUiAction
     object Refresh : RecurringInstallmentsUiAction
 }
 

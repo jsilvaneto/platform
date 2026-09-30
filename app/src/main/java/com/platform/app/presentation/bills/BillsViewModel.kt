@@ -8,7 +8,6 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
-import com.platform.app.domain.usecase.CreateBillUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -24,13 +23,12 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
+import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
 class BillsViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val createBillUseCase: CreateBillUseCase,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase
 ) : ViewModel() {
 
@@ -54,19 +52,53 @@ class BillsViewModel @Inject constructor(
 
     fun onAction(action: BillsUiAction) {
         when (action) {
-            is BillsUiAction.CreateBill -> handleCreateBill(action)
             is BillsUiAction.TogglePayment -> handleTogglePayment(action.installment)
             is BillsUiAction.DeleteBill -> handleDeleteBill(action.billId)
             is BillsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is BillsUiAction.TypeFilterChanged -> handleTypeFilter(action.type)
             is BillsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
             is BillsUiAction.PeriodFilterChanged -> handlePeriodFilter(action.period)
-            is BillsUiAction.MonthChanged -> handleMonthChanged(action.monthMillis)
+            is BillsUiAction.YearChanged -> handleYearChanged(action.year)
             is BillsUiAction.PayBatch -> handlePayBatch(action.installmentIds)
             is BillsUiAction.DeleteBatch -> handleDeleteBatch(action.billIds)
+            is BillsUiAction.OpenEditInstallment -> handleOpenEdit(action.installment)
+            is BillsUiAction.DismissEditInstallment -> handleDismissEdit()
+            is BillsUiAction.SaveInstallmentEdit -> handleSaveEdit(action)
             is BillsUiAction.Refresh -> {
                 loadAuxiliaryData()
                 loadInstallments()
+            }
+        }
+    }
+
+    private fun handleOpenEdit(installment: BillInstallment) {
+        _uiState.update { it.copy(editingInstallment = installment) }
+    }
+
+    private fun handleDismissEdit() {
+        _uiState.update { it.copy(editingInstallment = null) }
+    }
+
+    private fun handleSaveEdit(action: BillsUiAction.SaveInstallmentEdit) {
+        viewModelScope.launch {
+            try {
+                repository.updateBillAndInstallment(
+                    installmentId = action.installmentId,
+                    billId = action.billId,
+                    title = action.title,
+                    description = action.description,
+                    amountCents = action.amountCents,
+                    dueDate = action.dueDate,
+                    categoryId = action.categoryId,
+                    itemId = action.itemId,
+                    contactId = action.contactId,
+                    financialAccountId = action.financialAccountId,
+                    paymentMethodId = action.paymentMethodId
+                )
+                _uiState.update { it.copy(editingInstallment = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Registro atualizado com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao salvar alterações: ${e.message}"))
             }
         }
     }
@@ -128,16 +160,33 @@ class BillsViewModel @Inject constructor(
         installmentsJob = repository.getAllInstallments()
             .onEach { installments ->
                 _uiState.update { current ->
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    val yearsFromData = installments.map { getYearFromTimestamp(it.dueDate) }.toSet()
+                    val allYears = (yearsFromData + currentYear).sortedDescending()
+
                     val filtered = applyFilters(
                         installments = installments,
                         query = current.searchQuery,
                         typeFilter = current.typeFilter,
                         statusFilter = current.statusFilter,
-                        periodFilter = current.periodFilter
+                        periodFilter = current.periodFilter,
+                        selectedYear = current.selectedYear
                     )
+
+                    val now = System.currentTimeMillis()
+                    val total = filtered.sumOf { it.amountCents }
+                    val paid = filtered.filter { it.isPaid }.sumOf { it.amountCents }
+                    val pending = filtered.filter { !it.isPaid && it.dueDate >= now }.sumOf { it.amountCents }
+                    val overdue = filtered.filter { !it.isPaid && it.dueDate < now }.sumOf { it.amountCents }
+
                     current.copy(
                         installments = installments,
                         filteredInstallments = filtered,
+                        availableYears = allYears,
+                        totalPeriodCents = total,
+                        paidPeriodCents = paid,
+                        pendingPeriodCents = pending,
+                        overduePeriodCents = overdue,
                         isLoading = false,
                         errorMessage = null
                     )
@@ -150,31 +199,6 @@ class BillsViewModel @Inject constructor(
                     )
                 }
             }.launchIn(viewModelScope)
-    }
-
-    private fun handleCreateBill(action: BillsUiAction.CreateBill) {
-        viewModelScope.launch {
-            try {
-                val bill = Bill(
-                    id = UUID.randomUUID().toString(),
-                    title = action.title.trim(),
-                    description = action.description.trim(),
-                    type = action.type,
-                    totalAmountCents = action.totalAmountCents,
-                    categoryId = action.categoryId,
-                    itemId = action.itemId,
-                    invoiceId = action.invoiceId,
-                    contactId = action.contactId,
-                    financialAccountId = action.financialAccountId,
-                    paymentMethodId = action.paymentMethodId,
-                    totalInstallments = action.totalInstallments
-                )
-                createBillUseCase(bill, action.firstDueDate)
-                _effectChannel.send(BillsUiEffect.ShowSnackbar("Conta '${bill.title}' cadastrada com sucesso!"))
-            } catch (e: Exception) {
-                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao cadastrar conta: ${e.message}"))
-            }
-        }
     }
 
     private fun handleTogglePayment(installment: BillInstallment) {
@@ -202,35 +226,86 @@ class BillsViewModel @Inject constructor(
 
     private fun handleSearchQuery(query: String) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, query, current.typeFilter, current.statusFilter, current.periodFilter)
-            current.copy(searchQuery = query, filteredInstallments = filtered)
+            val filtered = applyFilters(
+                current.installments,
+                query,
+                current.typeFilter,
+                current.statusFilter,
+                current.periodFilter,
+                current.selectedYear
+            )
+            recalculateMetrics(current, filtered).copy(searchQuery = query, filteredInstallments = filtered)
         }
     }
 
     private fun handleTypeFilter(type: BillType?) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, current.searchQuery, type, current.statusFilter, current.periodFilter)
-            current.copy(typeFilter = type, filteredInstallments = filtered)
+            val filtered = applyFilters(
+                current.installments,
+                current.searchQuery,
+                type,
+                current.statusFilter,
+                current.periodFilter,
+                current.selectedYear
+            )
+            recalculateMetrics(current, filtered).copy(typeFilter = type, filteredInstallments = filtered)
         }
     }
 
     private fun handleStatusFilter(status: BillStatus?) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, current.searchQuery, current.typeFilter, status, current.periodFilter)
-            current.copy(statusFilter = status, filteredInstallments = filtered)
+            val filtered = applyFilters(
+                current.installments,
+                current.searchQuery,
+                current.typeFilter,
+                status,
+                current.periodFilter,
+                current.selectedYear
+            )
+            recalculateMetrics(current, filtered).copy(statusFilter = status, filteredInstallments = filtered)
         }
     }
 
     private fun handlePeriodFilter(period: BillPeriodFilter) {
         _uiState.update { current ->
-            val filtered = applyFilters(current.installments, current.searchQuery, current.typeFilter, current.statusFilter, period)
-            current.copy(periodFilter = period, filteredInstallments = filtered)
+            val filtered = applyFilters(
+                current.installments,
+                current.searchQuery,
+                current.typeFilter,
+                current.statusFilter,
+                period,
+                current.selectedYear
+            )
+            recalculateMetrics(current, filtered).copy(periodFilter = period, filteredInstallments = filtered)
         }
     }
 
-    private fun handleMonthChanged(monthMillis: Long) {
-        _uiState.update { it.copy(selectedMonthMillis = monthMillis) }
-        loadInstallments()
+    private fun handleYearChanged(year: Int?) {
+        _uiState.update { current ->
+            val filtered = applyFilters(
+                current.installments,
+                current.searchQuery,
+                current.typeFilter,
+                current.statusFilter,
+                current.periodFilter,
+                year
+            )
+            recalculateMetrics(current, filtered).copy(selectedYear = year, filteredInstallments = filtered)
+        }
+    }
+
+    private fun recalculateMetrics(state: BillsUiState, filtered: List<BillInstallment>): BillsUiState {
+        val now = System.currentTimeMillis()
+        val total = filtered.sumOf { it.amountCents }
+        val paid = filtered.filter { it.isPaid }.sumOf { it.amountCents }
+        val pending = filtered.filter { !it.isPaid && it.dueDate >= now }.sumOf { it.amountCents }
+        val overdue = filtered.filter { !it.isPaid && it.dueDate < now }.sumOf { it.amountCents }
+        return state.copy(
+            totalPeriodCents = total,
+            paidPeriodCents = paid,
+            pendingPeriodCents = pending,
+            overduePeriodCents = overdue
+        )
     }
 
     private fun applyFilters(
@@ -238,14 +313,21 @@ class BillsViewModel @Inject constructor(
         query: String,
         typeFilter: BillType?,
         statusFilter: BillStatus?,
-        periodFilter: BillPeriodFilter
+        periodFilter: BillPeriodFilter,
+        selectedYear: Int?
     ): List<BillInstallment> {
         val now = System.currentTimeMillis()
         val startOfMonth = DateUtils.getStartOfMonth(now)
         val endOfMonth = DateUtils.getEndOfMonth(now)
         val thirtyDaysAhead = now + (30L * 24 * 3600 * 1000)
 
-        return installments.filter { inst ->
+        val filtered = installments.filter { inst ->
+            // Filtro de ano
+            val matchesYear = if (selectedYear != null) {
+                getYearFromTimestamp(inst.dueDate) == selectedYear
+            } else true
+
+            // Filtro de período relativo
             val matchesPeriod = when (periodFilter) {
                 BillPeriodFilter.ALL -> true
                 BillPeriodFilter.THIS_MONTH -> inst.dueDate in startOfMonth..endOfMonth
@@ -253,12 +335,17 @@ class BillsViewModel @Inject constructor(
                 BillPeriodFilter.OVERDUE -> !inst.isPaid && inst.dueDate < now
             }
 
+            // Busca por texto
             val matchesQuery = query.isBlank() ||
                     inst.billTitle.contains(query, ignoreCase = true) ||
-                    inst.categoryName.contains(query, ignoreCase = true)
+                    inst.categoryName.contains(query, ignoreCase = true) ||
+                    (inst.contactName?.contains(query, ignoreCase = true) == true) ||
+                    (inst.financialAccountName?.contains(query, ignoreCase = true) == true)
 
+            // Tipo da conta
             val matchesType = typeFilter == null || inst.type == typeFilter
 
+            // Status de liquidação
             val matchesStatus = when (statusFilter) {
                 null -> true
                 BillStatus.PAID -> inst.isPaid
@@ -266,7 +353,16 @@ class BillsViewModel @Inject constructor(
                 BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now
             }
 
-            matchesPeriod && matchesQuery && matchesType && matchesStatus
+            matchesYear && matchesPeriod && matchesQuery && matchesType && matchesStatus
         }
+
+        // 1- os primeiros registros sempre ser os mais recentes (ordenar por data decrescente)
+        return filtered.sortedByDescending { it.dueDate }
+    }
+
+    private fun getYearFromTimestamp(timestamp: Long): Int {
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = timestamp
+        return cal.get(Calendar.YEAR)
     }
 }

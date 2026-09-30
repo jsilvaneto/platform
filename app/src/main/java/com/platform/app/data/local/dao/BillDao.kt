@@ -24,6 +24,30 @@ interface BillDao {
     @Query("DELETE FROM bills WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("""
+        UPDATE bills 
+        SET title = :title,
+            description = :description,
+            totalAmountCents = :totalAmountCents,
+            categoryId = :categoryId,
+            itemId = :itemId,
+            contactId = :contactId,
+            financialAccountId = :financialAccountId,
+            paymentMethodId = :paymentMethodId
+        WHERE id = :id
+    """)
+    suspend fun updateBillDetails(
+        id: String,
+        title: String,
+        description: String,
+        totalAmountCents: Long,
+        categoryId: String?,
+        itemId: String?,
+        contactId: String?,
+        financialAccountId: String?,
+        paymentMethodId: String?
+    )
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(bills: List<BillEntity>)
 

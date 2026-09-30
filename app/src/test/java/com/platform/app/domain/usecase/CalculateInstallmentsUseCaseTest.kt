@@ -1,8 +1,12 @@
 package com.platform.app.domain.usecase
 
+import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillType
+import com.platform.app.domain.model.RecurrenceEndType
+import com.platform.app.domain.model.RecurrenceFrequency
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -55,7 +59,7 @@ class CalculateInstallmentsUseCaseTest {
     }
 
     @Test
-    fun `recurring bill should project 12 monthly installments with fixed amount`() {
+    fun `recurring bill should project 12 monthly installments with fixed amount by default`() {
         val bill = Bill(
             id = "3",
             title = "Internet Fibra",
@@ -68,6 +72,80 @@ class CalculateInstallmentsUseCaseTest {
         installments.forEach { inst ->
             assertEquals(9990L, inst.amountCents)
             assertEquals(BillType.RECURRING, inst.type)
+        }
+    }
+
+    @Test
+    fun `recurring bill with DAILY frequency and BY_OCCURRENCES should generate exact daily installments`() {
+        val startDate = 1727395200000L
+        val bill = Bill(
+            id = "4",
+            title = "Almoço Diário",
+            type = BillType.RECURRING,
+            totalAmountCents = 2500L,
+            totalInstallments = 7,
+            recurrenceFrequency = RecurrenceFrequency.DAILY,
+            recurrenceEndType = RecurrenceEndType.BY_OCCURRENCES
+        )
+        val installments = useCase(bill, startDate)
+
+        assertEquals(7, installments.size)
+        for (i in 0 until 7) {
+            val expectedDate = DateUtils.addDays(startDate, i)
+            assertEquals(expectedDate, installments[i].dueDate)
+            assertEquals(i + 1, installments[i].installmentNumber)
+            assertEquals(7, installments[i].totalInstallments)
+            assertEquals(2500L, installments[i].amountCents)
+        }
+    }
+
+    @Test
+    fun `recurring bill with WEEKLY frequency and UNTIL_DATE should generate installments up to end date`() {
+        val startDate = 1727395200000L
+        // 3 semanas depois
+        val endDate = DateUtils.addWeeks(startDate, 3)
+
+        val bill = Bill(
+            id = "5",
+            title = "Aula Particular Semanal",
+            type = BillType.RECURRING,
+            totalAmountCents = 8000L,
+            recurrenceFrequency = RecurrenceFrequency.WEEKLY,
+            recurrenceEndType = RecurrenceEndType.UNTIL_DATE,
+            recurrenceEndDate = endDate
+        )
+        val installments = useCase(bill, startDate)
+
+        // Semana 0, Semana 1, Semana 2, Semana 3 = 4 ocorrências
+        assertEquals(4, installments.size)
+        assertEquals(startDate, installments[0].dueDate)
+        assertEquals(DateUtils.addWeeks(startDate, 1), installments[1].dueDate)
+        assertEquals(DateUtils.addWeeks(startDate, 2), installments[2].dueDate)
+        assertEquals(DateUtils.addWeeks(startDate, 3), installments[3].dueDate)
+        installments.forEach {
+            assertTrue(it.dueDate <= DateUtils.getEndOfDay(endDate))
+            assertEquals(4, it.totalInstallments)
+        }
+    }
+
+    @Test
+    fun `recurring bill with YEARLY frequency and FOREVER should project 5 yearly installments`() {
+        val startDate = 1727395200000L
+        val bill = Bill(
+            id = "6",
+            title = "IPVA Anual",
+            type = BillType.RECURRING,
+            totalAmountCents = 150000L,
+            recurrenceFrequency = RecurrenceFrequency.YEARLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER
+        )
+        val installments = useCase(bill, startDate)
+
+        assertEquals(5, installments.size)
+        for (i in 0 until 5) {
+            assertEquals(DateUtils.addYears(startDate, i), installments[i].dueDate)
+            assertEquals(i + 1, installments[i].installmentNumber)
+            assertEquals(5, installments[i].totalInstallments)
         }
     }
 }

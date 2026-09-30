@@ -6,29 +6,29 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 
 sealed interface BillsUiAction : UiAction {
-    data class CreateBill(
-        val title: String,
-        val description: String,
-        val type: BillType,
-        val totalAmountCents: Long,
-        val categoryId: String?,
-        val itemId: String? = null,
-        val invoiceId: String? = null,
-        val contactId: String? = null,
-        val financialAccountId: String? = null,
-        val paymentMethodId: String? = null,
-        val totalInstallments: Int,
-        val firstDueDate: Long
-    ) : BillsUiAction
-
     data class TogglePayment(val installment: BillInstallment) : BillsUiAction
     data class DeleteBill(val billId: String) : BillsUiAction
     data class SearchQueryChanged(val query: String) : BillsUiAction
     data class TypeFilterChanged(val type: BillType?) : BillsUiAction
     data class StatusFilterChanged(val status: BillStatus?) : BillsUiAction
     data class PeriodFilterChanged(val period: BillPeriodFilter) : BillsUiAction
-    data class MonthChanged(val monthMillis: Long) : BillsUiAction
+    data class YearChanged(val year: Int?) : BillsUiAction
     data class PayBatch(val installmentIds: List<String>) : BillsUiAction
     data class DeleteBatch(val billIds: List<String>) : BillsUiAction
+    data class OpenEditInstallment(val installment: BillInstallment) : BillsUiAction
+    object DismissEditInstallment : BillsUiAction
+    data class SaveInstallmentEdit(
+        val installmentId: String,
+        val billId: String,
+        val title: String,
+        val description: String,
+        val amountCents: Long,
+        val dueDate: Long,
+        val categoryId: String?,
+        val itemId: String?,
+        val contactId: String?,
+        val financialAccountId: String?,
+        val paymentMethodId: String?
+    ) : BillsUiAction
     object Refresh : BillsUiAction
 }

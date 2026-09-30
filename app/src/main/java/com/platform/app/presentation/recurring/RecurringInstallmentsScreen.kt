@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -58,6 +59,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -77,6 +93,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillType
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
@@ -100,13 +117,22 @@ fun RecurringInstallmentsScreen(
     // 0: Compras Parceladas, 1: Assinaturas & Custos Fixos
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
-    val installmentItems = remember(uiState.items) {
-        uiState.items.filter { it.bill.type == BillType.INSTALLMENT }
+    var isSearchExpanded by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    val installmentItems = remember(uiState.filteredItems) {
+        uiState.filteredItems.filter { it.bill.type == BillType.INSTALLMENT }
     }
-    val recurringItems = remember(uiState.items) {
-        uiState.items.filter { it.bill.type == BillType.RECURRING }
+    val recurringItems = remember(uiState.filteredItems) {
+        uiState.filteredItems.filter { it.bill.type == BillType.RECURRING }
     }
     val currentTabItems = if (selectedTabIndex == 0) installmentItems else recurringItems
+
+    LaunchedEffect(isSearchExpanded) {
+        if (isSearchExpanded) {
+            focusRequester.requestFocus()
+        }
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -121,15 +147,83 @@ fun RecurringInstallmentsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Recorrentes & Parcelados",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (!isSearchExpanded) {
+                        Text(
+                            text = "Pagamentos Planejados",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onOpenDrawer) {
                         Icon(imageVector = Icons.Default.Menu, contentDescription = "Menu lateral")
+                    }
+                },
+                actions = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        AnimatedVisibility(
+                            visible = isSearchExpanded,
+                            enter = fadeIn() + expandHorizontally(),
+                            exit = fadeOut() + shrinkHorizontally()
+                        ) {
+                            OutlinedTextField(
+                                value = uiState.searchQuery,
+                                onValueChange = { viewModel.onAction(RecurringInstallmentsUiAction.SearchQueryChanged(it)) },
+                                placeholder = {
+                                    Text(
+                                        text = "Buscar plano...",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodyMedium,
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                ),
+                                trailingIcon = {
+                                    if (uiState.searchQuery.isNotBlank()) {
+                                        IconButton(
+                                            onClick = { viewModel.onAction(RecurringInstallmentsUiAction.SearchQueryChanged("")) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Clear,
+                                                contentDescription = "Limpar busca",
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .width(200.dp)
+                                    .height(46.dp)
+                                    .focusRequester(focusRequester)
+                                    .padding(end = 4.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                isSearchExpanded = !isSearchExpanded
+                                if (!isSearchExpanded) {
+                                    viewModel.onAction(RecurringInstallmentsUiAction.SearchQueryChanged(""))
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isSearchExpanded) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = if (isSearchExpanded) "Fechar busca" else "Buscar planos",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -171,7 +265,24 @@ fun RecurringInstallmentsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 2. Filtros de Status (Todas, Em Andamento, Concluídas)
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(RecurringStatusFilter.values()) { filter ->
+                    FilterChip(
+                        selected = uiState.statusFilter == filter,
+                        onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
+                        label = { Text(filter.label) },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 2. Resumo Consolidado Contextual
             if (selectedTabIndex == 0) {
@@ -329,9 +440,28 @@ fun RecurringInstallmentsScreen(
                 onTogglePayment = { instId, paid ->
                     viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
                 },
+                onOpenAdjust = { inst ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.OpenAdjustInstallment(inst))
+                },
                 onDelete = {
                     planToViewDetails = null
                     viewModel.onAction(RecurringInstallmentsUiAction.DeleteBill(plan.bill.id))
+                }
+            )
+        }
+
+        uiState.installmentToAdjust?.let { instToAdjust ->
+            AdjustInstallmentDialog(
+                installment = instToAdjust,
+                onDismiss = { viewModel.onAction(RecurringInstallmentsUiAction.DismissAdjustInstallment) },
+                onSave = { instId, amount, due ->
+                    viewModel.onAction(
+                        RecurringInstallmentsUiAction.SaveAdjustInstallment(
+                            installmentId = instId,
+                            newAmountCents = amount,
+                            newDueDate = due
+                        )
+                    )
                 }
             )
         }
@@ -508,6 +638,7 @@ fun RecurringDetailBottomSheet(
     item: BillWithInstallments,
     onDismiss: () -> Unit,
     onTogglePayment: (String, Boolean) -> Unit,
+    onOpenAdjust: (BillInstallment) -> Unit = {},
     onDelete: () -> Unit
 ) {
     val bill = item.bill
@@ -694,6 +825,14 @@ fun RecurringDetailBottomSheet(
                                 )
                             }
                         }
+
+                        if (item.estimatedPayoffDate != null && !isAllPaid) {
+                            Text(
+                                text = "Previsão de quitação: ${DateUtils.formatMonthYear(item.estimatedPayoffDate)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -711,7 +850,8 @@ fun RecurringDetailBottomSheet(
                     item.installments.forEach { inst ->
                         InstallmentRow(
                             installment = inst,
-                            onTogglePayment = { onTogglePayment(inst.id, inst.isPaid) }
+                            onTogglePayment = { onTogglePayment(inst.id, inst.isPaid) },
+                            onOpenAdjust = { onOpenAdjust(inst) }
                         )
                     }
                 }
@@ -747,8 +887,9 @@ fun RecurringDetailBottomSheet(
 
 @Composable
 fun InstallmentRow(
-    installment: com.platform.app.domain.model.BillInstallment,
-    onTogglePayment: () -> Unit
+    installment: BillInstallment,
+    onTogglePayment: () -> Unit,
+    onOpenAdjust: (() -> Unit)? = null
 ) {
     val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
 
@@ -794,12 +935,28 @@ fun InstallmentRow(
                 }
             }
 
-            Text(
-                text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = if (installment.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (installment.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                )
+
+                if (onOpenAdjust != null) {
+                    IconButton(
+                        onClick = onOpenAdjust,
+                        modifier = Modifier.size(32.dp).padding(start = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Ajustar parcela",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

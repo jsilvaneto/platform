@@ -3,7 +3,7 @@ package com.platform.app.presentation.navigation
 sealed class Screen(val route: String, val title: String) {
     object Dashboard : Screen("dashboard_screen", "Início")
     object Bills : Screen("bills_screen", "Registros")
-    object RecurringInstallments : Screen("recurring_installments_screen", "Recorrentes e Parcelados")
+    object RecurringInstallments : Screen("recurring_installments_screen", "Pagamentos Planejados")
     object CreditCards : Screen("credit_cards_screen", "Cartões de Crédito")
     object Statistics : Screen("statistics_screen", "Estatísticas")
     object Goals : Screen("goals_screen", "Metas")

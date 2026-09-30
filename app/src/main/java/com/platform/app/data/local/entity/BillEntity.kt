@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillType
+import com.platform.app.domain.model.RecurrenceEndType
+import com.platform.app.domain.model.RecurrenceFrequency
 
 @Entity(tableName = "bills")
 data class BillEntity(
@@ -20,6 +22,9 @@ data class BillEntity(
     val financialAccountId: String? = null,
     val paymentMethodId: String? = null,
     val totalInstallments: Int,
+    val recurrenceFrequency: String? = null,
+    val recurrenceEndType: String? = null,
+    val recurrenceEndDate: Long? = null,
     val createdAt: Long
 ) {
     fun toDomain(): Bill {
@@ -40,6 +45,13 @@ data class BillEntity(
             financialAccountId = financialAccountId,
             paymentMethodId = paymentMethodId,
             totalInstallments = totalInstallments,
+            recurrenceFrequency = recurrenceFrequency?.let {
+                try { RecurrenceFrequency.valueOf(it) } catch (e: Exception) { null }
+            },
+            recurrenceEndType = recurrenceEndType?.let {
+                try { RecurrenceEndType.valueOf(it) } catch (e: Exception) { null }
+            },
+            recurrenceEndDate = recurrenceEndDate,
             createdAt = createdAt
         )
     }
@@ -59,6 +71,9 @@ data class BillEntity(
                 financialAccountId = bill.financialAccountId,
                 paymentMethodId = bill.paymentMethodId,
                 totalInstallments = bill.totalInstallments,
+                recurrenceFrequency = bill.recurrenceFrequency?.name,
+                recurrenceEndType = bill.recurrenceEndType?.name,
+                recurrenceEndDate = bill.recurrenceEndDate,
                 createdAt = bill.createdAt
             )
         }

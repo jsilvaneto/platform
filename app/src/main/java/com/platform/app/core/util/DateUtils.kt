@@ -1,5 +1,6 @@
 package com.platform.app.core.util
 
+import com.platform.app.domain.model.RecurrenceFrequency
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -77,6 +78,55 @@ object DateUtils {
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+        }
+        return cal.timeInMillis
+    }
+
+    fun addDays(epochMillis: Long, days: Int): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            add(Calendar.DAY_OF_YEAR, days)
+        }
+        return cal.timeInMillis
+    }
+
+    fun addWeeks(epochMillis: Long, weeks: Int): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            add(Calendar.WEEK_OF_YEAR, weeks)
+        }
+        return cal.timeInMillis
+    }
+
+    fun addYears(epochMillis: Long, years: Int): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            add(Calendar.YEAR, years)
+        }
+        return cal.timeInMillis
+    }
+
+    fun addRecurrenceStep(epochMillis: Long, frequency: RecurrenceFrequency, steps: Int): Long {
+        if (steps == 0) return epochMillis
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            when (frequency) {
+                RecurrenceFrequency.DAILY -> add(Calendar.DAY_OF_YEAR, steps)
+                RecurrenceFrequency.WEEKLY -> add(Calendar.WEEK_OF_YEAR, steps)
+                RecurrenceFrequency.MONTHLY -> add(Calendar.MONTH, steps)
+                RecurrenceFrequency.YEARLY -> add(Calendar.YEAR, steps)
+            }
+        }
+        return cal.timeInMillis
+    }
+
+    fun getEndOfDay(epochMillis: Long): Long {
+        val cal = Calendar.getInstance().apply {
+            timeInMillis = epochMillis
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
         }
         return cal.timeInMillis
     }

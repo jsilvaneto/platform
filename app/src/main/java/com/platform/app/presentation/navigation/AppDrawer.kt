@@ -81,7 +81,7 @@ fun AppDrawer(
                 ),
                 DrawerItem(
                     screen = Screen.RecurringInstallments,
-                    title = "Recorrentes & Parcelados",
+                    title = "Pagamentos Planejados",
                     icon = Icons.Default.Repeat
                 ),
                 DrawerItem(

@@ -5,9 +5,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
-import com.platform.app.domain.usecase.CreateBillUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -29,7 +27,6 @@ class BillsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FinancialRepository
-    private lateinit var createBillUseCase: CreateBillUseCase
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
     private lateinit var viewModel: BillsViewModel
 
@@ -37,7 +34,6 @@ class BillsViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
-        createBillUseCase = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
@@ -55,29 +51,47 @@ class BillsViewModelTest {
     }
 
     @Test
-    fun `CreateBill action should invoke createBillUseCase and emit ShowSnackbar`() = runTest {
-        viewModel = BillsViewModel(repository, createBillUseCase, togglePaymentUseCase)
+    fun `SaveInstallmentEdit should invoke updateBillAndInstallment and emit ShowSnackbar`() = runTest {
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
             viewModel.onAction(
-                BillsUiAction.CreateBill(
-                    title = "Aluguel",
-                    description = "Mensalidade do imóvel",
-                    type = BillType.RECURRING,
-                    totalAmountCents = 250000L,
+                BillsUiAction.SaveInstallmentEdit(
+                    installmentId = "inst-1",
+                    billId = "bill-1",
+                    title = "Aluguel Atualizado",
+                    description = "Mensalidade",
+                    amountCents = 260000L,
+                    dueDate = 1759000000000L,
                     categoryId = "cat-1",
-                    totalInstallments = 1,
-                    firstDueDate = System.currentTimeMillis()
+                    itemId = null,
+                    contactId = null,
+                    financialAccountId = null,
+                    paymentMethodId = null
                 )
             )
             testDispatcher.scheduler.advanceUntilIdle()
 
-            coVerify(exactly = 1) { createBillUseCase(any(), any()) }
+            coVerify(exactly = 1) {
+                repository.updateBillAndInstallment(
+                    installmentId = "inst-1",
+                    billId = "bill-1",
+                    title = "Aluguel Atualizado",
+                    description = "Mensalidade",
+                    amountCents = 260000L,
+                    dueDate = 1759000000000L,
+                    categoryId = "cat-1",
+                    itemId = null,
+                    contactId = null,
+                    financialAccountId = null,
+                    paymentMethodId = null
+                )
+            }
 
             val effect = awaitItem()
             assertTrue(effect is BillsUiEffect.ShowSnackbar)
-            assertTrue((effect as BillsUiEffect.ShowSnackbar).message.contains("Aluguel"))
+            assertTrue((effect as BillsUiEffect.ShowSnackbar).message.contains("sucesso"))
         }
     }
 
@@ -96,7 +110,7 @@ class BillsViewModelTest {
             type = BillType.SINGLE
         )
 
-        viewModel = BillsViewModel(repository, createBillUseCase, togglePaymentUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -124,7 +138,7 @@ class BillsViewModelTest {
         )
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = BillsViewModel(repository, createBillUseCase, togglePaymentUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(BillsUiAction.SearchQueryChanged("Internet"))

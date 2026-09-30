@@ -5,6 +5,8 @@ import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
+import com.platform.app.domain.model.RecurrenceEndType
+import com.platform.app.domain.model.RecurrenceFrequency
 import java.util.UUID
 import javax.inject.Inject
 
@@ -68,8 +70,18 @@ class CalculateInstallmentsUseCase @Inject constructor() {
             }
 
             BillType.RECURRING -> {
-                for (i in 1..12) {
-                    val dueDate = DateUtils.addMonths(firstDueDate, i - 1)
+                val frequency = bill.recurrenceFrequency ?: RecurrenceFrequency.MONTHLY
+                val endType = bill.recurrenceEndType ?: RecurrenceEndType.FOREVER
+                val targetDueDates = calculateRecurrenceDueDates(
+                    firstDueDate = firstDueDate,
+                    frequency = frequency,
+                    endType = endType,
+                    endDate = bill.recurrenceEndDate,
+                    occurrencesCount = bill.totalInstallments
+                )
+                val total = targetDueDates.size
+
+                targetDueDates.forEachIndexed { index, dueDate ->
                     installments.add(
                         BillInstallment(
                             id = UUID.randomUUID().toString(),
@@ -81,8 +93,8 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                             contactId = bill.contactId,
                             financialAccountId = bill.financialAccountId,
                             paymentMethodId = bill.paymentMethodId,
-                            installmentNumber = i,
-                            totalInstallments = 12,
+                            installmentNumber = index + 1,
+                            totalInstallments = total,
                             amountCents = bill.totalAmountCents,
                             dueDate = dueDate,
                             status = BillStatus.PENDING,
@@ -94,5 +106,52 @@ class CalculateInstallmentsUseCase @Inject constructor() {
         }
 
         return installments
+    }
+
+    companion object {
+        fun calculateRecurrenceDueDates(
+            firstDueDate: Long,
+            frequency: RecurrenceFrequency,
+            endType: RecurrenceEndType,
+            endDate: Long?,
+            occurrencesCount: Int
+        ): List<Long> {
+            val dueDates = mutableListOf<Long>()
+            when (endType) {
+                RecurrenceEndType.FOREVER -> {
+                    val count = when (frequency) {
+                        RecurrenceFrequency.DAILY -> 30
+                        RecurrenceFrequency.WEEKLY -> 26
+                        RecurrenceFrequency.MONTHLY -> 12
+                        RecurrenceFrequency.YEARLY -> 5
+                    }
+                    for (i in 0 until count) {
+                        dueDates.add(DateUtils.addRecurrenceStep(firstDueDate, frequency, i))
+                    }
+                }
+                RecurrenceEndType.BY_OCCURRENCES -> {
+                    val count = occurrencesCount.coerceIn(1, 365)
+                    for (i in 0 until count) {
+                        dueDates.add(DateUtils.addRecurrenceStep(firstDueDate, frequency, i))
+                    }
+                }
+                RecurrenceEndType.UNTIL_DATE -> {
+                    val limitDate = endDate ?: DateUtils.addMonths(firstDueDate, 12)
+                    val endOfDayLimit = DateUtils.getEndOfDay(limitDate)
+                    var index = 0
+                    val maxOccurrences = 365
+                    while (index < maxOccurrences) {
+                        val nextDate = DateUtils.addRecurrenceStep(firstDueDate, frequency, index)
+                        if (nextDate <= endOfDayLimit || index == 0) {
+                            dueDates.add(nextDate)
+                            index++
+                        } else {
+                            break
+                        }
+                    }
+                }
+            }
+            return dueDates
+        }
     }
 }

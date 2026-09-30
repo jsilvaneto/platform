@@ -71,5 +71,19 @@ interface FinancialRepository {
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
     suspend fun toggleInstallmentPayment(installmentId: String, isPaid: Boolean, paidTimestamp: Long? = null)
+    suspend fun updateInstallment(installmentId: String, newAmountCents: Long, newDueDate: Long)
+    suspend fun updateBillAndInstallment(
+        installmentId: String,
+        billId: String,
+        title: String,
+        description: String,
+        amountCents: Long,
+        dueDate: Long,
+        categoryId: String?,
+        itemId: String?,
+        contactId: String?,
+        financialAccountId: String?,
+        paymentMethodId: String?
+    )
     suspend fun deleteBill(billId: String)
 }

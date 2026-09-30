@@ -323,7 +323,35 @@ fun BillsScreen(
                 modifier = Modifier.padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
             )
 
-            // 2. Filtros Secundários Refinados: Período e Tipo
+            // 2. Seletor Dinâmico de Ano (Ano atual selecionado por padrão)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                item {
+                    FilterChip(
+                        selected = uiState.selectedYear == null,
+                        onClick = { onAction(BillsUiAction.YearChanged(null)) },
+                        label = { Text("Todos os Anos") },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                items(uiState.availableYears) { year ->
+                    val isCurrent = year == Calendar.getInstance().get(Calendar.YEAR)
+                    FilterChip(
+                        selected = uiState.selectedYear == year,
+                        onClick = { onAction(BillsUiAction.YearChanged(year)) },
+                        label = {
+                            Text(if (isCurrent) "$year (Atual)" else "$year")
+                        },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            }
+
+            // 3. Filtros Secundários: Período e Tipo
             FilterChipsRow(
                 periodFilter = uiState.periodFilter,
                 typeFilter = uiState.typeFilter,
@@ -331,36 +359,110 @@ fun BillsScreen(
                 onTypeFilterChange = { onAction(BillsUiAction.TypeFilterChanged(it)) }
             )
 
-            // 3. Banner de Totais Filtrados
-            val filteredTotalCents = remember(uiState.filteredInstallments) {
-                uiState.filteredInstallments.sumOf { it.amountCents }
-            }
-
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                shape = RoundedCornerShape(8.dp),
+            // 4. Hero KPI Card Executivo com Métricas do Período/Ano
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Dimens.spacingNormal, vertical = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "${uiState.filteredInstallments.size} ${if (uiState.filteredInstallments.size == 1) "registro" else "registros"}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Total: ${CurrencyUtils.formatCentsToCurrency(filteredTotalCents)}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = if (uiState.selectedYear != null) "Total no Ano de ${uiState.selectedYear}" else "Total Geral Filtrado",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalPeriodCents),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = "${uiState.filteredInstallments.size} ${if (uiState.filteredInstallments.size == 1) "registro" else "registros"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Pago
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = SuccessGreen.copy(alpha = 0.12f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                                Text("Pago", style = MaterialTheme.typography.labelSmall, color = SuccessGreen)
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(uiState.paidPeriodCents),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SuccessGreen
+                                )
+                            }
+                        }
+
+                        // A Pagar
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                                Text("A Pagar", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    text = CurrencyUtils.formatCentsToCurrency(uiState.pendingPeriodCents),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        // Atrasado (se houver)
+                        if (uiState.overduePeriodCents > 0L) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                                    Text("Atrasado", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                                    Text(
+                                        text = CurrencyUtils.formatCentsToCurrency(uiState.overduePeriodCents),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -378,43 +480,76 @@ fun BillsScreen(
                     }
 
                     else -> {
+                        val groupedByMonth = remember(uiState.filteredInstallments) {
+                            uiState.filteredInstallments.groupBy { inst ->
+                                DateUtils.formatMonthYear(inst.dueDate)
+                            }
+                        }
+
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 6.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                .padding(horizontal = 16.dp, vertical = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(uiState.filteredInstallments, key = { it.id }) { installment ->
-                                val isSelected = installment.id in selectedInstallmentIds
+                            groupedByMonth.forEach { (monthLabel, monthItems) ->
+                                item(key = "header_$monthLabel") {
+                                    val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 10.dp, bottom = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = monthLabel,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "Subtotal: ${CurrencyUtils.formatCentsToCurrency(monthTotal)}",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
 
-                                BillInstallmentItemCard(
-                                    installment = installment,
-                                    isSelectionMode = isSelectionMode,
-                                    isSelected = isSelected,
-                                    onToggleSelect = {
-                                        selectedInstallmentIds = if (isSelected) {
-                                            selectedInstallmentIds - installment.id
-                                        } else {
-                                            selectedInstallmentIds + installment.id
-                                        }
-                                    },
-                                    onLongClick = {
-                                        isSelectionMode = true
-                                        selectedInstallmentIds = selectedInstallmentIds + installment.id
-                                    },
-                                    onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
-                                    onSelectInstallment = {
-                                        if (isSelectionMode) {
+                                items(monthItems, key = { it.id }) { installment ->
+                                    val isSelected = installment.id in selectedInstallmentIds
+
+                                    BillInstallmentItemCard(
+                                        installment = installment,
+                                        isSelectionMode = isSelectionMode,
+                                        isSelected = isSelected,
+                                        onToggleSelect = {
                                             selectedInstallmentIds = if (isSelected) {
                                                 selectedInstallmentIds - installment.id
                                             } else {
                                                 selectedInstallmentIds + installment.id
                                             }
-                                        } else {
-                                            installmentToViewDetails = installment
+                                        },
+                                        onLongClick = {
+                                            isSelectionMode = true
+                                            selectedInstallmentIds = selectedInstallmentIds + installment.id
+                                        },
+                                        onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
+                                        onSelectInstallment = {
+                                            if (isSelectionMode) {
+                                                selectedInstallmentIds = if (isSelected) {
+                                                    selectedInstallmentIds - installment.id
+                                                } else {
+                                                    selectedInstallmentIds + installment.id
+                                                }
+                                            } else {
+                                                // 2- Ao tocar em um registro: abrir janela para editar
+                                                onAction(BillsUiAction.OpenEditInstallment(installment))
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                             item {
                                 Spacer(modifier = Modifier.height(84.dp))
@@ -423,7 +558,7 @@ fun BillsScreen(
                     }
                 }
 
-                // 4. Barra Flutuante de Ações em Lote
+                // Barra Flutuante de Ações em Lote
                 val selectedTotalCents = remember(selectedInstallmentIds, uiState.installments) {
                     uiState.installments
                         .filter { it.id in selectedInstallmentIds }
@@ -450,21 +585,38 @@ fun BillsScreen(
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
 
-                installmentToViewDetails?.let { inst ->
-                    val currentInstallment = uiState.installments.find { it.id == inst.id } ?: inst
-                    BillInstallmentDetailBottomSheet(
-                        installment = currentInstallment,
-                        onDismiss = { installmentToViewDetails = null },
-                        onTogglePayment = {
-                            onAction(BillsUiAction.TogglePayment(currentInstallment))
-                        },
-                        onDuplicate = { billId ->
-                            installmentToViewDetails = null
-                            onNavigateToDuplicate(billId)
+                // ModalBottomSheet para Edição Completa ao Tocar no Registro (Ponto 2)
+                uiState.editingInstallment?.let { inst ->
+                    EditInstallmentBottomSheet(
+                        installment = inst,
+                        categories = uiState.categories,
+                        contacts = uiState.contacts,
+                        financialAccounts = uiState.financialAccounts,
+                        paymentMethods = uiState.paymentMethods,
+                        onDismiss = { onAction(BillsUiAction.DismissEditInstallment) },
+                        onSave = { title, desc, amount, due, catId, itemId, contId, accId, methId ->
+                            onAction(
+                                BillsUiAction.SaveInstallmentEdit(
+                                    installmentId = inst.id,
+                                    billId = inst.billId,
+                                    title = title,
+                                    description = desc,
+                                    amountCents = amount,
+                                    dueDate = due,
+                                    categoryId = catId,
+                                    itemId = itemId,
+                                    contactId = contId,
+                                    financialAccountId = accId,
+                                    paymentMethodId = methId
+                                )
+                            )
                         },
                         onDelete = { billId ->
-                            installmentToViewDetails = null
+                            onAction(BillsUiAction.DismissEditInstallment)
                             onAction(BillsUiAction.DeleteBill(billId))
+                        },
+                        onTogglePayment = {
+                            onAction(BillsUiAction.TogglePayment(inst))
                         }
                     )
                 }

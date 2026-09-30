@@ -11,3 +11,16 @@ enum class BillStatus(val label: String) {
     PAID("Paga"),
     OVERDUE("Vencida")
 }
+
+enum class RecurrenceFrequency(val label: String) {
+    DAILY("Diariamente"),
+    WEEKLY("Semanalmente"),
+    MONTHLY("Mensalmente"),
+    YEARLY("Anualmente")
+}
+
+enum class RecurrenceEndType(val label: String) {
+    FOREVER("Para sempre"),
+    UNTIL_DATE("Até uma data"),
+    BY_OCCURRENCES("Por número de eventos")
+}

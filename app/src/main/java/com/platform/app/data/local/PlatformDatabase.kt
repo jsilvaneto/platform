@@ -43,7 +43,7 @@ import com.platform.app.data.local.entity.TransactionEntity
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -147,6 +147,14 @@ abstract class PlatformDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_itemId ON transactions(itemId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_invoiceId ON transactions(invoiceId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_dueDate ON transactions(dueDate)")
+            }
+        }
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceFrequency TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceEndType TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceEndDate INTEGER DEFAULT NULL")
             }
         }
     }

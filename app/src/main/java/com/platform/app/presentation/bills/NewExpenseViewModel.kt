@@ -16,6 +16,8 @@ import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
 import com.platform.app.domain.model.PaymentMethod
+import com.platform.app.domain.model.RecurrenceEndType
+import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CalculateInstallmentsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +44,10 @@ data class NewExpenseUiState(
     val isPaid: Boolean = false,
     val expenseType: BillType = BillType.SINGLE,
     val installmentsCount: Int = 2,
+    val recurrenceFrequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
+    val recurrenceEndType: RecurrenceEndType = RecurrenceEndType.FOREVER,
+    val recurrenceEndDate: Long = DateUtils.addMonths(System.currentTimeMillis(), 12),
+    val recurrenceOccurrencesCount: Int = 12,
     val selectedPaymentMethodId: String? = null,
     val selectedFinancialAccountId: String? = null,
     val isCreditCard: Boolean = false,
@@ -143,7 +149,11 @@ class NewExpenseViewModel @Inject constructor(
                             selectedPaymentMethodId = originalBill.paymentMethodId,
                             expenseType = originalBill.type,
                             installmentsCount = originalBill.totalInstallments,
-                            isCreditCard = originalBill.invoiceId != null
+                            isCreditCard = originalBill.invoiceId != null,
+                            recurrenceFrequency = originalBill.recurrenceFrequency ?: current.recurrenceFrequency,
+                            recurrenceEndType = originalBill.recurrenceEndType ?: current.recurrenceEndType,
+                            recurrenceEndDate = originalBill.recurrenceEndDate ?: current.recurrenceEndDate,
+                            recurrenceOccurrencesCount = if (originalBill.type == BillType.RECURRING) originalBill.totalInstallments else current.recurrenceOccurrencesCount
                         )
                     }
                 }
@@ -218,7 +228,12 @@ class NewExpenseViewModel @Inject constructor(
     }
 
     fun onDueDateChange(dueDate: Long) {
-        _uiState.update { it.copy(dueDate = dueDate) }
+        _uiState.update { current ->
+            val updatedEndDate = if (current.recurrenceEndDate <= dueDate) {
+                DateUtils.addMonths(dueDate, 12)
+            } else current.recurrenceEndDate
+            current.copy(dueDate = dueDate, recurrenceEndDate = updatedEndDate)
+        }
     }
 
     fun onCategorySelect(categoryId: String?) {
@@ -262,14 +277,47 @@ class NewExpenseViewModel @Inject constructor(
         _uiState.update { it.copy(installmentsCount = count.coerceIn(2, 72)) }
     }
 
+    fun onRecurrenceFrequencyChange(frequency: RecurrenceFrequency) {
+        _uiState.update { current ->
+            val defaultCount = when (frequency) {
+                RecurrenceFrequency.DAILY -> 30
+                RecurrenceFrequency.WEEKLY -> 12
+                RecurrenceFrequency.MONTHLY -> 12
+                RecurrenceFrequency.YEARLY -> 5
+            }
+            current.copy(
+                recurrenceFrequency = frequency,
+                recurrenceOccurrencesCount = defaultCount
+            )
+        }
+    }
+
+    fun onRecurrenceEndTypeChange(endType: RecurrenceEndType) {
+        _uiState.update { it.copy(recurrenceEndType = endType) }
+    }
+
+    fun onRecurrenceEndDateChange(endDate: Long) {
+        _uiState.update { it.copy(recurrenceEndDate = endDate) }
+    }
+
+    fun onRecurrenceOccurrencesCountChange(count: Int) {
+        _uiState.update { it.copy(recurrenceOccurrencesCount = count.coerceIn(2, 365)) }
+    }
+
     fun onPaymentMethodSelect(methodId: String?) {
         _uiState.update { state ->
             val method = state.paymentMethods.find { it.id == methodId }
-            val isCard = method?.name?.contains("cartão", ignoreCase = true) == true ||
-                    method?.name?.contains("crédito", ignoreCase = true) == true
+            val isCredit = method?.name?.let { name ->
+                val lower = name.lowercase()
+                lower.contains("crédito") && !lower.contains("débito")
+            } ?: false
+
             state.copy(
                 selectedPaymentMethodId = methodId,
-                isCreditCard = if (isCard) true else state.isCreditCard
+                isCreditCard = isCredit,
+                selectedCreditCardId = if (isCredit) {
+                    state.selectedCreditCardId ?: state.creditCards.firstOrNull()?.id
+                } else null
             )
         }
     }
@@ -280,8 +328,29 @@ class NewExpenseViewModel @Inject constructor(
 
     fun onToggleCreditCard(isCreditCard: Boolean) {
         _uiState.update { state ->
+            val updatedPaymentMethodId = if (isCreditCard) {
+                state.paymentMethods.find {
+                    val lower = it.name.lowercase()
+                    lower.contains("crédito") && !lower.contains("débito")
+                }?.id ?: state.selectedPaymentMethodId
+            } else {
+                val currentMethod = state.paymentMethods.find { it.id == state.selectedPaymentMethodId }
+                val isCurrentCredit = currentMethod?.name?.let {
+                    val lower = it.lowercase()
+                    lower.contains("crédito") && !lower.contains("débito")
+                } ?: false
+                if (isCurrentCredit) {
+                    state.paymentMethods.find {
+                        val lower = it.name.lowercase()
+                        !lower.contains("crédito")
+                    }?.id ?: state.selectedPaymentMethodId
+                } else {
+                    state.selectedPaymentMethodId
+                }
+            }
             state.copy(
                 isCreditCard = isCreditCard,
+                selectedPaymentMethodId = updatedPaymentMethodId,
                 selectedCreditCardId = if (isCreditCard) {
                     state.selectedCreditCardId ?: state.creditCards.firstOrNull()?.id
                 } else null
@@ -323,26 +392,38 @@ class NewExpenseViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val billId = UUID.randomUUID().toString()
-                val totalInstallments = when (state.expenseType) {
-                    BillType.SINGLE -> 1
-                    BillType.INSTALLMENT -> state.installmentsCount.coerceAtLeast(2)
-                    BillType.RECURRING -> 12
-                }
-
                 val finalTitle = state.effectiveTitle
                 val finalDescription = if (state.description.isNotBlank()) state.description.trim() else finalTitle
 
                 if (state.isCreditCard && state.selectedCreditCardId != null) {
                     val card = state.selectedCreditCard ?: repository.getCreditCards().let { null }
                     val closingDay = card?.closingDay ?: 25
-                    val baseRefMonth = CreditCardCalculator.determineInvoiceReferenceMonth(state.dueDate, closingDay)
 
+                    val dueDates: List<Long> = when (state.expenseType) {
+                        BillType.SINGLE -> listOf(state.dueDate)
+                        BillType.INSTALLMENT -> {
+                            val count = state.installmentsCount.coerceAtLeast(2)
+                            (0 until count).map { DateUtils.addMonths(state.dueDate, it) }
+                        }
+                        BillType.RECURRING -> {
+                            CalculateInstallmentsUseCase.calculateRecurrenceDueDates(
+                                firstDueDate = state.dueDate,
+                                frequency = state.recurrenceFrequency,
+                                endType = state.recurrenceEndType,
+                                endDate = state.recurrenceEndDate,
+                                occurrencesCount = state.recurrenceOccurrencesCount
+                            )
+                        }
+                    }
+
+                    val totalInstallments = dueDates.size
                     val installments = mutableListOf<BillInstallment>()
                     val baseAmount = state.amountCents / totalInstallments
                     val remainder = state.amountCents % totalInstallments
 
                     for (i in 1..totalInstallments) {
-                        val refMonth = CreditCardCalculator.addMonthsToReferenceMonth(baseRefMonth, i - 1)
+                        val occurrenceDate = dueDates[i - 1]
+                        val refMonth = CreditCardCalculator.determineInvoiceReferenceMonth(occurrenceDate, closingDay)
                         val invoice = repository.getOrCreateInvoiceForMonth(state.selectedCreditCardId, refMonth)
                         val installmentAmount = when (state.expenseType) {
                             BillType.SINGLE -> state.amountCents
@@ -388,7 +469,7 @@ class NewExpenseViewModel @Inject constructor(
                         title = finalTitle,
                         description = finalDescription,
                         type = state.expenseType,
-                        totalAmountCents = if (state.expenseType == BillType.RECURRING) state.amountCents else state.amountCents,
+                        totalAmountCents = state.amountCents,
                         categoryId = state.selectedCategoryId,
                         itemId = state.selectedItemId,
                         invoiceId = installments.firstOrNull()?.invoiceId,
@@ -396,12 +477,24 @@ class NewExpenseViewModel @Inject constructor(
                         financialAccountId = state.selectedFinancialAccountId,
                         paymentMethodId = state.selectedPaymentMethodId,
                         totalInstallments = totalInstallments,
+                        recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
+                        recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
+                        recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
                         createdAt = System.currentTimeMillis()
                     )
 
                     repository.saveBillWithInstallments(bill, installments)
                 } else {
                     // Sem cartão de crédito
+                    val totalInstallments = when (state.expenseType) {
+                        BillType.SINGLE -> 1
+                        BillType.INSTALLMENT -> state.installmentsCount.coerceAtLeast(2)
+                        BillType.RECURRING -> when (state.recurrenceEndType) {
+                            RecurrenceEndType.BY_OCCURRENCES -> state.recurrenceOccurrencesCount
+                            else -> 12
+                        }
+                    }
+
                     val bill = Bill(
                         id = billId,
                         title = finalTitle,
@@ -415,6 +508,9 @@ class NewExpenseViewModel @Inject constructor(
                         financialAccountId = state.selectedFinancialAccountId,
                         paymentMethodId = state.selectedPaymentMethodId,
                         totalInstallments = totalInstallments,
+                        recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
+                        recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
+                        recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
                         createdAt = System.currentTimeMillis()
                     )
 
@@ -439,7 +535,13 @@ class NewExpenseViewModel @Inject constructor(
                         )
                     }
 
-                    repository.saveBillWithInstallments(bill, finalizedInstallments)
+                    val updatedBill = if (bill.type == BillType.RECURRING && finalizedInstallments.isNotEmpty()) {
+                        bill.copy(totalInstallments = finalizedInstallments.size)
+                    } else {
+                        bill
+                    }
+
+                    repository.saveBillWithInstallments(updatedBill, finalizedInstallments)
                 }
 
                 _uiState.update { it.copy(isSaved = true) }

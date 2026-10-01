@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalance
+import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -287,6 +288,17 @@ fun EditInstallmentBottomSheet(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Categoria") },
+                    leadingIcon = selectedCategory?.let { cat ->
+                        {
+                            val resolvedColor = try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+                            Icon(
+                                imageVector = PlatformIconCatalog.getIcon(cat.iconName),
+                                contentDescription = null,
+                                tint = resolvedColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -303,8 +315,17 @@ fun EditInstallmentBottomSheet(
                     onDismissRequest = { categoryExpanded = false }
                 ) {
                     categories.forEach { category ->
+                        val itemColor = try { Color(android.graphics.Color.parseColor(category.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                         DropdownMenuItem(
                             text = { Text(category.name) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = PlatformIconCatalog.getIcon(category.iconName),
+                                    contentDescription = null,
+                                    tint = itemColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
                             onClick = {
                                 selectedCategoryId = category.id
                                 categoryExpanded = false
@@ -427,10 +448,11 @@ fun EditInstallmentBottomSheet(
                     readOnly = true,
                     label = { Text("Forma de Pagamento") },
                     leadingIcon = {
+                        val iconVector = selectedMethod?.let { PlatformIconCatalog.getIcon(it.iconName) } ?: Icons.Default.CreditCard
                         Icon(
-                            imageVector = Icons.Default.CreditCard,
+                            imageVector = iconVector,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = if (selectedMethod != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentMethodExpanded) },
@@ -458,6 +480,14 @@ fun EditInstallmentBottomSheet(
                     paymentMethods.forEach { method ->
                         DropdownMenuItem(
                             text = { Text(method.name) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = PlatformIconCatalog.getIcon(method.iconName),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
                             onClick = {
                                 selectedPaymentMethodId = method.id
                                 paymentMethodExpanded = false

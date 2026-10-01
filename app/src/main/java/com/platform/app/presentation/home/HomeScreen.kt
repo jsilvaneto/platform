@@ -95,6 +95,7 @@ import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.PlatformPrivacyToggle
 import com.platform.app.presentation.components.formatValueOrPrivate
 import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformIconCatalog
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.UrgentRed
 import com.platform.app.presentation.theme.WarningAmber
@@ -1914,7 +1915,7 @@ fun PayableItemCard(
     onPay: (() -> Unit)? = null
 ) {
     val alphaModifier = if (isMuted) Modifier.alpha(0.75f) else Modifier
-    val functionalIcon = getFunctionalIcon(item.categoryName)
+    val functionalIcon = PlatformIconCatalog.getIcon(item.categoryIconName)
     val categoryColor = try {
         Color(item.categoryColorHex.toColorInt())
     } catch (e: Exception) {
@@ -2151,7 +2152,10 @@ fun EmptyForecastCard(onAddExpense: () -> Unit) {
     }
 }
 
-fun getFunctionalIcon(categoryName: String): ImageVector {
+fun getFunctionalIcon(categoryName: String, iconName: String? = null): ImageVector {
+    if (!iconName.isNullOrBlank() && iconName != "category") {
+        return PlatformIconCatalog.getIcon(iconName)
+    }
     val lower = categoryName.lowercase()
     return when {
         lower.contains("restaurante") || lower.contains("alimenta") || lower.contains("comida") || lower.contains("mercado") -> Icons.Default.Restaurant
@@ -2161,6 +2165,6 @@ fun getFunctionalIcon(categoryName: String): ImageVector {
         lower.contains("saúde") || lower.contains("médic") || lower.contains("remédio") || lower.contains("farm") -> Icons.Default.MedicalServices
         lower.contains("educa") || lower.contains("curso") || lower.contains("faculdade") -> Icons.Default.School
         lower.contains("compra") || lower.contains("shopping") -> Icons.Default.ShoppingCart
-        else -> Icons.AutoMirrored.Filled.ReceiptLong
+        else -> PlatformIconCatalog.getIcon(iconName ?: "")
     }
 }

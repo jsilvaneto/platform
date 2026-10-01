@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -1063,6 +1065,12 @@ fun TimelineMonthCard(
     onTogglePayment: (String, Boolean) -> Unit,
     onSelectPlan: (BillWithInstallments) -> Unit
 ) {
+    val currentMonthLabel = remember { DateUtils.formatMonthYear(System.currentTimeMillis()) }
+    val isCurrentMonth = remember(month.monthLabel, currentMonthLabel) {
+        month.monthLabel.equals(currentMonthLabel, ignoreCase = true)
+    }
+    var isExpanded by rememberSaveable(month.monthLabel) { mutableStateOf(isCurrentMonth) }
+
     PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
         Column(
             modifier = Modifier
@@ -1071,19 +1079,23 @@ fun TimelineMonthCard(
         ) {
             // Header do Mês
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(34.dp)
                             .background(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                if (isCurrentMonth) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 CircleShape
                             ),
                         contentAlignment = Alignment.Center
@@ -1096,12 +1108,29 @@ fun TimelineMonthCard(
                         )
                     }
                     Column {
-                        Text(
-                            text = month.monthLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = month.monthLabel,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (isCurrentMonth) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "Mês Atual",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                        }
                         Text(
                             text = "${month.installmentsCount} ${if (month.installmentsCount == 1) "parcela" else "parcelas"}",
                             style = MaterialTheme.typography.bodySmall,
@@ -1110,36 +1139,49 @@ fun TimelineMonthCard(
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = CurrencyUtils.formatCentsToCurrency(month.totalCents),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    if (month.pendingCents > 0L && month.paidCents > 0L) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Resta: ${CurrencyUtils.formatCentsToCurrency(month.pendingCents)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
+                            text = CurrencyUtils.formatCentsToCurrency(month.totalCents),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                    } else if (month.pendingCents == 0L && month.totalCents > 0L) {
-                        Text(
-                            text = "Mês Quitado",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = SuccessGreen
-                        )
+                        if (month.pendingCents > 0L && month.paidCents > 0L) {
+                            Text(
+                                text = "Resta: ${CurrencyUtils.formatCentsToCurrency(month.pendingCents)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } else if (month.pendingCents == 0L && month.totalCents > 0L) {
+                            Text(
+                                text = "Mês Quitado",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = SuccessGreen
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = if (isExpanded) "Recolher mês" else "Expandir mês",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-            Spacer(modifier = Modifier.height(8.dp))
+            AnimatedVisibility(visible = isExpanded) {
+                Column {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            // Parcelas individuais do mês
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Parcelas individuais do mês
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 month.items.forEach { inst ->
                     val parentPlan = allItems.find { it.bill.id == inst.billId }
                     val title = parentPlan?.bill?.title ?: "Parcela"
@@ -1219,6 +1261,9 @@ fun TimelineMonthCard(
         }
     }
 }
+    }
+}
+
 
 @Composable
 fun EmptyRecurringView(mode: Int = 0) {

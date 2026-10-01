@@ -78,6 +78,7 @@ import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformIconCatalog
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.UrgentRed
 import com.platform.app.presentation.theme.WarningAmber
@@ -173,10 +174,14 @@ fun NewExpenseScreen(
                             label = { Text("Item de Despesa * (Obrigatório)") },
                             placeholder = { Text("Selecione o item categorizado") },
                             leadingIcon = {
+                                val itemIcon = uiState.selectedItem?.let { PlatformIconCatalog.getIcon(it.categoryIconName) } ?: Icons.Default.Payments
+                                val itemColor = uiState.selectedItem?.let {
+                                    try { Color(android.graphics.Color.parseColor(it.categoryColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
+                                } ?: MaterialTheme.colorScheme.primary
                                 Icon(
-                                    imageVector = Icons.Default.Payments,
+                                    imageVector = itemIcon,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
+                                    tint = itemColor
                                 )
                             },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = itemDropdownExpanded) },
@@ -200,7 +205,16 @@ fun NewExpenseScreen(
                                 )
                             }
                             for (item in uiState.allExpenseItems) {
+                                val itemColor = try { Color(android.graphics.Color.parseColor(item.categoryColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
                                 DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = PlatformIconCatalog.getIcon(item.categoryIconName),
+                                            contentDescription = null,
+                                            tint = itemColor,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
                                     text = {
                                         Column {
                                             Text(item.name, fontWeight = FontWeight.SemiBold)
@@ -1021,6 +1035,16 @@ fun NewExpenseScreen(
                                 onValueChange = {},
                                 readOnly = true,
                                 label = { Text("Forma de Pagamento (PIX, Boleto, etc.)") },
+                                leadingIcon = uiState.selectedPaymentMethod?.let { pm ->
+                                    {
+                                        Icon(
+                                            imageVector = PlatformIconCatalog.getIcon(pm.iconName),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = methodDropdownExpanded) },
                                 shape = RoundedCornerShape(Dimens.buttonCornerRadius),
                                 modifier = Modifier
@@ -1034,6 +1058,14 @@ fun NewExpenseScreen(
                                 for (pm in uiState.paymentMethods) {
                                     DropdownMenuItem(
                                         text = { Text(pm.name) },
+                                        leadingIcon = {
+                                            Icon(
+                                                imageVector = PlatformIconCatalog.getIcon(pm.iconName),
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        },
                                         onClick = {
                                             viewModel.onPaymentMethodSelect(pm.id)
                                             methodDropdownExpanded = false

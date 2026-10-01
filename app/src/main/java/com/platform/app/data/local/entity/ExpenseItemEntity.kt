@@ -26,13 +26,19 @@ data class ExpenseItemEntity(
     val categoryId: String,
     val syncStatus: String = "PENDENTE"
 ) {
-    fun toDomain(categoryName: String = "", categoryColorHex: String = "#64748B", nature: ExpenseNature = ExpenseNature.NECESSARIO): ExpenseItem {
+    fun toDomain(
+        categoryName: String = "",
+        categoryColorHex: String = "#64748B",
+        categoryIconName: String = "category",
+        nature: ExpenseNature = ExpenseNature.NECESSARIO
+    ): ExpenseItem {
         return ExpenseItem(
             id = id,
             name = name,
             categoryId = categoryId,
             categoryName = categoryName,
             categoryColorHex = categoryColorHex,
+            categoryIconName = categoryIconName,
             nature = nature,
             syncStatus = syncStatus
         )

@@ -19,8 +19,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.rememberScrollState
 import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -144,7 +144,8 @@ fun BillsScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
-    var collapsedMonths by rememberSaveable { mutableStateOf(setOf<String>()) }
+    val currentMonthLabel = remember { DateUtils.formatMonthYear(System.currentTimeMillis()) }
+    var expandedMonths by rememberSaveable { mutableStateOf(setOf(DateUtils.formatMonthYear(System.currentTimeMillis()))) }
 
     LaunchedEffect(uiEffect) {
         uiEffect.collect { effect ->
@@ -306,7 +307,7 @@ fun BillsScreen(
                         ) {
                             if (groupedByMonth.size > 1) {
                                 item(key = "toggle_all_months") {
-                                    val allCollapsed = collapsedMonths.size >= groupedByMonth.size
+                                    val allExpanded = groupedByMonth.keys.isNotEmpty() && groupedByMonth.keys.all { it in expandedMonths }
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -321,7 +322,7 @@ fun BillsScreen(
                                         )
                                         TextButton(
                                             onClick = {
-                                                collapsedMonths = if (allCollapsed) {
+                                                expandedMonths = if (allExpanded) {
                                                     emptySet()
                                                 } else {
                                                     groupedByMonth.keys.toSet()
@@ -331,14 +332,14 @@ fun BillsScreen(
                                             modifier = Modifier.height(28.dp)
                                         ) {
                                             Icon(
-                                                imageVector = if (allCollapsed) Icons.Default.UnfoldMore else Icons.Default.UnfoldLess,
+                                                imageVector = if (allExpanded) Icons.Default.UnfoldLess else Icons.Default.UnfoldMore,
                                                 contentDescription = null,
                                                 modifier = Modifier.size(14.dp),
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text(
-                                                text = if (allCollapsed) "Expandir todos" else "Recolher todos",
+                                                text = if (allExpanded) "Recolher todos" else "Expandir todos",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = MaterialTheme.colorScheme.primary
@@ -349,7 +350,8 @@ fun BillsScreen(
                             }
 
                             groupedByMonth.forEach { (monthLabel, monthItems) ->
-                                val isExpanded = monthLabel !in collapsedMonths
+                                val isExpanded = monthLabel in expandedMonths
+                                val isCurrentMonth = monthLabel.equals(currentMonthLabel, ignoreCase = true)
 
                                 item(key = "header_$monthLabel") {
                                     val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
@@ -360,15 +362,16 @@ fun BillsScreen(
 
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        color = if (isCurrentMonth) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        border = if (isCurrentMonth) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)) else null,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = 6.dp, bottom = 2.dp)
                                             .clickable {
-                                                collapsedMonths = if (isExpanded) {
-                                                    collapsedMonths + monthLabel
+                                                expandedMonths = if (isExpanded) {
+                                                    expandedMonths - monthLabel
                                                 } else {
-                                                    collapsedMonths - monthLabel
+                                                    expandedMonths + monthLabel
                                                 }
                                             }
                                     ) {
@@ -395,6 +398,21 @@ fun BillsScreen(
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
+                                                if (isCurrentMonth) {
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Surface(
+                                                        shape = RoundedCornerShape(4.dp),
+                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                                    ) {
+                                                        Text(
+                                                            text = "Mês Atual",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                                        )
+                                                    }
+                                                }
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Surface(
                                                     shape = RoundedCornerShape(6.dp),
@@ -1069,7 +1087,12 @@ fun BillInstallmentItemCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Box(modifier = Modifier.size(7.dp).background(catColor, CircleShape))
+                    Icon(
+                        imageVector = PlatformIconCatalog.getIcon(installment.categoryIconName),
+                        contentDescription = null,
+                        tint = catColor,
+                        modifier = Modifier.size(13.dp)
+                    )
                     Text(
                         text = installment.categoryName,
                         style = MaterialTheme.typography.bodySmall,

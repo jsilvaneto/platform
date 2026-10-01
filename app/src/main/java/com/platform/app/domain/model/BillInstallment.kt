@@ -7,6 +7,7 @@ data class BillInstallment(
     val categoryId: String? = null,
     val categoryName: String = "Geral",
     val categoryColorHex: String = "#64748B",
+    val categoryIconName: String = "category",
     val nature: ExpenseNature = ExpenseNature.NECESSARIO,
     val itemId: String? = null,
     val itemName: String? = null,

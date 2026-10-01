@@ -95,6 +95,7 @@ class FinancialRepositoryImpl @Inject constructor(
                 item.toDomain(
                     categoryName = cat?.name ?: "Geral",
                     categoryColorHex = cat?.colorHex ?: "#64748B",
+                    categoryIconName = cat?.iconName ?: "category",
                     nature = cat?.nature ?: ExpenseNature.NECESSARIO
                 )
             }
@@ -108,6 +109,7 @@ class FinancialRepositoryImpl @Inject constructor(
                 item.toDomain(
                     categoryName = cat?.name ?: "Geral",
                     categoryColorHex = cat?.colorHex ?: "#64748B",
+                    categoryIconName = cat?.iconName ?: "category",
                     nature = cat?.nature ?: ExpenseNature.NECESSARIO
                 )
             }

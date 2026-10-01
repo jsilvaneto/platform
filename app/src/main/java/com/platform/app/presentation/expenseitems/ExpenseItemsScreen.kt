@@ -329,7 +329,7 @@ fun CategorySectionHeader(
     val categoryColor = remember(category.colorHex) {
         try { Color(category.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
     }
-    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(category.name)
+    val functionalIcon = PlatformIconCatalog.getIcon(category.iconName)
 
     Row(
         modifier = Modifier
@@ -447,7 +447,7 @@ fun ExpenseItemDetailBottomSheet(
     } catch (e: Exception) {
         MaterialTheme.colorScheme.primary
     }
-    val functionalIcon = com.platform.app.presentation.home.getFunctionalIcon(item.categoryName)
+    val functionalIcon = PlatformIconCatalog.getIcon(item.categoryIconName)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

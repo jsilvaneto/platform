@@ -307,7 +307,11 @@ fun ManagementScreen(
                     isNewAccountDialog = false
                     accountToEdit = null
                 },
-                onConfirm = { account -> viewModel.onAction(ManagementUiAction.SaveAccount(account)) }
+                onConfirm = { account ->
+                    viewModel.onAction(ManagementUiAction.SaveAccount(account))
+                    isNewAccountDialog = false
+                    accountToEdit = null
+                }
             )
         }
 
@@ -319,7 +323,11 @@ fun ManagementScreen(
                     isNewMethodDialog = false
                     methodToEdit = null
                 },
-                onConfirm = { method -> viewModel.onAction(ManagementUiAction.SavePaymentMethod(method)) }
+                onConfirm = { method ->
+                    viewModel.onAction(ManagementUiAction.SavePaymentMethod(method))
+                    isNewMethodDialog = false
+                    methodToEdit = null
+                }
             )
         }
 
@@ -331,7 +339,11 @@ fun ManagementScreen(
                     isNewCategoryDialog = false
                     categoryToEdit = null
                 },
-                onConfirm = { category -> viewModel.onAction(ManagementUiAction.SaveCategory(category)) }
+                onConfirm = { category ->
+                    viewModel.onAction(ManagementUiAction.SaveCategory(category))
+                    isNewCategoryDialog = false
+                    categoryToEdit = null
+                }
             )
         }
 
@@ -865,13 +877,7 @@ fun PaymentMethodsTab(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(methods, key = { it.id }) { method ->
-                val icon = when {
-                    method.name.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
-                    method.name.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
-                    method.name.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
-                    method.name.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
-                    else -> Icons.Default.AccountBalance
-                }
+                val icon = com.platform.app.presentation.theme.PlatformIconCatalog.getIcon(method.iconName)
 
                 Card(
                     modifier = Modifier
@@ -950,13 +956,7 @@ fun PaymentMethodDetailBottomSheet(
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    val icon = when {
-        method.name.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
-        method.name.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
-        method.name.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
-        method.name.contains("Dinheiro", ignoreCase = true) -> Icons.Default.Payments
-        else -> Icons.Default.AccountBalance
-    }
+    val icon = com.platform.app.presentation.theme.PlatformIconCatalog.getIcon(method.iconName)
 
     val linkedInstallments = remember(installments, method.id) {
         installments.filter { it.paymentMethodId == method.id }
@@ -1666,7 +1666,7 @@ fun AddEditAccountDialog(
     onDismiss: () -> Unit,
     onConfirm: (FinancialAccount) -> Unit
 ) {
-    var name by remember { mutableStateOf(account?.name ?: "") }
+    var name by remember(account) { mutableStateOf(account?.name ?: "") }
     val types = listOf(
         "Conta Corrente",
         "Cartão de Crédito",
@@ -1675,10 +1675,10 @@ fun AddEditAccountDialog(
         "Investimento / Reserva",
         "Outro"
     )
-    var selectedType by remember { mutableStateOf(account?.accountType ?: types[0]) }
+    var selectedType by remember(account) { mutableStateOf(account?.accountType ?: types[0]) }
     var typeDropdownExpanded by remember { mutableStateOf(false) }
 
-    var selectedColor by remember { mutableStateOf(account?.colorHex ?: "#2563EB") }
+    var selectedColor by remember(account) { mutableStateOf(account?.colorHex ?: "#2563EB") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1810,14 +1810,26 @@ fun AddEditPaymentMethodDialog(
         "Transferência TED/DOC",
         "Outro"
     )
-    var name by remember { mutableStateOf(method?.name ?: "") }
-    var selectedPreset by remember { mutableStateOf(if (method != null && commonMethods.contains(method.name)) method.name else if (method == null) commonMethods[0] else "Outro") }
-    var isCustomName by remember { mutableStateOf(method != null && !commonMethods.contains(method.name)) }
+    var name by remember(method) { mutableStateOf(method?.name ?: "") }
+    var selectedPreset by remember(method) { mutableStateOf(if (method != null && commonMethods.contains(method.name)) method.name else if (method == null) commonMethods[0] else "Outro") }
+    var isCustomName by remember(method) { mutableStateOf(method != null && !commonMethods.contains(method.name)) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+    var selectedIcon by remember(method) {
+        mutableStateOf(
+            method?.iconName ?: when {
+                method?.name?.contains("Pix", ignoreCase = true) == true -> "qr_code"
+                method?.name?.contains("Boleto", ignoreCase = true) == true -> "receipt"
+                method?.name?.contains("Cartão", ignoreCase = true) == true -> "credit_card"
+                method?.name?.contains("Dinheiro", ignoreCase = true) == true -> "payments"
+                else -> "account_balance"
+            }
+        )
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(method) {
         if (method == null && name.isBlank()) {
             name = commonMethods[0]
+            selectedIcon = "qr_code"
         }
     }
 
@@ -1896,6 +1908,13 @@ fun AddEditPaymentMethodDialog(
                                     } else {
                                         isCustomName = false
                                         name = preset
+                                        selectedIcon = when {
+                                            preset.contains("Pix", ignoreCase = true) -> "qr_code"
+                                            preset.contains("Boleto", ignoreCase = true) -> "receipt"
+                                            preset.contains("Cartão", ignoreCase = true) -> "credit_card"
+                                            preset.contains("Dinheiro", ignoreCase = true) -> "payments"
+                                            else -> "account_balance"
+                                        }
                                     }
                                 }
                             )
@@ -1914,6 +1933,12 @@ fun AddEditPaymentMethodDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+
+                PlatformIconPicker(
+                    selectedIconKey = selectedIcon,
+                    onIconSelected = { selectedIcon = it },
+                    activeColorHex = "#2563EB"
+                )
             }
         },
         confirmButton = {
@@ -1921,18 +1946,11 @@ fun AddEditPaymentMethodDialog(
                 onClick = {
                     val finalName = (if (isCustomName) name else selectedPreset).trim()
                     if (finalName.isNotBlank()) {
-                        val iconName = when {
-                            finalName.contains("Pix", ignoreCase = true) -> "qr_code"
-                            finalName.contains("Boleto", ignoreCase = true) -> "receipt"
-                            finalName.contains("Cartão", ignoreCase = true) -> "credit_card"
-                            finalName.contains("Dinheiro", ignoreCase = true) -> "payments"
-                            else -> "account_balance"
-                        }
                         onConfirm(
                             PaymentMethod(
                                 id = method?.id ?: UUID.randomUUID().toString(),
                                 name = finalName,
-                                iconName = iconName
+                                iconName = selectedIcon
                             )
                         )
                     }
@@ -1956,10 +1974,10 @@ fun AddEditCategoryDialog(
     onDismiss: () -> Unit,
     onConfirm: (Category) -> Unit
 ) {
-    var name by remember { mutableStateOf(category?.name ?: "") }
-    var selectedColor by remember { mutableStateOf(category?.colorHex ?: "#2563EB") }
-    var selectedIcon by remember { mutableStateOf(category?.iconName ?: "shopping_cart") }
-    var selectedNature by remember { mutableStateOf(category?.nature ?: ExpenseNature.NECESSARIO) }
+    var name by remember(category) { mutableStateOf(category?.name ?: "") }
+    var selectedColor by remember(category) { mutableStateOf(category?.colorHex ?: "#2563EB") }
+    var selectedIcon by remember(category) { mutableStateOf(category?.iconName ?: "shopping_cart") }
+    var selectedNature by remember(category) { mutableStateOf(category?.nature ?: ExpenseNature.NECESSARIO) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

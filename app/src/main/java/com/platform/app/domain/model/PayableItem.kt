@@ -17,6 +17,7 @@ sealed class PayableItem {
     abstract val urgency: PayableUrgency
     abstract val categoryName: String
     abstract val categoryColorHex: String
+    abstract val categoryIconName: String
     abstract val nature: ExpenseNature
 
     data class BillPayable(
@@ -30,6 +31,7 @@ sealed class PayableItem {
         override val isPaid: Boolean get() = installment.isPaid
         override val categoryName: String get() = installment.categoryName
         override val categoryColorHex: String get() = installment.categoryColorHex
+        override val categoryIconName: String get() = installment.categoryIconName
         override val nature: ExpenseNature get() = installment.nature
     }
 
@@ -46,6 +48,7 @@ sealed class PayableItem {
         override val isPaid: Boolean get() = invoice.status == InvoiceStatus.PAGA
         override val categoryName: String get() = "Cartão de Crédito"
         override val categoryColorHex: String get() = cardColorHex
+        override val categoryIconName: String get() = "credit_card"
         override val nature: ExpenseNature get() = ExpenseNature.NECESSARIO
     }
 }

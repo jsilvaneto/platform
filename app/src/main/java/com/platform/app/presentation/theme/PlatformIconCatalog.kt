@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocalBar
@@ -41,9 +42,11 @@ import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.LocalTaxi
 import androidx.compose.material.icons.filled.MedicalServices
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
@@ -61,6 +64,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -117,6 +121,7 @@ object PlatformIconCatalog {
         CategoryIconItem("credit_card", Icons.Default.CreditCard, "Cartão", "Finanças"),
         CategoryIconItem("payments", Icons.Default.Payments, "Dinheiro", "Finanças"),
         CategoryIconItem("receipt", Icons.AutoMirrored.Filled.ReceiptLong, "Boleto", "Finanças"),
+        CategoryIconItem("qr_code", Icons.Default.QrCode, "Pix / QR Code", "Finanças"),
         CategoryIconItem("work", Icons.Default.Work, "Trabalho", "Finanças"),
         CategoryIconItem("school", Icons.Default.School, "Educação", "Educação"),
 
@@ -124,11 +129,34 @@ object PlatformIconCatalog {
         CategoryIconItem("pets", Icons.Default.Pets, "Pet", "Outros"),
         CategoryIconItem("shopping_bag", Icons.Default.ShoppingBag, "Compras", "Outros"),
         CategoryIconItem("card_giftcard", Icons.Default.CardGiftcard, "Presentes", "Outros"),
+        CategoryIconItem("folder", Icons.Default.Folder, "Pasta", "Outros"),
+        CategoryIconItem("more_horiz", Icons.Default.MoreHoriz, "Outros", "Outros"),
         CategoryIconItem("category", Icons.Default.Category, "Geral", "Outros")
     )
 
     fun getIcon(key: String): ImageVector {
-        return ICONS.find { it.key.equals(key, ignoreCase = true) }?.icon ?: Icons.Default.Category
+        val trimmed = key.trim()
+        val found = ICONS.find { it.key.equals(trimmed, ignoreCase = true) }
+        if (found != null) return found.icon
+
+        return when (trimmed.lowercase()) {
+            "qr_code", "qrcode", "pix" -> Icons.Default.QrCode
+            "receipt", "receipt_long", "boleto" -> Icons.AutoMirrored.Filled.ReceiptLong
+            "credit_card", "card", "cartao" -> Icons.Default.CreditCard
+            "payments", "dinheiro", "money" -> Icons.Default.Payments
+            "account_balance", "bank", "banco" -> Icons.Default.AccountBalance
+            "folder", "pasta" -> Icons.Default.Folder
+            "more_horiz", "more", "outros" -> Icons.Default.MoreHoriz
+            "home", "casa", "moradia" -> Icons.Default.Home
+            "restaurant", "restaurante", "alimentacao", "comida" -> Icons.Default.Restaurant
+            "shopping_cart", "mercado" -> Icons.Default.ShoppingCart
+            "directions_car", "carro", "transporte" -> Icons.Default.DirectionsCar
+            "subscriptions", "streaming", "assinaturas" -> Icons.Default.Subscriptions
+            "medical_services", "saude", "medico" -> Icons.Default.MedicalServices
+            "school", "educacao" -> Icons.Default.School
+            "sports_esports", "lazer", "games" -> Icons.Default.SportsEsports
+            else -> Icons.Default.Category
+        }
     }
 }
 
@@ -160,7 +188,7 @@ fun PlatformIconPicker(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            val selectedItem = PlatformIconCatalog.ICONS.find { it.key == selectedIconKey }
+            val selectedItem = PlatformIconCatalog.ICONS.find { it.key.equals(selectedIconKey.trim(), ignoreCase = true) }
             Text(
                 text = selectedItem?.label ?: "Padrão",
                 style = MaterialTheme.typography.labelSmall,
@@ -180,11 +208,12 @@ fun PlatformIconPicker(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(PlatformIconCatalog.ICONS, key = { it.key }) { item ->
-                val isSelected = selectedIconKey.equals(item.key, ignoreCase = true)
+                val isSelected = selectedIconKey.trim().equals(item.key, ignoreCase = true)
 
                 Box(
                     modifier = Modifier
                         .size(34.dp)
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             color = if (isSelected) activeColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(8.dp)

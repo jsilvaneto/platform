@@ -20,10 +20,12 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 interface PreferencesManager {
     val isDarkMode: Flow<Boolean?>
+    val isAmoledMode: Flow<Boolean>
     val isBiometricEnabled: Flow<Boolean>
     val lastOfflineBackupTimestamp: Flow<Long>
     val appIcon: Flow<String>
     suspend fun setDarkMode(enabled: Boolean?)
+    suspend fun setAmoledMode(enabled: Boolean)
     suspend fun setBiometricEnabled(enabled: Boolean)
     suspend fun setAppIcon(iconKey: String)
     suspend fun updateLastOfflineBackupTimestamp(timestamp: Long)
@@ -36,6 +38,7 @@ class PreferencesManagerImpl @Inject constructor(
 
     private object PreferencesKeys {
         val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
+        val IS_AMOLED_MODE = booleanPreferencesKey("is_amoled_mode")
         val IS_BIOMETRIC_ENABLED = booleanPreferencesKey("is_biometric_enabled")
         val LAST_BACKUP_TIMESTAMP = longPreferencesKey("last_backup_timestamp")
         val APP_ICON = androidx.datastore.preferences.core.stringPreferencesKey("app_icon")
@@ -77,6 +80,18 @@ class PreferencesManagerImpl @Inject constructor(
             preferences[PreferencesKeys.LAST_BACKUP_TIMESTAMP] ?: 0L
         }
 
+    override val isAmoledMode: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.IS_AMOLED_MODE] ?: false
+        }
+
     override suspend fun setDarkMode(enabled: Boolean?) {
         context.dataStore.edit { preferences ->
             if (enabled == null) {
@@ -84,6 +99,12 @@ class PreferencesManagerImpl @Inject constructor(
             } else {
                 preferences[PreferencesKeys.IS_DARK_MODE] = enabled
             }
+        }
+    }
+
+    override suspend fun setAmoledMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_AMOLED_MODE] = enabled
         }
     }
 

@@ -72,12 +72,47 @@ private val LightColorScheme = lightColorScheme(
     surfaceTint = Color.Transparent
 )
 
+private val AmoledDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF60A5FA),
+    onPrimary = Color(0xFF000000),
+    primaryContainer = Color(0xFF1E3A8A).copy(alpha = 0.5f),
+    onPrimaryContainer = Color(0xFFBFDBFE),
+    secondary = Color(0xFF93C5FD),
+    onSecondary = Color(0xFF000000),
+    secondaryContainer = Color(0xFF18181B),
+    onSecondaryContainer = Color(0xFFE4E4E7),
+    background = Color(0xFF000000),
+    onBackground = Color(0xFFF4F4F5),
+    surface = Color(0xFF09090B),
+    onSurface = Color(0xFFF4F4F5),
+    surfaceVariant = Color(0xFF18181B),
+    onSurfaceVariant = Color(0xFFA1A1AA),
+    surfaceContainerLowest = Color(0xFF000000),
+    surfaceContainerLow = Color(0xFF050507),
+    surfaceContainer = Color(0xFF09090B),
+    surfaceContainerHigh = Color(0xFF121215),
+    surfaceContainerHighest = Color(0xFF18181B),
+    outline = Color(0xFF27272A),
+    outlineVariant = Color(0xFF1E1E22),
+    error = UrgentRed,
+    onError = Color(0xFFFFFFFF),
+    errorContainer = UrgentRedContainer,
+    onErrorContainer = Color(0xFFFECACA),
+    scrim = Color(0xFF000000),
+    surfaceTint = Color.Transparent
+)
+
 @Composable
 fun PlatformTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    isAmoled: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when {
+        darkTheme && isAmoled -> AmoledDarkColorScheme
+        darkTheme -> DarkColorScheme
+        else -> LightColorScheme
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -103,5 +138,6 @@ fun PlatformTheme(
 @Composable
 fun WalletTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    isAmoled: Boolean = false,
     content: @Composable () -> Unit
-) = PlatformTheme(darkTheme = darkTheme, content = content)
+) = PlatformTheme(darkTheme = darkTheme, isAmoled = isAmoled, content = content)

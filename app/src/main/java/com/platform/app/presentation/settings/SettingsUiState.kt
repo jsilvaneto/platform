@@ -6,6 +6,7 @@ data class SettingsUiState(
     val isBiometricSupported: Boolean = false,
     val isBiometricEnabled: Boolean = false,
     val isDarkMode: Boolean? = null,
+    val isAmoledMode: Boolean = false,
     val appIcon: String = "classic",
     val appVersionName: String = "1.0.0",
     val appVersionCode: Int = 1,

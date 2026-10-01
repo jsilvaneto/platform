@@ -21,11 +21,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.HorizontalDivider
+import com.platform.app.presentation.theme.BrandPrimary
+import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,6 +91,7 @@ fun ExpenseItemsScreen(
 ) {
     var isSearchExpanded by remember { mutableStateOf(false) }
     var showAddOrEditSheet by remember { mutableStateOf(false) }
+    var showCategoryFilterModal by remember { mutableStateOf(false) }
     var itemToEdit by remember { mutableStateOf<ExpenseItem?>(null) }
     var itemToViewDetails by remember { mutableStateOf<ExpenseItem?>(null) }
     var itemToDelete by remember { mutableStateOf<ExpenseItem?>(null) }
@@ -128,6 +140,21 @@ fun ExpenseItemsScreen(
                         selected = uiState.selectedCategoryId == null,
                         onClick = { onAction(ExpenseItemsUiAction.CategoryFilterChanged(null)) },
                         label = { Text("Todas ($totalItemsCount)") }
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = false,
+                        onClick = { showCategoryFilterModal = true },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Buscar Categoria",
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        label = { Text("Buscar Categoria...") }
                     )
                 }
                 items(uiState.categories, key = { it.id }) { cat ->
@@ -277,6 +304,18 @@ fun ExpenseItemsScreen(
                         Text("Cancelar")
                     }
                 }
+            )
+        }
+
+        if (showCategoryFilterModal) {
+            CategorySearchableModal(
+                categories = uiState.categories,
+                selectedCategoryId = uiState.selectedCategoryId,
+                onCategorySelected = { cat ->
+                    onAction(ExpenseItemsUiAction.CategoryFilterChanged(cat.id))
+                    showCategoryFilterModal = false
+                },
+                onDismiss = { showCategoryFilterModal = false }
             )
         }
     }
@@ -622,7 +661,7 @@ fun AddEditExpenseItemBottomSheet(
                 ?: categories.firstOrNull()
         )
     }
-    var expandedCategoryMenu by remember { mutableStateOf(false) }
+    var showCategoryPickerModal by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
@@ -652,33 +691,74 @@ fun AddEditExpenseItemBottomSheet(
                 shape = RoundedCornerShape(Dimens.buttonCornerRadius)
             )
 
-            ExposedDropdownMenuBox(
-                expanded = expandedCategoryMenu,
-                onExpandedChange = { expandedCategoryMenu = !expandedCategoryMenu }
+            val catColor = selectedCategory?.let {
+                try { Color(it.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showCategoryPickerModal = true }
             ) {
-                OutlinedTextField(
-                    value = selectedCategory?.name ?: "Selecione a Categoria",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Categoria") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategoryMenu) },
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedCategoryMenu,
-                    onDismissRequest = { expandedCategoryMenu = false }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    categories.forEach { cat ->
-                        DropdownMenuItem(
-                            text = { Text("${cat.name} (${cat.nature.displayName})") },
-                            onClick = {
-                                selectedCategory = cat
-                                expandedCategoryMenu = false
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (selectedCategory != null && catColor != null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .background(catColor.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = PlatformIconCatalog.getIcon(selectedCategory!!.iconName),
+                                    contentDescription = null,
+                                    tint = catColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
-                        )
+                            Spacer(modifier = Modifier.width(10.dp))
+                        }
+                        Column {
+                            Text(
+                                text = "Categoria",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = selectedCategory?.name ?: "Toque para selecionar a categoria...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (selectedCategory != null) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (selectedCategory != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
                     }
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Selecionar Categoria",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+            }
+
+            if (showCategoryPickerModal) {
+                CategorySearchableModal(
+                    categories = categories,
+                    selectedCategoryId = selectedCategory?.id,
+                    onCategorySelected = {
+                        selectedCategory = it
+                        showCategoryPickerModal = false
+                    },
+                    onDismiss = { showCategoryPickerModal = false }
+                )
             }
 
             selectedCategory?.let { cat ->
@@ -739,4 +819,195 @@ fun AddEditExpenseItemBottomSheet(
         }
     }
 }
+
+/**
+ * Seletor inteligente e escalável de categorias com busca instantânea e agrupamento por natureza.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CategorySearchableModal(
+    categories: List<Category>,
+    selectedCategoryId: String?,
+    onCategorySelected: (Category) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCategories = remember(categories, searchQuery) {
+        if (searchQuery.isBlank()) categories
+        else categories.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    val groupedByNature = remember(filteredCategories) {
+        filteredCategories.groupBy { it.nature }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Selecionar Categoria",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(imageVector = Icons.Default.Close, contentDescription = "Fechar")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = {
+                    Text(
+                        text = "Buscar entre as ${categories.size} categorias...",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(imageVector = Icons.Default.Clear, contentDescription = "Limpar busca")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (filteredCategories.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Nenhuma categoria encontrada para \"$searchQuery\"",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    groupedByNature.forEach { (nature, cats) ->
+                        item(key = "nature_${nature.name}") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 6.dp, bottom = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = nature.displayName.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                HorizontalDivider(
+                                    modifier = Modifier.weight(1f),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                )
+                            }
+                        }
+
+                        items(cats, key = { it.id }) { cat ->
+                            val isSelected = cat.id == selectedCategoryId
+                            val color = remember(cat.colorHex) {
+                                try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onCategorySelected(cat)
+                                        onDismiss()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .background(color.copy(alpha = 0.18f), CircleShape),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = PlatformIconCatalog.getIcon(cat.iconName),
+                                                contentDescription = null,
+                                                tint = color,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Text(
+                                            text = cat.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selecionada",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
 

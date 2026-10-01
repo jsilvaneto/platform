@@ -538,7 +538,7 @@ fun PastHistoryChartCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Desembolsos devidos e taxa de liquidação de cada período",
+                text = "Pagamentos devidos e taxa de liquidação de cada período",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1372,7 +1372,7 @@ fun DeescalationCurveCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Evolução decrescente dos desembolsos com amortização",
+                        text = "Evolução decrescente dos pagamentos com amortização",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1380,16 +1380,27 @@ fun DeescalationCurveCard(
 
                 if (lowestProj != null && lowestProj.totalCommittedCents < (highestProj?.totalCommittedCents ?: 0L)) {
                     Surface(
-                        shape = RoundedCornerShape(999.dp),
-                        color = SuccessGreenContainer
+                        shape = RoundedCornerShape(8.dp),
+                        color = SuccessGreenContainer.copy(alpha = 0.5f)
                     ) {
-                        Text(
-                            text = "Maior folga: ${lowestProj.monthLabel.take(7)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = SuccessGreen,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Maior folga: ${lowestProj.monthLabel.take(7)}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen
+                            )
+                        }
                     }
                 }
             }
@@ -1417,20 +1428,54 @@ fun DeescalationCurveCard(
                                 )
                                 if (isPeak) {
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Pico",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = ErrorRed
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = ErrorRedContainer.copy(alpha = 0.45f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                                contentDescription = null,
+                                                tint = ErrorRed,
+                                                modifier = Modifier.size(10.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Text(
+                                                text = "Pico",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = ErrorRed
+                                            )
+                                        }
+                                    }
                                 } else if (isLowest) {
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Folga",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SuccessGreen
-                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = SuccessGreenContainer.copy(alpha = 0.45f)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                                contentDescription = null,
+                                                tint = SuccessGreen,
+                                                modifier = Modifier.size(10.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Text(
+                                                text = "Folga",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SuccessGreen
+                                            )
+                                        }
+                                    }
                                 }
                             }
 

@@ -2,6 +2,7 @@ package com.platform.app.presentation.recurring
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
@@ -84,20 +85,22 @@ class RecurringInstallmentsViewModel @Inject constructor(
             val items = targetBills.map { bill ->
                 val insts = installmentsByBill[bill.id]?.sortedBy { it.installmentNumber } ?: emptyList()
                 val paidInsts = insts.filter { it.isPaid }
+                val pendingInsts = insts.filter { !it.isPaid }
                 val paidCount = paidInsts.size
                 val totalPaid = paidInsts.sumOf { it.amountCents }
 
-                val nextInst = insts
-                    .filter { !it.isPaid }
-                    .minByOrNull { it.dueDate }
+                val nextInst = pendingInsts.minByOrNull { it.dueDate }
 
+                // Verdade financeira: Saldo restante é a soma real das parcelas pendentes!
                 val remaining = if (bill.type == BillType.INSTALLMENT) {
-                    (bill.totalAmountCents - totalPaid).coerceAtLeast(0L)
+                    pendingInsts.sumOf { it.amountCents }
                 } else {
                     nextInst?.amountCents ?: bill.totalAmountCents
                 }
-                val progress = if (bill.type == BillType.INSTALLMENT && bill.totalAmountCents > 0L) {
-                    (totalPaid.toFloat() / bill.totalAmountCents.toFloat()).coerceIn(0f, 1f)
+
+                val totalFinanced = if (insts.isNotEmpty()) insts.sumOf { it.amountCents } else bill.totalAmountCents
+                val progress = if (totalFinanced > 0L) {
+                    (totalPaid.toFloat() / totalFinanced.toFloat()).coerceIn(0f, 1f)
                 } else 0f
 
                 val estimatedPayoff = if (bill.type == BillType.INSTALLMENT) {
@@ -116,13 +119,49 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 )
             }
 
-            val totalActiveInstallments = items
-                .filter { it.bill.type == BillType.INSTALLMENT }
-                .sumOf { it.remainingCents }
+            // Totais Reais de Compras Parceladas
+            val installmentItems = items.filter { it.bill.type == BillType.INSTALLMENT }
+            val totalActiveInstallments = installmentItems.sumOf { it.remainingCents }
+            val totalPaidInstallments = installmentItems.sumOf { it.totalPaidCents }
+            val totalOriginalFinanced = totalActiveInstallments + totalPaidInstallments
 
-            val totalMonthlyRecurring = items
-                .filter { it.bill.type == BillType.RECURRING }
-                .sumOf { it.bill.totalAmountCents }
+            // Totais Reais de Assinaturas & Recorrentes
+            val recurringItems = items.filter { it.bill.type == BillType.RECURRING }
+            val totalMonthlyRecurring = recurringItems.sumOf { it.bill.totalAmountCents }
+
+            val now = System.currentTimeMillis()
+            val startOfMonth = DateUtils.getStartOfMonth(now)
+            val endOfMonth = DateUtils.getEndOfMonth(now)
+
+            val recurringInstsThisMonth = allInstallments.filter { inst ->
+                val bill = targetBills.find { it.id == inst.billId }
+                bill?.type == BillType.RECURRING && inst.dueDate in startOfMonth..endOfMonth
+            }
+            val paidThisMonthRecurring = recurringInstsThisMonth.filter { it.isPaid }.sumOf { it.amountCents }
+            val pendingThisMonthRecurring = recurringInstsThisMonth.filter { !it.isPaid }.sumOf { it.amountCents }
+
+            // Linha do Tempo Futura (Cronograma dos próximos 6 a 12 meses)
+            val futureInstallments = allInstallments
+                .filter { it.dueDate >= startOfMonth }
+                .sortedBy { it.dueDate }
+
+            val futureTimeline = futureInstallments
+                .groupBy { DateUtils.formatMonthYear(it.dueDate) }
+                .map { (monthLabel, instList) ->
+                    val total = instList.sumOf { it.amountCents }
+                    val pending = instList.filter { !it.isPaid }.sumOf { it.amountCents }
+                    val paid = instList.filter { it.isPaid }.sumOf { it.amountCents }
+                    val firstDue = instList.firstOrNull()?.dueDate ?: 0L
+                    TimelineMonthSummary(
+                        monthLabel = monthLabel,
+                        timestamp = firstDue,
+                        totalCents = total,
+                        pendingCents = pending,
+                        paidCents = paid,
+                        installmentsCount = instList.size,
+                        items = instList
+                    )
+                }
 
             val filtered = applyFilter(
                 items = items,
@@ -135,8 +174,13 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 it.copy(
                     items = items,
                     filteredItems = filtered,
+                    futureTimeline = futureTimeline,
                     totalActiveInstallmentsCents = totalActiveInstallments,
+                    totalOriginalFinancedCents = totalOriginalFinanced,
+                    totalPaidInstallmentsCents = totalPaidInstallments,
                     totalMonthlyRecurringCents = totalMonthlyRecurring,
+                    pendingThisMonthRecurringCents = pendingThisMonthRecurring,
+                    paidThisMonthRecurringCents = paidThisMonthRecurring,
                     isLoading = false,
                     errorMessage = null
                 )

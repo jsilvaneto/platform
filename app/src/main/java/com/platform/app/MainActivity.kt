@@ -51,9 +51,10 @@ class MainActivity : FragmentActivity() {
         DueReminderManager.scheduleDailyReminder(this)
         setContent {
             val isDarkModePref by preferencesManager.isDarkMode.collectAsState(initial = null)
+            val isAmoledPref by preferencesManager.isAmoledMode.collectAsState(initial = false)
             val isDarkTheme = isDarkModePref ?: isSystemInDarkTheme()
 
-            PlatformTheme(darkTheme = isDarkTheme) {
+            PlatformTheme(darkTheme = isDarkTheme, isAmoled = isAmoledPref) {
                 val isBiometricEnabled by preferencesManager.isBiometricEnabled.collectAsState(initial = false)
                 var isUnlocked by rememberSaveable { mutableStateOf(false) }
                 var unlockError by rememberSaveable { mutableStateOf<String?>(null) }

@@ -60,13 +60,15 @@ class SettingsViewModel @Inject constructor(
         combine(
             preferencesManager.isBiometricEnabled,
             preferencesManager.isDarkMode,
+            preferencesManager.isAmoledMode,
             preferencesManager.lastOfflineBackupTimestamp,
             preferencesManager.appIcon
-        ) { isBioEnabled, isDark, lastBackup, icon ->
+        ) { isBioEnabled, isDark, isAmoled, lastBackup, icon ->
             _uiState.update { current ->
                 current.copy(
                     isBiometricEnabled = isBioEnabled,
                     isDarkMode = isDark,
+                    isAmoledMode = isAmoled,
                     lastBackupTimestamp = lastBackup,
                     appIcon = icon,
                     isBiometricSupported = biometricAuthManager.canAuthenticate()
@@ -95,6 +97,7 @@ class SettingsViewModel @Inject constructor(
         when (action) {
             is SettingsUiAction.ToggleBiometric -> handleToggleBiometric(action.enabled)
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
+            is SettingsUiAction.SetAmoledMode -> handleSetAmoledMode(action.enabled)
             is SettingsUiAction.SetAppIcon -> handleSetAppIcon(action.iconKey)
             is SettingsUiAction.ExportBackupToUri -> handleExportBackupToUri(action.uri)
             is SettingsUiAction.RestoreBackupFromUri -> handleRestoreBackupFromUri(action.uri)
@@ -107,7 +110,12 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.setAppIcon(iconKey)
             com.platform.app.core.util.AppIconManager.applyIcon(context, iconKey)
-            val iconLabel = if (iconKey == "modern") "Modern V2" else "Clássico"
+            val iconLabel = when (iconKey) {
+                "modern" -> "Modern V2"
+                "emerald" -> "Esmeralda Wealth"
+                "obsidian" -> "Obsidian VIP"
+                else -> "Clássico"
+            }
             _effectChannel.send(SettingsUiEffect.ShowSnackbar("Ícone alterado para $iconLabel!"))
         }
     }
@@ -219,6 +227,12 @@ class SettingsViewModel @Inject constructor(
     private fun handleSetThemeMode(isDarkMode: Boolean?) {
         viewModelScope.launch {
             preferencesManager.setDarkMode(isDarkMode)
+        }
+    }
+
+    private fun handleSetAmoledMode(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.setAmoledMode(enabled)
         }
     }
 }

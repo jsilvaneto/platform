@@ -66,7 +66,7 @@ O formato Ã© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.
   - **Meio de LiquidaÃ§Ã£o & CrÃ©dito**: Barra bifurcada e percentuais de exposiÃ§Ã£o entre CartÃ£o de CrÃ©dito vs DÃ©bito/Pix/Dinheiro.
   - **Top Categorias & Contas BancÃ¡rias**: DistribuiÃ§Ã£o visual dos gastos e concentraÃ§Ã£o institucional.
 - **3. Eixo Futuro (Previsibilidade & Tomada de DecisÃ£o â€” Para onde vamos)**:
-  - **Curva de DesoneraÃ§Ã£o (PrÃ³ximos 6 Meses)**: EvoluÃ§Ã£o decrescente dos desembolsos com destaque para o mÃªs de maior pico e o mÃªs de maior folga financeira.
+  - **Curva de Desoneração (Próximos 6 Meses)**: Evolução decrescente dos pagamentos com destaque para o mês de maior pico e o mês de maior folga financeira.
   - **DesoneraÃ§Ã£o & TÃ©rmino de Parcelas**: Cronograma de compras parceladas ativas que chegam ao fim, com cÃ¡lculo de alÃ­vio mensal gerado (*"+R$ X/mÃªs livre"*).
   - **Cockpit de Tomada de DecisÃ£o (Smart Advisor)**: Consultoria contextual em tempo real para responder *"Posso assumir uma nova compra parcelada agora?"*.
 - **4. DomÃ­nio & Testes Automatizados**:

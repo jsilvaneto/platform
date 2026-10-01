@@ -58,6 +58,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.platform.app.presentation.theme.PlatformColorPicker
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -794,9 +795,7 @@ fun AddEditGoalDialog(
     var name by remember { mutableStateOf(goal?.name ?: "") }
     var targetText by remember { mutableStateOf(if (goal != null) (goal.targetAmountCents / 100).toString() else "") }
     var currentText by remember { mutableStateOf(if (goal != null) (goal.currentAmountCents / 100).toString() else "0") }
-
-    val colors = listOf("#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#EF4444", "#6366F1")
-    var selectedColor by remember { mutableStateOf(goal?.colorHex ?: colors[0]) }
+    var selectedColor by remember { mutableStateOf(goal?.colorHex ?: "#2563EB") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -832,28 +831,10 @@ fun AddEditGoalDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Cor de Destaque:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    colors.forEach { hex ->
-                        val c = Color(android.graphics.Color.parseColor(hex))
-                        val isSelected = selectedColor == hex
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .background(c, CircleShape)
-                                .clickable { selectedColor = hex },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .background(MaterialTheme.colorScheme.surface, CircleShape)
-                                )
-                            }
-                        }
-                    }
-                }
+                PlatformColorPicker(
+                    selectedColorHex = selectedColor,
+                    onColorSelected = { selectedColor = it }
+                )
             }
         },
         confirmButton = {

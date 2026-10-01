@@ -531,6 +531,7 @@ fun SettingsScreen(
                 AppearanceBottomSheetContent(
                     uiState = uiState,
                     onSetThemeMode = { viewModel.onAction(SettingsUiAction.SetThemeMode(it)) },
+                    onSetAmoledMode = { viewModel.onAction(SettingsUiAction.SetAmoledMode(it)) },
                     onSetAppIcon = { viewModel.onAction(SettingsUiAction.SetAppIcon(it)) },
                     onClose = { showAppearanceSheet = false }
                 )
@@ -964,9 +965,68 @@ fun ModernV2IconPreview() {
 }
 
 @Composable
+fun EmeraldIconPreview() {
+    Box(
+        modifier = Modifier
+            .size(54.dp)
+            .background(Color(0xFF042F2E), RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp, 26.dp)
+                .background(Color(0xFF0D9488), RoundedCornerShape(5.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp, 10.dp)
+                    .background(Color(0xFF14B8A6), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+            )
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 2.dp, bottom = 2.dp)
+                    .background(Color(0xFF34D399), CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
+fun ObsidianIconPreview() {
+    Box(
+        modifier = Modifier
+            .size(54.dp)
+            .background(Color(0xFF000000), RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp, 26.dp)
+                .background(Color(0xFF1C1917), RoundedCornerShape(5.dp))
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp, 10.dp)
+                    .background(Color(0xFFD97706), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+            )
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 2.dp, bottom = 2.dp)
+                    .background(Color(0xFFFBBF24), CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
 private fun AppearanceBottomSheetContent(
     uiState: SettingsUiState,
     onSetThemeMode: (Boolean?) -> Unit,
+    onSetAmoledMode: (Boolean) -> Unit,
     onSetAppIcon: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -1037,25 +1097,43 @@ private fun AppearanceBottomSheetContent(
         Spacer(modifier = Modifier.height(8.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             FilterChip(
                 selected = uiState.isDarkMode == null,
-                onClick = { onSetThemeMode(null) },
-                label = { Text("Automático", style = MaterialTheme.typography.bodySmall) },
+                onClick = {
+                    onSetThemeMode(null)
+                    onSetAmoledMode(false)
+                },
+                label = { Text("Auto", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
                 selected = uiState.isDarkMode == false,
-                onClick = { onSetThemeMode(false) },
+                onClick = {
+                    onSetThemeMode(false)
+                    onSetAmoledMode(false)
+                },
                 label = { Text("Claro", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
-                selected = uiState.isDarkMode == true,
-                onClick = { onSetThemeMode(true) },
-                label = { Text("Escuro", style = MaterialTheme.typography.bodySmall) },
+                selected = uiState.isDarkMode == true && !uiState.isAmoledMode,
+                onClick = {
+                    onSetThemeMode(true)
+                    onSetAmoledMode(false)
+                },
+                label = { Text("Navy", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = uiState.isDarkMode == true && uiState.isAmoledMode,
+                onClick = {
+                    onSetThemeMode(true)
+                    onSetAmoledMode(true)
+                },
+                label = { Text("AMOLED", style = MaterialTheme.typography.bodySmall) },
+                modifier = Modifier.weight(1.1f)
             )
         }
 
@@ -1079,7 +1157,7 @@ private fun AppearanceBottomSheetContent(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             AppIconPreviewCard(
                 title = "Clássico",
@@ -1093,12 +1171,39 @@ private fun AppearanceBottomSheetContent(
 
             AppIconPreviewCard(
                 title = "Modern V2",
-                tag = "Novo",
+                tag = "Padrão",
                 isSelected = uiState.appIcon == "modern",
                 onClick = { onSetAppIcon("modern") },
                 modifier = Modifier.weight(1f)
             ) {
                 ModernV2IconPreview()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AppIconPreviewCard(
+                title = "Esmeralda",
+                tag = "Wealth",
+                isSelected = uiState.appIcon == "emerald",
+                onClick = { onSetAppIcon("emerald") },
+                modifier = Modifier.weight(1f)
+            ) {
+                EmeraldIconPreview()
+            }
+
+            AppIconPreviewCard(
+                title = "Obsidian",
+                tag = "Gold VIP",
+                isSelected = uiState.appIcon == "obsidian",
+                onClick = { onSetAppIcon("obsidian") },
+                modifier = Modifier.weight(1f)
+            ) {
+                ObsidianIconPreview()
             }
         }
 

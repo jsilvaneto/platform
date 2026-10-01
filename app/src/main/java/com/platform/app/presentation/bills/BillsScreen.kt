@@ -49,7 +49,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -137,6 +144,7 @@ fun BillsScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    var collapsedMonths by rememberSaveable { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(uiEffect) {
         uiEffect.collect { effect ->
@@ -294,65 +302,157 @@ fun BillsScreen(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = 16.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            groupedByMonth.forEach { (monthLabel, monthItems) ->
-                                item(key = "header_$monthLabel") {
-                                    val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
+                            if (groupedByMonth.size > 1) {
+                                item(key = "toggle_all_months") {
+                                    val allCollapsed = collapsedMonths.size >= groupedByMonth.size
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(top = 10.dp, bottom = 4.dp),
+                                            .padding(horizontal = 4.dp, vertical = 2.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = monthLabel,
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Text(
-                                            text = "Subtotal: ${CurrencyUtils.formatCentsToCurrency(monthTotal)}",
+                                            text = "${groupedByMonth.size} meses listados",
                                             style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        TextButton(
+                                            onClick = {
+                                                collapsedMonths = if (allCollapsed) {
+                                                    emptySet()
+                                                } else {
+                                                    groupedByMonth.keys.toSet()
+                                                }
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                            modifier = Modifier.height(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = if (allCollapsed) Icons.Default.UnfoldMore else Icons.Default.UnfoldLess,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = if (allCollapsed) "Expandir todos" else "Recolher todos",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            groupedByMonth.forEach { (monthLabel, monthItems) ->
+                                val isExpanded = monthLabel !in collapsedMonths
+
+                                item(key = "header_$monthLabel") {
+                                    val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
+                                    val rotationState by animateFloatAsState(
+                                        targetValue = if (isExpanded) 180f else 0f,
+                                        label = "monthCollapseRotation_$monthLabel"
+                                    )
+
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 6.dp, bottom = 2.dp)
+                                            .clickable {
+                                                collapsedMonths = if (isExpanded) {
+                                                    collapsedMonths + monthLabel
+                                                } else {
+                                                    collapsedMonths - monthLabel
+                                                }
+                                            }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                                    contentDescription = if (isExpanded) "Recolher mês" else "Expandir mês",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier
+                                                        .size(20.dp)
+                                                        .graphicsLayer(rotationZ = rotationState)
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = monthLabel,
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                ) {
+                                                    Text(
+                                                        text = "${monthItems.size}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                text = "Subtotal: ${CurrencyUtils.formatCentsToCurrency(monthTotal)}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
 
-                                items(monthItems, key = { it.id }) { installment ->
-                                    val isSelected = installment.id in selectedInstallmentIds
+                                if (isExpanded) {
+                                    items(monthItems, key = { it.id }) { installment ->
+                                        val isSelected = installment.id in selectedInstallmentIds
 
-                                    BillInstallmentItemCard(
-                                        installment = installment,
-                                        isSelectionMode = isSelectionMode,
-                                        isSelected = isSelected,
-                                        onToggleSelect = {
-                                            selectedInstallmentIds = if (isSelected) {
-                                                selectedInstallmentIds - installment.id
-                                            } else {
-                                                selectedInstallmentIds + installment.id
-                                            }
-                                        },
-                                        onLongClick = {
-                                            isSelectionMode = true
-                                            selectedInstallmentIds = selectedInstallmentIds + installment.id
-                                        },
-                                        onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
-                                        onSelectInstallment = {
-                                            if (isSelectionMode) {
+                                        BillInstallmentItemCard(
+                                            installment = installment,
+                                            isSelectionMode = isSelectionMode,
+                                            isSelected = isSelected,
+                                            onToggleSelect = {
                                                 selectedInstallmentIds = if (isSelected) {
                                                     selectedInstallmentIds - installment.id
                                                 } else {
                                                     selectedInstallmentIds + installment.id
                                                 }
-                                            } else {
-                                                // 2- Ao tocar em um registro: abrir janela para editar
-                                                onAction(BillsUiAction.OpenEditInstallment(installment))
+                                            },
+                                            onLongClick = {
+                                                isSelectionMode = true
+                                                selectedInstallmentIds = selectedInstallmentIds + installment.id
+                                            },
+                                            onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
+                                            onSelectInstallment = {
+                                                if (isSelectionMode) {
+                                                    selectedInstallmentIds = if (isSelected) {
+                                                        selectedInstallmentIds - installment.id
+                                                    } else {
+                                                        selectedInstallmentIds + installment.id
+                                                    }
+                                                } else {
+                                                    // 2- Ao tocar em um registro: abrir janela para editar
+                                                    onAction(BillsUiAction.OpenEditInstallment(installment))
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                             }
                             item {

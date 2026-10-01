@@ -78,6 +78,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
+import com.platform.app.presentation.theme.PlatformColorPicker
+import com.platform.app.presentation.theme.PlatformIconPicker
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.ExpenseNature
@@ -1298,7 +1300,7 @@ fun CategoriesTab(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.CategoryIcon,
+                                imageVector = com.platform.app.presentation.theme.PlatformIconCatalog.getIcon(cat.iconName),
                                 contentDescription = null,
                                 tint = color,
                                 modifier = Modifier.size(20.dp)
@@ -1399,7 +1401,7 @@ fun CategoryDetailBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CategoryIcon,
+                        imageVector = com.platform.app.presentation.theme.PlatformIconCatalog.getIcon(category.iconName),
                         contentDescription = null,
                         tint = catColor,
                         modifier = Modifier.size(24.dp)
@@ -1676,8 +1678,7 @@ fun AddEditAccountDialog(
     var selectedType by remember { mutableStateOf(account?.accountType ?: types[0]) }
     var typeDropdownExpanded by remember { mutableStateOf(false) }
 
-    val colors = listOf("#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#64748B")
-    var selectedColor by remember { mutableStateOf(account?.colorHex ?: colors[0]) }
+    var selectedColor by remember { mutableStateOf(account?.colorHex ?: "#2563EB") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1762,28 +1763,10 @@ fun AddEditAccountDialog(
                     }
                 }
 
-                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    colors.forEach { hex ->
-                        val c = Color(android.graphics.Color.parseColor(hex))
-                        val isSelected = selectedColor.equals(hex, ignoreCase = true)
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .background(c, CircleShape)
-                                .clickable { selectedColor = hex },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
-                                )
-                            }
-                        }
-                    }
-                }
+                PlatformColorPicker(
+                    selectedColorHex = selectedColor,
+                    onColorSelected = { selectedColor = it }
+                )
             }
         },
         confirmButton = {
@@ -1974,8 +1957,8 @@ fun AddEditCategoryDialog(
     onConfirm: (Category) -> Unit
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
-    val colors = listOf("#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EF4444", "#EC4899", "#6366F1", "#64748B")
-    var selectedColor by remember { mutableStateOf(category?.colorHex ?: colors[0]) }
+    var selectedColor by remember { mutableStateOf(category?.colorHex ?: "#2563EB") }
+    var selectedIcon by remember { mutableStateOf(category?.iconName ?: "shopping_cart") }
     var selectedNature by remember { mutableStateOf(category?.nature ?: ExpenseNature.NECESSARIO) }
 
     AlertDialog(
@@ -2009,29 +1992,16 @@ fun AddEditCategoryDialog(
                     }
                 }
 
-                Text("Cor de Identificação:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    colors.forEach { hex ->
-                        val c = Color(android.graphics.Color.parseColor(hex))
-                        val isSelected = selectedColor.equals(hex, ignoreCase = true)
-                        Box(
-                            modifier = Modifier
-                                .size(26.dp)
-                                .background(c, CircleShape)
-                                .clickable { selectedColor = hex },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .background(MaterialTheme.colorScheme.surface, CircleShape)
-                                        .align(Alignment.Center)
-                                )
-                            }
-                        }
-                    }
-                }
+                PlatformColorPicker(
+                    selectedColorHex = selectedColor,
+                    onColorSelected = { selectedColor = it }
+                )
+
+                PlatformIconPicker(
+                    selectedIconKey = selectedIcon,
+                    onIconSelected = { selectedIcon = it },
+                    activeColorHex = selectedColor
+                )
             }
         },
         confirmButton = {
@@ -2043,7 +2013,7 @@ fun AddEditCategoryDialog(
                                 id = category?.id ?: UUID.randomUUID().toString(),
                                 name = name.trim(),
                                 colorHex = selectedColor,
-                                iconName = category?.iconName ?: "category",
+                                iconName = selectedIcon,
                                 nature = selectedNature
                             )
                         )

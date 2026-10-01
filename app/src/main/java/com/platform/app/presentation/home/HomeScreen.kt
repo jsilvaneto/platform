@@ -534,12 +534,12 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderPanoramaView(
     val forecast = uiState.forecastResult
     val dashboard = uiState.dashboardMetrics
 
-    // 1. Radar de Desembolso / Liquidez Imediata
+    // 1. Radar de Pagamentos / Liquidez Imediata
     item {
         PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
             Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
                 Text(
-                    text = "Radar de Desembolso & Liquidez",
+                    text = "Radar de Pagamentos & Liquidez",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

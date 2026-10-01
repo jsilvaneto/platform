@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -59,7 +60,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -67,7 +67,6 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedTextField
@@ -115,7 +114,7 @@ fun RecurringInstallmentsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var planToViewDetails by remember { mutableStateOf<BillWithInstallments?>(null) }
 
-    // 0: Compras Parceladas, 1: Assinaturas & Custos Fixos
+    // 0: Cronograma, 1: Compras Parceladas, 2: Assinaturas
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     var isSearchExpanded by remember { mutableStateOf(false) }
@@ -126,7 +125,6 @@ fun RecurringInstallmentsScreen(
     val recurringItems = remember(uiState.filteredItems) {
         uiState.filteredItems.filter { it.bill.type == BillType.RECURRING }
     }
-    val currentTabItems = if (selectedTabIndex == 0) installmentItems else recurringItems
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -168,11 +166,12 @@ fun RecurringInstallmentsScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 1. Segmented Tabs Superiores: Compras Parceladas vs Assinaturas
-            val tabItems = remember(installmentItems.size, recurringItems.size) {
+            // 1. Segmented Tabs Superiores: Cronograma, Parcelados, Assinaturas
+            val tabItems = remember(uiState.futureTimeline.size, installmentItems.size, recurringItems.size) {
                 listOf(
-                    SegmentedTabItem("Compras Parceladas", installmentItems.size),
-                    SegmentedTabItem("Assinaturas & Custos Fixos", recurringItems.size)
+                    SegmentedTabItem("Cronograma", uiState.futureTimeline.size),
+                    SegmentedTabItem("Parcelados", installmentItems.size),
+                    SegmentedTabItem("Assinaturas", recurringItems.size)
                 )
             }
 
@@ -183,168 +182,305 @@ fun RecurringInstallmentsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 2. Filtros de Status (Todas, Em Andamento, Concluídas)
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                items(RecurringStatusFilter.values()) { filter ->
-                    FilterChip(
-                        selected = uiState.statusFilter == filter,
-                        onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
-                        label = { Text(filter.label) },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 2. Resumo Consolidado Contextual
-            if (selectedTabIndex == 0) {
-                // Resumo de Compras Parceladas (Amortização Total)
-                val totalInstallmentOriginal = remember(installmentItems) {
-                    installmentItems.sumOf { it.bill.totalAmountCents }
-                }
-                val totalPaidInstallment = remember(installmentItems) {
-                    installmentItems.sumOf { it.totalPaidCents }
-                }
-                val amortizedProgress = if (totalInstallmentOriginal > 0L) {
-                    totalPaidInstallment.toFloat() / totalInstallmentOriginal.toFloat()
-                } else 0f
+            when (selectedTabIndex) {
+                0 -> {
+                    // TAB 0: CRONOGRAMA FUTURO
+                    val totalTimelinePendingCents = remember(uiState.futureTimeline) {
+                        uiState.futureTimeline.sumOf { it.pendingCents }
+                    }
+                    val totalTimelinePaidCents = remember(uiState.futureTimeline) {
+                        uiState.futureTimeline.sumOf { it.paidCents }
+                    }
 
-                PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp)
                         ) {
-                            Column {
-                                Text(
-                                    text = "Saldo Devedor Restante",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = CurrencyUtils.formatCentsToCurrency(uiState.totalActiveInstallmentsCents),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Compromissos Futuros (A Pagar)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = CurrencyUtils.formatCentsToCurrency(totalTimelinePendingCents),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        text = "${uiState.futureTimeline.size} meses mapeados",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
                             }
 
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            if (totalTimelinePaidCents > 0L) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Já quitado no período: ${CurrencyUtils.formatCentsToCurrency(totalTimelinePaidCents)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SuccessGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (uiState.isLoading && uiState.futureTimeline.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else if (uiState.futureTimeline.isEmpty()) {
+                        EmptyRecurringView(mode = 0)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 84.dp)
+                        ) {
+                            items(uiState.futureTimeline, key = { it.timestamp }) { month ->
+                                TimelineMonthCard(
+                                    month = month,
+                                    allItems = uiState.items,
+                                    onTogglePayment = { instId, paid ->
+                                        viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
+                                    },
+                                    onSelectPlan = { plan ->
+                                        planToViewDetails = plan
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                1 -> {
+                    // TAB 1: COMPRAS PARCELADAS
+                    // Filtros de Status (Todas, Em Andamento, Concluídas)
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        items(RecurringStatusFilter.values()) { filter ->
+                            FilterChip(
+                                selected = uiState.statusFilter == filter,
+                                onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
+                                label = { Text(filter.label) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Resumo de Compras Parceladas com Verdade Financeira
+                    val amortizedProgress = if (uiState.totalOriginalFinancedCents > 0L) {
+                        uiState.totalPaidInstallmentsCents.toFloat() / uiState.totalOriginalFinancedCents.toFloat()
+                    } else 0f
+
+                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Saldo Devedor Restante",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = CurrencyUtils.formatCentsToCurrency(uiState.totalActiveInstallmentsCents),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        text = "${(amortizedProgress * 100).toInt()}% amortizado",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            PlatformProgressBar(
+                                progress = amortizedProgress,
+                                height = 6.dp,
+                                progressColor = MaterialTheme.colorScheme.primary
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "${(amortizedProgress * 100).toInt()}% amortizado",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    text = "Já quitado: ${CurrencyUtils.formatCentsToCurrency(uiState.totalPaidInstallmentsCents)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SuccessGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Total financiado: ${CurrencyUtils.formatCentsToCurrency(uiState.totalOriginalFinancedCents)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        PlatformProgressBar(
-                            progress = amortizedProgress,
-                            height = 6.dp,
-                            progressColor = MaterialTheme.colorScheme.primary
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                    if (uiState.isLoading && uiState.items.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else if (installmentItems.isEmpty()) {
+                        EmptyRecurringView(mode = 1)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(bottom = 84.dp)
                         ) {
-                            Text(
-                                text = "Já quitado: ${CurrencyUtils.formatCentsToCurrency(totalPaidInstallment)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = SuccessGreen,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "Total financiado: ${CurrencyUtils.formatCentsToCurrency(totalInstallmentOriginal)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            items(installmentItems, key = { it.bill.id }) { item ->
+                                BillPlanCard(
+                                    item = item,
+                                    onClick = { planToViewDetails = item }
+                                )
+                            }
                         }
                     }
                 }
-            } else {
-                // Resumo de Assinaturas & Custos Fixos
-                PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Compromisso Mensal Fixo",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = SuccessGreen
-                            )
-                        }
 
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "Projeção Anual",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents * 12),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                2 -> {
+                    // TAB 2: ASSINATURAS & CUSTOS FIXOS
+                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Compromisso Mensal Fixo",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SuccessGreen
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "Projeção Anual",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = CurrencyUtils.formatCentsToCurrency(uiState.totalMonthlyRecurringCents * 12),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Pago este mês: ${CurrencyUtils.formatCentsToCurrency(uiState.paidThisMonthRecurringCents)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = SuccessGreen,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "Pendente este mês: ${CurrencyUtils.formatCentsToCurrency(uiState.pendingThisMonthRecurringCents)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-            if (uiState.isLoading && uiState.items.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else if (currentTabItems.isEmpty()) {
-                EmptyRecurringView(isInstallmentTab = selectedTabIndex == 0)
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 84.dp)
-                ) {
-                    items(currentTabItems, key = { it.bill.id }) { item ->
-                        BillPlanCard(
-                            item = item,
-                            onClick = { planToViewDetails = item }
-                        )
+                    if (uiState.isLoading && uiState.items.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else if (recurringItems.isEmpty()) {
+                        EmptyRecurringView(mode = 2)
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            contentPadding = PaddingValues(bottom = 84.dp)
+                        ) {
+                            items(recurringItems, key = { it.bill.id }) { item ->
+                                BillPlanCard(
+                                    item = item,
+                                    onClick = { planToViewDetails = item }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -880,7 +1016,159 @@ fun InstallmentRow(
 }
 
 @Composable
-fun EmptyRecurringView(isInstallmentTab: Boolean = true) {
+fun TimelineMonthCard(
+    month: TimelineMonthSummary,
+    allItems: List<BillWithInstallments>,
+    onTogglePayment: (String, Boolean) -> Unit,
+    onSelectPlan: (BillWithInstallments) -> Unit
+) {
+    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            // Header do Mês
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = month.monthLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${month.installmentsCount} ${if (month.installmentsCount == 1) "parcela" else "parcelas"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = CurrencyUtils.formatCentsToCurrency(month.totalCents),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (month.pendingCents > 0L && month.paidCents > 0L) {
+                        Text(
+                            text = "Resta: ${CurrencyUtils.formatCentsToCurrency(month.pendingCents)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else if (month.pendingCents == 0L && month.totalCents > 0L) {
+                        Text(
+                            text = "Mês Quitado",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SuccessGreen
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Parcelas individuais do mês
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                month.items.forEach { inst ->
+                    val parentPlan = allItems.find { it.bill.id == inst.billId }
+                    val title = parentPlan?.bill?.title ?: "Parcela"
+                    val isOverdue = !inst.isPaid && inst.dueDate < System.currentTimeMillis()
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (parentPlan != null) onSelectPlan(parentPlan)
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                IconButton(
+                                    onClick = { onTogglePayment(inst.id, inst.isPaid) },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = if (inst.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
+                                        contentDescription = if (inst.isPaid) "Paga" else "Marcar como paga",
+                                        tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Column {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = "Parcela ${inst.installmentNumber} • Vence em ${DateUtils.formatDate(inst.dueDate)}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = CurrencyUtils.formatCentsToCurrency(inst.amountCents),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (inst.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EmptyRecurringView(mode: Int = 0) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -898,7 +1186,11 @@ fun EmptyRecurringView(isInstallmentTab: Boolean = true) {
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isInstallmentTab) Icons.Default.CreditCard else Icons.Default.Autorenew,
+                    imageVector = when (mode) {
+                        0 -> Icons.Default.CalendarMonth
+                        1 -> Icons.Default.CreditCard
+                        else -> Icons.Default.Autorenew
+                    },
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(28.dp)
@@ -908,7 +1200,11 @@ fun EmptyRecurringView(isInstallmentTab: Boolean = true) {
             Spacer(modifier = Modifier.height(14.dp))
 
             Text(
-                text = if (isInstallmentTab) "Nenhuma Compra Parcelada" else "Nenhuma Assinatura Cadastrada",
+                text = when (mode) {
+                    0 -> "Nenhum Pagamento Futuro"
+                    1 -> "Nenhuma Compra Parcelada"
+                    else -> "Nenhuma Assinatura Cadastrada"
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -917,10 +1213,11 @@ fun EmptyRecurringView(isInstallmentTab: Boolean = true) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = if (isInstallmentTab)
-                    "Cadastre compras parceladas para acompanhar o progresso da amortização."
-                else
-                    "Cadastre despesas contínuas como streaming e condomínio.",
+                text = when (mode) {
+                    0 -> "Todas as suas parcelas já foram quitadas ou ainda não há compromissos futuros programados."
+                    1 -> "Cadastre compras parceladas para acompanhar o cronograma e amortização de débitos."
+                    else -> "Cadastre despesas contínuas como streaming, condomínio e serviços recorrentes."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center

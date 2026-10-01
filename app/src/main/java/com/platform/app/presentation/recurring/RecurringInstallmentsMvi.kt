@@ -18,6 +18,16 @@ data class BillWithInstallments(
     val estimatedPayoffDate: Long? = null
 )
 
+data class TimelineMonthSummary(
+    val monthLabel: String,
+    val timestamp: Long,
+    val totalCents: Long,
+    val pendingCents: Long,
+    val paidCents: Long,
+    val installmentsCount: Int,
+    val items: List<BillInstallment>
+)
+
 enum class RecurringStatusFilter(val label: String) {
     ALL("Todas"),
     ACTIVE("Em Andamento"),
@@ -30,9 +40,14 @@ data class RecurringInstallmentsUiState(
     val searchQuery: String = "",
     val items: List<BillWithInstallments> = emptyList(),
     val filteredItems: List<BillWithInstallments> = emptyList(),
+    val futureTimeline: List<TimelineMonthSummary> = emptyList(),
     val installmentToAdjust: BillInstallment? = null,
     val totalActiveInstallmentsCents: Long = 0L,
+    val totalOriginalFinancedCents: Long = 0L,
+    val totalPaidInstallmentsCents: Long = 0L,
     val totalMonthlyRecurringCents: Long = 0L,
+    val pendingThisMonthRecurringCents: Long = 0L,
+    val paidThisMonthRecurringCents: Long = 0L,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 ) : UiState

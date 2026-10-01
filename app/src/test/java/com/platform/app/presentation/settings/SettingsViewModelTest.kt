@@ -62,6 +62,7 @@ class SettingsViewModelTest {
 
         every { preferencesManager.isBiometricEnabled } returns flowOf(false)
         every { preferencesManager.isDarkMode } returns flowOf(null)
+        every { preferencesManager.isAmoledMode } returns flowOf(false)
         every { preferencesManager.lastOfflineBackupTimestamp } returns flowOf(1700000000000L)
         every { preferencesManager.appIcon } returns flowOf("classic")
         every { biometricAuthManager.canAuthenticate() } returns true
@@ -84,6 +85,7 @@ class SettingsViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(false, state.isBiometricEnabled)
         assertEquals(null, state.isDarkMode)
+        assertEquals(false, state.isAmoledMode)
         assertEquals(1700000000000L, state.lastBackupTimestamp)
         assertTrue(state.isBiometricSupported)
         assertEquals(0, state.accountsCount)
@@ -164,6 +166,18 @@ class SettingsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { preferencesManager.setDarkMode(true) }
+    }
+
+    @Test
+    fun `SetAmoledMode calls preferencesManager setAmoledMode`() = runTest {
+        coEvery { preferencesManager.setAmoledMode(true) } returns Unit
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(SettingsUiAction.SetAmoledMode(true))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { preferencesManager.setAmoledMode(true) }
     }
 
     @Test

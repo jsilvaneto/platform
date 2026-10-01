@@ -101,6 +101,7 @@ import com.platform.app.presentation.components.PlatformSegmentedTabs
 import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -645,15 +646,29 @@ fun BillPlanCard(
                     }
 
                     item.nextInstallment?.let { next ->
+                        val isNextToday = DateUtils.isToday(next.dueDate)
+                        val isNextOverdue = next.dueDate < System.currentTimeMillis() && !isNextToday
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                            color = when {
+                                isNextOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                                isNextToday -> WarningAmber.copy(alpha = 0.15f)
+                                else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                            }
                         ) {
                             Text(
-                                text = "Próx: ${DateUtils.formatDate(next.dueDate)}",
+                                text = when {
+                                    isNextOverdue -> "Atrasada: ${DateUtils.formatDate(next.dueDate)}"
+                                    isNextToday -> "Vence hoje"
+                                    else -> "Próx: ${DateUtils.formatDate(next.dueDate)}"
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = when {
+                                    isNextOverdue -> MaterialTheme.colorScheme.error
+                                    isNextToday -> WarningAmber
+                                    else -> MaterialTheme.colorScheme.primary
+                                },
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -662,6 +677,8 @@ fun BillPlanCard(
             } else {
                 // Indicador de próxima cobrança de assinatura
                 item.nextInstallment?.let { next ->
+                    val isNextToday = DateUtils.isToday(next.dueDate)
+                    val isNextOverdue = next.dueDate < System.currentTimeMillis() && !isNextToday
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -669,13 +686,25 @@ fun BillPlanCard(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = SuccessGreen.copy(alpha = 0.12f)
+                            color = when {
+                                isNextOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                                isNextToday -> WarningAmber.copy(alpha = 0.15f)
+                                else -> SuccessGreen.copy(alpha = 0.12f)
+                            }
                         ) {
                             Text(
-                                text = "Próximo débito: ${DateUtils.formatDate(next.dueDate)}",
+                                text = when {
+                                    isNextOverdue -> "Atrasado: ${DateUtils.formatDate(next.dueDate)}"
+                                    isNextToday -> "Débito hoje"
+                                    else -> "Próximo débito: ${DateUtils.formatDate(next.dueDate)}"
+                                },
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                color = SuccessGreen,
+                                color = when {
+                                    isNextOverdue -> MaterialTheme.colorScheme.error
+                                    isNextToday -> WarningAmber
+                                    else -> SuccessGreen
+                                },
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
@@ -945,7 +974,8 @@ fun InstallmentRow(
     onTogglePayment: () -> Unit,
     onOpenAdjust: (() -> Unit)? = null
 ) {
-    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
+    val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
+    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis() && !isToday
 
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -968,7 +998,7 @@ fun InstallmentRow(
                     Icon(
                         imageVector = if (installment.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
                         contentDescription = if (installment.isPaid) "Marcar como pendente" else "Marcar como paga",
-                        tint = if (installment.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (installment.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -982,9 +1012,20 @@ fun InstallmentRow(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Vencimento: ${DateUtils.formatDate(installment.dueDate)}",
+                        text = when {
+                            installment.isPaid -> "Pago"
+                            isOverdue -> "Venceu ${DateUtils.formatDate(installment.dueDate)}"
+                            isToday -> "Vence hoje"
+                            else -> "Vence ${DateUtils.formatDate(installment.dueDate)}"
+                        },
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        fontWeight = if (isOverdue || isToday) FontWeight.SemiBold else FontWeight.Normal,
+                        color = when {
+                            installment.isPaid -> SuccessGreen
+                            isOverdue -> MaterialTheme.colorScheme.error
+                            isToday -> WarningAmber
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
             }
@@ -1102,7 +1143,8 @@ fun TimelineMonthCard(
                 month.items.forEach { inst ->
                     val parentPlan = allItems.find { it.bill.id == inst.billId }
                     val title = parentPlan?.bill?.title ?: "Parcela"
-                    val isOverdue = !inst.isPaid && inst.dueDate < System.currentTimeMillis()
+                    val isToday = !inst.isPaid && DateUtils.isToday(inst.dueDate)
+                    val isOverdue = !inst.isPaid && inst.dueDate < System.currentTimeMillis() && !isToday
 
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -1131,7 +1173,7 @@ fun TimelineMonthCard(
                                     Icon(
                                         imageVector = if (inst.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
                                         contentDescription = if (inst.isPaid) "Paga" else "Marcar como paga",
-                                        tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -1146,9 +1188,20 @@ fun TimelineMonthCard(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "Parcela ${inst.installmentNumber} • Vence em ${DateUtils.formatDate(inst.dueDate)}",
+                                        text = when {
+                                            inst.isPaid -> "Parcela ${inst.installmentNumber} • Paga"
+                                            isOverdue -> "Parcela ${inst.installmentNumber} • Venceu em ${DateUtils.formatDate(inst.dueDate)}"
+                                            isToday -> "Parcela ${inst.installmentNumber} • Vence hoje"
+                                            else -> "Parcela ${inst.installmentNumber} • Vence em ${DateUtils.formatDate(inst.dueDate)}"
+                                        },
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                                        fontWeight = if (isOverdue || isToday) FontWeight.SemiBold else FontWeight.Normal,
+                                        color = when {
+                                            inst.isPaid -> SuccessGreen
+                                            isOverdue -> MaterialTheme.colorScheme.error
+                                            isToday -> WarningAmber
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
                                     )
                                 }
                             }

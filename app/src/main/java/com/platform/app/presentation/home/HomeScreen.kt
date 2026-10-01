@@ -1965,11 +1965,49 @@ fun PayableItemCard(
                     Spacer(modifier = Modifier.height(2.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Vence ${DateUtils.formatDate(item.dueDate)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        if (item.isPaid) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = SuccessGreen.copy(alpha = 0.12f),
+                                border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = null,
+                                        tint = SuccessGreen,
+                                        modifier = Modifier.size(10.dp)
+                                    )
+                                    Text(
+                                        text = "Pago",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = SuccessGreen
+                                    )
+                                }
+                            }
+                        } else {
+                            val isToday = item.urgency == PayableUrgency.DUE_TODAY || DateUtils.isToday(item.dueDate)
+                            val isOverdue = item.urgency == PayableUrgency.OVERDUE || (item.dueDate < System.currentTimeMillis() && !isToday)
+                            Text(
+                                text = when {
+                                    isOverdue -> "Venceu ${DateUtils.formatDate(item.dueDate)}"
+                                    isToday -> "Vence hoje"
+                                    else -> "Vence ${DateUtils.formatDate(item.dueDate)}"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = if (isOverdue || isToday) FontWeight.SemiBold else FontWeight.Normal,
+                                color = when {
+                                    isOverdue -> MaterialTheme.colorScheme.error
+                                    isToday -> WarningAmber
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
 
                         Spacer(modifier = Modifier.width(8.dp))
 

@@ -60,6 +60,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.usecase.ContactDetails
 import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
 
 import androidx.compose.material.icons.filled.Delete
@@ -531,16 +532,18 @@ fun PlannedInstallmentsTab(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(installments, key = { it.id }) { inst ->
-                val isOverdue = !inst.isPaid && inst.dueDate < now
+                val isToday = !inst.isPaid && DateUtils.isToday(inst.dueDate)
+                val isOverdue = !inst.isPaid && inst.dueDate < now && !isToday
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isOverdue)
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        containerColor = when {
+                            isOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
+                            isToday -> WarningAmber.copy(alpha = 0.12f)
+                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        }
                     )
                 ) {
                     Row(
@@ -553,7 +556,7 @@ fun PlannedInstallmentsTab(
                             Icon(
                                 imageVector = if (inst.isPaid) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
                                 contentDescription = if (inst.isPaid) "Pago" else "Pendente",
-                                tint = if (inst.isPaid) SuccessGreen else MaterialTheme.colorScheme.outline
+                                tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.outline
                             )
                         }
 
@@ -565,12 +568,23 @@ fun PlannedInstallmentsTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
 
+                            val statusLabel = when {
+                                inst.isPaid -> "Pago"
+                                isOverdue -> "Venceu ${DateUtils.formatDate(inst.dueDate)}"
+                                isToday -> "Vence hoje"
+                                else -> "Vence ${DateUtils.formatDate(inst.dueDate)}"
+                            }
                             Text(
-                                text = "Vencimento: ${DateUtils.formatDate(inst.dueDate)}" +
+                                text = "$statusLabel" +
                                         if (inst.type == BillType.INSTALLMENT) " • Parcela ${inst.installmentNumber}/${inst.totalInstallments}" else "",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal
+                                color = when {
+                                    inst.isPaid -> SuccessGreen
+                                    isOverdue -> MaterialTheme.colorScheme.error
+                                    isToday -> WarningAmber
+                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                },
+                                fontWeight = if (isOverdue || isToday) FontWeight.Bold else FontWeight.Normal
                             )
                         }
 

@@ -933,7 +933,8 @@ fun BillInstallmentItemCard(
     onTogglePayment: () -> Unit,
     onSelectInstallment: () -> Unit
 ) {
-    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis()
+    val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
+    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis() && !isToday
 
     val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
     val catColor = remember(installment.categoryColorHex, fallbackColor) {
@@ -948,6 +949,7 @@ fun BillInstallmentItemCard(
         isSelected -> BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
         installment.isPaid -> BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
         isOverdue -> BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f))
+        isToday -> BorderStroke(1.dp, WarningAmber.copy(alpha = 0.45f))
         else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     }
 
@@ -1125,14 +1127,14 @@ fun BillInstallmentItemCard(
                     Text(
                         text = when {
                             isOverdue -> "Venceu ${DateUtils.formatDate(installment.dueDate)}"
-                            DateUtils.isToday(installment.dueDate) -> "Vence hoje"
+                            isToday -> "Vence hoje"
                             else -> "Vence ${DateUtils.formatDate(installment.dueDate)}"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isOverdue || DateUtils.isToday(installment.dueDate)) FontWeight.SemiBold else FontWeight.Normal,
+                        fontWeight = if (isOverdue || isToday) FontWeight.SemiBold else FontWeight.Normal,
                         color = when {
                             isOverdue -> MaterialTheme.colorScheme.error
-                            DateUtils.isToday(installment.dueDate) -> WarningAmber
+                            isToday -> WarningAmber
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         }
                     )

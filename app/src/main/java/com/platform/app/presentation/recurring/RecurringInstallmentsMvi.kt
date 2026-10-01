@@ -15,7 +15,15 @@ data class BillWithInstallments(
     val remainingCents: Long,
     val progress: Float,
     val nextInstallment: BillInstallment?,
-    val estimatedPayoffDate: Long? = null
+    val estimatedPayoffDate: Long? = null,
+    val regularAmountCents: Long = bill.totalAmountCents,
+    val hasVariableFirstInstallment: Boolean = false,
+    val firstInstallmentAmountCents: Long = bill.totalAmountCents,
+    val contactName: String? = null,
+    val itemName: String? = null,
+    val categoryName: String = "Geral",
+    val categoryIconName: String = "category",
+    val categoryColorHex: String = "#64748B"
 )
 
 data class TimelineMonthSummary(

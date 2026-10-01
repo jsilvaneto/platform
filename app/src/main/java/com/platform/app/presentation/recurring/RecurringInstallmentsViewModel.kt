@@ -107,6 +107,35 @@ class RecurringInstallmentsViewModel @Inject constructor(
                     insts.maxOfOrNull { it.dueDate }
                 } else null
 
+                // Determina valor regular mensal (ex: se 1ª parcela é 2000 e 2..12 são 350, o regular é 350)
+                val regularAmount = if (bill.type == BillType.RECURRING) {
+                    if (insts.isNotEmpty()) {
+                        val amountCounts = insts.groupingBy { it.amountCents }.eachCount()
+                        val maxFreq = amountCounts.values.maxOrNull() ?: 1
+                        val candidates = amountCounts.filter { it.value == maxFreq }.keys
+                        if (candidates.size == 1) {
+                            candidates.first()
+                        } else {
+                            insts.last().amountCents
+                        }
+                    } else {
+                        bill.totalAmountCents
+                    }
+                } else {
+                    bill.totalAmountCents
+                }
+
+                val hasVariableFirst = bill.type == BillType.RECURRING && insts.size > 1 &&
+                        insts.first().amountCents != regularAmount
+
+                val firstAmount = insts.firstOrNull()?.amountCents ?: regularAmount
+
+                val contact = insts.firstOrNull { !it.contactName.isNullOrBlank() }?.contactName
+                val item = insts.firstOrNull { !it.itemName.isNullOrBlank() }?.itemName
+                val category = insts.firstOrNull { !it.categoryName.isNullOrBlank() }?.categoryName ?: "Geral"
+                val categoryIcon = insts.firstOrNull { !it.categoryIconName.isNullOrBlank() }?.categoryIconName ?: "category"
+                val categoryColor = insts.firstOrNull { !it.categoryColorHex.isNullOrBlank() }?.categoryColorHex ?: "#64748B"
+
                 BillWithInstallments(
                     bill = bill,
                     installments = insts,
@@ -115,7 +144,15 @@ class RecurringInstallmentsViewModel @Inject constructor(
                     remainingCents = remaining,
                     progress = progress,
                     nextInstallment = nextInst,
-                    estimatedPayoffDate = estimatedPayoff
+                    estimatedPayoffDate = estimatedPayoff,
+                    regularAmountCents = regularAmount,
+                    hasVariableFirstInstallment = hasVariableFirst,
+                    firstInstallmentAmountCents = firstAmount,
+                    contactName = contact,
+                    itemName = item,
+                    categoryName = category,
+                    categoryIconName = categoryIcon,
+                    categoryColorHex = categoryColor
                 )
             }
 
@@ -125,9 +162,9 @@ class RecurringInstallmentsViewModel @Inject constructor(
             val totalPaidInstallments = installmentItems.sumOf { it.totalPaidCents }
             val totalOriginalFinanced = totalActiveInstallments + totalPaidInstallments
 
-            // Totais Reais de Assinaturas & Recorrentes
+            // Totais Reais de Assinaturas & Recorrentes (baseado no valor regular da recorrência)
             val recurringItems = items.filter { it.bill.type == BillType.RECURRING }
-            val totalMonthlyRecurring = recurringItems.sumOf { it.bill.totalAmountCents }
+            val totalMonthlyRecurring = recurringItems.sumOf { it.regularAmountCents }
 
             val now = System.currentTimeMillis()
             val startOfMonth = DateUtils.getStartOfMonth(now)
@@ -237,8 +274,10 @@ class RecurringInstallmentsViewModel @Inject constructor(
 
             val matchesQuery = query.isBlank() ||
                     item.bill.title.contains(query, ignoreCase = true) ||
-                    (item.installments.firstOrNull()?.categoryName?.contains(query, ignoreCase = true) == true) ||
-                    (item.installments.firstOrNull()?.contactName?.contains(query, ignoreCase = true) == true)
+                    (item.contactName?.contains(query, ignoreCase = true) == true) ||
+                    (item.itemName?.contains(query, ignoreCase = true) == true) ||
+                    item.categoryName.contains(query, ignoreCase = true) ||
+                    item.installments.any { it.contactName?.contains(query, ignoreCase = true) == true }
 
             matchesType && matchesStatus && matchesQuery
         }

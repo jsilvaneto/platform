@@ -34,10 +34,18 @@ data class FinancialDashboardMetrics(
     val creditCardSpendCents: Long = 0L,
     val nonCardSpendCents: Long = 0L,
     val creditCardPercentage: Float = 0f,
+    val paymentMethodsDistribution: List<PaymentMethodSpend> = emptyList(),
     val topContactsSpend: List<ContactSpend> = emptyList(),
     // Visão do Futuro (Previsibilidade e Liberação de Caixa)
     val nextCompletingInstallments: List<CompletingInstallmentSummary> = emptyList(),
     val projectedFreedMonthlyFlowCents: Long = 0L
+)
+
+data class PaymentMethodSpend(
+    val methodName: String,
+    val amountCents: Long,
+    val percentage: Float,
+    val count: Int
 )
 
 data class PastMonthHistory(

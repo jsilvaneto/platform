@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.platform.app.data.local.entity.ContactEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -20,6 +22,12 @@ interface ContactDao {
 
     @Query("SELECT COUNT(*) FROM contacts")
     suspend fun count(): Int
+
+    @Upsert
+    suspend fun upsert(contact: ContactEntity)
+
+    @Update
+    suspend fun update(contact: ContactEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(contact: ContactEntity)

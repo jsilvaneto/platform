@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.platform.app.data.local.entity.CategoryEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -17,6 +19,12 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
+
+    @Upsert
+    suspend fun upsert(category: CategoryEntity)
+
+    @Update
+    suspend fun update(category: CategoryEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CategoryEntity)

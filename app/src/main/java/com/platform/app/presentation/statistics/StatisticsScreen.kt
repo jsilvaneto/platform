@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +72,7 @@ import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.domain.model.NatureSpend
 import com.platform.app.domain.model.PastMonthHistory
+import com.platform.app.domain.model.PaymentMethodSpend
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformAvatar
 import com.platform.app.presentation.components.PlatformCard
@@ -953,100 +957,214 @@ fun PaymentMethodDistributionCard(
     val total = metrics.totalDueMonthCents
     if (total <= 0L) return
 
+    val distribution = metrics.paymentMethodsDistribution
     val cardPct = metrics.creditCardPercentage
     val nonCardPct = (100f - cardPct).coerceAtLeast(0f)
 
+    val palette = remember {
+        listOf(
+            Color(0xFF2563EB), // Azul Royal (Cartão / Principal)
+            Color(0xFF06B6D4), // Ciano / Pix
+            Color(0xFF8B5CF6), // Roxo / Boleto
+            Color(0xFF10B981), // Verde / Dinheiro
+            Color(0xFFF59E0B), // Âmbar / Débito
+            Color(0xFFEC4899), // Rosa
+            Color(0xFF64748B)  // Neutro / Outros
+        )
+    }
+
     PlatformCard {
         Column(modifier = Modifier.padding(16.dp)) {
+            // Cabeçalho
             Text(
-                text = "Meio de Liquidação & Crédito",
+                text = "Formas de Pagamento",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Exposição a faturas de cartão de crédito vs liquidação à vista",
+                text = "Distribuição e porcentagem dos gastos do mês",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Barra Bifurcada Cartão vs Outros
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                if (cardPct > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(cardPct.coerceAtLeast(1f))
-                            .background(BrandPrimary)
-                    )
+            // 1. Barra Segmentada Proporcional no Topo
+            if (distribution.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    distribution.forEachIndexed { index, item ->
+                        if (item.percentage > 0f) {
+                            val color = palette[index % palette.size]
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(item.percentage.coerceAtLeast(0.5f))
+                                    .background(color)
+                            )
+                        }
+                    }
                 }
-                if (nonCardPct > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(nonCardPct.coerceAtLeast(1f))
-                            .background(InfoCyan)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.CreditCard,
-                        contentDescription = null,
-                        tint = BrandPrimary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Column {
-                        Text(
-                            text = "Cartão de Crédito",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                // Fallback bifurcado Cartão vs À Vista
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    if (cardPct > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(cardPct.coerceAtLeast(1f))
+                                .background(BrandPrimary)
                         )
-                        Text(
-                            text = "${formatValueOrPrivate(metrics.creditCardSpendCents, isPrivate)} (${String.format(Locale.getDefault(), "%.0f", cardPct)}%)",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                    }
+                    if (nonCardPct > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .weight(nonCardPct.coerceAtLeast(1f))
+                                .background(InfoCyan)
                         )
                     }
                 }
+            }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Payments,
-                        contentDescription = null,
-                        tint = InfoCyan,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Débito / Pix / Conta",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 2. Detalhamento por Forma de Pagamento com Porcentagens e Barras Individuais
+            if (distribution.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    distribution.forEachIndexed { index, item ->
+                        val color = palette[index % palette.size]
+                        val icon = when {
+                            item.methodName.contains("Pix", ignoreCase = true) -> Icons.Default.QrCode
+                            item.methodName.contains("Cartão", ignoreCase = true) || item.methodName.contains("Crédito", ignoreCase = true) -> Icons.Default.CreditCard
+                            item.methodName.contains("Boleto", ignoreCase = true) -> Icons.AutoMirrored.Filled.ReceiptLong
+                            item.methodName.contains("Dinheiro", ignoreCase = true) || item.methodName.contains("Espécie", ignoreCase = true) -> Icons.Default.Payments
+                            item.methodName.contains("Conta", ignoreCase = true) || item.methodName.contains("Transferência", ignoreCase = true) -> Icons.Default.AccountBalance
+                            else -> Icons.Default.Payments
+                        }
+
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .background(color.copy(alpha = 0.14f), CircleShape),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = color,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = item.methodName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (item.count > 0) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "(${item.count})",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = "${formatValueOrPrivate(item.amountCents, isPrivate)} (${String.format(Locale.getDefault(), "%.1f", item.percentage)}%)",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            PlatformProgressBar(
+                                progress = (item.percentage / 100f).coerceIn(0f, 1f),
+                                height = 5.dp,
+                                progressColor = color,
+                                trackColor = color.copy(alpha = 0.12f)
+                            )
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CreditCard,
+                            contentDescription = null,
+                            tint = BrandPrimary,
+                            modifier = Modifier.size(16.dp)
                         )
-                        Text(
-                            text = "${formatValueOrPrivate(metrics.nonCardSpendCents, isPrivate)} (${String.format(Locale.getDefault(), "%.0f", nonCardPct)}%)",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text(
+                                text = "Cartão de Crédito",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${formatValueOrPrivate(metrics.creditCardSpendCents, isPrivate)} (${String.format(Locale.getDefault(), "%.0f", cardPct)}%)",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = null,
+                            tint = InfoCyan,
+                            modifier = Modifier.size(16.dp)
                         )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "Débito / Pix / Conta",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${formatValueOrPrivate(metrics.nonCardSpendCents, isPrivate)} (${String.format(Locale.getDefault(), "%.0f", nonCardPct)}%)",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }

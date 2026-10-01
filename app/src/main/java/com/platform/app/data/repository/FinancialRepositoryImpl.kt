@@ -60,7 +60,10 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveCategory(category: Category) {
-        categoryDao.insert(CategoryEntity.fromDomain(category))
+        database.withTransaction {
+            categoryDao.upsert(CategoryEntity.fromDomain(category))
+            database.budgetDao.updateCategoryInfo(category.id, category.name, category.colorHex)
+        }
     }
 
     override suspend fun deleteCategory(categoryId: String) {
@@ -112,7 +115,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveExpenseItem(item: ExpenseItem) {
-        expenseItemDao.insert(ExpenseItemEntity.fromDomain(item))
+        expenseItemDao.upsert(ExpenseItemEntity.fromDomain(item))
     }
 
     override suspend fun deleteExpenseItem(itemId: String) {
@@ -149,7 +152,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveCreditCard(card: CreditCard) {
-        creditCardDao.insertCard(CreditCardEntity.fromDomain(card))
+        creditCardDao.upsertCard(CreditCardEntity.fromDomain(card))
     }
 
     override suspend fun deleteCreditCard(cardId: String) {
@@ -286,7 +289,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveContact(contact: Contact) {
-        contactDao.insert(ContactEntity.fromDomain(contact))
+        contactDao.upsert(ContactEntity.fromDomain(contact))
     }
 
     override suspend fun deleteContact(contactId: String) {
@@ -317,7 +320,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun saveFinancialAccount(account: FinancialAccount) {
-        financialAccountDao.insert(FinancialAccountEntity.fromDomain(account))
+        financialAccountDao.upsert(FinancialAccountEntity.fromDomain(account))
     }
 
     override suspend fun deleteFinancialAccount(accountId: String) {
@@ -344,7 +347,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun savePaymentMethod(method: PaymentMethod) {
-        paymentMethodDao.insert(PaymentMethodEntity.fromDomain(method))
+        paymentMethodDao.upsert(PaymentMethodEntity.fromDomain(method))
     }
 
     override suspend fun deletePaymentMethod(methodId: String) {

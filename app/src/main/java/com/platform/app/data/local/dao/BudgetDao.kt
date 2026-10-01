@@ -18,6 +18,9 @@ interface BudgetDao {
     @Query("DELETE FROM budgets WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("UPDATE budgets SET categoryName = :categoryName, colorHex = :colorHex WHERE categoryId = :categoryId")
+    suspend fun updateCategoryInfo(categoryId: String, categoryName: String, colorHex: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(budgets: List<BudgetEntity>)
 

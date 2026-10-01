@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.platform.app.data.local.entity.CreditCardEntity
 import com.platform.app.data.local.entity.CreditCardInvoiceEntity
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +18,12 @@ interface CreditCardDao {
 
     @Query("SELECT * FROM credit_cards WHERE id = :id LIMIT 1")
     suspend fun getCardById(id: String): CreditCardEntity?
+
+    @Upsert
+    suspend fun upsertCard(card: CreditCardEntity)
+
+    @Update
+    suspend fun updateCard(card: CreditCardEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCard(card: CreditCardEntity)

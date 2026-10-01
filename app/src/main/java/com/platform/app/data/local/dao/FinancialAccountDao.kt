@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.platform.app.data.local.entity.FinancialAccountEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -17,6 +19,12 @@ interface FinancialAccountDao {
 
     @Query("SELECT COUNT(*) FROM financial_accounts")
     suspend fun count(): Int
+
+    @Upsert
+    suspend fun upsert(account: FinancialAccountEntity)
+
+    @Update
+    suspend fun update(account: FinancialAccountEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(account: FinancialAccountEntity)

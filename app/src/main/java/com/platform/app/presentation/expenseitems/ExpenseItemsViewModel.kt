@@ -45,12 +45,20 @@ class ExpenseItemsViewModel @Inject constructor(
             }
             is ExpenseItemsUiAction.SaveItem -> {
                 viewModelScope.launch {
-                    repository.saveExpenseItem(action.item)
+                    try {
+                        repository.saveExpenseItem(action.item)
+                    } catch (_: Exception) {
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
                 }
             }
             is ExpenseItemsUiAction.DeleteItem -> {
                 viewModelScope.launch {
-                    repository.deleteExpenseItem(action.itemId)
+                    try {
+                        repository.deleteExpenseItem(action.itemId)
+                    } catch (_: Exception) {
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
                 }
             }
         }

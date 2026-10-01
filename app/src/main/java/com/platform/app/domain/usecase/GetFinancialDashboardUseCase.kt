@@ -153,6 +153,25 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val nonCardSpend = (totalDue - creditCardSpend).coerceAtLeast(0L)
             val creditCardPct = if (totalDue > 0) (creditCardSpend.toFloat() / totalDue.toFloat()) * 100f else 0f
 
+            // Distribuição Detalhada por Forma de Pagamento com Porcentagens
+            val paymentMethodsGroup = installments.groupBy { inst ->
+                when {
+                    !inst.paymentMethodName.isNullOrBlank() -> inst.paymentMethodName.trim()
+                    inst.invoiceId != null -> "Cartão de Crédito"
+                    else -> "Outros / Não Definido"
+                }
+            }
+            val paymentMethodsDistribution = paymentMethodsGroup.map { (methodName, instList) ->
+                val amount = instList.sumOf { it.amountCents }
+                val pct = if (totalDue > 0) (amount.toFloat() / totalDue.toFloat()) * 100f else 0f
+                com.platform.app.domain.model.PaymentMethodSpend(
+                    methodName = methodName,
+                    amountCents = amount,
+                    percentage = pct,
+                    count = instList.size
+                )
+            }.sortedByDescending { it.amountCents }
+
             // Top Contatos / Fornecedores no Mês Selecionado
             val contactsGroup = installments.groupBy {
                 it.contactName?.trim()?.takeIf { name -> name.isNotEmpty() } ?: "Diversos / Sem Contato"
@@ -251,6 +270,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 creditCardSpendCents = creditCardSpend,
                 nonCardSpendCents = nonCardSpend,
                 creditCardPercentage = creditCardPct,
+                paymentMethodsDistribution = paymentMethodsDistribution,
                 topContactsSpend = topContacts,
                 nextCompletingInstallments = nextCompleting,
                 projectedFreedMonthlyFlowCents = freedFlow

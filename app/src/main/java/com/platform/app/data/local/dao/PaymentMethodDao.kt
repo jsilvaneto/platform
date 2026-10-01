@@ -4,6 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
+import androidx.room.Upsert
 import com.platform.app.data.local.entity.PaymentMethodEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -14,6 +16,12 @@ interface PaymentMethodDao {
 
     @Query("SELECT COUNT(*) FROM payment_methods")
     suspend fun count(): Int
+
+    @Upsert
+    suspend fun upsert(method: PaymentMethodEntity)
+
+    @Update
+    suspend fun update(method: PaymentMethodEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(method: PaymentMethodEntity)

@@ -120,4 +120,60 @@ class GetFinancialDashboardUseCaseTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `should calculate paymentMethodsDistribution with percentages and counts accurately`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+
+        val pixInst = BillInstallment(
+            id = "inst-pix",
+            billId = "bill-pix",
+            billTitle = "Aluguel",
+            categoryId = "cat-1",
+            installmentNumber = 1,
+            totalInstallments = 1,
+            amountCents = 60000L, // R$ 600,00 (60%)
+            dueDate = currentMonthEpoch + 1000L,
+            paymentMethodId = "pm-pix",
+            paymentMethodName = "Pix"
+        )
+
+        val cardInst = BillInstallment(
+            id = "inst-card",
+            billId = "bill-card",
+            billTitle = "Mercado",
+            categoryId = "cat-2",
+            installmentNumber = 1,
+            totalInstallments = 1,
+            amountCents = 40000L, // R$ 400,00 (40%)
+            dueDate = currentMonthEpoch + 2000L,
+            paymentMethodId = "pm-card",
+            paymentMethodName = "Cartão de Crédito"
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(pixInst, cardInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(pixInst, cardInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+
+            assertEquals(2, metrics.paymentMethodsDistribution.size)
+            val firstMethod = metrics.paymentMethodsDistribution[0]
+            assertEquals("Pix", firstMethod.methodName)
+            assertEquals(60000L, firstMethod.amountCents)
+            assertEquals(60f, firstMethod.percentage, 0.01f)
+            assertEquals(1, firstMethod.count)
+
+            val secondMethod = metrics.paymentMethodsDistribution[1]
+            assertEquals("Cartão de Crédito", secondMethod.methodName)
+            assertEquals(40000L, secondMethod.amountCents)
+            assertEquals(40f, secondMethod.percentage, 0.01f)
+            assertEquals(1, secondMethod.count)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

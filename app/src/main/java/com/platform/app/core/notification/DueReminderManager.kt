@@ -92,7 +92,7 @@ object DueReminderManager {
 
         // Contas avulsas pendentes vencendo hoje
         val dueBillsToday = installments.filter { inst ->
-            inst.invoiceId == null && !inst.isPaid && inst.dueDate in startOfToday..endOfToday
+            inst.invoiceId == null && !inst.isPaid && !inst.isPaused && inst.dueDate in startOfToday..endOfToday
         }
 
         // Faturas pendentes vencendo hoje

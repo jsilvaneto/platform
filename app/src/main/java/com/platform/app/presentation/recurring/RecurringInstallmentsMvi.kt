@@ -19,6 +19,7 @@ data class BillWithInstallments(
     val regularAmountCents: Long = bill.totalAmountCents,
     val hasVariableFirstInstallment: Boolean = false,
     val firstInstallmentAmountCents: Long = bill.totalAmountCents,
+    val isPaused: Boolean = bill.isPaused,
     val contactName: String? = null,
     val itemName: String? = null,
     val categoryName: String = "Geral",
@@ -39,6 +40,7 @@ data class TimelineMonthSummary(
 enum class RecurringStatusFilter(val label: String) {
     ALL("Todas"),
     ACTIVE("Em Andamento"),
+    PAUSED("Pausadas"),
     COMPLETED("Concluídas")
 }
 
@@ -71,7 +73,16 @@ sealed interface RecurringInstallmentsUiAction : UiAction {
     data class SaveAdjustInstallment(
         val installmentId: String,
         val newAmountCents: Long,
-        val newDueDate: Long
+        val newDueDate: Long,
+        val applyToFuturePending: Boolean = false
+    ) : RecurringInstallmentsUiAction
+    data class DeleteSingleInstallment(val installmentId: String) : RecurringInstallmentsUiAction
+    data class DeleteFutureInstallments(val billId: String, val fromDueDate: Long) : RecurringInstallmentsUiAction
+    data class TogglePauseBill(val billId: String, val isCurrentlyPaused: Boolean) : RecurringInstallmentsUiAction
+    data class StopRecurringBill(val billId: String) : RecurringInstallmentsUiAction
+    data class UpdateBillMonthlyAmount(
+        val billId: String,
+        val newAmountCents: Long
     ) : RecurringInstallmentsUiAction
     object Refresh : RecurringInstallmentsUiAction
 }

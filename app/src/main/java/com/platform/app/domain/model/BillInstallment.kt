@@ -27,4 +27,5 @@ data class BillInstallment(
     val type: BillType = BillType.SINGLE
 ) {
     val isPaid: Boolean get() = paidAt != null || status == BillStatus.PAID
+    val isPaused: Boolean get() = status == BillStatus.PAUSED
 }

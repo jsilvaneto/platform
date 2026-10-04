@@ -1,5 +1,6 @@
 package com.platform.app.presentation.recurring
 
+import java.util.Locale
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -37,7 +38,11 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -94,6 +99,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillInstallment
@@ -400,6 +407,23 @@ fun RecurringInstallmentsScreen(
 
                 2 -> {
                     // TAB 2: ASSINATURAS & CUSTOS FIXOS
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val recurringFilters = listOf(RecurringStatusFilter.ALL, RecurringStatusFilter.ACTIVE, RecurringStatusFilter.PAUSED)
+                        items(recurringFilters) { filter ->
+                            FilterChip(
+                                selected = uiState.statusFilter == filter,
+                                onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
+                                label = { Text(filter.label) },
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
                         Column(
                             modifier = Modifier
@@ -502,6 +526,16 @@ fun RecurringInstallmentsScreen(
                 onOpenAdjust = { inst ->
                     viewModel.onAction(RecurringInstallmentsUiAction.OpenAdjustInstallment(inst))
                 },
+                onTogglePause = { billId, isPaused ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.TogglePauseBill(billId, isPaused))
+                },
+                onStopRecurring = { billId ->
+                    planToViewDetails = null
+                    viewModel.onAction(RecurringInstallmentsUiAction.StopRecurringBill(billId))
+                },
+                onUpdateMonthlyAmount = { billId, newAmountCents ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.UpdateBillMonthlyAmount(billId, newAmountCents))
+                },
                 onDelete = {
                     planToViewDetails = null
                     viewModel.onAction(RecurringInstallmentsUiAction.DeleteBill(plan.bill.id))
@@ -513,14 +547,21 @@ fun RecurringInstallmentsScreen(
             AdjustInstallmentDialog(
                 installment = instToAdjust,
                 onDismiss = { viewModel.onAction(RecurringInstallmentsUiAction.DismissAdjustInstallment) },
-                onSave = { instId, amount, due ->
+                onSave = { instId, amount, due, applyToFuture ->
                     viewModel.onAction(
                         RecurringInstallmentsUiAction.SaveAdjustInstallment(
                             installmentId = instId,
                             newAmountCents = amount,
-                            newDueDate = due
+                            newDueDate = due,
+                            applyToFuturePending = applyToFuture
                         )
                     )
+                },
+                onDeleteSingle = { instId ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.DeleteSingleInstallment(instId))
+                },
+                onDeleteFuture = { billId, fromDueDate ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.DeleteFutureInstallments(billId, fromDueDate))
                 }
             )
         }
@@ -792,6 +833,22 @@ fun RecurringBillCard(
                                 )
                             }
                         }
+
+                        // Status Pausada
+                        if (item.isPaused) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = WarningAmber.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "Pausada",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WarningAmber,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -921,6 +978,9 @@ fun RecurringDetailBottomSheet(
     onDismiss: () -> Unit,
     onTogglePayment: (String, Boolean) -> Unit,
     onOpenAdjust: (BillInstallment) -> Unit = {},
+    onTogglePause: ((String, Boolean) -> Unit)? = null,
+    onStopRecurring: ((String) -> Unit)? = null,
+    onUpdateMonthlyAmount: ((billId: String, newAmountCents: Long) -> Unit)? = null,
     onDelete: () -> Unit
 ) {
     val bill = item.bill
@@ -928,6 +988,8 @@ fun RecurringDetailBottomSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var showStopConfirmDialog by remember { mutableStateOf(false) }
+    var showEditAmountDialog by remember { mutableStateOf(false) }
 
     val isAllPaid = item.paidInstallmentsCount == bill.totalInstallments && bill.totalInstallments > 0
 
@@ -994,6 +1056,21 @@ fun RecurringDetailBottomSheet(
                                 color = if (isInstallment) MaterialTheme.colorScheme.primary else SuccessGreen,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
+                        }
+
+                        if (item.isPaused) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = WarningAmber.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "Pausada",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = WarningAmber,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
 
                         if (isInstallment) {
@@ -1068,9 +1145,62 @@ fun RecurringDetailBottomSheet(
                         expanded = showMenu,
                         onDismissRequest = { showMenu = false }
                     ) {
+                        if (!isInstallment) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Alterar Valor Mensal", color = MaterialTheme.colorScheme.onSurface)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showEditAmountDialog = true
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text(if (item.isPaused) "Retomar Assinatura" else "Pausar Assinatura")
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = if (item.isPaused) Icons.Default.PlayArrow else Icons.Default.Pause,
+                                        contentDescription = null,
+                                        tint = if (item.isPaused) SuccessGreen else WarningAmber
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onTogglePause?.invoke(bill.id, item.isPaused)
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Encerrar Recorrência", color = MaterialTheme.colorScheme.onSurface)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.StopCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    showStopConfirmDialog = true
+                                }
+                            )
+                        }
+
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Lançamento", color = MaterialTheme.colorScheme.error)
+                                Text("Excluir Tudo (Inclusive Histórico)", color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(
@@ -1084,6 +1214,48 @@ fun RecurringDetailBottomSheet(
                                 showDeleteConfirmDialog = true
                             }
                         )
+                    }
+                }
+            }
+
+            // Banner se assinatura estiver pausada
+            if (item.isPaused) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = WarningAmber.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, WarningAmber.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PauseCircle,
+                                contentDescription = null,
+                                tint = WarningAmber,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Assinatura pausada. As cobranças futuras estão suspensas.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        TextButton(
+                            onClick = { onTogglePause?.invoke(bill.id, true) }
+                        ) {
+                            Text("Retomar", fontWeight = FontWeight.Bold, color = SuccessGreen)
+                        }
                     }
                 }
             }
@@ -1256,6 +1428,46 @@ fun RecurringDetailBottomSheet(
             }
         )
     }
+
+    if (showStopConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopConfirmDialog = false },
+            title = { Text("Encerrar Recorrência?") },
+            text = {
+                Text(
+                    "Todas as cobranças futuras pendentes serão canceladas. As parcelas já pagas continuarão salvas com total integridade no seu histórico financeiro."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showStopConfirmDialog = false
+                        onStopRecurring?.invoke(bill.id)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Encerrar Recorrência")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStopConfirmDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showEditAmountDialog) {
+        EditBillMonthlyAmountDialog(
+            currentAmountCents = item.regularAmountCents,
+            billTitle = bill.title,
+            onDismiss = { showEditAmountDialog = false },
+            onConfirm = { newAmountCents ->
+                showEditAmountDialog = false
+                onUpdateMonthlyAmount?.invoke(bill.id, newAmountCents)
+            }
+        )
+    }
 }
 
 @Composable
@@ -1265,8 +1477,8 @@ fun InstallmentRow(
     onTogglePayment: () -> Unit,
     onOpenAdjust: (() -> Unit)? = null
 ) {
-    val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
-    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis() && !isToday
+    val isToday = !installment.isPaid && !installment.isPaused && DateUtils.isToday(installment.dueDate)
+    val isOverdue = !installment.isPaid && !installment.isPaused && installment.dueDate < System.currentTimeMillis() && !isToday
 
     val rowTitle = when (installment.type) {
         BillType.RECURRING -> if (isVariableFirst && installment.installmentNumber == 1) {
@@ -1301,7 +1513,13 @@ fun InstallmentRow(
                     Icon(
                         imageVector = if (installment.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
                         contentDescription = if (installment.isPaid) "Marcar como pendente" else "Marcar como paga",
-                        tint = if (installment.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = when {
+                            installment.isPaid -> SuccessGreen
+                            installment.isPaused -> WarningAmber
+                            isOverdue -> MaterialTheme.colorScheme.error
+                            isToday -> WarningAmber
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
 
@@ -1334,14 +1552,16 @@ fun InstallmentRow(
                     Text(
                         text = when {
                             installment.isPaid -> "Pago"
+                            installment.isPaused -> "Cobrança Pausada"
                             isOverdue -> "Venceu ${DateUtils.formatDate(installment.dueDate)}"
                             isToday -> "Vence hoje"
                             else -> "Vence ${DateUtils.formatDate(installment.dueDate)}"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        fontWeight = if (isOverdue || isToday) FontWeight.SemiBold else FontWeight.Normal,
+                        fontWeight = if (isOverdue || isToday || installment.isPaused) FontWeight.SemiBold else FontWeight.Normal,
                         color = when {
                             installment.isPaid -> SuccessGreen
+                            installment.isPaused -> WarningAmber
                             isOverdue -> MaterialTheme.colorScheme.error
                             isToday -> WarningAmber
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -1707,4 +1927,122 @@ fun EmptyRecurringView(mode: Int = 0) {
             )
         }
     }
+}
+
+@Composable
+fun EditBillMonthlyAmountDialog(
+    currentAmountCents: Long,
+    billTitle: String,
+    onDismiss: () -> Unit,
+    onConfirm: (newAmountCents: Long) -> Unit
+) {
+    var amountText by remember {
+        val initial = if (currentAmountCents > 0L) {
+            String.format(Locale.getDefault(), "%.2f", currentAmountCents / 100.0).replace('.', ',')
+        } else ""
+        mutableStateOf(initial)
+    }
+
+    val parsedCents: Long? = remember(amountText) {
+        amountText
+            .replace(".", "")
+            .replace(",", ".")
+            .toDoubleOrNull()
+            ?.let { (it * 100).toLong() }
+            ?.takeIf { it > 0L }
+    }
+
+    val isValid = parsedCents != null && parsedCents > 0L
+    val isUnchanged = parsedCents == currentAmountCents
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    text = "Alterar Valor Mensal",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = billTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Apenas as próximas cobranças pendentes serão atualizadas. Pagamentos já realizados não serão alterados.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                if (currentAmountCents > 0L) {
+                    Text(
+                        text = "Valor atual: ${CurrencyUtils.formatCentsToCurrency(currentAmountCents)}/mês",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { raw ->
+                        val filtered = raw.filter { it.isDigit() || it == ',' || it == '.' }
+                        amountText = filtered
+                    },
+                    label = { Text("Novo valor mensal (R$)") },
+                    placeholder = { Text("Ex: 49,90") },
+                    isError = amountText.isNotBlank() && !isValid,
+                    supportingText = {
+                        when {
+                            amountText.isNotBlank() && !isValid ->
+                                Text("Informe um valor válido", color = MaterialTheme.colorScheme.error)
+                            isUnchanged && isValid ->
+                                Text("Igual ao valor atual", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            isValid ->
+                                Text(
+                                    "Novo valor: ${CurrencyUtils.formatCentsToCurrency(parsedCents!!)}/mês",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { parsedCents?.let { onConfirm(it) } },
+                enabled = isValid && !isUnchanged
+            ) {
+                Text("Atualizar Próximas Cobranças")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }

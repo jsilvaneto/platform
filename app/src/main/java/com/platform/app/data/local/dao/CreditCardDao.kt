@@ -28,8 +28,17 @@ interface CreditCardDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCard(card: CreditCardEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllCards(cards: List<CreditCardEntity>)
+
     @Query("DELETE FROM credit_cards WHERE id = :id")
     suspend fun deleteCardById(id: String)
+
+    @Query("DELETE FROM credit_cards")
+    suspend fun deleteAllCards()
+
+    @Query("SELECT * FROM credit_cards")
+    suspend fun getAllCardsList(): List<CreditCardEntity>
 
     @Query("SELECT COUNT(*) FROM credit_cards")
     suspend fun countCards(): Int
@@ -47,11 +56,17 @@ interface CreditCardDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvoice(invoice: CreditCardInvoiceEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllInvoices(invoices: List<CreditCardInvoiceEntity>)
+
     @Query("UPDATE credit_card_invoices SET status = :status WHERE id = :id")
     suspend fun updateInvoiceStatus(id: String, status: String)
 
     @Query("DELETE FROM credit_card_invoices WHERE id = :id")
     suspend fun deleteInvoiceById(id: String)
+
+    @Query("DELETE FROM credit_card_invoices")
+    suspend fun deleteAllInvoices()
 
     @Query("SELECT * FROM credit_card_invoices ORDER BY dueDate ASC")
     fun getAllInvoices(): Flow<List<CreditCardInvoiceEntity>>

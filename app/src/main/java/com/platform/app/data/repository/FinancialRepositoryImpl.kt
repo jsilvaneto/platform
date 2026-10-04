@@ -492,6 +492,79 @@ class FinancialRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateFutureInstallmentsAmount(
+        billId: String,
+        fromDueDate: Long,
+        newAmountCents: Long
+    ) {
+        database.withTransaction {
+            installmentDao.updateAmountForPendingFromDueDate(billId, fromDueDate, newAmountCents)
+            billDao.updateBillTotalAmount(billId, newAmountCents)
+        }
+    }
+
+    override suspend fun deleteSingleInstallment(installmentId: String) {
+        database.withTransaction {
+            val entity = installmentDao.getEntityById(installmentId)
+            if (entity != null) {
+                installmentDao.deleteById(installmentId)
+                val remaining = installmentDao.getInstallmentsByBillId(entity.billId)
+                if (remaining.isEmpty()) {
+                    billDao.deleteById(entity.billId)
+                } else {
+                    val maxDueDate = remaining.maxOfOrNull { it.dueDate }
+                    billDao.updateBillEndDateAndTotalInstallments(
+                        id = entity.billId,
+                        recurrenceEndDate = maxDueDate,
+                        totalInstallments = remaining.size
+                    )
+                }
+            }
+        }
+    }
+
+    override suspend fun deleteFutureInstallments(billId: String, fromDueDate: Long) {
+        database.withTransaction {
+            installmentDao.deletePendingFromDueDate(billId, fromDueDate)
+            val remaining = installmentDao.getInstallmentsByBillId(billId)
+            if (remaining.isEmpty()) {
+                billDao.deleteById(billId)
+            } else {
+                val maxDueDate = remaining.maxOfOrNull { it.dueDate }
+                billDao.updateBillEndDateAndTotalInstallments(
+                    id = billId,
+                    recurrenceEndDate = maxDueDate,
+                    totalInstallments = remaining.size
+                )
+            }
+        }
+    }
+
+    override suspend fun pauseRecurringBill(billId: String, isPaused: Boolean) {
+        database.withTransaction {
+            billDao.updatePausedStatus(billId, isPaused)
+            val targetStatus = if (isPaused) "PAUSED" else "PENDING"
+            installmentDao.updateStatusForPending(billId, targetStatus)
+        }
+    }
+
+    override suspend fun stopRecurringBill(billId: String) {
+        database.withTransaction {
+            installmentDao.deletePendingFromDueDate(billId, 0L)
+            val remaining = installmentDao.getInstallmentsByBillId(billId)
+            if (remaining.isEmpty()) {
+                billDao.deleteById(billId)
+            } else {
+                val maxDueDate = remaining.maxOfOrNull { it.dueDate }
+                billDao.updateBillEndDateAndTotalInstallments(
+                    id = billId,
+                    recurrenceEndDate = maxDueDate,
+                    totalInstallments = remaining.size
+                )
+            }
+        }
+    }
+
     override suspend fun deleteBill(billId: String) {
         billDao.deleteById(billId)
     }

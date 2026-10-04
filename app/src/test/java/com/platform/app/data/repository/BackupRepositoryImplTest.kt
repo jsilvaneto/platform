@@ -12,13 +12,13 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
+import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.data.local.entity.CategoryEntity
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -50,6 +50,7 @@ class BackupRepositoryImplTest {
     private lateinit var billInstallmentDao: BillInstallmentDao
     private lateinit var goalDao: GoalDao
     private lateinit var budgetDao: BudgetDao
+    private lateinit var transactionDao: TransactionDao
     private lateinit var repository: BackupRepositoryImpl
 
     @Before
@@ -66,6 +67,7 @@ class BackupRepositoryImplTest {
         billInstallmentDao = mockk(relaxed = true)
         goalDao = mockk(relaxed = true)
         budgetDao = mockk(relaxed = true)
+        transactionDao = mockk(relaxed = true)
 
         repository = BackupRepositoryImpl(
             database = database,
@@ -79,6 +81,7 @@ class BackupRepositoryImplTest {
             billInstallmentDao = billInstallmentDao,
             goalDao = goalDao,
             budgetDao = budgetDao,
+            transactionDao = transactionDao,
             dispatcherProvider = dispatcherProvider
         )
     }
@@ -97,8 +100,8 @@ class BackupRepositoryImplTest {
             iconName = "Restaurant"
         )
         coEvery { categoryDao.getAllList() } returns listOf(sampleCategory)
-        coEvery { expenseItemDao.getAll() } returns flowOf(emptyList())
-        coEvery { creditCardDao.getAllCards() } returns flowOf(emptyList())
+        coEvery { expenseItemDao.getAllList() } returns emptyList()
+        coEvery { creditCardDao.getAllCardsList() } returns emptyList()
 
         val result = repository.exportBackupJson()
         testDispatcher.scheduler.advanceUntilIdle()

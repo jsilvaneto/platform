@@ -85,5 +85,10 @@ interface FinancialRepository {
         financialAccountId: String?,
         paymentMethodId: String?
     )
+    suspend fun updateFutureInstallmentsAmount(billId: String, fromDueDate: Long, newAmountCents: Long)
+    suspend fun deleteSingleInstallment(installmentId: String)
+    suspend fun deleteFutureInstallments(billId: String, fromDueDate: Long)
+    suspend fun pauseRecurringBill(billId: String, isPaused: Boolean)
+    suspend fun stopRecurringBill(billId: String)
     suspend fun deleteBill(billId: String)
 }

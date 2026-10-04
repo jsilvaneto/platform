@@ -37,4 +37,10 @@ interface ExpenseItemDao {
 
     @Query("SELECT COUNT(*) FROM expense_items")
     suspend fun count(): Int
+
+    @Query("SELECT * FROM expense_items")
+    suspend fun getAllList(): List<ExpenseItemEntity>
+
+    @Query("DELETE FROM expense_items")
+    suspend fun deleteAll()
 }

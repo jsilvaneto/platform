@@ -16,5 +16,6 @@ data class Bill(
     val recurrenceFrequency: RecurrenceFrequency? = null,
     val recurrenceEndType: RecurrenceEndType? = null,
     val recurrenceEndDate: Long? = null,
+    val isPaused: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )

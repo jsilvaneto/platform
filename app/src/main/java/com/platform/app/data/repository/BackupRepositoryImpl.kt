@@ -15,8 +15,8 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
+import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.domain.repository.BackupRepository
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,6 +34,7 @@ class BackupRepositoryImpl @Inject constructor(
     private val billInstallmentDao: BillInstallmentDao,
     private val goalDao: GoalDao,
     private val budgetDao: BudgetDao,
+    private val transactionDao: TransactionDao,
     private val dispatcherProvider: DispatcherProvider
 ) : BackupRepository {
 
@@ -45,15 +46,17 @@ class BackupRepositoryImpl @Inject constructor(
                 version = BackupDataDto.CURRENT_VERSION,
                 exportedAt = System.currentTimeMillis(),
                 categories = categoryDao.getAllList(),
-                expenseItems = expenseItemDao.getAll().first(),
-                creditCards = creditCardDao.getAllCards().first(),
+                expenseItems = expenseItemDao.getAllList(),
+                creditCards = creditCardDao.getAllCardsList(),
+                creditCardInvoices = creditCardDao.getAllInvoicesList(),
                 financialAccounts = financialAccountDao.getAllList(),
                 paymentMethods = paymentMethodDao.getAllList(),
                 contacts = contactDao.getAllList(),
                 bills = billDao.getAllList(),
                 installments = billInstallmentDao.getAllInstallmentsList(),
                 budgets = budgetDao.getAllList(),
-                goals = goalDao.getAllList()
+                goals = goalDao.getAllList(),
+                transactions = transactionDao.getAllList()
             )
             gson.toJson(dto)
         }
@@ -69,17 +72,21 @@ class BackupRepositoryImpl @Inject constructor(
             }
 
             database.withTransaction {
-                // Limpeza ordenada respeitando constraints de chaves estrangeiras
+                // 1. Limpeza ordenada respeitando constraints de chaves estrangeiras (filhos primeiro)
                 billInstallmentDao.deleteAll()
                 billDao.deleteAll()
+                transactionDao.deleteAll()
+                expenseItemDao.deleteAll()
+                creditCardDao.deleteAllInvoices()
+                creditCardDao.deleteAllCards()
+                categoryDao.deleteAll()
                 budgetDao.deleteAll()
                 goalDao.deleteAll()
                 contactDao.deleteAll()
                 financialAccountDao.deleteAll()
                 paymentMethodDao.deleteAll()
-                categoryDao.deleteAll()
 
-                // Restauração ordenada
+                // 2. Restauração ordenada (pais primeiro, filhos depois)
                 if (payload.categories.isNotEmpty()) {
                     categoryDao.insertAll(payload.categories)
                 }
@@ -87,10 +94,10 @@ class BackupRepositoryImpl @Inject constructor(
                     expenseItemDao.insertAll(payload.expenseItems)
                 }
                 if (payload.creditCards.isNotEmpty()) {
-                    payload.creditCards.forEach { creditCardDao.insertCard(it) }
+                    creditCardDao.insertAllCards(payload.creditCards)
                 }
                 if (payload.creditCardInvoices.isNotEmpty()) {
-                    payload.creditCardInvoices.forEach { creditCardDao.insertInvoice(it) }
+                    creditCardDao.insertAllInvoices(payload.creditCardInvoices)
                 }
                 if (payload.financialAccounts.isNotEmpty()) {
                     financialAccountDao.insertAll(payload.financialAccounts)
@@ -112,6 +119,9 @@ class BackupRepositoryImpl @Inject constructor(
                 }
                 if (payload.goals.isNotEmpty()) {
                     goalDao.insertAll(payload.goals)
+                }
+                if (payload.transactions.isNotEmpty()) {
+                    transactionDao.insertAll(payload.transactions)
                 }
             }
         }

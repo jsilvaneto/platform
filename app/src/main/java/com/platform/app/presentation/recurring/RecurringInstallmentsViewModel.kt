@@ -2,7 +2,9 @@ package com.platform.app.presentation.recurring
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
@@ -50,6 +52,11 @@ class RecurringInstallmentsViewModel @Inject constructor(
                 _uiState.update { it.copy(installmentToAdjust = null) }
             }
             is RecurringInstallmentsUiAction.SaveAdjustInstallment -> handleSaveAdjustInstallment(action)
+            is RecurringInstallmentsUiAction.DeleteSingleInstallment -> handleDeleteSingleInstallment(action.installmentId)
+            is RecurringInstallmentsUiAction.DeleteFutureInstallments -> handleDeleteFutureInstallments(action.billId, action.fromDueDate)
+            is RecurringInstallmentsUiAction.TogglePauseBill -> handleTogglePauseBill(action.billId, action.isCurrentlyPaused)
+            is RecurringInstallmentsUiAction.StopRecurringBill -> handleStopRecurringBill(action.billId)
+            is RecurringInstallmentsUiAction.UpdateBillMonthlyAmount -> handleUpdateBillMonthlyAmount(action.billId, action.newAmountCents)
             is RecurringInstallmentsUiAction.Refresh -> loadData()
         }
     }
@@ -57,15 +64,99 @@ class RecurringInstallmentsViewModel @Inject constructor(
     private fun handleSaveAdjustInstallment(action: RecurringInstallmentsUiAction.SaveAdjustInstallment) {
         viewModelScope.launch {
             try {
-                repository.updateInstallment(
-                    installmentId = action.installmentId,
-                    newAmountCents = action.newAmountCents,
-                    newDueDate = action.newDueDate
-                )
+                val currentInst = _uiState.value.installmentToAdjust
+                if (action.applyToFuturePending && currentInst != null) {
+                    repository.updateInstallment(
+                        installmentId = action.installmentId,
+                        newAmountCents = action.newAmountCents,
+                        newDueDate = action.newDueDate
+                    )
+                    repository.updateFutureInstallmentsAmount(
+                        billId = currentInst.billId,
+                        fromDueDate = currentInst.dueDate,
+                        newAmountCents = action.newAmountCents
+                    )
+                    _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Valor atualizado para esta e as próximas parcelas pendentes!"))
+                } else {
+                    repository.updateInstallment(
+                        installmentId = action.installmentId,
+                        newAmountCents = action.newAmountCents,
+                        newDueDate = action.newDueDate
+                    )
+                    _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Parcela ajustada com sucesso!"))
+                }
                 _uiState.update { it.copy(installmentToAdjust = null) }
-                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Parcela ajustada com sucesso!"))
             } catch (e: Exception) {
                 _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao ajustar parcela: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleDeleteSingleInstallment(installmentId: String) {
+        viewModelScope.launch {
+            try {
+                repository.deleteSingleInstallment(installmentId)
+                _uiState.update { it.copy(installmentToAdjust = null) }
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Cobrança excluída com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao excluir cobrança: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleDeleteFutureInstallments(billId: String, fromDueDate: Long) {
+        viewModelScope.launch {
+            try {
+                repository.deleteFutureInstallments(billId, fromDueDate)
+                _uiState.update { it.copy(installmentToAdjust = null) }
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Cobranças futuras canceladas. Histórico mantido intacto!"))
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao cancelar cobranças futuras: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleTogglePauseBill(billId: String, isCurrentlyPaused: Boolean) {
+        viewModelScope.launch {
+            try {
+                val newPaused = !isCurrentlyPaused
+                repository.pauseRecurringBill(billId, newPaused)
+                val msg = if (newPaused) "Assinatura pausada com sucesso!" else "Assinatura retomada com sucesso!"
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar(msg))
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao pausar/retomar: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleStopRecurringBill(billId: String) {
+        viewModelScope.launch {
+            try {
+                repository.stopRecurringBill(billId)
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Recorrência encerrada. Histórico de pagamentos mantido!"))
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao encerrar recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleUpdateBillMonthlyAmount(billId: String, newAmountCents: Long) {
+        viewModelScope.launch {
+            try {
+                val now = System.currentTimeMillis()
+                // Atualiza apenas parcelas PENDING a partir de hoje (não toca em pagas)
+                repository.updateFutureInstallmentsAmount(
+                    billId = billId,
+                    fromDueDate = now,
+                    newAmountCents = newAmountCents
+                )
+                _effectChannel.send(
+                    RecurringInstallmentsUiEffect.ShowSnackbar(
+                        "Valor atualizado! Próximas cobranças: ${CurrencyUtils.formatCentsToCurrency(newAmountCents)}/mês"
+                    )
+                )
+            } catch (e: Exception) {
+                _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar("Erro ao atualizar valor: ${e.message}"))
             }
         }
     }
@@ -162,8 +253,8 @@ class RecurringInstallmentsViewModel @Inject constructor(
             val totalPaidInstallments = installmentItems.sumOf { it.totalPaidCents }
             val totalOriginalFinanced = totalActiveInstallments + totalPaidInstallments
 
-            // Totais Reais de Assinaturas & Recorrentes (baseado no valor regular da recorrência)
-            val recurringItems = items.filter { it.bill.type == BillType.RECURRING }
+            // Totais Reais de Assinaturas & Recorrentes (baseado no valor regular da recorrência ativa)
+            val recurringItems = items.filter { it.bill.type == BillType.RECURRING && !it.isPaused }
             val totalMonthlyRecurring = recurringItems.sumOf { it.regularAmountCents }
 
             val now = System.currentTimeMillis()
@@ -172,14 +263,14 @@ class RecurringInstallmentsViewModel @Inject constructor(
 
             val recurringInstsThisMonth = allInstallments.filter { inst ->
                 val bill = targetBills.find { it.id == inst.billId }
-                bill?.type == BillType.RECURRING && inst.dueDate in startOfMonth..endOfMonth
+                bill?.type == BillType.RECURRING && !bill.isPaused && inst.status != BillStatus.PAUSED && inst.dueDate in startOfMonth..endOfMonth
             }
             val paidThisMonthRecurring = recurringInstsThisMonth.filter { it.isPaid }.sumOf { it.amountCents }
             val pendingThisMonthRecurring = recurringInstsThisMonth.filter { !it.isPaid }.sumOf { it.amountCents }
 
-            // Linha do Tempo Futura (Cronograma dos próximos 6 a 12 meses)
+            // Linha do Tempo Futura (Cronograma dos próximos 6 a 12 meses - apenas cobranças ativas)
             val futureInstallments = allInstallments
-                .filter { it.dueDate >= startOfMonth }
+                .filter { it.dueDate >= startOfMonth && it.status != BillStatus.PAUSED }
                 .sortedBy { it.dueDate }
 
             val futureTimeline = futureInstallments
@@ -268,7 +359,8 @@ class RecurringInstallmentsViewModel @Inject constructor(
 
             val matchesStatus = when (statusFilter) {
                 RecurringStatusFilter.ALL -> true
-                RecurringStatusFilter.ACTIVE -> !isCompleted
+                RecurringStatusFilter.ACTIVE -> !isCompleted && !item.isPaused
+                RecurringStatusFilter.PAUSED -> item.isPaused
                 RecurringStatusFilter.COMPLETED -> isCompleted
             }
 

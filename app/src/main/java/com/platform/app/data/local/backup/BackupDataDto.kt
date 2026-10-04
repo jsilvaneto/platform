@@ -12,6 +12,7 @@ import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.GoalEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
+import com.platform.app.data.local.entity.TransactionEntity
 
 data class BackupDataDto(
     @SerializedName("version") val version: Int = CURRENT_VERSION,
@@ -26,7 +27,8 @@ data class BackupDataDto(
     @SerializedName("bills") val bills: List<BillEntity> = emptyList(),
     @SerializedName("installments") val installments: List<BillInstallmentEntity> = emptyList(),
     @SerializedName("budgets") val budgets: List<BudgetEntity> = emptyList(),
-    @SerializedName("goals") val goals: List<GoalEntity> = emptyList()
+    @SerializedName("goals") val goals: List<GoalEntity> = emptyList(),
+    @SerializedName("transactions") val transactions: List<TransactionEntity> = emptyList()
 ) {
     companion object {
         const val CURRENT_VERSION = 2

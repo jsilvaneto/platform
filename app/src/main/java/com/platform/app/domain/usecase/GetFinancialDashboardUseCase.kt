@@ -35,6 +35,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val categoryMap = mutableMapOf<String, Pair<String, Long>>()
 
             for (inst in installments) {
+                if (inst.isPaused) continue
                 totalDue += inst.amountCents
 
                 if (inst.isPaid) {

@@ -43,7 +43,7 @@ import com.platform.app.data.local.entity.TransactionEntity
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -155,6 +155,12 @@ abstract class PlatformDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceFrequency TEXT DEFAULT NULL")
                 db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceEndType TEXT DEFAULT NULL")
                 db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceEndDate INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE bills ADD COLUMN isPaused INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

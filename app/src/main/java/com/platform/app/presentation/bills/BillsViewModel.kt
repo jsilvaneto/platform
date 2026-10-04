@@ -372,8 +372,9 @@ class BillsViewModel @Inject constructor(
             val matchesStatus = when (statusFilter) {
                 null -> true
                 BillStatus.PAID -> inst.isPaid
-                BillStatus.PENDING -> !inst.isPaid && inst.dueDate >= now
-                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now
+                BillStatus.PENDING -> !inst.isPaid && inst.dueDate >= now && !inst.isPaused
+                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now && !inst.isPaused
+                BillStatus.PAUSED -> inst.isPaused
             }
 
             matchesYear && matchesPeriod && matchesQuery && matchesType && matchesStatus

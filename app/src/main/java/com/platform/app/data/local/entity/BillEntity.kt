@@ -25,6 +25,7 @@ data class BillEntity(
     val recurrenceFrequency: String? = null,
     val recurrenceEndType: String? = null,
     val recurrenceEndDate: Long? = null,
+    val isPaused: Boolean = false,
     val createdAt: Long
 ) {
     fun toDomain(): Bill {
@@ -52,6 +53,7 @@ data class BillEntity(
                 try { RecurrenceEndType.valueOf(it) } catch (e: Exception) { null }
             },
             recurrenceEndDate = recurrenceEndDate,
+            isPaused = isPaused,
             createdAt = createdAt
         )
     }
@@ -74,6 +76,7 @@ data class BillEntity(
                 recurrenceFrequency = bill.recurrenceFrequency?.name,
                 recurrenceEndType = bill.recurrenceEndType?.name,
                 recurrenceEndDate = bill.recurrenceEndDate,
+                isPaused = bill.isPaused,
                 createdAt = bill.createdAt
             )
         }

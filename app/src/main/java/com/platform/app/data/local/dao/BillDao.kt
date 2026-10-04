@@ -48,6 +48,18 @@ interface BillDao {
         paymentMethodId: String?
     )
 
+    @Query("UPDATE bills SET isPaused = :isPaused WHERE id = :id")
+    suspend fun updatePausedStatus(id: String, isPaused: Boolean)
+
+    @Query("UPDATE bills SET totalAmountCents = :totalAmountCents WHERE id = :id")
+    suspend fun updateBillTotalAmount(id: String, totalAmountCents: Long)
+
+    @Query("UPDATE bills SET totalAmountCents = :totalAmountCents, recurrenceEndDate = :recurrenceEndDate, totalInstallments = :totalInstallments WHERE id = :id")
+    suspend fun updateBillAmountAndEndDate(id: String, totalAmountCents: Long, recurrenceEndDate: Long?, totalInstallments: Int)
+
+    @Query("UPDATE bills SET recurrenceEndDate = :recurrenceEndDate, totalInstallments = :totalInstallments WHERE id = :id")
+    suspend fun updateBillEndDateAndTotalInstallments(id: String, recurrenceEndDate: Long?, totalInstallments: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(bills: List<BillEntity>)
 

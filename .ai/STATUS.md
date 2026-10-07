@@ -79,6 +79,14 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Acesso Direto à Edição em Nova Despesa (`NewExpenseScreen`)**: Atalho "Gerenciar Itens (Criar / Editar)" no menu dropdown e botão de edição rápida de 1 toque no chip de natureza herdada.
 - [x] **Suíte de Testes Automatizados**: Novos testes unitários aprovados em `ExpenseItemsViewModelTest.kt` cobrindo carga, filtros, salvamento de edição e exclusão.
 
+### Baixa de Pagamento Retroativa & Data Real de Pagamento (v1.4.5)
+- [x] **Campo `actualPaymentDate` no Domínio e Room**: Adicionado campo opcional `actualPaymentDate: Long?` em `BillInstallment` e `BillInstallmentEntity`.
+- [x] **Migração de Banco de Dados Room (`PlatformDatabase` v10)**: Migração `MIGRATION_9_10` (`ALTER TABLE bill_installments ADD COLUMN actualPaymentDate INTEGER DEFAULT NULL`) registrada e injetada no `AppModule`.
+- [x] **Diálogo Material 3 de Baixa (`ConfirmPaymentDialog`)**: Confirmação visual de pagamento com atalhos "Hoje", "No Vencimento" e `DatePickerDialog` customizado integrado em todas as telas de liquidação.
+- [x] **Cálculo da Taxa de Pontualidade (`GetFinancialDashboardUseCase`)**: Métrica `onTimePaymentRate` atualizada para comparar `actualPaymentDate` (fallback `paidAt`) com `dueDate`, eliminando falsos atrasos em baixas retroativas.
+- [x] **Suíte de Testes Automatizados**: Cobertura expandida em `ToggleInstallmentPaymentUseCaseTest`, `GetFinancialDashboardUseCaseTest`, `BillsViewModelTest` e `HomeViewModelTest`.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 020](.ai/DECISIONS/020-data-real-pagamento-e-baixa-retroativa.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

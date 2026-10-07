@@ -37,8 +37,8 @@ class ToggleInstallmentPaymentUseCaseTest {
         )
 
         val isPaidSlot = slot<Boolean>()
-        val paidTimestampSlot = slot<Long?>()
-        val actualDateSlot = slot<Long?>()
+        val paidTimestampSlot = slot<Long>()
+        val actualDateSlot = slot<Long>()
 
         coVerify(exactly = 1) {
             repository.toggleInstallmentPayment(
@@ -65,8 +65,8 @@ class ToggleInstallmentPaymentUseCaseTest {
         )
 
         val isPaidSlot = slot<Boolean>()
-        val paidTimestampSlot = slot<Long?>()
-        val actualDateSlot = slot<Long?>()
+        val paidTimestampSlot = slot<Long>()
+        val actualDateSlot = slot<Long>()
 
         coVerify(exactly = 1) {
             repository.toggleInstallmentPayment(

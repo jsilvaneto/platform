@@ -109,6 +109,15 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Rótulo Semântico "Restante a Pagar no Mês"**: Renomeação no `ForecastImpactCard` em `HomeScreen.kt`, eliminando ambiguidade sobre orçamento total versus saldo ainda em aberto.
 - [x] **Hierarquia Visual Reforçada para Quitação Completa**: Quando todas as contas do mês estiverem pagas (`R$ 0,00`), o badge de sucesso "Tudo quitado" com ícone de confirmação aparece antes do valor monetário, que ganha tonalidade esmeralda de sucesso (`SuccessGreen`).
 
+### Tipificação de Contatos e Migração Room v12 (v1.7.0)
+- [x] **Enum de Domínio Puro (`ContactType`)**: Enum com `PESSOA_FISICA`, `FORNECEDOR`, `ORGAO_PUBLICO` incorporado a `Contact` e mapeado em `ContactEntity`.
+- [x] **Migração de Schema Room (`PlatformDatabase` v12)**: `MIGRATION_11_12` adicionando coluna `type TEXT NOT NULL DEFAULT 'FORNECEDOR'` na tabela `contacts`.
+- [x] **Filtros e Agrupamento em `ContactsScreen`**: Barra de chips com contadores dinâmicos (`ContactTypeFilterRow`) e agrupamento por seções (`ContactSectionHeader`).
+- [x] **Indicadores Visuais de Tipo**: `ContactTypeBadge` com ícones temáticos (`Person`, `Business`, `AccountBalance`) e avatar com cor temática.
+- [x] **Seletor de Tipo no Formulário**: Componente de seleção ergonômico no `AddContactBottomSheet` e exibição na tela de detalhes.
+- [x] **Suíte de Testes Automatizados**: Testes unitários em `ContactsViewModelTest` cobrindo filtros por tipo e buscas textuais combinadas.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 023](.ai/DECISIONS/023-tipificacao-contatos-e-migracao-room.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

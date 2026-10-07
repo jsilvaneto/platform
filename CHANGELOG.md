@@ -3,6 +3,33 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.7.0] - 2026-10-07
+
+### 👥 Tipificação de Contatos (`ContactType`) & Migração Room v12
+
+- **Enum de Domínio Puro (`ContactType`)**:
+  - Introduzido o enum `ContactType` (`PESSOA_FISICA`, `FORNECEDOR`, `ORGAO_PUBLICO`) com método utilitário resiliente `fromString()`.
+  - Atualizado o modelo `Contact` para conter `val type: ContactType = ContactType.FORNECEDOR`.
+- **Evolução de Persistência no Room (`PlatformDatabase` v12)**:
+  - Adicionada a coluna `type TEXT NOT NULL DEFAULT 'FORNECEDOR'` na tabela `contacts` via migração `MIGRATION_11_12`.
+  - Registrada a migração no `AppModule` preservando a integridade dos dados existentes.
+- **Filtros e Agrupamento na Tela de Contatos (`ContactsScreen`)**:
+  - Adicionada barra de chips de filtro superior (`ContactTypeFilterRow`) com contadores dinâmicos para "Todos", "Pessoa Física", "Fornecedor" e "Órgão Público".
+  - Agrupamento visual automático por seções temáticas (`ContactSectionHeader`) quando a visualização estiver em "Todos".
+  - Filtro exclusivo e direto ao selecionar um tipo específico.
+- **Indicadores Visuais de Tipo de Contato (`ContactTypeBadge` & `PlatformAvatar`)**:
+  - Chip temático com ícone dedicado (`Person`, `Business`, `AccountBalance`) e paleta semântica em cada card de contato.
+  - Avatar colorido dinamicamente com a identidade visual do tipo.
+  - Integração do badge no cabeçalho da tela de detalhes (`ContactDetailScreen`).
+- **Seletor de Tipo no Formulário (`AddContactBottomSheet`)**:
+  - Seletor ergonômico em cartões para escolha rápida do tipo de contato durante criação ou edição.
+- **Testes Automatizados**:
+  - Novos testes unitários em `ContactsViewModelTest` cobrindo filtragem por cada tipo, restauração e busca textual combinada com filtro.
+- **Governança & Arquitetura**:
+  - Criada a [ADR 023: Tipificação de Contatos (ContactType) e Migração Room v12](.ai/DECISIONS/023-tipificacao-contatos-e-migracao-room.md).
+
+---
+
 ## [1.6.1] - 2026-10-07
 
 ### 🎨 Semântica e Hierarquia Visual na Visão Mensal (`HomeScreen`)

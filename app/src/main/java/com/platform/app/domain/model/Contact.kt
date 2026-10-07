@@ -3,6 +3,7 @@ package com.platform.app.domain.model
 data class Contact(
     val id: String,
     val name: String,
+    val type: ContactType = ContactType.FORNECEDOR,
     val phone: String = "",
     val email: String = "",
     val street: String = "",

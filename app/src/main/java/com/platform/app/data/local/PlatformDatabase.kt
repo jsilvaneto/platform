@@ -45,7 +45,7 @@ import com.platform.app.data.local.entity.TransactionEntity
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -189,6 +189,12 @@ abstract class PlatformDatabase : RoomDatabase() {
                     INSERT INTO goal_contributions (id, goalId, amountCents, date)
                     SELECT id || '_init', id, currentAmountCents, createdAt FROM goals WHERE currentAmountCents > 0
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE contacts ADD COLUMN type TEXT NOT NULL DEFAULT 'FORNECEDOR'")
             }
         }
     }

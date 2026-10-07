@@ -1,5 +1,6 @@
 package com.platform.app.presentation.contacts
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -21,7 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
@@ -72,7 +76,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.ContactType
 import com.platform.app.presentation.theme.SuccessGreen
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -151,6 +157,15 @@ fun ContactsScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Filtro por Tipo de Contato
+            ContactTypeFilterRow(
+                selectedType = uiState.selectedTypeFilter,
+                contacts = uiState.contacts,
+                onSelectType = { viewModel.onAction(ContactsUiAction.FilterTypeSelected(it)) }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             when {
                 uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -166,11 +181,31 @@ fun ContactsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(top = 4.dp, bottom = 80.dp)
                     ) {
-                        items(uiState.filteredContacts, key = { it.id }) { contact ->
-                            ContactCard(
-                                contact = contact,
-                                onClick = { onNavigateToDetail(contact.id) }
-                            )
+                        if (uiState.selectedTypeFilter == null) {
+                            // Exibição agrupada por tipo quando filtro estiver em 'Todos'
+                            val groups = ContactType.entries.mapNotNull { type ->
+                                val list = uiState.filteredContacts.filter { it.type == type }
+                                if (list.isNotEmpty()) type to list else null
+                            }
+                            groups.forEach { (type, contactsInType) ->
+                                item(key = "header_${type.name}") {
+                                    ContactSectionHeader(type = type, count = contactsInType.size)
+                                }
+                                items(contactsInType, key = { it.id }) { contact ->
+                                    ContactCard(
+                                        contact = contact,
+                                        onClick = { onNavigateToDetail(contact.id) }
+                                    )
+                                }
+                            }
+                        } else {
+                            // Exibição direta da lista do tipo filtrado
+                            items(uiState.filteredContacts, key = { it.id }) { contact ->
+                                ContactCard(
+                                    contact = contact,
+                                    onClick = { onNavigateToDetail(contact.id) }
+                                )
+                            }
                         }
                     }
                 }
@@ -199,6 +234,8 @@ fun ContactCard(
     contact: Contact,
     onClick: () -> Unit
 ) {
+    val (avatarColor, _) = getContactTypeColors(contact.type)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -214,22 +251,33 @@ fun ContactCard(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar Inicial
+            // Avatar Inicial com cor temática do tipo
             PlatformAvatar(
                 name = contact.name,
                 size = 42.dp,
-                color = MaterialTheme.colorScheme.primary
+                color = avatarColor
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = contact.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = contact.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    ContactTypeBadge(type = contact.type)
+                }
 
                 if (contact.phone.isNotBlank()) {
                     Spacer(modifier = Modifier.height(2.dp))
@@ -308,6 +356,7 @@ fun AddContactBottomSheet(
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
 
     var name by remember { mutableStateOf(contact?.name ?: "") }
+    var type by remember { mutableStateOf(contact?.type ?: ContactType.FORNECEDOR) }
     var phone by remember { mutableStateOf(contact?.phone ?: "") }
     var email by remember { mutableStateOf(contact?.email ?: "") }
     var zipCode by remember { mutableStateOf(contact?.zipCode ?: "") }
@@ -389,6 +438,67 @@ fun AddContactBottomSheet(
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+            // Seletor de Tipo de Contato
+            Text(
+                text = "Tipo de Contato *",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ContactType.entries.forEach { contactType ->
+                    val isSelected = type == contactType
+                    val (typeColor, _) = getContactTypeColors(contactType)
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { type = contactType },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected) {
+                            typeColor.copy(alpha = 0.15f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                        },
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) typeColor else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = getContactTypeIcon(contactType),
+                                contentDescription = null,
+                                tint = if (isSelected) typeColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = when (contactType) {
+                                    ContactType.PESSOA_FISICA -> "Pessoa"
+                                    ContactType.FORNECEDOR -> "Empresa"
+                                    ContactType.ORGAO_PUBLICO -> "Público"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) typeColor else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Seção 1: Dados Pessoais
             Text(
@@ -583,6 +693,7 @@ fun AddContactBottomSheet(
                                 Contact(
                                     id = contact?.id ?: UUID.randomUUID().toString(),
                                     name = name.trim(),
+                                    type = type,
                                     phone = phone.trim(),
                                     email = email.trim(),
                                     street = street.trim(),
@@ -632,5 +743,215 @@ fun EmptyContactsView() {
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
+    }
+}
+
+fun getContactTypeIcon(type: ContactType): ImageVector = when (type) {
+    ContactType.PESSOA_FISICA -> Icons.Default.Person
+    ContactType.FORNECEDOR -> Icons.Default.Business
+    ContactType.ORGAO_PUBLICO -> Icons.Default.AccountBalance
+}
+
+@Composable
+fun getContactTypeColors(type: ContactType): Pair<Color, Color> {
+    return when (type) {
+        ContactType.PESSOA_FISICA -> {
+            val content = MaterialTheme.colorScheme.primary
+            content to content.copy(alpha = 0.12f)
+        }
+        ContactType.FORNECEDOR -> {
+            val content = Color(0xFFD97706)
+            content to content.copy(alpha = 0.12f)
+        }
+        ContactType.ORGAO_PUBLICO -> {
+            val content = Color(0xFF7C3AED)
+            content to content.copy(alpha = 0.12f)
+        }
+    }
+}
+
+@Composable
+fun ContactTypeBadge(
+    type: ContactType,
+    modifier: Modifier = Modifier
+) {
+    val (contentColor, containerColor) = getContactTypeColors(type)
+    val icon = getContactTypeIcon(type)
+    val label = when (type) {
+        ContactType.PESSOA_FISICA -> "Pessoa"
+        ContactType.FORNECEDOR -> "Fornecedor"
+        ContactType.ORGAO_PUBLICO -> "Órgão Público"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor,
+        modifier = modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(11.dp)
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor
+            )
+        }
+    }
+}
+
+@Composable
+fun ContactTypeFilterRow(
+    selectedType: ContactType?,
+    contacts: List<Contact>,
+    onSelectType: (ContactType?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val totalCount = contacts.size
+    val pfCount = contacts.count { it.type == ContactType.PESSOA_FISICA }
+    val fornCount = contacts.count { it.type == ContactType.FORNECEDOR }
+    val orgCount = contacts.count { it.type == ContactType.ORGAO_PUBLICO }
+
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
+    ) {
+        item {
+            FilterChipItem(
+                label = "Todos ($totalCount)",
+                icon = null,
+                isSelected = selectedType == null,
+                onClick = { onSelectType(null) }
+            )
+        }
+        item {
+            FilterChipItem(
+                label = "Pessoa Física ($pfCount)",
+                icon = Icons.Default.Person,
+                isSelected = selectedType == ContactType.PESSOA_FISICA,
+                onClick = { onSelectType(ContactType.PESSOA_FISICA) }
+            )
+        }
+        item {
+            FilterChipItem(
+                label = "Fornecedor ($fornCount)",
+                icon = Icons.Default.Business,
+                isSelected = selectedType == ContactType.FORNECEDOR,
+                onClick = { onSelectType(ContactType.FORNECEDOR) }
+            )
+        }
+        item {
+            FilterChipItem(
+                label = "Órgão Público ($orgCount)",
+                icon = Icons.Default.AccountBalance,
+                isSelected = selectedType == ContactType.ORGAO_PUBLICO,
+                onClick = { onSelectType(ContactType.ORGAO_PUBLICO) }
+            )
+        }
+    }
+}
+
+@Composable
+fun FilterChipItem(
+    label: String,
+    icon: ImageVector?,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        },
+        border = if (isSelected) null else BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        ),
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ContactSectionHeader(
+    type: ContactType,
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    val (contentColor, _) = getContactTypeColors(type)
+    val icon = getContactTypeIcon(type)
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(15.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = type.displayName,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Surface(
+            shape = CircleShape,
+            color = contentColor.copy(alpha = 0.12f)
+        ) {
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = contentColor,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+            )
+        }
     }
 }

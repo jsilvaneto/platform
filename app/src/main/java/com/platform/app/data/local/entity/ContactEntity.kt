@@ -3,12 +3,14 @@ package com.platform.app.data.local.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.ContactType
 
 @Entity(tableName = "contacts")
 data class ContactEntity(
     @PrimaryKey
     val id: String,
     val name: String,
+    val type: String = "FORNECEDOR",
     val phone: String,
     val email: String,
     val street: String,
@@ -25,6 +27,7 @@ data class ContactEntity(
         return Contact(
             id = id,
             name = name,
+            type = ContactType.fromString(type),
             phone = phone,
             email = email,
             street = street,
@@ -44,6 +47,7 @@ data class ContactEntity(
             return ContactEntity(
                 id = contact.id,
                 name = contact.name,
+                type = contact.type.name,
                 phone = contact.phone,
                 email = contact.email,
                 street = contact.street,

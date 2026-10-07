@@ -103,4 +103,58 @@ class ContactsViewModelTest {
         assertEquals(1, viewModel.uiState.value.filteredContacts.size)
         assertEquals("Maria Santos", viewModel.uiState.value.filteredContacts[0].name)
     }
+
+    @Test
+    fun `FilterTypeSelected should filter contacts by contact type and reset when null`() = runTest {
+        val c1 = Contact(id = "1", name = "Mãe", type = com.platform.app.domain.model.ContactType.PESSOA_FISICA)
+        val c2 = Contact(id = "2", name = "Copel", type = com.platform.app.domain.model.ContactType.FORNECEDOR)
+        val c3 = Contact(id = "3", name = "Prefeitura de Curitiba", type = com.platform.app.domain.model.ContactType.ORGAO_PUBLICO)
+        every { repository.getContacts() } returns flowOf(listOf(c1, c2, c3))
+
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Filtro por PESSOA_FISICA
+        viewModel.onAction(ContactsUiAction.FilterTypeSelected(com.platform.app.domain.model.ContactType.PESSOA_FISICA))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.filteredContacts.size)
+        assertEquals("Mãe", viewModel.uiState.value.filteredContacts[0].name)
+        assertEquals(com.platform.app.domain.model.ContactType.PESSOA_FISICA, viewModel.uiState.value.selectedTypeFilter)
+
+        // Filtro por FORNECEDOR
+        viewModel.onAction(ContactsUiAction.FilterTypeSelected(com.platform.app.domain.model.ContactType.FORNECEDOR))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.filteredContacts.size)
+        assertEquals("Copel", viewModel.uiState.value.filteredContacts[0].name)
+
+        // Filtro por ORGAO_PUBLICO
+        viewModel.onAction(ContactsUiAction.FilterTypeSelected(com.platform.app.domain.model.ContactType.ORGAO_PUBLICO))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.filteredContacts.size)
+        assertEquals("Prefeitura de Curitiba", viewModel.uiState.value.filteredContacts[0].name)
+
+        // Reset para Todos (null)
+        viewModel.onAction(ContactsUiAction.FilterTypeSelected(null))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(3, viewModel.uiState.value.filteredContacts.size)
+    }
+
+    @Test
+    fun `FilterTypeSelected combined with SearchQueryChanged should apply both filters concurrently`() = runTest {
+        val c1 = Contact(id = "1", name = "Mãe Maria", type = com.platform.app.domain.model.ContactType.PESSOA_FISICA)
+        val c2 = Contact(id = "2", name = "Dona Maria Restaurante", type = com.platform.app.domain.model.ContactType.FORNECEDOR)
+        val c3 = Contact(id = "3", name = "Supermercado Central", type = com.platform.app.domain.model.ContactType.FORNECEDOR)
+        every { repository.getContacts() } returns flowOf(listOf(c1, c2, c3))
+
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Busca por 'Maria' com filtro FORNECEDOR -> deve retornar apenas 'Dona Maria Restaurante'
+        viewModel.onAction(ContactsUiAction.FilterTypeSelected(com.platform.app.domain.model.ContactType.FORNECEDOR))
+        viewModel.onAction(ContactsUiAction.SearchQueryChanged("Maria"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1, viewModel.uiState.value.filteredContacts.size)
+        assertEquals("Dona Maria Restaurante", viewModel.uiState.value.filteredContacts[0].name)
+    }
 }

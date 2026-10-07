@@ -330,21 +330,29 @@ fun ContactHeaderCard(details: ContactDetails) {
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val (avatarColor, _) = getContactTypeColors(contact.type)
+
                 PlatformAvatar(
                     name = contact.name,
                     size = 44.dp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = avatarColor
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
-                    Text(
-                        text = contact.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = contact.name,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ContactTypeBadge(type = contact.type)
+                    }
 
                     if (contact.phone.isNotBlank()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

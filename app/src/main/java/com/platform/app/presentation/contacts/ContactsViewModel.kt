@@ -3,6 +3,7 @@ package com.platform.app.presentation.contacts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.platform.app.domain.model.Contact
+import com.platform.app.domain.model.ContactType
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.repository.AddressInfo
 import com.platform.app.domain.usecase.GetContactDetailsUseCase
@@ -48,6 +49,7 @@ class ContactsViewModel @Inject constructor(
             is ContactsUiAction.SaveContact -> handleSaveContact(action.contact)
             is ContactsUiAction.DeleteContact -> handleDeleteContact(action.contactId)
             is ContactsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
+            is ContactsUiAction.FilterTypeSelected -> handleFilterType(action.type)
             is ContactsUiAction.LoadContactDetails -> loadContactDetails(action.contactId)
             is ContactsUiAction.ToggleInstallmentPayment -> handleTogglePayment(action.installmentId, action.isPaid, action.actualPaymentDate)
             is ContactsUiAction.Refresh -> loadContacts()
@@ -59,7 +61,7 @@ class ContactsViewModel @Inject constructor(
         repository.getContacts()
             .onEach { contacts ->
                 _uiState.update { current ->
-                    val filtered = applySearch(contacts, current.searchQuery)
+                    val filtered = applyFilters(contacts, current.searchQuery, current.selectedTypeFilter)
                     current.copy(
                         contacts = contacts,
                         filteredContacts = filtered,
@@ -81,19 +83,36 @@ class ContactsViewModel @Inject constructor(
 
     private fun handleSearchQuery(query: String) {
         _uiState.update { current ->
-            val filtered = applySearch(current.contacts, query)
+            val filtered = applyFilters(current.contacts, query, current.selectedTypeFilter)
             current.copy(searchQuery = query, filteredContacts = filtered)
         }
     }
 
-    private fun applySearch(contacts: List<Contact>, query: String): List<Contact> {
-        if (query.isBlank()) return contacts
-        return contacts.filter {
-            it.name.contains(query, ignoreCase = true) ||
-            it.phone.contains(query, ignoreCase = true) ||
-            it.email.contains(query, ignoreCase = true) ||
-            it.city.contains(query, ignoreCase = true)
+    private fun handleFilterType(type: ContactType?) {
+        _uiState.update { current ->
+            val filtered = applyFilters(current.contacts, current.searchQuery, type)
+            current.copy(selectedTypeFilter = type, filteredContacts = filtered)
         }
+    }
+
+    private fun applyFilters(
+        contacts: List<Contact>,
+        query: String,
+        typeFilter: ContactType?
+    ): List<Contact> {
+        var result = contacts
+        if (typeFilter != null) {
+            result = result.filter { it.type == typeFilter }
+        }
+        if (query.isNotBlank()) {
+            result = result.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.phone.contains(query, ignoreCase = true) ||
+                it.email.contains(query, ignoreCase = true) ||
+                it.city.contains(query, ignoreCase = true)
+            }
+        }
+        return result
     }
 
     private fun handleSaveContact(contact: Contact) {

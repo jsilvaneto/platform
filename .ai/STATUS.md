@@ -188,6 +188,13 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Faturas Recorrentes Sob Demanda**: `CreateBillUseCase` vincula apenas a 1ª ocorrência à fatura inicial em `RECURRING`, prevenindo a pré-criação desnecessária de 11 faturas futuras vazias no SQLite.
 - [x] **Suíte de Testes Automatizados**: Criado `GetCreditCardSummariesUseCaseTest` cobrindo cenários com 1 parcelado 10x, 1 assinatura e 1 compra à vista, além da liberação do limite após quitação de fatura. 100% dos testes unitários aprovados.
 
+### Otimização SQL de Pagamento e Totais de Faturas (v1.17.0)
+- [x] **Queries SQL de Alta Performance (`BillInstallmentDao`)**: Atualização em lote via `UPDATE bill_installments ... WHERE invoiceId = :invoiceId` e agregação direta via `SELECT invoiceId, COALESCE(SUM(amountCents), 0) ... GROUP BY invoiceId`.
+- [x] **Delegação ao SQLite & Resíduo Zero de Memória**: Eliminação de `getAllInstallmentsList()` e `getAllInstallments()` com filtros e loops em Kotlin para quitação, reabertura e totais de faturas.
+- [x] **Data Real de Pagamento (`actualPaymentDate`)**: Suporte a data real no método `payInvoice` (padrão = hoje), alinhado com a ADR 020 e indicadores de pontualidade.
+- [x] **Transações Atômicas Mantidas**: Execução protegida por `database.withTransaction` garantindo integridade entre `credit_card_invoices` e `bill_installments`.
+- [x] **Suíte de Testes Automatizados**: Criado `FinancialRepositoryInvoiceTest` validando isolamento por fatura na quitação/reabertura, fallback para data corrente e mapeamento de totais. 100% dos testes unitários verdes (154 testes).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

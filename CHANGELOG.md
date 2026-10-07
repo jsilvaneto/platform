@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.16.0] - 2026-10-07
+
+### 💳 Regra Única de Limite de Cartão de Crédito e Faturas Sob Demanda
+
+- **Criação do `GetCreditCardSummariesUseCase`**:
+  - Centralizado o cálculo do limite consumido e limite disponível de cartões de crédito em uma única fonte da verdade.
+  - Implementada a **Regra Canônica de Limite**:
+    - **`INSTALLMENT` (Parcelados)**: Consome o saldo devedor restante de todas as parcelas não pagas (atuais e futuras contratadas).
+    - **`RECURRING` (Assinaturas) e `SINGLE` (À vista)**: Consomem exclusivamente o que pertence à fatura aberta ou fechada atual não paga, eliminando o erro de projeção que consumia antecipadamente o limite de até 12 meses futuros de assinaturas.
+- **Eliminação de Cálculos Duplicados nas ViewModels**:
+  - `CreditCardsViewModel` e `NewExpenseViewModel` agora consomem diretamente o Flow reativo de `GetCreditCardSummariesUseCase`.
+  - Corrigido vazamento na `NewExpenseViewModel`, que somava parcelas de todos os cartões indistintamente sem isolamento por `cardId`.
+- **Faturas Recorrentes Sob Demanda**:
+  - `CreateBillUseCase` atualizado para não mais pré-criar 11 faturas vazias antecipadas no SQLite para compras do tipo `RECURRING`. Apenas a 1ª ocorrência do ciclo inicial é atrelada de imediato à fatura atual, preservando as projeções futuras de contas a pagar e gerando faturas sob demanda à medida que os ciclos chegam.
+- **Suíte de Testes Automatizados**:
+  - Criado `GetCreditCardSummariesUseCaseTest` cobrindo detalhadamente o cenário de um cartão com 1 compra parcelada em 10x, 1 assinatura mensal e 1 compra à vista, além da liberação proporcional de limite após pagamento de fatura.
+  - Atualizados `CreateBillUseCaseTest` e `NewExpenseViewModelTest`.
+  - 100% dos testes unitários (150 testes) aprovados via Gradle.
+
+---
+
 ## [1.15.0] - 2026-10-07
 
 ### 🏛️ Unificação da Geração de Parcelas no `CreateBillUseCase` e Paridade entre Cartão e Contas Avulsas

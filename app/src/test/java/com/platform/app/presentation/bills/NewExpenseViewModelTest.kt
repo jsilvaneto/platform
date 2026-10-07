@@ -6,6 +6,7 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CreateBillUseCase
+import com.platform.app.domain.usecase.GetCreditCardSummariesUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -32,12 +33,16 @@ class NewExpenseViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FinancialRepository
     private lateinit var createBillUseCase: CreateBillUseCase
+    private lateinit var getCreditCardSummariesUseCase: GetCreditCardSummariesUseCase
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
         createBillUseCase = mockk(relaxed = true)
+        getCreditCardSummariesUseCase = mockk(relaxed = true)
+        every { getCreditCardSummariesUseCase() } returns flowOf(emptyList())
+        every { getCreditCardSummariesUseCase(any()) } returns flowOf(emptyList())
 
         every { repository.getCategories() } returns flowOf(emptyList())
         every { repository.getExpenseItems() } returns flowOf(emptyList())
@@ -76,7 +81,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = savedStateHandle,
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
 
         testDispatcher.scheduler.advanceUntilIdle()
@@ -98,7 +104,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = savedStateHandle,
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
 
         testDispatcher.scheduler.advanceUntilIdle()
@@ -120,7 +127,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = SavedStateHandle(),
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -141,7 +149,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = SavedStateHandle(),
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -164,7 +173,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = SavedStateHandle(),
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -199,7 +209,8 @@ class NewExpenseViewModelTest {
         val viewModel = NewExpenseViewModel(
             savedStateHandle = SavedStateHandle(mapOf("duplicateBillId" to "bill-rec-1")),
             repository = repository,
-            createBillUseCase = createBillUseCase
+            createBillUseCase = createBillUseCase,
+            getCreditCardSummariesUseCase = getCreditCardSummariesUseCase
         )
         testDispatcher.scheduler.advanceUntilIdle()
 

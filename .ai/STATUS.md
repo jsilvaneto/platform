@@ -181,6 +181,13 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Saneamento Arquitetural em `NewExpenseViewModel`**: Remoção de ~150 linhas de duplicação inline, alinhando a ViewModel estritamente com as fronteiras de Clean Architecture.
 - [x] **Suíte de Testes Automatizados**: Criado `CreateBillUseCaseTest` cobrindo paridade total de valores, centavos e datas-base entre fluxo com e sem cartão, despesas à vista e recorrentes. 100% dos testes unitários passando.
 
+### Regra Única de Limite de Cartão de Crédito e Faturas Sob Demanda (v1.16.0)
+- [x] **Caso de Uso Centralizado (`GetCreditCardSummariesUseCase`)**: Cálculo canônico de limite consumido e disponível de cartões.
+- [x] **Regra Canônica de Limite**: `INSTALLMENT` consome o saldo devedor restante de todas as parcelas não pagas; `RECURRING` e `SINGLE` consomem exclusivamente a fatura aberta/fechada atual não paga.
+- [x] **Desacoplamento e Correção de ViewModels**: `CreditCardsViewModel` e `NewExpenseViewModel` agora delegam integralmente o cálculo ao use case, corrigindo soma indevida de cartões misturados e duplicações.
+- [x] **Faturas Recorrentes Sob Demanda**: `CreateBillUseCase` vincula apenas a 1ª ocorrência à fatura inicial em `RECURRING`, prevenindo a pré-criação desnecessária de 11 faturas futuras vazias no SQLite.
+- [x] **Suíte de Testes Automatizados**: Criado `GetCreditCardSummariesUseCaseTest` cobrindo cenários com 1 parcelado 10x, 1 assinatura e 1 compra à vista, além da liberação do limite após quitação de fatura. 100% dos testes unitários aprovados.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

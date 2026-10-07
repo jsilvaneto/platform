@@ -20,6 +20,7 @@ import com.platform.app.domain.model.RecurrenceEndType
 import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.CreateBillUseCase
+import com.platform.app.domain.usecase.GetCreditCardSummariesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -123,6 +125,7 @@ sealed interface NewExpenseUiEffect {
 class NewExpenseViewModel @Inject constructor(
     private val repository: FinancialRepository,
     private val createBillUseCase: CreateBillUseCase,
+    private val getCreditCardSummariesUseCase: GetCreditCardSummariesUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -170,17 +173,10 @@ class NewExpenseViewModel @Inject constructor(
             BaseOptions(categories, items, contacts, accounts, methods)
         }
 
-        val cardDataFlow = combine(
-            repository.getCreditCards(),
-            repository.getAllInstallments()
-        ) { cards, installments ->
-            val summaries = cards.associate { card ->
-                val used = installments
-                    .filter { it.invoiceId != null && !it.isPaid }
-                    .sumOf { it.amountCents }
-                card.id to CreditCardCalculator.calculateAvailableLimit(card.totalLimitCents, used)
-            }
-            cards to summaries
+        val cardDataFlow = getCreditCardSummariesUseCase().map { summaries ->
+            val cards = summaries.map { it.card }
+            val limitsMap = summaries.associate { it.card.id to it.availableLimitCents }
+            cards to limitsMap
         }
 
         combine(baseOptionsFlow, cardDataFlow) { base, (cards, summaries) ->

@@ -28,19 +28,30 @@ class CreateBillUseCase @Inject constructor(
             val status = if (isPaid) BillStatus.PAID else BillStatus.PENDING
 
             if (creditCard != null) {
-                val refMonth = CreditCardCalculator.determineInvoiceReferenceMonth(
-                    purchaseTimestamp = installment.dueDate,
-                    closingDay = creditCard.closingDay
-                )
-                val invoice = repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)
+                // Para RECURRING, apenas a ocorrência do ciclo inicial é atrelada imediatamente à fatura.
+                // As ocorrências futuras mantêm a projeção temporal sem pré-criar faturas vazias antecipadas no banco.
+                if (bill.type == BillType.RECURRING && index > 0) {
+                    installment.copy(
+                        invoiceId = null,
+                        status = status,
+                        paidAt = paymentTimestamp,
+                        actualPaymentDate = paymentTimestamp
+                    )
+                } else {
+                    val refMonth = CreditCardCalculator.determineInvoiceReferenceMonth(
+                        purchaseTimestamp = installment.dueDate,
+                        closingDay = creditCard.closingDay
+                    )
+                    val invoice = repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)
 
-                installment.copy(
-                    invoiceId = invoice.id,
-                    dueDate = invoice.dueDate,
-                    status = status,
-                    paidAt = paymentTimestamp,
-                    actualPaymentDate = paymentTimestamp
-                )
+                    installment.copy(
+                        invoiceId = invoice.id,
+                        dueDate = invoice.dueDate,
+                        status = status,
+                        paidAt = paymentTimestamp,
+                        actualPaymentDate = paymentTimestamp
+                    )
+                }
             } else {
                 installment.copy(
                     status = status,

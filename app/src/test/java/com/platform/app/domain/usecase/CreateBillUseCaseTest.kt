@@ -218,7 +218,11 @@ class CreateBillUseCaseTest {
             assertEquals(amount, instNoCard[i].amountCents)
             assertEquals(amount, instCard[i].amountCents)
             assertNull(instNoCard[i].invoiceId)
-            assertNotNull(instCard[i].invoiceId)
+        }
+        // Primeira ocorrência vinculada à fatura do ciclo atual; ocorrências futuras criadas sob demanda
+        assertNotNull(instCard[0].invoiceId)
+        for (i in 1 until 12) {
+            assertNull(instCard[i].invoiceId)
         }
     }
 

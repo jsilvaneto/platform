@@ -18,10 +18,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.platform.app.domain.usecase.GetCreditCardSummariesUseCase
 import javax.inject.Inject
+
 @HiltViewModel
 class CreditCardsViewModel @Inject constructor(
-    private val repository: FinancialRepository
+    private val repository: FinancialRepository,
+    private val getCreditCardSummariesUseCase: GetCreditCardSummariesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CreditCardsUiState())
@@ -127,11 +130,11 @@ class CreditCardsViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true) }
 
         combine(
-            repository.getCreditCards(),
-            repository.getAllInstallments(),
-            repository.getAllCreditCardInvoices()
-        ) { cards, installments, allInvoices ->
-            val currentSelected = _uiState.value.selectedCardId ?: cards.firstOrNull()?.id
+            getCreditCardSummariesUseCase(),
+            repository.getAllCreditCardInvoices(),
+            repository.getAllInstallments()
+        ) { summaries, allInvoices, installments ->
+            val currentSelected = _uiState.value.selectedCardId ?: summaries.firstOrNull()?.card?.id
             val cardInvoices = if (currentSelected != null) {
                 allInvoices.filter { it.creditCardId == currentSelected }
                     .sortedByDescending { it.referenceMonth }
@@ -143,26 +146,10 @@ class CreditCardsViewModel @Inject constructor(
                     }
             } else emptyList()
 
-            val currentInvoice = cardInvoices.firstOrNull { it.status != InvoiceStatus.PAGA }
+            val selectedSummary = summaries.find { it.card.id == currentSelected }
+            val currentInvoice = selectedSummary?.currentInvoice
+                ?: cardInvoices.firstOrNull { it.status != InvoiceStatus.PAGA }
                 ?: cardInvoices.firstOrNull()
-
-            val summaries = cards.map { card ->
-                val activeInvoiceInsts = installments.filter { it.invoiceId != null && !it.isPaid }
-                // Compras atreladas a faturas deste cartão
-                val cardInvoiceIds = allInvoices.filter { it.creditCardId == card.id }.map { it.id }.toSet()
-                val usedLimit = activeInvoiceInsts
-                    .filter { it.invoiceId in cardInvoiceIds }
-                    .sumOf { it.amountCents }
-
-                val cardInv = cardInvoices.firstOrNull { it.creditCardId == card.id && it.status != InvoiceStatus.PAGA }
-                    ?: cardInvoices.firstOrNull { it.creditCardId == card.id }
-
-                CreditCardWithInvoiceSummary(
-                    card = card,
-                    currentInvoice = cardInv,
-                    usedLimitCents = usedLimit
-                )
-            }
 
             _uiState.update {
                 it.copy(

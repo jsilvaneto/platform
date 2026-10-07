@@ -6,7 +6,13 @@ import javax.inject.Inject
 class RestoreBackupUseCase @Inject constructor(
     private val backupRepository: BackupRepository
 ) {
-    suspend operator fun invoke(jsonString: String): Result<Unit> {
-        return backupRepository.restoreBackupFromJson(jsonString)
+    suspend operator fun invoke(encryptedBackupJson: String, password: String): Result<Unit> {
+        if (password.isBlank()) {
+            return Result.failure(IllegalArgumentException("A senha ou PIN para restauração é obrigatória."))
+        }
+        if (encryptedBackupJson.isBlank()) {
+            return Result.failure(IllegalArgumentException("O arquivo de backup selecionado está vazio."))
+        }
+        return backupRepository.restoreBackupFromJson(encryptedBackupJson, password)
     }
 }

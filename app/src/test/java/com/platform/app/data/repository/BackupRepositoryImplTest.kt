@@ -1,5 +1,6 @@
 package com.platform.app.data.repository
 
+import androidx.room.withTransaction
 import com.platform.app.core.dispatcher.DispatcherProvider
 import com.platform.app.data.local.PlatformDatabase
 import com.platform.app.data.local.dao.BillDao
@@ -16,6 +17,8 @@ import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.data.local.entity.CategoryEntity
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,6 +27,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -56,7 +60,12 @@ class BackupRepositoryImplTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        mockkStatic("androidx.room.RoomDatabaseKt")
         database = mockk(relaxed = true)
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            val block = secondArg<suspend () -> Any?>()
+            block()
+        }
         categoryDao = mockk(relaxed = true)
         expenseItemDao = mockk(relaxed = true)
         creditCardDao = mockk(relaxed = true)
@@ -88,11 +97,12 @@ class BackupRepositoryImplTest {
 
     @After
     fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
         Dispatchers.resetMain()
     }
 
     @Test
-    fun `exportBackupJson successfully exports structured JSON containing version and entities`() = runTest(testDispatcher) {
+    fun `exportBackupJson successfully exports encrypted JSON containing cipher metadata and protecting plaintext`() = runTest(testDispatcher) {
         val sampleCategory = CategoryEntity(
             id = "cat-1",
             name = "Alimentação",
@@ -103,18 +113,67 @@ class BackupRepositoryImplTest {
         coEvery { expenseItemDao.getAllList() } returns emptyList()
         coEvery { creditCardDao.getAllCardsList() } returns emptyList()
 
-        val result = repository.exportBackupJson()
+        val password = "SenhaDeBackupForte@123"
+        val result = repository.exportBackupJson(password)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(result.isSuccess)
         val json = result.getOrThrow()
-        assertTrue(json.contains("\"version\": 2"))
-        assertTrue(json.contains("Alimentação"))
+        assertTrue("Deve conter identificador de envelope criptografado", json.contains("PLATFORM_ENCRYPTED_BACKUP"))
+        assertTrue("Deve conter algoritmo AES/GCM", json.contains("AES/GCM/NoPadding"))
+        assertTrue("Deve conter KDF PBKDF2", json.contains("PBKDF2WithHmacSHA256"))
+        assertFalse("Não deve expor entidade em texto claro", json.contains("Alimentação"))
+    }
+
+    @Test
+    fun `restoreBackupFromJson with correct password successfully decrypts and restores entities`() = runTest(testDispatcher) {
+        val sampleCategory = CategoryEntity(
+            id = "cat-1",
+            name = "Alimentação",
+            colorHex = "#FF5722",
+            iconName = "Restaurant"
+        )
+        coEvery { categoryDao.getAllList() } returns listOf(sampleCategory)
+        coEvery { expenseItemDao.getAllList() } returns emptyList()
+        coEvery { creditCardDao.getAllCardsList() } returns emptyList()
+
+        val password = "SenhaDeBackupForte@123"
+        val exportResult = repository.exportBackupJson(password)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val encryptedJson = exportResult.getOrThrow()
+
+        val restoreResult = repository.restoreBackupFromJson(encryptedJson, password)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(restoreResult.isSuccess)
+    }
+
+    @Test
+    fun `restoreBackupFromJson with wrong password fails and does not restore any data`() = runTest(testDispatcher) {
+        val sampleCategory = CategoryEntity(
+            id = "cat-1",
+            name = "Alimentação",
+            colorHex = "#FF5722",
+            iconName = "Restaurant"
+        )
+        coEvery { categoryDao.getAllList() } returns listOf(sampleCategory)
+        coEvery { expenseItemDao.getAllList() } returns emptyList()
+        coEvery { creditCardDao.getAllCardsList() } returns emptyList()
+
+        val password = "SenhaDeBackupForte@123"
+        val exportResult = repository.exportBackupJson(password)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val encryptedJson = exportResult.getOrThrow()
+
+        val restoreResult = repository.restoreBackupFromJson(encryptedJson, "SenhaErrada@999")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(restoreResult.isFailure)
     }
 
     @Test
     fun `restoreBackupFromJson returns failure when json is corrupt or empty`() = runTest(testDispatcher) {
-        val result = repository.restoreBackupFromJson("")
+        val result = repository.restoreBackupFromJson("", "QualquerSenha123")
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(result.isFailure)

@@ -39,6 +39,8 @@ import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Restore
@@ -46,6 +48,8 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -61,6 +65,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -70,6 +75,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -113,16 +120,28 @@ fun SettingsScreen(
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
     var showAppearanceSheet by remember { mutableStateOf(false) }
 
+    var showCreateBackupDialog by remember { mutableStateOf(false) }
+    var isSharingAfterBackup by remember { mutableStateOf(false) }
+    var pendingBackupPassword by remember { mutableStateOf("") }
+    var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var showRestorePasswordDialog by remember { mutableStateOf(false) }
+
     val createDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
-        uri?.let { viewModel.onAction(SettingsUiAction.ExportBackupToUri(it)) }
+        if (uri != null && pendingBackupPassword.isNotBlank()) {
+            viewModel.onAction(SettingsUiAction.ExportBackupToUri(uri, pendingBackupPassword))
+        }
+        pendingBackupPassword = ""
     }
 
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { viewModel.onAction(SettingsUiAction.RestoreBackupFromUri(it)) }
+        if (uri != null) {
+            pendingRestoreUri = uri
+            showRestorePasswordDialog = true
+        }
     }
 
     val lastBackupFormatted = remember(uiState.lastBackupTimestamp) {
@@ -368,8 +387,8 @@ fun SettingsScreen(
                 ) {
                     Button(
                         onClick = {
-                            val timeStampStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                            createDocumentLauncher.launch("platform_backup_$timeStampStr.json")
+                            isSharingAfterBackup = false
+                            showCreateBackupDialog = true
                         },
                         enabled = !uiState.isLoading,
                         shape = RoundedCornerShape(10.dp),
@@ -414,7 +433,10 @@ fun SettingsScreen(
 
                 // Compartilhar arquivo direto (WhatsApp / E-mail)
                 TextButton(
-                    onClick = { viewModel.onAction(SettingsUiAction.ShareBackup) },
+                    onClick = {
+                        isSharingAfterBackup = true
+                        showCreateBackupDialog = true
+                    },
                     enabled = !uiState.isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(vertical = 4.dp)
@@ -584,6 +606,39 @@ fun SettingsScreen(
                     ) {
                         Text("Cancelar")
                     }
+                }
+            )
+        }
+
+        if (showCreateBackupDialog) {
+            CreateBackupPasswordDialog(
+                isSharing = isSharingAfterBackup,
+                onDismiss = { showCreateBackupDialog = false },
+                onConfirm = { password ->
+                    showCreateBackupDialog = false
+                    if (isSharingAfterBackup) {
+                        viewModel.onAction(SettingsUiAction.ShareBackup(password))
+                    } else {
+                        pendingBackupPassword = password
+                        val timeStampStr = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                        createDocumentLauncher.launch("platform_backup_$timeStampStr.json")
+                    }
+                }
+            )
+        }
+
+        if (showRestorePasswordDialog) {
+            RestorePasswordDialog(
+                onDismiss = {
+                    showRestorePasswordDialog = false
+                    pendingRestoreUri = null
+                },
+                onConfirm = { password ->
+                    showRestorePasswordDialog = false
+                    pendingRestoreUri?.let { uri ->
+                        viewModel.onAction(SettingsUiAction.RestoreBackupFromUri(uri, password))
+                    }
+                    pendingRestoreUri = null
                 }
             )
         }
@@ -1210,5 +1265,188 @@ private fun AppearanceBottomSheetContent(
         Spacer(modifier = Modifier.height(28.dp))
     }
 }
+
+@Composable
+fun CreateBackupPasswordDialog(
+    isSharing: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val isLengthValid = password.length >= 4
+    val isMatching = password == confirmPassword
+    val isValid = isLengthValid && isMatching
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        },
+        title = {
+            Text(
+                text = if (isSharing) "Proteger Compartilhamento" else "Criptografar Backup",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Defina uma senha ou PIN para proteger seus dados financeiros com criptografia simétrica AES-256 (PBKDF2).\n\n⚠️ Esta senha será estritamente necessária para restaurar este arquivo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Senha / PIN (mínimo 4 caracteres)") },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirmar Senha / PIN") },
+                    singleLine = true,
+                    isError = confirmPassword.isNotBlank() && !isMatching,
+                    supportingText = {
+                        if (confirmPassword.isNotBlank() && !isMatching) {
+                            Text("As senhas não coincidem.", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(password) },
+                enabled = isValid,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(if (isSharing) "Criptografar e Enviar" else "Salvar Arquivo")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun RestorePasswordDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Key,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        },
+        title = {
+            Text(
+                text = "Descriptografar Backup",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Informe a senha ou PIN definida no momento da geração deste backup para desbloquear e restaurar os dados com segurança.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Senha / PIN do Backup") },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha"
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(password) },
+                enabled = password.isNotBlank(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Descriptografar e Restaurar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
 
 

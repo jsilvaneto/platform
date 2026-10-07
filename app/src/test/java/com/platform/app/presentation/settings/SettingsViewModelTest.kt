@@ -194,18 +194,18 @@ class SettingsViewModelTest {
 
     @Test
     fun `ExportBackupToUri emits snackbar error when usecase fails`() = runTest {
-        coEvery { exportBackupUseCase() } returns Result.failure(RuntimeException("Falha de disco"))
+        coEvery { exportBackupUseCase("Senha123") } returns Result.failure(RuntimeException("Falha de disco"))
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val mockUri = mockk<android.net.Uri>()
         viewModel.uiEffect.test {
-            viewModel.onAction(SettingsUiAction.ExportBackupToUri(mockUri))
+            viewModel.onAction(SettingsUiAction.ExportBackupToUri(mockUri, "Senha123"))
             testDispatcher.scheduler.advanceUntilIdle()
 
             val effect = awaitItem()
             assertTrue(effect is SettingsUiEffect.ShowSnackbar)
-            assertTrue((effect as SettingsUiEffect.ShowSnackbar).message.contains("Erro ao gerar dados do backup"))
+            assertTrue((effect as SettingsUiEffect.ShowSnackbar).message.contains("Erro ao gerar backup"))
         }
     }
 
@@ -218,7 +218,7 @@ class SettingsViewModelTest {
         every { context.contentResolver.openInputStream(mockUri) } returns null
 
         viewModel.uiEffect.test {
-            viewModel.onAction(SettingsUiAction.RestoreBackupFromUri(mockUri))
+            viewModel.onAction(SettingsUiAction.RestoreBackupFromUri(mockUri, "Senha123"))
             testDispatcher.scheduler.advanceUntilIdle()
 
             val effect = awaitItem()

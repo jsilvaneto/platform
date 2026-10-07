@@ -99,9 +99,9 @@ class SettingsViewModel @Inject constructor(
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
             is SettingsUiAction.SetAmoledMode -> handleSetAmoledMode(action.enabled)
             is SettingsUiAction.SetAppIcon -> handleSetAppIcon(action.iconKey)
-            is SettingsUiAction.ExportBackupToUri -> handleExportBackupToUri(action.uri)
-            is SettingsUiAction.RestoreBackupFromUri -> handleRestoreBackupFromUri(action.uri)
-            is SettingsUiAction.ShareBackup -> handleShareBackup()
+            is SettingsUiAction.ExportBackupToUri -> handleExportBackupToUri(action.uri, action.password)
+            is SettingsUiAction.RestoreBackupFromUri -> handleRestoreBackupFromUri(action.uri, action.password)
+            is SettingsUiAction.ShareBackup -> handleShareBackup(action.password)
             is SettingsUiAction.Refresh -> observeData()
         }
     }
@@ -120,32 +120,32 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun handleExportBackupToUri(uri: android.net.Uri) {
+    private fun handleExportBackupToUri(uri: android.net.Uri, password: String) {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val exportResult = exportBackupUseCase()
-            exportResult.onSuccess { jsonString ->
+            val exportResult = exportBackupUseCase(password)
+            exportResult.onSuccess { encryptedJson ->
                 val writeResult = runCatching {
                     context.contentResolver.openOutputStream(uri)?.use { stream ->
-                        stream.write(jsonString.toByteArray(Charsets.UTF_8))
+                        stream.write(encryptedJson.toByteArray(Charsets.UTF_8))
                         stream.flush()
                     } ?: throw IllegalStateException("Não foi possível acessar o destino do arquivo.")
                 }
                 writeResult.onSuccess {
                     val now = System.currentTimeMillis()
                     preferencesManager.updateLastOfflineBackupTimestamp(now)
-                    _effectChannel.send(SettingsUiEffect.ShowSnackbar("Backup exportado com sucesso!"))
+                    _effectChannel.send(SettingsUiEffect.ShowSnackbar("Backup criptografado exportado com sucesso!"))
                 }.onFailure { err ->
                     _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao salvar arquivo: ${err.localizedMessage}"))
                 }
             }.onFailure { err ->
-                _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao gerar dados do backup: ${err.localizedMessage}"))
+                _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao gerar backup: ${err.localizedMessage}"))
             }
             _uiState.update { it.copy(isLoading = false) }
         }
     }
 
-    private fun handleRestoreBackupFromUri(uri: android.net.Uri) {
+    private fun handleRestoreBackupFromUri(uri: android.net.Uri, password: String) {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             val readResult = runCatching {
@@ -153,8 +153,8 @@ class SettingsViewModel @Inject constructor(
                     it.readText()
                 } ?: throw IllegalStateException("Não foi possível ler o arquivo selecionado.")
             }
-            readResult.onSuccess { jsonString ->
-                val restoreResult = restoreBackupUseCase(jsonString)
+            readResult.onSuccess { encryptedContent ->
+                val restoreResult = restoreBackupUseCase(encryptedContent, password)
                 restoreResult.onSuccess {
                     val now = System.currentTimeMillis()
                     preferencesManager.updateLastOfflineBackupTimestamp(now)
@@ -169,15 +169,15 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun handleShareBackup() {
+    private fun handleShareBackup(password: String) {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
-            val exportResult = exportBackupUseCase()
-            exportResult.onSuccess { jsonString ->
+            val exportResult = exportBackupUseCase(password)
+            exportResult.onSuccess { encryptedJson ->
                 val shareResult = runCatching {
                     val cacheDir = File(context.cacheDir, "backups").apply { mkdirs() }
                     val backupFile = File(cacheDir, "platform_backup_${System.currentTimeMillis()}.json")
-                    backupFile.writeText(jsonString, Charsets.UTF_8)
+                    backupFile.writeText(encryptedJson, Charsets.UTF_8)
                     FileProvider.getUriForFile(
                         context,
                         "${context.packageName}.fileprovider",
@@ -192,7 +192,7 @@ class SettingsViewModel @Inject constructor(
                     _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao preparar compartilhamento: ${err.localizedMessage}"))
                 }
             }.onFailure { err ->
-                _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao gerar dados do backup: ${err.localizedMessage}"))
+                _effectChannel.send(SettingsUiEffect.ShowSnackbar("Erro ao gerar backup: ${err.localizedMessage}"))
             }
             _uiState.update { it.copy(isLoading = false) }
         }

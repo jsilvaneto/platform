@@ -129,6 +129,15 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Testes em `FinancialAccountTypeTest` e atualização de `ManagementViewModelTest`.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 024](.ai/DECISIONS/024-enum-financial-account-type-e-migracao-room.md).
 
+### Criptografia AES-256-GCM para Backups com Proteção por Senha (v1.9.0)
+- [x] **Criptografia Simétrica AEAD (`BackupCryptoHelper`)**: `AES/GCM/NoPadding` de 256 bits eliminando exportações em texto plano.
+- [x] **Derivação de Chave PBKDF2**: `PBKDF2WithHmacSHA256` com 65.536 iterações, sal de 16 bytes e IV de 12 bytes via `SecureRandom`.
+- [x] **Envelope de Transporte (`EncryptedBackupDto`)**: Empacotamento versionado em JSON protegendo 100% dos dados financeiros locais.
+- [x] **Contratos e Casos de Uso com Senha**: Exigência de senha/PIN em `BackupRepository`, `ExportBackupUseCase` e `RestoreBackupUseCase`.
+- [x] **Interface & Modais Interativos (`SettingsScreen`)**: Diálogos ergonômicos `CreateBackupPasswordDialog` e `RestorePasswordDialog` com validações, visibilidade de senha e feedback semântico.
+- [x] **Suíte de Testes Automatizados**: Novos testes em `BackupCryptoHelperTest` e atualizações em `BackupRepositoryImplTest` e `SettingsViewModelTest`.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 025](.ai/DECISIONS/025-criptografia-aes-gcm-backups-protegidos-por-senha.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

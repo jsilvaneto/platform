@@ -1,6 +1,6 @@
 package com.platform.app.domain.repository
 
 interface BackupRepository {
-    suspend fun exportBackupJson(): Result<String>
-    suspend fun restoreBackupFromJson(jsonString: String): Result<Unit>
+    suspend fun exportBackupJson(password: String): Result<String>
+    suspend fun restoreBackupFromJson(encryptedBackupJson: String, password: String): Result<Unit>
 }

@@ -3,6 +3,31 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.9.0] - 2026-10-07
+
+### 🔒 Criptografia AES-256-GCM para Backups com Proteção por Senha/PIN
+
+- **Criptografia Simétrica Forte (AEAD AES-256-GCM)**:
+  - Implementada criptografia simétrica autenticada (`AES/GCM/NoPadding`) de 256 bits via `BackupCryptoHelper`, eliminando o risco de vazamento de dados em texto plano em backups locais e compartilhamentos via ShareSheet (WhatsApp, E-mail, etc.).
+  - Derivação de chaves via `PBKDF2WithHmacSHA256` com 65.536 iterações, sal criptográfico aleatório de 16 bytes e IV aleatório de 12 bytes gerados via `SecureRandom`.
+  - Descarte defensivo imediato da senha em memória RAM (`clearPassword()` e preenchimento com zeros).
+- **Envelope Criptográfico Seguro (`EncryptedBackupDto`)**:
+  - Dados exportados em envelope versionado contendo parâmetros do KDF, vetor de inicialização e o criptograma em Base64, protegendo 100% dos dados financeiros contra inspeção não autorizada.
+- **Contratos e Casos de Uso com Senha**:
+  - `BackupRepository`: atualizado para exigir senha em `exportBackupJson(password)` e `restoreBackupFromJson(backupJson, password)`.
+  - `ExportBackupUseCase` e `RestoreBackupUseCase`: validação mandatória de preenchimento e integridade.
+- **Interface e Experiência do Usuário (UI/UX)**:
+  - `SettingsScreen`: diálogos dedicados `CreateBackupPasswordDialog` (criação e confirmação de senha de no mínimo 4 caracteres com alertas visuais) e `RestorePasswordDialog` (solicitação de senha para descriptografia e restauração).
+  - Tratamento de erro detalhado informando explicitamente quando a senha/PIN fornecido estiver incorreto.
+- **Testes Automatizados**:
+  - `BackupCryptoHelperTest`: validação de ciclo completo de criptografia/descriptografia, confidencialidade do ciphertext contra vazamento de tokens, integridade contra adulteração e rejeição de senhas incorretas.
+  - `BackupRepositoryImplTest`: validação do ciclo exportação $\rightarrow$ restauração com senha correta e rejeição atômica com senha incorreta.
+  - `SettingsViewModelTest`: testes atualizados com a nova API protegida por senha.
+- **Governança & Arquitetura**:
+  - Registrada a [ADR 025: Criptografia Simétrica AES-256-GCM para Backups com Proteção por Senha/PIN](.ai/DECISIONS/025-criptografia-aes-gcm-backups-protegidos-por-senha.md).
+
+---
+
 ## [1.8.0] - 2026-10-07
 
 ### 💳 Tipificação de Contas Financeiras (`FinancialAccountType`) & Migração Room v13

@@ -4,7 +4,9 @@ import androidx.room.withTransaction
 import com.google.gson.GsonBuilder
 import com.platform.app.core.dispatcher.DispatcherProvider
 import com.platform.app.data.local.PlatformDatabase
+import com.platform.app.data.local.backup.BackupCryptoHelper
 import com.platform.app.data.local.backup.BackupDataDto
+import com.platform.app.data.local.backup.EncryptedBackupDto
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
@@ -40,8 +42,9 @@ class BackupRepositoryImpl @Inject constructor(
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
-    override suspend fun exportBackupJson(): Result<String> = withContext(dispatcherProvider.io) {
+    override suspend fun exportBackupJson(password: String): Result<String> = withContext(dispatcherProvider.io) {
         runCatching {
+            require(password.isNotBlank()) { "A senha ou PIN de backup não pode estar vazia." }
             val dto = BackupDataDto(
                 version = BackupDataDto.CURRENT_VERSION,
                 exportedAt = System.currentTimeMillis(),
@@ -59,14 +62,29 @@ class BackupRepositoryImpl @Inject constructor(
                 goalContributions = goalDao.getAllContributions(),
                 transactions = transactionDao.getAllList()
             )
-            gson.toJson(dto)
+            val plaintextJson = gson.toJson(dto)
+            val encryptedDto = BackupCryptoHelper.encrypt(plaintextJson, password)
+            gson.toJson(encryptedDto)
         }
     }
 
-    override suspend fun restoreBackupFromJson(jsonString: String): Result<Unit> = withContext(dispatcherProvider.io) {
+    override suspend fun restoreBackupFromJson(encryptedBackupJson: String, password: String): Result<Unit> = withContext(dispatcherProvider.io) {
         runCatching {
-            val payload = gson.fromJson(jsonString, BackupDataDto::class.java)
-                ?: throw IllegalArgumentException("Arquivo de backup inválido ou vazio.")
+            if (encryptedBackupJson.isBlank()) {
+                throw IllegalArgumentException("Arquivo de backup inválido ou vazio.")
+            }
+            require(password.isNotBlank()) { "A senha ou PIN para restauração é obrigatória." }
+
+            val encryptedDto = try {
+                gson.fromJson(encryptedBackupJson, EncryptedBackupDto::class.java)
+            } catch (e: Exception) {
+                throw IllegalArgumentException("Arquivo de backup com formato inválido ou corrompido.", e)
+            } ?: throw IllegalArgumentException("Arquivo de backup vazio.")
+
+            val plaintextJson = BackupCryptoHelper.decrypt(encryptedDto, password)
+
+            val payload = gson.fromJson(plaintextJson, BackupDataDto::class.java)
+                ?: throw IllegalArgumentException("Dados de backup corrompidos.")
 
             if (payload.version <= 0) {
                 throw IllegalArgumentException("Versão de backup inválida ou corrompida.")

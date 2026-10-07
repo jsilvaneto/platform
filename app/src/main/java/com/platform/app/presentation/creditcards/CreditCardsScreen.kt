@@ -178,10 +178,23 @@ fun CreditCardsScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Toque no botão + para adicionar o seu primeiro cartão.",
+                                        text = "Cadastre seu cartão de crédito para gerenciar limites e faturas.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Button(
+                                        onClick = { showAddCardSheet = true },
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("Cadastrar primeiro cartão")
+                                    }
                                 }
                             }
                         } else {

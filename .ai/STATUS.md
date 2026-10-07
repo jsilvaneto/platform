@@ -167,7 +167,14 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Recálculo Atômico do Cache de Saldo**: `addContribution` persiste a contribuição datada e recalcula `currentAmountCents` derivado diretamente da soma real das contribuições.
 - [x] **Granularidade Temporal no Repositório**: Exposição de `getContributionsForPeriod(goalId, startDate, endDate)` para apuração mensal e histórico de metas.
 - [x] **Suíte de Testes Automatizados**: Criado `GoalRepositoryImplTest` cobrindo múltiplos aportes em meses diferentes, recálculo e filtros temporais. 100% dos testes unitários passando.
-- [x] **Decisão Arquitetural Documentada**: Criada [ADR 028](.ai/DECISIONS/028-dao-dedicado-goal-contributions-e-recalculo-aportes.md).
+### Remoção do Seed Fictício de Cartões e Centralização de Seeds no Primeiro Uso (v1.14.0)
+- [x] **Eliminação de Dados Fictícios de Cartões**: Remoção definitiva do método `seedInitialCreditCardsIfEmpty()` que recriava dados falsos ("Cartão Principal" e "Cartão Secundário").
+- [x] **Empty State com CTA em `CreditCardsScreen`**: Exibição de empty state elegante com botão de ação `"Cadastrar primeiro cartão"`.
+- [x] **Centralização no Startup (`SeedInitialDataUseCase`)**: Inicialização única no `onCreate` do `PlatformApplication`, aplicando categorias, itens, contatos, contas e formas de pagamento padrão apenas no primeiro uso real.
+- [x] **Controle por Flag em `PreferencesManager` (`seeds_applied`)**: Fim da dependência em checagens do tipo "tabela vazia". Se o usuário excluir todos os dados de qualquer tabela, o app respeita e não recria nada.
+- [x] **Limpeza nos ViewModels**: Remoção de chamadas concorrentes e redundantes de seeding nos blocos `init` de 7 ViewModels (`HomeViewModel`, `BillsViewModel`, `NewExpenseViewModel`, `ManagementViewModel`, `ExpenseItemsViewModel`, `CreditCardsViewModel`, `DashboardViewModel`).
+- [x] **Suíte de Testes Automatizados**: Criado `FinancialRepositoryImplSeedTest` validando a garantia de resíduo zero (deleção total do usuário sem re-criação de registros) e atualização de `ExpenseItemsViewModelTest`. 100% dos testes unitários passando.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 029](.ai/DECISIONS/029-remocao-seed-cartoes-e-centralizacao-startup-seeds.md).
 
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).

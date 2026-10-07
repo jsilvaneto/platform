@@ -30,9 +30,6 @@ class CreditCardsViewModel @Inject constructor(
     private var invoiceDetailsJob: Job? = null
 
     init {
-        viewModelScope.launch {
-            repository.seedInitialCreditCardsIfEmpty()
-        }
         loadData()
     }
 

@@ -23,9 +23,6 @@ class ExpenseItemsViewModel @Inject constructor(
     val uiState: StateFlow<ExpenseItemsUiState> = _uiState.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            repository.seedInitialExpenseItemsIfEmpty()
-        }
         loadData()
     }
 

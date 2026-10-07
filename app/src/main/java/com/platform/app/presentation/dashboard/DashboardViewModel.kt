@@ -22,8 +22,7 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val getDashboardUseCase: GetFinancialDashboardUseCase,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
-    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase,
-    private val repository: FinancialRepository
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -31,7 +30,6 @@ class DashboardViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.seedInitialCategoriesIfEmpty()
             extendRecurringBillsUseCase()
         }
         loadMetricsForMonth(_uiState.value.selectedMonthMillis)

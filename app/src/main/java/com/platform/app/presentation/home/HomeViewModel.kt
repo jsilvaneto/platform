@@ -61,11 +61,6 @@ class HomeViewModel @Inject constructor(
     private var cachedCardsMap: Map<String, CreditCard> = emptyMap()
 
     init {
-        viewModelScope.launch {
-            repository.seedInitialCategoriesIfEmpty()
-            repository.seedInitialCreditCardsIfEmpty()
-            repository.seedInitialExpenseItemsIfEmpty()
-        }
         observeData(_uiState.value.selectedMonthMillis)
     }
 

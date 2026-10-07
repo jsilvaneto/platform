@@ -44,9 +44,6 @@ class BillsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            repository.seedInitialCategoriesIfEmpty()
-            repository.seedInitialFinancialAccountsIfEmpty()
-            repository.seedInitialPaymentMethodsIfEmpty()
             extendRecurringBillsUseCase()
         }
         loadAuxiliaryData()

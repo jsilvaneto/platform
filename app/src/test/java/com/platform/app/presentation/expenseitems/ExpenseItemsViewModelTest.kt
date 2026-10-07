@@ -41,7 +41,7 @@ class ExpenseItemsViewModelTest {
     }
 
     @Test
-    fun `init should seed items if empty and load data into state`() = runTest {
+    fun `init should load data into state`() = runTest {
         val cat1 = Category(id = "cat-1", name = "Alimentação", colorHex = "#10B981", nature = ExpenseNature.OBRIGATORIO)
         val item1 = ExpenseItem(id = "item-1", name = "Supermercado", categoryId = "cat-1", categoryName = "Alimentação", nature = ExpenseNature.OBRIGATORIO)
 
@@ -50,8 +50,6 @@ class ExpenseItemsViewModelTest {
 
         val viewModel = ExpenseItemsViewModel(repository)
         testDispatcher.scheduler.advanceUntilIdle()
-
-        coVerify { repository.seedInitialExpenseItemsIfEmpty() }
 
         assertEquals(1, viewModel.uiState.value.items.size)
         assertEquals("Supermercado", viewModel.uiState.value.items[0].name)

@@ -1,7 +1,29 @@
 # Changelog - Platform (Android App)
 
-Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
-O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
+Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
+
+## [1.14.0] - 2026-10-07
+
+### 💳 Remoção do Seed Fictício de Cartões e Centralização de Seeds no Primeiro Uso
+
+- **Remoção de Dados Fictícios de Cartões de Crédito**:
+  - Excluído o seed automático que criava "Cartão Principal" e "Cartão Secundário" quando a tabela estava vazia.
+  - Implementado empty state refinado em `CreditCardsScreen` com botão de Call-To-Action (CTA): `"Cadastrar primeiro cartão"`.
+  - O app agora respeita quando o usuário exclui todos os cartões, nunca mais recriando dados fictícios sem autorização.
+- **Centralização da Inicialização no Primeiro Uso (Startup)**:
+  - Criado o caso de uso `SeedInitialDataUseCase` e centralizado o bootstrap de entidades de referência (Categorias, Itens, Contatos, Contas Financeiras e Formas de Pagamento) em `PlatformApplication.onCreate()`.
+  - Controle de primeiro uso governado via flag persistente `seeds_applied` no `PreferencesManager` (Jetpack DataStore) em vez de checagens repetitivas de "tabela vazia".
+  - Se o usuário excluir conscientemente todos os registros de qualquer entidade (categorias, contatos, etc.), eles não são recriados ao abrir o app.
+- **Desacoplamento e Limpeza nos ViewModels**:
+  - Removidas chamadas de seed dos blocos `init` de 7 ViewModels (`HomeViewModel`, `BillsViewModel`, `NewExpenseViewModel`, `ManagementViewModel`, `ExpenseItemsViewModel`, `CreditCardsViewModel` e `DashboardViewModel`).
+  - Redução drástica de overhead de I/O de banco e checagens concorrentes desnecessárias na navegação entre telas.
+- **Testes Automatizados & Governança**:
+  - Criado `FinancialRepositoryImplSeedTest` validando a garantia de resíduo zero: mesmo com todas as tabelas vazias, uma vez que a flag `seeds_applied` está ativa, nenhuma entidade é recriada.
+  - Atualizado `ExpenseItemsViewModelTest` com foco no carregamento de dados.
+  - Registrado [ADR 029](.ai/DECISIONS/029-remocao-seed-cartoes-e-centralizacao-startup-seeds.md).
+
+---
 
 ## [1.13.0] - 2026-10-07
 

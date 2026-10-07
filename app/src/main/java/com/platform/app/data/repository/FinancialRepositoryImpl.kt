@@ -145,19 +145,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun seedInitialCategoriesIfEmpty() {
-        if (categoryDao.count() == 0) {
-            val defaults = listOf(
-                Category(id = UUID.randomUUID().toString(), name = "Moradia", colorHex = "#3B82F6", iconName = "home", nature = ExpenseNature.OBRIGATORIO),
-                Category(id = UUID.randomUUID().toString(), name = "Alimentação", colorHex = "#10B981", iconName = "shopping_cart", nature = ExpenseNature.NECESSARIO),
-                Category(id = UUID.randomUUID().toString(), name = "Transporte", colorHex = "#F59E0B", iconName = "directions_car", nature = ExpenseNature.NECESSARIO),
-                Category(id = UUID.randomUUID().toString(), name = "Assinaturas & Serviços", colorHex = "#8B5CF6", iconName = "subscriptions", nature = ExpenseNature.DESEJA),
-                Category(id = UUID.randomUUID().toString(), name = "Saúde", colorHex = "#EF4444", iconName = "medical_services", nature = ExpenseNature.OBRIGATORIO),
-                Category(id = UUID.randomUUID().toString(), name = "Lazer", colorHex = "#EC4899", iconName = "sports_esports", nature = ExpenseNature.DESEJA),
-                Category(id = UUID.randomUUID().toString(), name = "Educação", colorHex = "#6366F1", iconName = "school", nature = ExpenseNature.OBRIGATORIO),
-                Category(id = UUID.randomUUID().toString(), name = "Outros", colorHex = "#64748B", iconName = "more_horiz", nature = ExpenseNature.NENHUM)
-            )
-            categoryDao.insertAll(defaults.map { CategoryEntity.fromDomain(it) })
-        }
+        seedInitialData()
     }
 
     // --- Expense Items ---
@@ -199,25 +187,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun seedInitialExpenseItemsIfEmpty() {
-        if (expenseItemDao.count() == 0) {
-            val categories = getCategories().first()
-            if (categories.isNotEmpty()) {
-                val moradia = categories.find { it.name == "Moradia" }?.id ?: categories[0].id
-                val alimentacao = categories.find { it.name == "Alimentação" }?.id ?: categories[0].id
-                val transporte = categories.find { it.name == "Transporte" }?.id ?: categories[0].id
-
-                val defaults = listOf(
-                    ExpenseItem(name = "Aluguel / Condomínio", categoryId = moradia),
-                    ExpenseItem(name = "Energia Elétrica", categoryId = moradia),
-                    ExpenseItem(name = "Água & Saneamento", categoryId = moradia),
-                    ExpenseItem(name = "Supermercado", categoryId = alimentacao),
-                    ExpenseItem(name = "Feira & Hortifruti", categoryId = alimentacao),
-                    ExpenseItem(name = "Combustível", categoryId = transporte),
-                    ExpenseItem(name = "Manutenção Veicular", categoryId = transporte)
-                )
-                expenseItemDao.insertAll(defaults.map { ExpenseItemEntity.fromDomain(it) })
-            }
-        }
+        seedInitialData()
     }
 
     // --- Credit Cards & Invoices ---
@@ -362,19 +332,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun seedInitialContactsIfEmpty() {
-        if (contactDao.count() == 0) {
-            val initial = listOf(
-                Contact(id = UUID.randomUUID().toString(), name = "Supermercado"),
-                Contact(id = UUID.randomUUID().toString(), name = "Farmácia"),
-                Contact(id = UUID.randomUUID().toString(), name = "Posto de Combustível"),
-                Contact(id = UUID.randomUUID().toString(), name = "Restaurante"),
-                Contact(id = UUID.randomUUID().toString(), name = "Internet / Telefonia"),
-                Contact(id = UUID.randomUUID().toString(), name = "Energia Elétrica"),
-                Contact(id = UUID.randomUUID().toString(), name = "Água e Saneamento"),
-                Contact(id = UUID.randomUUID().toString(), name = "Diversos")
-            )
-            contactDao.insertAll(initial.map { ContactEntity.fromDomain(it) })
-        }
+        seedInitialData()
     }
 
     // --- Financial Accounts ---
@@ -393,15 +351,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun seedInitialFinancialAccountsIfEmpty() {
-        if (financialAccountDao.count() == 0) {
-            val defaults = listOf(
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Conta Corrente", accountType = FinancialAccountType.CORRENTE, colorHex = "#3B82F6"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Carteira / Dinheiro", accountType = FinancialAccountType.CARTEIRA, colorHex = "#10B981"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Reserva de Emergência", accountType = FinancialAccountType.POUPANCA, colorHex = "#F59E0B"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Investimentos", accountType = FinancialAccountType.INVESTIMENTO, colorHex = "#8B5CF6")
-            )
-            financialAccountDao.insertAll(defaults.map { FinancialAccountEntity.fromDomain(it) })
-        }
+        seedInitialData()
     }
 
     // --- Payment Methods ---
@@ -420,17 +370,7 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun seedInitialPaymentMethodsIfEmpty() {
-        if (paymentMethodDao.count() == 0) {
-            val defaults = listOf(
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Pix", iconName = "qr_code"),
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Boleto", iconName = "receipt"),
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Cartão de Crédito", iconName = "credit_card"),
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Cartão de Débito", iconName = "credit_card"),
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Dinheiro", iconName = "payments"),
-                PaymentMethod(id = UUID.randomUUID().toString(), name = "Transferência Bancária", iconName = "account_balance")
-            )
-            paymentMethodDao.insertAll(defaults.map { PaymentMethodEntity.fromDomain(it) })
-        }
+        seedInitialData()
     }
 
     // --- Bills & Installments ---

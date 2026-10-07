@@ -32,11 +32,6 @@ class ManagementViewModel @Inject constructor(
     val uiEffect: Flow<ManagementUiEffect> = _effectChannel.receiveAsFlow()
 
     init {
-        viewModelScope.launch {
-            repository.seedInitialCategoriesIfEmpty()
-            repository.seedInitialFinancialAccountsIfEmpty()
-            repository.seedInitialPaymentMethodsIfEmpty()
-        }
         loadData()
     }
 

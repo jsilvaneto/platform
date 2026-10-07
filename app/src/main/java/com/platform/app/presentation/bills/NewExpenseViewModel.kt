@@ -160,15 +160,6 @@ class NewExpenseViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch {
-            repository.seedInitialCategoriesIfEmpty()
-            repository.seedInitialExpenseItemsIfEmpty()
-            repository.seedInitialContactsIfEmpty()
-            repository.seedInitialFinancialAccountsIfEmpty()
-            repository.seedInitialPaymentMethodsIfEmpty()
-            repository.seedInitialCreditCardsIfEmpty()
-        }
-
         val baseOptionsFlow = combine(
             repository.getCategories(),
             repository.getExpenseItems(),

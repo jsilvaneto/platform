@@ -3,6 +3,18 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.6.1] - 2026-10-07
+
+### 🎨 Semântica e Hierarquia Visual na Visão Mensal (`HomeScreen`)
+
+- **Rótulo Semântico "Restante a Pagar no Mês"**:
+  - Renomeado de "Total Previsto no Mês" para "Restante a Pagar no Mês" no card executivo `ForecastImpactCard`, eliminando a ambiguidade com o total orçado e deixando claro que o montante destacado reflete apenas o saldo ainda em aberto.
+- **Hierarquia Visual Reforçada para Quitação Completa**:
+  - Quando todas as contas do mês estiverem pagas (`R$ 0,00` restante), a UI destaca o badge de sucesso **"Tudo quitado"** com ícone de confirmação no topo do card, **antes** da exibição do valor.
+  - O valor `R$ 0,00` adota a tonalidade esmeralda de sucesso (`SuccessGreen`), reforçando visualmente a conquista de quitação em vez de sugerir ausência de dados ou valor zerado neutro.
+
+---
+
 ## [1.6.0] - 2026-10-07
 
 ### 🔄 Extensão Contínua de Recorrências FOREVER (Janela Deslizante Automática)

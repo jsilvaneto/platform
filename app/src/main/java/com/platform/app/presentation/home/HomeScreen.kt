@@ -1542,6 +1542,7 @@ fun ForecastImpactCard(
         0f
     }
     val percentage = (progress * 100).toInt()
+    val isFullyPaid = totalForecastCents == 0L && totalMonthCents > 0L
 
     PlatformCard(
         shape = RoundedCornerShape(Dimens.cardCornerRadius)
@@ -1551,40 +1552,99 @@ fun ForecastImpactCard(
                 .fillMaxWidth()
                 .padding(Dimens.spacingNormal)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Column {
-                    Text(
-                        text = "Total Previsto no Mês",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            if (isFullyPaid) {
+                // Hierarquia reforçada: quando tudo estiver quitado, o badge de sucesso
+                // aparece em destaque no topo, ANTES do valor R$ 0,00.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = SuccessGreen.copy(alpha = 0.15f)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = SuccessGreen,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Tudo quitado",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = SuccessGreen
+                            )
+                        }
+                    }
 
-                    Spacer(modifier = Modifier.height(2.dp))
-
                     Text(
-                        text = formatValueOrPrivate(totalForecastCents, isPrivate),
-                        style = MaterialTheme.typography.headlineSmall,
+                        text = "100% quitado",
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = SuccessGreen
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (percentage == 100 && totalMonthCents > 0) SuccessGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Restante a Pagar no Mês",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = formatValueOrPrivate(totalForecastCents, isPrivate),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = SuccessGreen
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Text(
-                        text = "$percentage% quitado",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (percentage == 100 && totalMonthCents > 0) SuccessGreen else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
+                    Column {
+                        Text(
+                            text = "Restante a Pagar no Mês",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = formatValueOrPrivate(totalForecastCents, isPrivate),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = "$percentage% quitado",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
 
@@ -1593,7 +1653,7 @@ fun ForecastImpactCard(
             PlatformProgressBar(
                 progress = progress,
                 height = 7.dp,
-                progressColor = if (percentage == 100 && totalMonthCents > 0) SuccessGreen else MaterialTheme.colorScheme.primary
+                progressColor = if (isFullyPaid) SuccessGreen else MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(12.dp))

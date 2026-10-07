@@ -105,6 +105,10 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Novos testes em `ExtendRecurringBillsUseCaseTest` e `CalculateInstallmentsUseCaseTest` com 100% de aprovação.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 022](.ai/DECISIONS/022-extensao-continua-recorrencias-forever.md).
 
+### Semântica e Hierarquia Visual na Visão Mensal (v1.6.1)
+- [x] **Rótulo Semântico "Restante a Pagar no Mês"**: Renomeação no `ForecastImpactCard` em `HomeScreen.kt`, eliminando ambiguidade sobre orçamento total versus saldo ainda em aberto.
+- [x] **Hierarquia Visual Reforçada para Quitação Completa**: Quando todas as contas do mês estiverem pagas (`R$ 0,00`), o badge de sucesso "Tudo quitado" com ícone de confirmação aparece antes do valor monetário, que ganha tonalidade esmeralda de sucesso (`SuccessGreen`).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

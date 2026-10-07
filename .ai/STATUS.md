@@ -118,6 +118,17 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Testes unitários em `ContactsViewModelTest` cobrindo filtros por tipo e buscas textuais combinadas.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 023](.ai/DECISIONS/023-tipificacao-contatos-e-migracao-room.md).
 
+### Tipificação de Contas Financeiras e Migração Room v13 (v1.8.0)
+- [x] **Enum de Domínio Puro (`FinancialAccountType`)**: Enum com `CORRENTE`, `CARTEIRA`, `POUPANCA`, `INVESTIMENTO`, labels amigáveis e resolução resiliente de aliases históricos (`fromString`).
+- [x] **Substituição de String Livre por Enum**: Campo `accountType` tipado em `FinancialAccount`, `FinancialAccountEntity` e na métrica de dashboard `AccountSpend`.
+- [x] **Migração de Schema Room (`PlatformDatabase` v13)**: `MIGRATION_12_13` normalizando strings legadas (`CHECKING`, `CASH`, `SAVINGS`, `Conta Corrente`, etc.) para os nomes canônicos do enum.
+- [x] **Conversor de Tipos Room (`FinancialAccountTypeConverter`)**: Conversor seguro com fallback contra inconsistências registrado no Room.
+- [x] **Interface e Experiência do Usuário (UI/UX)**:
+  - `ManagementScreen`: badges e detalhes exibindo `account.accountType.displayName`, diálogo `AddEditAccountDialog` com dropdown alimentado por `FinancialAccountType.entries` e ícones dinâmicos.
+  - `StatisticsScreen`: card `AccountsDistributionCard` com ícones semânticos contextuais (`AccountBalance`, `Payments`, `Savings`, `TrendingUp`) e rótulo do tipo de conta.
+- [x] **Suíte de Testes Automatizados**: Testes em `FinancialAccountTypeTest` e atualização de `ManagementViewModelTest`.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 024](.ai/DECISIONS/024-enum-financial-account-type-e-migracao-room.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

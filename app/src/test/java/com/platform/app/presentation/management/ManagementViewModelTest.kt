@@ -2,6 +2,7 @@ package com.platform.app.presentation.management
 
 import app.cash.turbine.test
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.FinancialAccountType
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.repository.FinancialRepository
 import io.mockk.coVerify
@@ -57,7 +58,7 @@ class ManagementViewModelTest {
         val account = FinancialAccount(
             id = "acc-1",
             name = "Nubank PF",
-            accountType = "Conta Corrente",
+            accountType = FinancialAccountType.CORRENTE,
             colorHex = "#8B5CF6"
         )
 

@@ -90,7 +90,8 @@ data class AccountSpend(
     val accountName: String,
     val bankName: String,
     val totalAmountCents: Long,
-    val pendingBillsCount: Int
+    val pendingBillsCount: Int,
+    val accountType: FinancialAccountType = FinancialAccountType.CORRENTE
 )
 
 data class FutureMonthProjection(

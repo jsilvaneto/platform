@@ -2,8 +2,10 @@ package com.platform.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.platform.app.data.local.converter.FinancialAccountTypeConverter
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
@@ -45,9 +47,10 @@ import com.platform.app.data.local.entity.TransactionEntity
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
+@TypeConverters(FinancialAccountTypeConverter::class)
 abstract class PlatformDatabase : RoomDatabase() {
     abstract val categoryDao: CategoryDao
     abstract val expenseItemDao: ExpenseItemDao
@@ -195,6 +198,16 @@ abstract class PlatformDatabase : RoomDatabase() {
         val MIGRATION_11_12 = object : Migration(11, 12) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE contacts ADD COLUMN type TEXT NOT NULL DEFAULT 'FORNECEDOR'")
+            }
+        }
+
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE financial_accounts SET accountType = 'CORRENTE' WHERE accountType IN ('CHECKING', 'Conta Corrente', 'Corrente', 'CREDIT_CARD', 'Cartão de Crédito', 'Outro')")
+                db.execSQL("UPDATE financial_accounts SET accountType = 'CARTEIRA' WHERE accountType IN ('CASH', 'Dinheiro / Carteira', 'Carteira', 'Dinheiro')")
+                db.execSQL("UPDATE financial_accounts SET accountType = 'POUPANCA' WHERE accountType IN ('SAVINGS', 'Poupança', 'Poupanca')")
+                db.execSQL("UPDATE financial_accounts SET accountType = 'INVESTIMENTO' WHERE accountType IN ('INVESTMENT', 'Investimento / Reserva', 'Investimento', 'Reserva de Emergência')")
+                db.execSQL("UPDATE financial_accounts SET accountType = 'CORRENTE' WHERE accountType NOT IN ('CORRENTE', 'CARTEIRA', 'POUPANCA', 'INVESTIMENTO')")
             }
         }
     }

@@ -260,9 +260,10 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 val accPending = allInstallments.filter { it.financialAccountId == acc.id && !it.isPaid }
                 AccountSpend(
                     accountName = acc.name,
-                    bankName = acc.accountType,
+                    bankName = acc.accountType.displayName,
                     totalAmountCents = accPending.sumOf { it.amountCents },
-                    pendingBillsCount = accPending.size
+                    pendingBillsCount = accPending.size,
+                    accountType = acc.accountType
                 )
             }.filter { it.pendingBillsCount > 0 }
 

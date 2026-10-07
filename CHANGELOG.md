@@ -3,6 +3,31 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.8.0] - 2026-10-07
+
+### 💳 Tipificação de Contas Financeiras (`FinancialAccountType`) & Migração Room v13
+
+- **Enum de Domínio Puro (`FinancialAccountType`)**:
+  - Criado o enum `FinancialAccountType` (`CORRENTE`, `CARTEIRA`, `POUPANCA`, `INVESTIMENTO`) com rótulos amigáveis (`displayName`) e resolução de aliases legados (`fromString`).
+  - Substituído o campo `accountType: String` livre em `FinancialAccount` pelo enum tipado.
+- **Evolução de Persistência no Room (`PlatformDatabase` v13)**:
+  - Criado `FinancialAccountTypeConverter` para serialização e deserialização no banco SQLite.
+  - Implementada a migração `MIGRATION_12_13`, normalizando strings legadas (`CHECKING`, `CASH`, `SAVINGS`, `Conta Corrente`, etc.) para os nomes canônicos do enum.
+  - Registrada a migração no provider do `AppModule`.
+- **Mapeamento em Entidades e Casos de Uso**:
+  - `FinancialAccountEntity` atualizado com o enum e mapeamento bidirecional `toDomain()` / `fromDomain()`.
+  - Métrica de dashboard `AccountSpend` atualizada com o campo `accountType: FinancialAccountType`, mapeando rótulo e tipo via `GetFinancialDashboardUseCase`.
+- **Interface e Experiência do Usuário (UI/UX)**:
+  - `ManagementScreen`: badges e listas de detalhe exibem `account.accountType.displayName`. Diálogo de criação e edição (`AddEditAccountDialog`) utiliza dropdown baseado em `FinancialAccountType.entries` com ícones temáticos contextuais.
+  - `StatisticsScreen`: card `AccountsDistributionCard` exibe ícones representativos (`AccountBalance`, `Payments`, `Savings`, `TrendingUp`) e subtítulo informativo com o tipo da conta.
+- **Testes Automatizados**:
+  - Novos testes unitários em `FinancialAccountTypeTest` cobrindo conversão de aliases, display names, fallbacks, `FinancialAccountTypeConverter` e `FinancialAccountEntity`.
+  - Atualização dos testes em `ManagementViewModelTest`.
+- **Governança & Arquitetura**:
+  - Registrada a [ADR 024: Enum FinancialAccountType e Migração Room v13](.ai/DECISIONS/024-enum-financial-account-type-e-migracao-room.md).
+
+---
+
 ## [1.7.0] - 2026-10-07
 
 ### 👥 Tipificação de Contatos (`ContactType`) & Migração Room v12

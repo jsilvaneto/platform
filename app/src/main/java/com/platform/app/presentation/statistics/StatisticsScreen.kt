@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -72,6 +73,7 @@ import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.CompletingInstallmentSummary
 import com.platform.app.domain.model.ContactSpend
 import com.platform.app.domain.model.ExpenseNature
+import com.platform.app.domain.model.FinancialAccountType
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.domain.model.NatureSpend
@@ -1361,9 +1363,15 @@ fun AccountsDistributionCard(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f)
                         ) {
+                            val icon = when (acc.accountType) {
+                                FinancialAccountType.CORRENTE -> Icons.Default.AccountBalance
+                                FinancialAccountType.CARTEIRA -> Icons.Default.Payments
+                                FinancialAccountType.POUPANCA -> Icons.Default.Savings
+                                FinancialAccountType.INVESTIMENTO -> Icons.AutoMirrored.Filled.TrendingUp
+                            }
                             Icon(
-                                imageVector = Icons.Default.AccountBalance,
-                                contentDescription = null,
+                                imageVector = icon,
+                                contentDescription = acc.accountType.displayName,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -1376,7 +1384,7 @@ fun AccountsDistributionCard(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "${acc.pendingBillsCount} pagamentos vinculados",
+                                    text = "${acc.accountType.displayName} • ${acc.pendingBillsCount} pagamentos vinculados",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

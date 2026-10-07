@@ -69,7 +69,8 @@ object AppModule {
             PlatformDatabase.MIGRATION_8_9,
             PlatformDatabase.MIGRATION_9_10,
             PlatformDatabase.MIGRATION_10_11,
-            PlatformDatabase.MIGRATION_11_12
+            PlatformDatabase.MIGRATION_11_12,
+            PlatformDatabase.MIGRATION_12_13
         )
         .fallbackToDestructiveMigration()
         .build()

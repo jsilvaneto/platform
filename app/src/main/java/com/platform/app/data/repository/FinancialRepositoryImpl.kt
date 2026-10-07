@@ -29,6 +29,7 @@ import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.FinancialAccountType
 import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.repository.FinancialRepository
@@ -332,10 +333,10 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun seedInitialFinancialAccountsIfEmpty() {
         if (financialAccountDao.count() == 0) {
             val defaults = listOf(
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Conta Corrente", accountType = "CHECKING", colorHex = "#3B82F6"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Cartão de Crédito", accountType = "CREDIT_CARD", colorHex = "#8B5CF6"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Carteira / Dinheiro", accountType = "CASH", colorHex = "#10B981"),
-                FinancialAccount(id = UUID.randomUUID().toString(), name = "Reserva de Emergência", accountType = "SAVINGS", colorHex = "#F59E0B")
+                FinancialAccount(id = UUID.randomUUID().toString(), name = "Conta Corrente", accountType = FinancialAccountType.CORRENTE, colorHex = "#3B82F6"),
+                FinancialAccount(id = UUID.randomUUID().toString(), name = "Carteira / Dinheiro", accountType = FinancialAccountType.CARTEIRA, colorHex = "#10B981"),
+                FinancialAccount(id = UUID.randomUUID().toString(), name = "Reserva de Emergência", accountType = FinancialAccountType.POUPANCA, colorHex = "#F59E0B"),
+                FinancialAccount(id = UUID.randomUUID().toString(), name = "Investimentos", accountType = FinancialAccountType.INVESTIMENTO, colorHex = "#8B5CF6")
             )
             financialAccountDao.insertAll(defaults.map { FinancialAccountEntity.fromDomain(it) })
         }

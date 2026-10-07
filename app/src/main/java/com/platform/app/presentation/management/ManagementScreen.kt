@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Category as CategoryIcon
 import androidx.compose.material3.AlertDialog
@@ -84,6 +86,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.FinancialAccountType
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.SuccessGreen
@@ -460,20 +463,18 @@ fun AccountsTab(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            if (account.accountType.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = color.copy(alpha = 0.12f)
-                                ) {
-                                    Text(
-                                        text = account.accountType,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = color,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = color.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    text = account.accountType.displayName,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = color,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
                         }
 
@@ -565,7 +566,7 @@ fun AccountDetailBottomSheet(
                         color = accountColor.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = account.accountType.ifBlank { "Conta Padrão" },
+                            text = account.accountType.displayName,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = accountColor,
@@ -759,7 +760,7 @@ fun AccountDetailBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                         Text(
-                            text = account.accountType,
+                            text = account.accountType.displayName,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1667,15 +1668,9 @@ fun AddEditAccountDialog(
     onConfirm: (FinancialAccount) -> Unit
 ) {
     var name by remember(account) { mutableStateOf(account?.name ?: "") }
-    val types = listOf(
-        "Conta Corrente",
-        "Cartão de Crédito",
-        "Dinheiro / Carteira",
-        "Poupança",
-        "Investimento / Reserva",
-        "Outro"
-    )
-    var selectedType by remember(account) { mutableStateOf(account?.accountType ?: types[0]) }
+    var selectedType by remember(account) {
+        mutableStateOf(account?.accountType ?: FinancialAccountType.CORRENTE)
+    }
     var typeDropdownExpanded by remember { mutableStateOf(false) }
 
     var selectedColor by remember(account) { mutableStateOf(account?.colorHex ?: "#2563EB") }
@@ -1703,7 +1698,7 @@ fun AddEditAccountDialog(
                 // Campo do Tipo Lista (Dropdown)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
-                        value = selectedType,
+                        value = selectedType.displayName,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tipo de Conta", style = MaterialTheme.typography.bodySmall) },
@@ -1730,22 +1725,23 @@ fun AddEditAccountDialog(
                         onDismissRequest = { typeDropdownExpanded = false },
                         modifier = Modifier.fillMaxWidth(0.72f)
                     ) {
-                        types.forEach { type ->
+                        FinancialAccountType.entries.forEach { type ->
                             val isSelected = type == selectedType
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = type,
+                                        text = type.displayName,
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                     )
                                 },
                                 leadingIcon = {
-                                    val icon = when {
-                                        type.contains("Cartão", ignoreCase = true) -> Icons.Default.CreditCard
-                                        type.contains("Dinheiro", ignoreCase = true) || type.contains("Carteira", ignoreCase = true) -> Icons.Default.Payments
-                                        else -> Icons.Default.AccountBalance
+                                    val icon = when (type) {
+                                        FinancialAccountType.CORRENTE -> Icons.Default.AccountBalance
+                                        FinancialAccountType.CARTEIRA -> Icons.Default.Payments
+                                        FinancialAccountType.POUPANCA -> Icons.Default.Savings
+                                        FinancialAccountType.INVESTIMENTO -> Icons.AutoMirrored.Filled.TrendingUp
                                     }
                                     Icon(
                                         imageVector = icon,

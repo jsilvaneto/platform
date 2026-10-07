@@ -174,7 +174,12 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Controle por Flag em `PreferencesManager` (`seeds_applied`)**: Fim da dependência em checagens do tipo "tabela vazia". Se o usuário excluir todos os dados de qualquer tabela, o app respeita e não recria nada.
 - [x] **Limpeza nos ViewModels**: Remoção de chamadas concorrentes e redundantes de seeding nos blocos `init` de 7 ViewModels (`HomeViewModel`, `BillsViewModel`, `NewExpenseViewModel`, `ManagementViewModel`, `ExpenseItemsViewModel`, `CreditCardsViewModel`, `DashboardViewModel`).
 - [x] **Suíte de Testes Automatizados**: Criado `FinancialRepositoryImplSeedTest` validando a garantia de resíduo zero (deleção total do usuário sem re-criação de registros) e atualização de `ExpenseItemsViewModelTest`. 100% dos testes unitários passando.
-- [x] **Decisão Arquitetural Documentada**: Criada [ADR 029](.ai/DECISIONS/029-remocao-seed-cartoes-e-centralizacao-startup-seeds.md).
+### Unificação da Geração de Parcelas no `CreateBillUseCase` (v1.15.0)
+- [x] **Extensão de Domínio (`CreateBillUseCase`)**: Inclusão de suporte opcional a `CreditCard?`, `isFirstInstallmentPaid` e `actualPaymentDate`, centralizando a criação de contas e parcelas em uma única fonte da verdade.
+- [x] **Reaproveitamento de `CalculateInstallmentsUseCase`**: Datas-base, contagem e divisão exata de centavos com resto na 1ª parcela unificadas para despesas com e sem cartão de crédito.
+- [x] **Mapeamento Automático de Faturas**: Associação dinâmica com a competência da fatura via `CreditCardCalculator.determineInvoiceReferenceMonth` e `repository.getOrCreateInvoiceForMonth`, atualizando o vencimento e o `invoiceId` da parcela.
+- [x] **Saneamento Arquitetural em `NewExpenseViewModel`**: Remoção de ~150 linhas de duplicação inline, alinhando a ViewModel estritamente com as fronteiras de Clean Architecture.
+- [x] **Suíte de Testes Automatizados**: Criado `CreateBillUseCaseTest` cobrindo paridade total de valores, centavos e datas-base entre fluxo com e sem cartão, despesas à vista e recorrentes. 100% dos testes unitários passando.
 
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).

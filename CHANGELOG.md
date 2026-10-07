@@ -3,6 +3,30 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.15.0] - 2026-10-07
+
+### 🏛️ Unificação da Geração de Parcelas no `CreateBillUseCase` e Paridade entre Cartão e Contas Avulsas
+
+- **Extensão do `CreateBillUseCase` com Suporte a Cartão de Crédito**:
+  - `CreateBillUseCase` agora recebe opcionalmente a entidade `CreditCard?`, `isFirstInstallmentPaid: Boolean` e `actualPaymentDate: Long?`.
+  - Reutiliza integralmente `CalculateInstallmentsUseCase` para o cálculo canônico de contagem de parcelas, divisão exata de centavos com resto na 1ª parcela e datas-base de ocorrência.
+  - Quando a despesa for no cartão (`creditCard != null`), mapeia cada ocorrência para sua respectiva fatura usando `CreditCardCalculator.determineInvoiceReferenceMonth()` e `repository.getOrCreateInvoiceForMonth()`, vinculando `invoiceId` e ajustando o `dueDate` da parcela para o vencimento da fatura.
+  - Atualiza atomicamente a `bill` vinculando o `invoiceId` inicial e persistindo conta e parcelas em transação Room.
+- **Eliminação de Código Duplicado Inline na `NewExpenseViewModel`**:
+  - Removido bloco redundante de ~150 linhas em `NewExpenseViewModel.saveExpense()` que recalculava parcelas, datas, resto de centavos e faturas inline.
+  - Resolvida a divergência de contagem de parcelas (`coerceAtLeast(2)` vs `coerceAtLeast(1)`), restabelecendo o alinhamento estrito com as fronteiras de Clean Architecture.
+- **Testes Automatizados de Paridade**:
+  - Criado `CreateBillUseCaseTest` validando a paridade absoluta entre os fluxos com e sem cartão:
+    - Mesma divisão exata de centavos e mesmo valor individual por parcela.
+    - Alocação consistente do resto de centavos na 1ª parcela.
+    - Mesmas datas-base de ocorrência utilizadas para geração das faturas correspondentes.
+    - Paridade para parcelamentos (`INSTALLMENT`), despesas à vista (`SINGLE`) e recorrências (`RECURRING`).
+    - Tratamento uniforme de status e timestamp de quitação quando a despesa já é criada como paga.
+  - Atualizado `NewExpenseViewModelTest` injetando `CreateBillUseCase`.
+  - 100% dos testes unitários validados via Gradle.
+
+---
+
 ## [1.14.0] - 2026-10-07
 
 ### 💳 Remoção do Seed Fictício de Cartões e Centralização de Seeds no Primeiro Uso

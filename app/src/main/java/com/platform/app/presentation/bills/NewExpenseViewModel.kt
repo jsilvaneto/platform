@@ -19,7 +19,7 @@ import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.model.RecurrenceEndType
 import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.domain.repository.FinancialRepository
-import com.platform.app.domain.usecase.CalculateInstallmentsUseCase
+import com.platform.app.domain.usecase.CreateBillUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -122,7 +122,7 @@ sealed interface NewExpenseUiEffect {
 @HiltViewModel
 class NewExpenseViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val calculateInstallmentsUseCase: CalculateInstallmentsUseCase,
+    private val createBillUseCase: CreateBillUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -386,156 +386,43 @@ class NewExpenseViewModel @Inject constructor(
                 val finalTitle = state.effectiveTitle
                 val finalDescription = if (state.description.isNotBlank()) state.description.trim() else finalTitle
 
-                if (state.isCreditCard && state.selectedCreditCardId != null) {
-                    val card = state.selectedCreditCard ?: repository.getCreditCards().let { null }
-                    val closingDay = card?.closingDay ?: 25
-
-                    val dueDates: List<Long> = when (state.expenseType) {
-                        BillType.SINGLE -> listOf(state.dueDate)
-                        BillType.INSTALLMENT -> {
-                            val count = state.installmentsCount.coerceAtLeast(2)
-                            (0 until count).map { DateUtils.addMonths(state.dueDate, it) }
-                        }
-                        BillType.RECURRING -> {
-                            CalculateInstallmentsUseCase.calculateRecurrenceDueDates(
-                                firstDueDate = state.dueDate,
-                                frequency = state.recurrenceFrequency,
-                                endType = state.recurrenceEndType,
-                                endDate = state.recurrenceEndDate,
-                                occurrencesCount = state.recurrenceOccurrencesCount
-                            )
-                        }
+                val totalInstallments = when (state.expenseType) {
+                    BillType.SINGLE -> 1
+                    BillType.INSTALLMENT -> state.installmentsCount.coerceAtLeast(1)
+                    BillType.RECURRING -> when (state.recurrenceEndType) {
+                        RecurrenceEndType.BY_OCCURRENCES -> state.recurrenceOccurrencesCount
+                        else -> 12
                     }
-
-                    val totalInstallments = dueDates.size
-                    val installments = mutableListOf<BillInstallment>()
-                    val baseAmount = state.amountCents / totalInstallments
-                    val remainder = state.amountCents % totalInstallments
-
-                    for (i in 1..totalInstallments) {
-                        val occurrenceDate = dueDates[i - 1]
-                        val refMonth = CreditCardCalculator.determineInvoiceReferenceMonth(occurrenceDate, closingDay)
-                        val invoice = repository.getOrCreateInvoiceForMonth(state.selectedCreditCardId, refMonth)
-                        val installmentAmount = when (state.expenseType) {
-                            BillType.SINGLE -> state.amountCents
-                            BillType.INSTALLMENT -> if (i == 1) baseAmount + remainder else baseAmount
-                            BillType.RECURRING -> state.amountCents
-                        }
-
-                        val isFirstAndPaid = state.isPaid && i == 1
-                        val instStatus = if (isFirstAndPaid) BillStatus.PAID else BillStatus.PENDING
-                        val paidAt = if (isFirstAndPaid) System.currentTimeMillis() else null
-
-                        installments.add(
-                            BillInstallment(
-                                id = UUID.randomUUID().toString(),
-                                billId = billId,
-                                billTitle = finalTitle,
-                                categoryId = state.selectedCategoryId,
-                                categoryName = state.selectedCategory?.name ?: "Geral",
-                                categoryColorHex = state.selectedCategory?.colorHex ?: "#64748B",
-                                nature = state.inheritedNature,
-                                itemId = state.selectedItemId,
-                                itemName = state.selectedItem?.name,
-                                invoiceId = invoice.id,
-                                contactId = state.selectedContactId,
-                                contactName = state.selectedContact?.name,
-                                financialAccountId = state.selectedFinancialAccountId,
-                                financialAccountName = state.selectedFinancialAccount?.name,
-                                paymentMethodId = state.selectedPaymentMethodId,
-                                paymentMethodName = state.selectedPaymentMethod?.name,
-                                installmentNumber = i,
-                                totalInstallments = totalInstallments,
-                                amountCents = installmentAmount,
-                                dueDate = invoice.dueDate,
-                                paidAt = paidAt,
-                                actualPaymentDate = paidAt,
-                                status = instStatus,
-                                type = state.expenseType
-                            )
-                        )
-                    }
-
-                    val bill = Bill(
-                        id = billId,
-                        title = finalTitle,
-                        description = finalDescription,
-                        type = state.expenseType,
-                        totalAmountCents = state.amountCents,
-                        categoryId = state.selectedCategoryId,
-                        itemId = state.selectedItemId,
-                        invoiceId = installments.firstOrNull()?.invoiceId,
-                        contactId = state.selectedContactId,
-                        financialAccountId = state.selectedFinancialAccountId,
-                        paymentMethodId = state.selectedPaymentMethodId,
-                        totalInstallments = totalInstallments,
-                        recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
-                        recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
-                        recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
-                        createdAt = System.currentTimeMillis()
-                    )
-
-                    repository.saveBillWithInstallments(bill, installments)
-                } else {
-                    // Sem cartão de crédito
-                    val totalInstallments = when (state.expenseType) {
-                        BillType.SINGLE -> 1
-                        BillType.INSTALLMENT -> state.installmentsCount.coerceAtLeast(2)
-                        BillType.RECURRING -> when (state.recurrenceEndType) {
-                            RecurrenceEndType.BY_OCCURRENCES -> state.recurrenceOccurrencesCount
-                            else -> 12
-                        }
-                    }
-
-                    val bill = Bill(
-                        id = billId,
-                        title = finalTitle,
-                        description = finalDescription,
-                        type = state.expenseType,
-                        totalAmountCents = state.amountCents,
-                        categoryId = state.selectedCategoryId,
-                        itemId = state.selectedItemId,
-                        invoiceId = null,
-                        contactId = state.selectedContactId,
-                        financialAccountId = state.selectedFinancialAccountId,
-                        paymentMethodId = state.selectedPaymentMethodId,
-                        totalInstallments = totalInstallments,
-                        recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
-                        recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
-                        recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
-                        createdAt = System.currentTimeMillis()
-                    )
-
-                    val generatedInstallments = calculateInstallmentsUseCase(bill, state.dueDate)
-                    val finalizedInstallments = generatedInstallments.mapIndexed { index, inst ->
-                        val isFirstAndPaid = state.isPaid && (state.expenseType == BillType.SINGLE || index == 0)
-                        inst.copy(
-                            contactId = state.selectedContactId,
-                            contactName = state.selectedContact?.name,
-                            financialAccountId = state.selectedFinancialAccountId,
-                            financialAccountName = state.selectedFinancialAccount?.name,
-                            paymentMethodId = state.selectedPaymentMethodId,
-                            paymentMethodName = state.selectedPaymentMethod?.name,
-                            itemId = state.selectedItemId,
-                            itemName = state.selectedItem?.name,
-                            categoryId = state.selectedCategoryId,
-                            categoryName = state.selectedCategory?.name ?: "Geral",
-                            categoryColorHex = state.selectedCategory?.colorHex ?: "#64748B",
-                            nature = state.inheritedNature,
-                            status = if (isFirstAndPaid) BillStatus.PAID else BillStatus.PENDING,
-                            paidAt = if (isFirstAndPaid) System.currentTimeMillis() else null,
-                            actualPaymentDate = if (isFirstAndPaid) System.currentTimeMillis() else null
-                        )
-                    }
-
-                    val updatedBill = if (bill.type == BillType.RECURRING && finalizedInstallments.isNotEmpty()) {
-                        bill.copy(totalInstallments = finalizedInstallments.size)
-                    } else {
-                        bill
-                    }
-
-                    repository.saveBillWithInstallments(updatedBill, finalizedInstallments)
                 }
+
+                val bill = Bill(
+                    id = billId,
+                    title = finalTitle,
+                    description = finalDescription,
+                    type = state.expenseType,
+                    totalAmountCents = state.amountCents,
+                    categoryId = state.selectedCategoryId,
+                    itemId = state.selectedItemId,
+                    invoiceId = null,
+                    contactId = state.selectedContactId,
+                    financialAccountId = state.selectedFinancialAccountId,
+                    paymentMethodId = state.selectedPaymentMethodId,
+                    totalInstallments = totalInstallments,
+                    recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
+                    recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
+                    recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
+                    createdAt = System.currentTimeMillis()
+                )
+
+                val selectedCard = if (state.isCreditCard) state.selectedCreditCard else null
+
+                createBillUseCase(
+                    bill = bill,
+                    firstDueDate = state.dueDate,
+                    creditCard = selectedCard,
+                    isFirstInstallmentPaid = state.isPaid,
+                    actualPaymentDate = if (state.isPaid) System.currentTimeMillis() else null
+                )
 
                 _uiState.update { it.copy(isSaved = true) }
                 _uiEffect.emit(NewExpenseUiEffect.ExpenseSaved)

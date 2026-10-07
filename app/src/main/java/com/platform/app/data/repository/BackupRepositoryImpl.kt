@@ -17,7 +17,6 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.domain.repository.BackupRepository
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -36,7 +35,6 @@ class BackupRepositoryImpl @Inject constructor(
     private val billInstallmentDao: BillInstallmentDao,
     private val goalDao: GoalDao,
     private val budgetDao: BudgetDao,
-    private val transactionDao: TransactionDao,
     private val dispatcherProvider: DispatcherProvider
 ) : BackupRepository {
 
@@ -59,8 +57,7 @@ class BackupRepositoryImpl @Inject constructor(
                 installments = billInstallmentDao.getAllInstallmentsList(),
                 budgets = budgetDao.getAllList(),
                 goals = goalDao.getAllList(),
-                goalContributions = goalDao.getAllContributions(),
-                transactions = transactionDao.getAllList()
+                goalContributions = goalDao.getAllContributions()
             )
             val plaintextJson = gson.toJson(dto)
             val encryptedDto = BackupCryptoHelper.encrypt(plaintextJson, password)
@@ -94,7 +91,6 @@ class BackupRepositoryImpl @Inject constructor(
                 // 1. Limpeza ordenada respeitando constraints de chaves estrangeiras (filhos primeiro)
                 billInstallmentDao.deleteAll()
                 billDao.deleteAll()
-                transactionDao.deleteAll()
                 expenseItemDao.deleteAll()
                 creditCardDao.deleteAllInvoices()
                 creditCardDao.deleteAllCards()
@@ -142,9 +138,6 @@ class BackupRepositoryImpl @Inject constructor(
                 }
                 if (payload.goalContributions.isNotEmpty()) {
                     goalDao.insertAllContributions(payload.goalContributions)
-                }
-                if (payload.transactions.isNotEmpty()) {
-                    transactionDao.insertAll(payload.transactions)
                 }
             }
         }

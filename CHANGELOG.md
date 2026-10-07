@@ -3,6 +3,26 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.11.0] - 2026-10-07
+
+### 🧹 Remoção da Tabela Legada `transactions`, Resíduo Zero e Migração Room v14
+
+- **Princípio do Resíduo Zero & Limpeza de Código Legado**:
+  - Removidos completamente os artefatos `TransactionEntity.kt` e `TransactionDao.kt`, eliminando classes residuais anteriores à consolidação do modelo unificado de Contas e Parcelas (`bills` / `bill_installments`).
+  - Removido o provider de injeção de dependência `@Provides @Singleton fun provideTransactionDao(...)` em `AppModule.kt`.
+  - Removido o campo `transactions` e sua serialização/deserialização em `BackupDataDto.kt` e `BackupRepositoryImpl.kt`, eliminando nós vazios nos arquivos de backup JSON exportados.
+- **Migração Física no SQLite (`PlatformDatabase` v14)**:
+  - Incrementada a versão do banco de dados Room para `version = 14`.
+  - Criada e registrada a migração `MIGRATION_13_14` executando `DROP TABLE IF EXISTS transactions`, limpando tabelas, índices e chaves estrangeiras obsoletas do SQLite dos dispositivos dos usuários.
+- **Testes e Garantia de Qualidade**:
+  - Criado `PlatformDatabaseMigrationTest` validando a execução do comando `DROP TABLE IF EXISTS transactions` na migração `13 -> 14`.
+  - Atualizado `BackupRepositoryImplTest` para operação sem dependências de transações legadas.
+  - 100% dos testes unitários da aplicação aprovados.
+- **Decisão Arquitetural Documentada**:
+  - Registrada [ADR 026](.ai/DECISIONS/026-remocao-tabela-transactions-e-migracao-room-v14.md) documentando a política de Resíduo Zero e a migração.
+
+---
+
 ## [1.10.0] - 2026-10-07
 
 ### 🌐 Centralização de Strings de Interface (UI) e Fonte Única da Verdade (`AppStrings`)

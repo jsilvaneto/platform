@@ -144,6 +144,13 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Substituição 1:1 sem Alterações de Texto**: Mapeamento e substituição de strings hardcoded em `HomeScreen`, `BillsScreen`, `NewExpenseScreen`, `EditInstallmentBottomSheet`, `ConfirmPaymentDialog`, `ContactsScreen`, `ContactDetailScreen`, `ManagementScreen`, `StatisticsScreen`, `CreditCardsScreen`, `ExpenseItemsScreen`, `GoalsScreen`, `BudgetsScreen`, `RecurringInstallmentsScreen`, `AdjustInstallmentDialog` e `SettingsScreen`.
 - [x] **Suíte de Testes Automatizados**: Criado `AppStringsTest` garantindo integridade das constantes de interface e prevenindo regressões. 100% dos testes unitários passando.
 
+### Remoção de Tabela Legada, Resíduo Zero e Migração Room v14 (v1.11.0)
+- [x] **Política de Resíduo Zero (.agents/rules/test_data_cleanup.md)**: Eliminação física de artefatos obsoletos e tabelas legadas órfãs.
+- [x] **Expurgo de Código Morto**: Exclusão de `TransactionEntity.kt` e `TransactionDao.kt`, remoção do provider `@Provides` no `AppModule.kt`, e remoção de referências em `BackupRepositoryImpl` e `BackupDataDto`.
+- [x] **Migração Room v14 com `DROP TABLE` Físico**: `PlatformDatabase` elevado para versão 14 e inclusão de `MIGRATION_13_14` (`DROP TABLE IF EXISTS transactions`), eliminando índices e tabelas fantasmas no SQLite local.
+- [x] **Suíte de Testes Automatizados**: Criado `PlatformDatabaseMigrationTest` validando a execução do comando de drop, atualização de `BackupRepositoryImplTest` e 100% dos testes unitários verdes.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 026](.ai/DECISIONS/026-remocao-tabela-transactions-e-migracao-room-v14.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

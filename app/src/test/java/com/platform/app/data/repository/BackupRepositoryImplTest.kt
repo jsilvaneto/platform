@@ -13,7 +13,6 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.data.local.entity.CategoryEntity
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -54,7 +53,6 @@ class BackupRepositoryImplTest {
     private lateinit var billInstallmentDao: BillInstallmentDao
     private lateinit var goalDao: GoalDao
     private lateinit var budgetDao: BudgetDao
-    private lateinit var transactionDao: TransactionDao
     private lateinit var repository: BackupRepositoryImpl
 
     @Before
@@ -76,7 +74,6 @@ class BackupRepositoryImplTest {
         billInstallmentDao = mockk(relaxed = true)
         goalDao = mockk(relaxed = true)
         budgetDao = mockk(relaxed = true)
-        transactionDao = mockk(relaxed = true)
 
         repository = BackupRepositoryImpl(
             database = database,
@@ -90,7 +87,6 @@ class BackupRepositoryImplTest {
             billInstallmentDao = billInstallmentDao,
             goalDao = goalDao,
             budgetDao = budgetDao,
-            transactionDao = transactionDao,
             dispatcherProvider = dispatcherProvider
         )
     }

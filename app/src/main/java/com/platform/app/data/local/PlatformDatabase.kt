@@ -16,7 +16,6 @@ import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.PaymentMethodDao
-import com.platform.app.data.local.dao.TransactionDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.data.local.entity.BudgetEntity
@@ -29,7 +28,6 @@ import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
-import com.platform.app.data.local.entity.TransactionEntity
 
 @Database(
     entities = [
@@ -44,10 +42,9 @@ import com.platform.app.data.local.entity.TransactionEntity
         BillInstallmentEntity::class,
         GoalEntity::class,
         GoalContributionEntity::class,
-        BudgetEntity::class,
-        TransactionEntity::class
+        BudgetEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
@@ -62,7 +59,6 @@ abstract class PlatformDatabase : RoomDatabase() {
     abstract val billInstallmentDao: BillInstallmentDao
     abstract val goalDao: GoalDao
     abstract val budgetDao: BudgetDao
-    abstract val transactionDao: TransactionDao
 
     companion object {
         const val DATABASE_NAME = "platform_db"
@@ -208,6 +204,12 @@ abstract class PlatformDatabase : RoomDatabase() {
                 db.execSQL("UPDATE financial_accounts SET accountType = 'POUPANCA' WHERE accountType IN ('SAVINGS', 'Poupança', 'Poupanca')")
                 db.execSQL("UPDATE financial_accounts SET accountType = 'INVESTIMENTO' WHERE accountType IN ('INVESTMENT', 'Investimento / Reserva', 'Investimento', 'Reserva de Emergência')")
                 db.execSQL("UPDATE financial_accounts SET accountType = 'CORRENTE' WHERE accountType NOT IN ('CORRENTE', 'CARTEIRA', 'POUPANCA', 'INVESTIMENTO')")
+            }
+        }
+
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS transactions")
             }
         }
     }

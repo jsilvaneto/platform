@@ -19,6 +19,7 @@ import com.platform.app.data.local.dao.CreditCardDao
 import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
+import com.platform.app.data.local.dao.GoalContributionDao
 import com.platform.app.data.local.dao.PaymentMethodDao
 import dagger.Module
 import dagger.Provides
@@ -129,6 +130,12 @@ object AppModule {
     @Singleton
     fun provideGoalDao(db: PlatformDatabase): GoalDao {
         return db.goalDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideGoalContributionDao(db: PlatformDatabase): GoalContributionDao {
+        return db.goalContributionDao
     }
 
     @Provides

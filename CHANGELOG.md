@@ -3,6 +3,25 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.13.0] - 2026-10-07
+
+### 🎯 DAO Dedicado para Goal Contributions e Recálculo Derivado de Aportes
+
+- **DAO Próprio (`GoalContributionDao`)**:
+  - Criada a interface dedicada `GoalContributionDao` com consultas especializadas para inserção, soma por meta (`sumByGoal`), soma por período (`sumForPeriod`), listagem por meta e período (`getByGoalForPeriod`), e deleção vinculada.
+  - Registrado em `PlatformDatabase` e provido como Singleton no container Hilt em `AppModule.kt`.
+- **Registro Datado & Recálculo do Cache de Saldo**:
+  - `GoalRepository.addContribution`: insere atomicamente a contribuição datada no banco de dados e recalcula o campo cache `currentAmountCents` da meta a partir da soma real de todas as suas contribuições (`sumByGoal`), eliminando riscos de inconsistência contábil.
+  - `saveGoal`: metas criadas com valor inicial geram automaticamente o primeiro registro histórico de contribuição com a data de criação da meta.
+- **Consulta Granular por Meta e Período**:
+  - Adicionado o método `getContributionsForPeriod(goalId, startDate, endDate)` em `GoalRepository` e `GoalRepositoryImpl`, viabilizando apuração por meta em intervalos de datas e histórico de aportes.
+- **Testes Automatizados**:
+  - Criado `GoalRepositoryImplTest` com cobertura completa de múltiplos aportes em meses distintos, filtros temporais e recálculo do cache.
+- **Decisão Arquitetural Documentada**:
+  - Registrada [ADR 028](.ai/DECISIONS/028-dao-dedicado-goal-contributions-e-recalculo-aportes.md).
+
+---
+
 ## [1.12.0] - 2026-10-07
 
 ### 🧹 Remoção de `syncStatus` Residual, Resíduo Zero e Migração Room v15

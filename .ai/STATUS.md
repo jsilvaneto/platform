@@ -162,6 +162,13 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Atualizado `PlatformDatabaseMigrationTest` validando a migração 14 -> 15. 100% dos testes aprovados.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 027](.ai/DECISIONS/027-remocao-sync-status-residuo-zero-preparacao-fase-11.md).
 
+### DAO Dedicado para Goal Contributions e Recálculo Derivado de Aportes (v1.13.0)
+- [x] **DAO Dedicado (`GoalContributionDao`)**: Criação de DAO próprio com queries atômicas para inserção, sum por meta/período e buscas filtradas por data e meta.
+- [x] **Recálculo Atômico do Cache de Saldo**: `addContribution` persiste a contribuição datada e recalcula `currentAmountCents` derivado diretamente da soma real das contribuições.
+- [x] **Granularidade Temporal no Repositório**: Exposição de `getContributionsForPeriod(goalId, startDate, endDate)` para apuração mensal e histórico de metas.
+- [x] **Suíte de Testes Automatizados**: Criado `GoalRepositoryImplTest` cobrindo múltiplos aportes em meses diferentes, recálculo e filtros temporais. 100% dos testes unitários passando.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 028](.ai/DECISIONS/028-dao-dedicado-goal-contributions-e-recalculo-aportes.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

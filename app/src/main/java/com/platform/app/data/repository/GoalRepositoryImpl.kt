@@ -2,6 +2,7 @@ package com.platform.app.data.repository
 
 import androidx.room.withTransaction
 import com.platform.app.data.local.PlatformDatabase
+import com.platform.app.data.local.dao.GoalContributionDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
@@ -17,7 +18,8 @@ import javax.inject.Singleton
 @Singleton
 class GoalRepositoryImpl @Inject constructor(
     private val database: PlatformDatabase,
-    private val goalDao: GoalDao
+    private val goalDao: GoalDao,
+    private val goalContributionDao: GoalContributionDao
 ) : GoalRepository {
 
     override fun getGoals(): Flow<List<Goal>> {
@@ -25,11 +27,15 @@ class GoalRepositoryImpl @Inject constructor(
     }
 
     override fun getMonthlyContribution(startDate: Long, endDate: Long): Flow<Long> {
-        return goalDao.getMonthlyContributionSum(startDate, endDate)
+        return goalContributionDao.sumForPeriod(startDate, endDate)
     }
 
     override fun getContributionsForPeriod(startDate: Long, endDate: Long): Flow<List<GoalContribution>> {
-        return goalDao.getContributionsForPeriod(startDate, endDate).map { list -> list.map { it.toDomain() } }
+        return goalContributionDao.getForPeriod(startDate, endDate).map { list -> list.map { it.toDomain() } }
+    }
+
+    override fun getContributionsForPeriod(goalId: String, startDate: Long, endDate: Long): Flow<List<GoalContribution>> {
+        return goalContributionDao.getByGoalForPeriod(goalId, startDate, endDate).map { list -> list.map { it.toDomain() } }
     }
 
     override suspend fun saveGoal(goal: Goal) {
@@ -37,7 +43,7 @@ class GoalRepositoryImpl @Inject constructor(
             val existing = goalDao.getById(goal.id)
             goalDao.insert(GoalEntity.fromDomain(goal))
             if (existing == null && goal.currentAmountCents > 0L) {
-                goalDao.insertContribution(
+                goalContributionDao.insert(
                     GoalContributionEntity(
                         id = UUID.randomUUID().toString(),
                         goalId = goal.id,
@@ -45,18 +51,22 @@ class GoalRepositoryImpl @Inject constructor(
                         date = goal.createdAt
                     )
                 )
+                val totalCents = goalContributionDao.sumByGoal(goal.id)
+                goalDao.updateCurrentAmount(goal.id, totalCents)
             }
         }
     }
 
     override suspend fun deleteGoal(goalId: String) {
-        goalDao.deleteById(goalId)
+        database.withTransaction {
+            goalContributionDao.deleteByGoalId(goalId)
+            goalDao.deleteById(goalId)
+        }
     }
 
     override suspend fun addContribution(goalId: String, amountCents: Long, date: Long) {
         database.withTransaction {
-            goalDao.addContribution(goalId, amountCents)
-            goalDao.insertContribution(
+            goalContributionDao.insert(
                 GoalContributionEntity(
                     id = UUID.randomUUID().toString(),
                     goalId = goalId,
@@ -64,6 +74,8 @@ class GoalRepositoryImpl @Inject constructor(
                     date = date
                 )
             )
+            val totalCents = goalContributionDao.sumByGoal(goalId)
+            goalDao.updateCurrentAmount(goalId, totalCents)
         }
     }
 }

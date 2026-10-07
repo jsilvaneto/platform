@@ -22,6 +22,9 @@ interface GoalDao {
     @Query("UPDATE goals SET currentAmountCents = currentAmountCents + :amountCents WHERE id = :id")
     suspend fun addContribution(id: String, amountCents: Long)
 
+    @Query("UPDATE goals SET currentAmountCents = :totalCents WHERE id = :id")
+    suspend fun updateCurrentAmount(id: String, totalCents: Long)
+
     @Query("DELETE FROM goals WHERE id = :id")
     suspend fun deleteById(id: String)
 

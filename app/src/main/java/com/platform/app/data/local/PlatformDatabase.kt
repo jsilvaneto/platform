@@ -15,6 +15,7 @@ import com.platform.app.data.local.dao.CreditCardDao
 import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
+import com.platform.app.data.local.dao.GoalContributionDao
 import com.platform.app.data.local.dao.PaymentMethodDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
@@ -58,6 +59,7 @@ abstract class PlatformDatabase : RoomDatabase() {
     abstract val billDao: BillDao
     abstract val billInstallmentDao: BillInstallmentDao
     abstract val goalDao: GoalDao
+    abstract val goalContributionDao: GoalContributionDao
     abstract val budgetDao: BudgetDao
 
     companion object {

@@ -3,6 +3,17 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.11.1] - 2026-10-07
+
+### 🧹 Limpeza de Typealias Obsoleto (`AppDatabase`)
+
+- **Remoção de Código Morto Residual**:
+  - Excluído o arquivo `AppDatabase.kt` contendo `typealias AppDatabase = PlatformDatabase`.
+  - O alias de compatibilidade foi introduzido durante o rename inicial da aplicação e não possuía nenhum consumidor em nenhuma camada do projeto.
+  - Eliminação definitiva de ambiguidades conceituais em favor do canônico `PlatformDatabase`.
+
+---
+
 ## [1.11.0] - 2026-10-07
 
 ### 🧹 Remoção da Tabela Legada `transactions`, Resíduo Zero e Migração Room v14

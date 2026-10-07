@@ -151,6 +151,10 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Criado `PlatformDatabaseMigrationTest` validando a execução do comando de drop, atualização de `BackupRepositoryImplTest` e 100% dos testes unitários verdes.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 026](.ai/DECISIONS/026-remocao-tabela-transactions-e-migracao-room-v14.md).
 
+### Limpeza de Typealias Obsoleto (v1.11.1)
+- [x] **Expurgo de Código Morto Residual**: Remoção de `AppDatabase.kt` (`typealias AppDatabase = PlatformDatabase`), eliminando código morto de compatibilidade sem uso no app.
+- [x] **Zero Efeito Colateral**: 100% dos testes unitários e compilação validados.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

@@ -108,7 +108,64 @@ class CalculateInstallmentsUseCase @Inject constructor() {
         return installments
     }
 
+    fun generateNextRecurringInstallments(
+        bill: Bill,
+        existingInstallments: List<BillInstallment>,
+        occurrencesToAdd: Int? = null
+    ): List<BillInstallment> {
+        if (bill.type != BillType.RECURRING || existingInstallments.isEmpty()) {
+            return emptyList()
+        }
+
+        val frequency = bill.recurrenceFrequency ?: RecurrenceFrequency.MONTHLY
+        val count = occurrencesToAdd ?: getDefaultWindowOccurrences(frequency)
+
+        val sorted = existingInstallments.sortedBy { it.installmentNumber }
+        val firstInstallment = sorted.first()
+        val lastInstallment = sorted.last()
+        val startNumber = lastInstallment.installmentNumber + 1
+        val newTotal = lastInstallment.installmentNumber + count
+
+        val installments = mutableListOf<BillInstallment>()
+        for (i in 0 until count) {
+            val installmentNumber = startNumber + i
+            val stepFromFirst = installmentNumber - firstInstallment.installmentNumber
+            val dueDate = DateUtils.addRecurrenceStep(firstInstallment.dueDate, frequency, stepFromFirst)
+
+            installments.add(
+                BillInstallment(
+                    id = UUID.randomUUID().toString(),
+                    billId = bill.id,
+                    billTitle = bill.title,
+                    categoryId = bill.categoryId,
+                    itemId = bill.itemId,
+                    invoiceId = bill.invoiceId,
+                    contactId = bill.contactId,
+                    financialAccountId = bill.financialAccountId,
+                    paymentMethodId = bill.paymentMethodId,
+                    installmentNumber = installmentNumber,
+                    totalInstallments = newTotal,
+                    amountCents = bill.totalAmountCents,
+                    dueDate = dueDate,
+                    status = if (bill.isPaused) BillStatus.PAUSED else BillStatus.PENDING,
+                    type = BillType.RECURRING
+                )
+            )
+        }
+
+        return installments
+    }
+
     companion object {
+        fun getDefaultWindowOccurrences(frequency: RecurrenceFrequency): Int {
+            return when (frequency) {
+                RecurrenceFrequency.DAILY -> 30
+                RecurrenceFrequency.WEEKLY -> 26
+                RecurrenceFrequency.MONTHLY -> 12
+                RecurrenceFrequency.YEARLY -> 5
+            }
+        }
+
         fun calculateRecurrenceDueDates(
             firstDueDate: Long,
             frequency: RecurrenceFrequency,
@@ -119,12 +176,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
             val dueDates = mutableListOf<Long>()
             when (endType) {
                 RecurrenceEndType.FOREVER -> {
-                    val count = when (frequency) {
-                        RecurrenceFrequency.DAILY -> 30
-                        RecurrenceFrequency.WEEKLY -> 26
-                        RecurrenceFrequency.MONTHLY -> 12
-                        RecurrenceFrequency.YEARLY -> 5
-                    }
+                    val count = getDefaultWindowOccurrences(frequency)
                     for (i in 0 until count) {
                         dueDates.add(DateUtils.addRecurrenceStep(firstDueDate, frequency, i))
                     }

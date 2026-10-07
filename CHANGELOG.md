@@ -3,6 +3,38 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.6.0] - 2026-10-07
+
+### 🔄 Extensão Contínua de Recorrências FOREVER (Janela Deslizante Automática)
+
+- **Geração Dinâmica de Próximas Ocorrências (`CalculateInstallmentsUseCase`)**:
+  - Novo método `generateNextRecurringInstallments(bill, existingInstallments, countToAdd)` para gerar parcelas subsequentes sem descontinuidade.
+  - Cálculo de passos ancorado na primeira parcela para evitar desvios cumulativos de dia de vencimento (ex: preservação estrita do dia 31 após meses menores como fevereiro).
+  - Continuidade estrita da numeração das parcelas (`installmentNumber = lastNumber + 1..lastNumber + count`) e atualização do total projetado.
+- **Caso de Uso de Extensão de Janela (`ExtendRecurringBillsUseCase`)**:
+  - Novo caso de uso de domínio puro (`domain/usecase/ExtendRecurringBillsUseCase`), sem dependências do framework Android.
+  - Avaliação de limiares por frequência:
+    - `MONTHLY`: estende em +12 parcelas quando restarem $\le 3$ ocorrências futuras ou horizonte $\le 3$ meses.
+    - `DAILY`: estende em +30 parcelas quando restarem $\le 7$ ocorrências.
+    - `WEEKLY`: estende em +26 parcelas quando restarem $\le 4$ ocorrências.
+    - `YEARLY`: estende em +5 parcelas quando restar $\le 1$ ocorrência.
+  - Laço auto-recuperativo com limite de segurança (`maxBatches = 5`), garantindo projeção adequada mesmo após longos períodos sem abertura do app.
+  - Idempotência total e garantia de que contas `BY_OCCURRENCES` e `UNTIL_DATE` permaneçam estritamente delimitadas.
+- **Suporte Transacional no Repositório & DAO (`FinancialRepositoryImpl` & `BillInstallmentDao`)**:
+  - Novo método `addInstallments(bill, newInstallments)` com inserção transacional no Room e atualização do `recurrenceEndDate` e `totalInstallments` na tabela `bills`.
+  - Nova consulta detalhada `getInstallmentsWithDetailsByBillId(billId)` em `BillInstallmentDao`.
+- **Garantia de Execução Oportuna e Periódica**:
+  - Invocação automática ao inicializar e atualizar `DashboardViewModel`, `BillsViewModel` (Registros) e `RecurringInstallmentsViewModel` (Assinaturas).
+  - Execução matinal em segundo plano no `DueReminderReceiver` (integrado com o `AlarmManager` existente) e no desbloqueio do app em `MainActivity`.
+- **Testes Automatizados**:
+  - Nova suíte de testes unitários `ExtendRecurringBillsUseCaseTest` validando extensão pontual, idempotência com janelas cheias, isolamento de contas não-FOREVER e recuperação temporal.
+  - Novos testes em `CalculateInstallmentsUseCaseTest` cobrindo `generateNextRecurringInstallments` e resiliência a exclusão de parcelas antigas.
+  - Atualização dos testes de apresentação em `BillsViewModelTest` e `RecurringInstallmentsViewModelTest`.
+- **Governança & Arquitetura**:
+  - Criação da [ADR 022: Extensão Contínua de Recorrências FOREVER via Janela Deslizante Automática](.ai/DECISIONS/022-extensao-continua-recorrencias-forever.md).
+
+---
+
 ## [1.5.0] - 2026-10-07
 
 ### 🎯 Rigidez Orçamentária Real 50-30-20 & Integração de Metas (Poupança)

@@ -96,6 +96,15 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Novos testes em `GetFinancialDashboardUseCaseTest` e `BudgetRigidityCalculatorTest` cobrindo 0% Deseja/Poupança, 50-30-20 real e todas as fronteiras de classificação com 100% de sucesso.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 021](.ai/DECISIONS/021-rigidez-orcamentaria-50-30-20-com-metas.md).
 
+### Extensão Contínua de Recorrências FOREVER (v1.6.0)
+- [x] **Geração Dinâmica de Próximas Ocorrências (`CalculateInstallmentsUseCase`)**: Método `generateNextRecurringInstallments` para projetar lotes seguintes de compromissos recorrentes contínuos.
+- [x] **Preservação de Vencimento e Prevenção de Desvios de Calendário**: Cálculo ancorado na primeira data de vencimento com passo estrito, eliminando degradação do dia do mês após meses curtos (ex: fevereiro).
+- [x] **Caso de Uso de Extensão Automática (`ExtendRecurringBillsUseCase`)**: Caso de uso de domínio puro (`domain/usecase/`) avaliando limiares $N$ por frequência (`MONTHLY` $\le 3$, `DAILY` $\le 7$, `WEEKLY` $\le 4$, `YEARLY` $\le 1$) com laço auto-recuperativo e idempotência garantida.
+- [x] **Persistência Transacional no Room (`FinancialRepositoryImpl` & `BillInstallmentDao`)**: Inserção em lote de parcelas e atualização simultânea de `recurrenceEndDate` e `totalInstallments` na tabela `bills`.
+- [x] **Ciclo de Execução Periódica & em Segundo Plano**: Invocação transparente na abertura do `DashboardViewModel`, `BillsViewModel` e `RecurringInstallmentsViewModel`, além da execução matinal offline via `DueReminderReceiver` (`AlarmManager`) e `MainActivity`.
+- [x] **Suíte de Testes Automatizados**: Novos testes em `ExtendRecurringBillsUseCaseTest` e `CalculateInstallmentsUseCaseTest` com 100% de aprovação.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 022](.ai/DECISIONS/022-extensao-continua-recorrencias-forever.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

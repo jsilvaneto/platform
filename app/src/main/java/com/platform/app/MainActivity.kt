@@ -46,6 +46,9 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var financialRepository: FinancialRepository
 
+    @Inject
+    lateinit var extendRecurringBillsUseCase: com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         DueReminderManager.scheduleDailyReminder(this)
@@ -64,6 +67,7 @@ class MainActivity : FragmentActivity() {
                 // Notificações locais de contas/faturas vencendo hoje após desbloqueio
                 LaunchedEffect(isLocked) {
                     if (!isLocked) {
+                        extendRecurringBillsUseCase()
                         DueReminderManager.checkAndNotifyDueExpenses(this@MainActivity, financialRepository)
                     }
                 }

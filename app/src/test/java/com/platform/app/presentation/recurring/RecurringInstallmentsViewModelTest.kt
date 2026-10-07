@@ -6,7 +6,9 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -30,6 +32,7 @@ class RecurringInstallmentsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FinancialRepository
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private lateinit var extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
     private lateinit var viewModel: RecurringInstallmentsViewModel
 
     @Before
@@ -37,6 +40,8 @@ class RecurringInstallmentsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
+        extendRecurringBillsUseCase = mockk(relaxed = true)
+        coEvery { extendRecurringBillsUseCase(any()) } returns 0
     }
 
     @After
@@ -101,7 +106,7 @@ class RecurringInstallmentsViewModelTest {
         every { repository.getBills() } returns flowOf(listOf(recurringBill))
         every { repository.getAllInstallments() } returns flowOf(installments)
 
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -166,7 +171,7 @@ class RecurringInstallmentsViewModelTest {
         every { repository.getBills() } returns flowOf(listOf(bill1, bill2))
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.uiState.value.filteredItems.size)
@@ -194,7 +199,7 @@ class RecurringInstallmentsViewModelTest {
         every { repository.getBills() } returns flowOf(listOf(bill))
         every { repository.getAllInstallments() } returns flowOf(listOf(inst))
 
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Selecionar a parcela para ajuste (necessário para que installmentToAdjust fique no estado)
@@ -229,7 +234,7 @@ class RecurringInstallmentsViewModelTest {
         every { repository.getBills() } returns flowOf(listOf(bill))
         every { repository.getAllInstallments() } returns flowOf(listOf(inst))
 
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.OpenAdjustInstallment(inst))
@@ -251,7 +256,7 @@ class RecurringInstallmentsViewModelTest {
 
     @Test
     fun `DeleteSingleInstallment delegates to repository`() = runTest {
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.DeleteSingleInstallment("inst-99"))
@@ -262,7 +267,7 @@ class RecurringInstallmentsViewModelTest {
 
     @Test
     fun `DeleteFutureInstallments delegates to repository with dueDate`() = runTest {
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.DeleteFutureInstallments("bill-1", 1700000000L))
@@ -273,7 +278,7 @@ class RecurringInstallmentsViewModelTest {
 
     @Test
     fun `TogglePauseBill pauses when isCurrentlyPaused is false`() = runTest {
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.TogglePauseBill("bill-1", isCurrentlyPaused = false))
@@ -284,7 +289,7 @@ class RecurringInstallmentsViewModelTest {
 
     @Test
     fun `TogglePauseBill unpauses when isCurrentlyPaused is true`() = runTest {
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.TogglePauseBill("bill-1", isCurrentlyPaused = true))
@@ -295,7 +300,7 @@ class RecurringInstallmentsViewModelTest {
 
     @Test
     fun `StopRecurringBill delegates to repository`() = runTest {
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(RecurringInstallmentsUiAction.StopRecurringBill("bill-1"))
@@ -323,7 +328,7 @@ class RecurringInstallmentsViewModelTest {
         every { repository.getBills() } returns flowOf(listOf(activeBill, pausedBill))
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase)
+        viewModel = RecurringInstallmentsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(2, viewModel.uiState.value.filteredItems.size)

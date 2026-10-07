@@ -68,8 +68,10 @@ interface FinancialRepository {
     fun getPlannedInstallmentsByContact(contactId: String): Flow<List<BillInstallment>>
     fun getInstallmentsForPeriod(startMillis: Long, endMillis: Long): Flow<List<BillInstallment>>
     fun getAllInstallments(): Flow<List<BillInstallment>>
+    suspend fun getInstallmentsByBillId(billId: String): List<BillInstallment>
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
+    suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>)
     suspend fun toggleInstallmentPayment(
         installmentId: String,
         isPaid: Boolean,

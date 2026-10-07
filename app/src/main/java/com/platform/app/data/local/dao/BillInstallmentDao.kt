@@ -255,6 +255,34 @@ interface BillInstallmentDao {
     @Query("SELECT * FROM bill_installments WHERE billId = :billId ORDER BY dueDate ASC")
     suspend fun getInstallmentsByBillId(billId: String): List<BillInstallmentEntity>
 
+    @Query(
+        """
+        SELECT 
+            i.*,
+            b.title AS bill_title,
+            b.type AS bill_type,
+            b.categoryId AS category_id,
+            c.name AS category_name,
+            c.colorHex AS category_color_hex,
+            c.nature AS category_nature,
+            c.iconName AS category_icon_name,
+            ei.name AS item_name,
+            cont.name AS contact_name,
+            fa.name AS financial_account_name,
+            pm.name AS payment_method_name
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        LEFT JOIN categories c ON b.categoryId = c.id
+        LEFT JOIN expense_items ei ON (i.itemId = ei.id OR b.itemId = ei.id)
+        LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
+        LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
+        LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
+        WHERE i.billId = :billId
+        ORDER BY i.dueDate ASC
+        """
+    )
+    suspend fun getInstallmentsWithDetailsByBillId(billId: String): List<InstallmentWithDetails>
+
     @Query("DELETE FROM bill_installments WHERE billId = :billId")
     suspend fun deleteByBillId(billId: String)
 

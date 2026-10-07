@@ -148,4 +148,77 @@ class CalculateInstallmentsUseCaseTest {
             assertEquals(5, installments[i].totalInstallments)
         }
     }
+
+    @Test
+    fun `generateNextRecurringInstallments should extend monthly FOREVER bill with installments 13 to 24`() {
+        val startDate = 1727395200000L // 27/09/2024
+        val bill = Bill(
+            id = "bill-forever-1",
+            title = "Academia Smart Fit",
+            type = BillType.RECURRING,
+            totalAmountCents = 11990L,
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER
+        )
+        val initialInstallments = useCase(bill, startDate)
+        assertEquals(12, initialInstallments.size)
+
+        // Estender com a próxima janela
+        val nextInstallments = useCase.generateNextRecurringInstallments(bill, initialInstallments)
+
+        assertEquals(12, nextInstallments.size)
+        // Números de parcela devem ser contínuos: 13 a 24
+        assertEquals(13, nextInstallments.first().installmentNumber)
+        assertEquals(24, nextInstallments.last().installmentNumber)
+        assertEquals(24, nextInstallments.first().totalInstallments)
+        assertEquals(24, nextInstallments.last().totalInstallments)
+
+        // Datas devem ser passos 12..23 em relação à startDate
+        for (i in 0 until 12) {
+            val expectedDueDate = DateUtils.addMonths(startDate, 12 + i)
+            assertEquals(expectedDueDate, nextInstallments[i].dueDate)
+            assertEquals(11990L, nextInstallments[i].amountCents)
+            assertEquals(BillType.RECURRING, nextInstallments[i].type)
+        }
+    }
+
+    @Test
+    fun `generateNextRecurringInstallments should preserve step calculation even if earlier installments were deleted`() {
+        val startDate = 1727395200000L
+        val bill = Bill(
+            id = "bill-forever-2",
+            title = "Streaming",
+            type = BillType.RECURRING,
+            totalAmountCents = 3990L,
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER
+        )
+        val initialInstallments = useCase(bill, startDate)
+        // Suponha que as parcelas 1 a 6 foram excluídas/liquidadas e restam apenas 7 a 12
+        val remainingInstallments = initialInstallments.filter { it.installmentNumber >= 7 }
+        assertEquals(6, remainingInstallments.size)
+
+        val nextInstallments = useCase.generateNextRecurringInstallments(bill, remainingInstallments)
+
+        assertEquals(12, nextInstallments.size)
+        assertEquals(13, nextInstallments.first().installmentNumber)
+        assertEquals(24, nextInstallments.last().installmentNumber)
+
+        // A data da parcela 13 deve ser exatamente 12 meses após startDate (ou 6 meses após a parcela 7)
+        val expectedFirstNewDueDate = DateUtils.addMonths(startDate, 12)
+        assertEquals(expectedFirstNewDueDate, nextInstallments.first().dueDate)
+    }
+
+    @Test
+    fun `generateNextRecurringInstallments should return empty list if bill is not RECURRING or existing is empty`() {
+        val singleBill = Bill(id = "s1", title = "Luz", type = BillType.SINGLE, totalAmountCents = 1000L)
+        val initial = useCase(singleBill, 1727395200000L)
+
+        val nextForSingle = useCase.generateNextRecurringInstallments(singleBill, initial)
+        assertTrue(nextForSingle.isEmpty())
+
+        val recurringBill = Bill(id = "r1", title = "Assinatura", type = BillType.RECURRING, totalAmountCents = 1000L)
+        val nextForEmpty = useCase.generateNextRecurringInstallments(recurringBill, emptyList())
+        assertTrue(nextForEmpty.isEmpty())
+    }
 }

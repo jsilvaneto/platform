@@ -8,6 +8,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -29,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class BillsViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BillsUiState())
@@ -45,6 +47,7 @@ class BillsViewModel @Inject constructor(
             repository.seedInitialCategoriesIfEmpty()
             repository.seedInitialFinancialAccountsIfEmpty()
             repository.seedInitialPaymentMethodsIfEmpty()
+            extendRecurringBillsUseCase()
         }
         loadAuxiliaryData()
         loadInstallments()
@@ -65,6 +68,9 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.DismissEditInstallment -> handleDismissEdit()
             is BillsUiAction.SaveInstallmentEdit -> handleSaveEdit(action)
             is BillsUiAction.Refresh -> {
+                viewModelScope.launch {
+                    extendRecurringBillsUseCase()
+                }
                 loadAuxiliaryData()
                 loadInstallments()
             }

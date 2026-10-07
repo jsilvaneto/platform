@@ -7,6 +7,7 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -25,7 +26,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RecurringInstallmentsViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RecurringInstallmentsUiState())
@@ -35,6 +37,9 @@ class RecurringInstallmentsViewModel @Inject constructor(
     val uiEffect: Flow<RecurringInstallmentsUiEffect> = _effectChannel.receiveAsFlow()
 
     init {
+        viewModelScope.launch {
+            extendRecurringBillsUseCase()
+        }
         loadData()
     }
 
@@ -57,7 +62,12 @@ class RecurringInstallmentsViewModel @Inject constructor(
             is RecurringInstallmentsUiAction.TogglePauseBill -> handleTogglePauseBill(action.billId, action.isCurrentlyPaused)
             is RecurringInstallmentsUiAction.StopRecurringBill -> handleStopRecurringBill(action.billId)
             is RecurringInstallmentsUiAction.UpdateBillMonthlyAmount -> handleUpdateBillMonthlyAmount(action.billId, action.newAmountCents)
-            is RecurringInstallmentsUiAction.Refresh -> loadData()
+            is RecurringInstallmentsUiAction.Refresh -> {
+                viewModelScope.launch {
+                    extendRecurringBillsUseCase()
+                }
+                loadData()
+            }
         }
     }
 

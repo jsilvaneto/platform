@@ -411,10 +411,28 @@ class FinancialRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getInstallmentsByBillId(billId: String): List<BillInstallment> {
+        return installmentDao.getInstallmentsWithDetailsByBillId(billId).map { it.toDomain() }
+    }
+
     override suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) {
         database.withTransaction {
             billDao.insert(BillEntity.fromDomain(bill))
             installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+        }
+    }
+
+    override suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>) {
+        if (installments.isEmpty()) return
+        database.withTransaction {
+            installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+            val allForBill = installmentDao.getInstallmentsByBillId(bill.id)
+            val maxDueDate = allForBill.maxOfOrNull { it.dueDate }
+            billDao.updateBillEndDateAndTotalInstallments(
+                id = bill.id,
+                recurrenceEndDate = maxDueDate,
+                totalInstallments = allForBill.size
+            )
         }
     }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.GetFinancialDashboardUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class DashboardViewModel @Inject constructor(
     private val getDashboardUseCase: GetFinancialDashboardUseCase,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase,
     private val repository: FinancialRepository
 ) : ViewModel() {
 
@@ -30,6 +32,7 @@ class DashboardViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             repository.seedInitialCategoriesIfEmpty()
+            extendRecurringBillsUseCase()
         }
         loadMetricsForMonth(_uiState.value.selectedMonthMillis)
     }
@@ -65,6 +68,9 @@ class DashboardViewModel @Inject constructor(
                 }
             }
             is DashboardUiAction.Refresh -> {
+                viewModelScope.launch {
+                    extendRecurringBillsUseCase()
+                }
                 loadMetricsForMonth(_uiState.value.selectedMonthMillis)
             }
         }

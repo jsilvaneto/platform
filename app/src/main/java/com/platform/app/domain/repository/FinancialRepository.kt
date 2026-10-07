@@ -13,6 +13,9 @@ import com.platform.app.domain.model.PaymentMethod
 import kotlinx.coroutines.flow.Flow
 
 interface FinancialRepository {
+    // Initial Data Seed (Startup)
+    suspend fun seedInitialData()
+
     // Categories
     fun getCategories(): Flow<List<Category>>
     suspend fun saveCategory(category: Category)
@@ -30,7 +33,6 @@ interface FinancialRepository {
     fun getCreditCards(): Flow<List<CreditCard>>
     suspend fun saveCreditCard(card: CreditCard)
     suspend fun deleteCreditCard(cardId: String)
-    suspend fun seedInitialCreditCardsIfEmpty()
 
     fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>>
     fun getAllCreditCardInvoices(): Flow<List<CreditCardInvoice>>

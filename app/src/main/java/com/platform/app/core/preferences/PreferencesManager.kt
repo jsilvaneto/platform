@@ -24,11 +24,13 @@ interface PreferencesManager {
     val isBiometricEnabled: Flow<Boolean>
     val lastOfflineBackupTimestamp: Flow<Long>
     val appIcon: Flow<String>
+    val areSeedsApplied: Flow<Boolean>
     suspend fun setDarkMode(enabled: Boolean?)
     suspend fun setAmoledMode(enabled: Boolean)
     suspend fun setBiometricEnabled(enabled: Boolean)
     suspend fun setAppIcon(iconKey: String)
     suspend fun updateLastOfflineBackupTimestamp(timestamp: Long)
+    suspend fun setSeedsApplied(applied: Boolean)
 }
 
 @Singleton
@@ -42,6 +44,7 @@ class PreferencesManagerImpl @Inject constructor(
         val IS_BIOMETRIC_ENABLED = booleanPreferencesKey("is_biometric_enabled")
         val LAST_BACKUP_TIMESTAMP = longPreferencesKey("last_backup_timestamp")
         val APP_ICON = androidx.datastore.preferences.core.stringPreferencesKey("app_icon")
+        val SEEDS_APPLIED = booleanPreferencesKey("seeds_applied")
     }
 
     override val isDarkMode: Flow<Boolean?> = context.dataStore.data
@@ -135,6 +138,24 @@ class PreferencesManagerImpl @Inject constructor(
     override suspend fun updateLastOfflineBackupTimestamp(timestamp: Long) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.LAST_BACKUP_TIMESTAMP] = timestamp
+        }
+    }
+
+    override val areSeedsApplied: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.SEEDS_APPLIED] ?: false
+        }
+
+    override suspend fun setSeedsApplied(applied: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SEEDS_APPLIED] = applied
         }
     }
 }

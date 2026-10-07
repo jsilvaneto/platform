@@ -111,7 +111,7 @@ class CreditCardsViewModel @Inject constructor(
             }
             is CreditCardsUiAction.PayInvoice -> {
                 viewModelScope.launch {
-                    repository.payInvoice(action.invoiceId)
+                    repository.payInvoice(action.invoiceId, action.actualPaymentDate)
                     // Se estiver com os detalhes da fatura aberta, atualiza
                     val currentDetails = _uiState.value.selectedInvoiceForDetails
                     if (currentDetails?.id == action.invoiceId) {

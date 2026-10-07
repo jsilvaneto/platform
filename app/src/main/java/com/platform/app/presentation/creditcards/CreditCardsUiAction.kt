@@ -14,5 +14,5 @@ sealed interface CreditCardsUiAction {
     data class RequestDeleteCard(val cardId: String) : CreditCardsUiAction
     data object ConfirmDeleteCard : CreditCardsUiAction
     data object CancelDeleteCard : CreditCardsUiAction
-    data class PayInvoice(val invoiceId: String) : CreditCardsUiAction
+    data class PayInvoice(val invoiceId: String, val actualPaymentDate: Long? = null) : CreditCardsUiAction
 }

@@ -206,31 +206,28 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>> {
-        return combine(creditCardDao.getInvoicesForCard(cardId), getAllInstallments()) { invoices, installments ->
+        return combine(creditCardDao.getInvoicesForCard(cardId), installmentDao.getInvoiceTotals()) { invoices, totals ->
+            val totalsMap = totals.associate { it.invoiceId to it.totalAmountCents }
             invoices.map { invEntity ->
-                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
-                val totalCents = invoiceInsts.sumOf { it.amountCents }
-                invEntity.toDomain(totalAmountCents = totalCents)
+                invEntity.toDomain(totalAmountCents = totalsMap[invEntity.id] ?: 0L)
             }
         }
     }
 
     override fun getAllCreditCardInvoices(): Flow<List<CreditCardInvoice>> {
-        return combine(creditCardDao.getAllInvoices(), getAllInstallments()) { invoices, installments ->
+        return combine(creditCardDao.getAllInvoices(), installmentDao.getInvoiceTotals()) { invoices, totals ->
+            val totalsMap = totals.associate { it.invoiceId to it.totalAmountCents }
             invoices.map { invEntity ->
-                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
-                val totalCents = invoiceInsts.sumOf { it.amountCents }
-                invEntity.toDomain(totalAmountCents = totalCents)
+                invEntity.toDomain(totalAmountCents = totalsMap[invEntity.id] ?: 0L)
             }
         }
     }
 
     override fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>> {
-        return combine(creditCardDao.getInvoicesForDueDateRange(startMillis, endMillis), getAllInstallments()) { invoices, installments ->
+        return combine(creditCardDao.getInvoicesForDueDateRange(startMillis, endMillis), installmentDao.getInvoiceTotals()) { invoices, totals ->
+            val totalsMap = totals.associate { it.invoiceId to it.totalAmountCents }
             invoices.map { invEntity ->
-                val invoiceInsts = installments.filter { it.invoiceId == invEntity.id }
-                val totalCents = invoiceInsts.sumOf { it.amountCents }
-                invEntity.toDomain(totalAmountCents = totalCents)
+                invEntity.toDomain(totalAmountCents = totalsMap[invEntity.id] ?: 0L)
             }
         }
     }
@@ -273,26 +270,29 @@ class FinancialRepositoryImpl @Inject constructor(
         return newInvoice
     }
 
-    override suspend fun payInvoice(invoiceId: String) {
+    override suspend fun payInvoice(invoiceId: String, actualPaymentDate: Long?) {
+        val now = System.currentTimeMillis()
+        val effectiveActualDate = actualPaymentDate ?: now
         database.withTransaction {
             creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.PAGA.name)
-            val allInsts = installmentDao.getAllInstallmentsList()
-            val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
-            val now = System.currentTimeMillis()
-            invoiceInsts.forEach { inst ->
-                installmentDao.updatePayment(inst.id, now, now, "PAID")
-            }
+            installmentDao.updatePaymentByInvoiceId(
+                invoiceId = invoiceId,
+                paidAt = now,
+                actualPaymentDate = effectiveActualDate,
+                status = "PAID"
+            )
         }
     }
 
     override suspend fun reopenInvoice(invoiceId: String) {
         database.withTransaction {
             creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.ABERTA.name)
-            val allInsts = installmentDao.getAllInstallmentsList()
-            val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
-            invoiceInsts.forEach { inst ->
-                installmentDao.updatePayment(inst.id, null, null, "PENDING")
-            }
+            installmentDao.updatePaymentByInvoiceId(
+                invoiceId = invoiceId,
+                paidAt = null,
+                actualPaymentDate = null,
+                status = "PENDING"
+            )
         }
     }
 

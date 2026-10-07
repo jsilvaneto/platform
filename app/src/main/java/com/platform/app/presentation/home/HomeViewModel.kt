@@ -131,7 +131,7 @@ class HomeViewModel @Inject constructor(
             }
             is HomeUiAction.PayInvoice -> {
                 viewModelScope.launch {
-                    repository.payInvoice(action.invoiceId)
+                    repository.payInvoice(action.invoiceId, action.actualPaymentDate)
                     _uiEffect.emit(
                         HomeUiEffect.ShowUndoSnackbar(
                             message = "Fatura marcada como paga!",

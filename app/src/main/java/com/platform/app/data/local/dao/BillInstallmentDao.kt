@@ -54,6 +54,11 @@ data class InstallmentWithDetails(
     }
 }
 
+data class InvoiceTotal(
+    @ColumnInfo(name = "invoiceId") val invoiceId: String,
+    @ColumnInfo(name = "totalAmountCents") val totalAmountCents: Long
+)
+
 @Dao
 interface BillInstallmentDao {
 
@@ -201,6 +206,29 @@ interface BillInstallmentDao {
 
     @Query(
         """
+        SELECT invoiceId, COALESCE(SUM(amountCents), 0) AS totalAmountCents
+        FROM bill_installments
+        WHERE invoiceId IS NOT NULL
+        GROUP BY invoiceId
+        """
+    )
+    fun getInvoiceTotals(): Flow<List<InvoiceTotal>>
+
+    @Query(
+        """
+        SELECT invoiceId, COALESCE(SUM(amountCents), 0) AS totalAmountCents
+        FROM bill_installments
+        WHERE invoiceId IS NOT NULL
+        GROUP BY invoiceId
+        """
+    )
+    suspend fun getInvoiceTotalsList(): List<InvoiceTotal>
+
+    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM bill_installments WHERE invoiceId = :invoiceId")
+    suspend fun getInvoiceTotal(invoiceId: String): Long
+
+    @Query(
+        """
         SELECT COUNT(i.id) FROM bill_installments i
         INNER JOIN credit_card_invoices inv ON i.invoiceId = inv.id
         WHERE inv.creditCardId = :cardId
@@ -213,6 +241,9 @@ interface BillInstallmentDao {
 
     @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE id = :id")
     suspend fun updatePayment(id: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
+
+    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE invoiceId = :invoiceId")
+    suspend fun updatePaymentByInvoiceId(invoiceId: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
 
     @Query("UPDATE bill_installments SET amountCents = :newAmountCents, dueDate = :newDueDate WHERE id = :id")
     suspend fun updateInstallmentAmountAndDate(id: String, newAmountCents: Long, newDueDate: Long)

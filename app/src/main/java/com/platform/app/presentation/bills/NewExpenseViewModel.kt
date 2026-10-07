@@ -458,6 +458,7 @@ class NewExpenseViewModel @Inject constructor(
                                 amountCents = installmentAmount,
                                 dueDate = invoice.dueDate,
                                 paidAt = paidAt,
+                                actualPaymentDate = paidAt,
                                 status = instStatus,
                                 type = state.expenseType
                             )
@@ -531,7 +532,8 @@ class NewExpenseViewModel @Inject constructor(
                             categoryColorHex = state.selectedCategory?.colorHex ?: "#64748B",
                             nature = state.inheritedNature,
                             status = if (isFirstAndPaid) BillStatus.PAID else BillStatus.PENDING,
-                            paidAt = if (isFirstAndPaid) System.currentTimeMillis() else null
+                            paidAt = if (isFirstAndPaid) System.currentTimeMillis() else null,
+                            actualPaymentDate = if (isFirstAndPaid) System.currentTimeMillis() else null
                         )
                     }
 

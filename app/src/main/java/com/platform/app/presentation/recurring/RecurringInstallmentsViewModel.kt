@@ -43,7 +43,7 @@ class RecurringInstallmentsViewModel @Inject constructor(
             is RecurringInstallmentsUiAction.SelectFilter -> handleSelectFilter(action.type)
             is RecurringInstallmentsUiAction.StatusFilterChanged -> handleStatusFilter(action.status)
             is RecurringInstallmentsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
-            is RecurringInstallmentsUiAction.TogglePayment -> handleTogglePayment(action.installmentId, action.currentPaid)
+            is RecurringInstallmentsUiAction.TogglePayment -> handleTogglePayment(action.installmentId, action.currentPaid, action.actualPaymentDate)
             is RecurringInstallmentsUiAction.DeleteBill -> handleDeleteBill(action.billId)
             is RecurringInstallmentsUiAction.OpenAdjustInstallment -> {
                 _uiState.update { it.copy(installmentToAdjust = action.installment) }
@@ -375,10 +375,10 @@ class RecurringInstallmentsViewModel @Inject constructor(
         }
     }
 
-    private fun handleTogglePayment(installmentId: String, currentPaid: Boolean) {
+    private fun handleTogglePayment(installmentId: String, currentPaid: Boolean, actualPaymentDate: Long? = null) {
         viewModelScope.launch {
             try {
-                togglePaymentUseCase(installmentId, currentPaid)
+                togglePaymentUseCase(installmentId, currentPaid, actualPaymentDate)
                 val msg = if (!currentPaid) "Parcela marcada como paga!" else "Pagamento desfeito."
                 _effectChannel.send(RecurringInstallmentsUiEffect.ShowSnackbar(msg))
             } catch (e: Exception) {

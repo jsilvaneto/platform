@@ -8,6 +8,10 @@ sealed interface ContactsUiAction : UiAction {
     data class DeleteContact(val contactId: String) : ContactsUiAction
     data class SearchQueryChanged(val query: String) : ContactsUiAction
     data class LoadContactDetails(val contactId: String) : ContactsUiAction
-    data class ToggleInstallmentPayment(val installmentId: String, val isPaid: Boolean) : ContactsUiAction
+    data class ToggleInstallmentPayment(
+        val installmentId: String,
+        val isPaid: Boolean,
+        val actualPaymentDate: Long? = null
+    ) : ContactsUiAction
     object Refresh : ContactsUiAction
 }

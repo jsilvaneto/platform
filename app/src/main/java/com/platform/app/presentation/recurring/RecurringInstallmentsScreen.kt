@@ -108,6 +108,7 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.PlatformSearchTopBar
+import com.platform.app.presentation.components.ConfirmPaymentDialog
 import com.platform.app.presentation.components.PlatformSegmentedTabs
 import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.theme.Dimens
@@ -130,6 +131,20 @@ fun RecurringInstallmentsScreen(
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
 
     var isSearchExpanded by remember { mutableStateOf(false) }
+    var installmentToConfirmPayment by remember { mutableStateOf<BillInstallment?>(null) }
+
+    val handleTogglePayment: (String, Boolean) -> Unit = { instId, paid ->
+        if (paid) {
+            viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
+        } else {
+            val targetInst = uiState.items.flatMap { it.installments }.find { it.id == instId }
+            if (targetInst != null) {
+                installmentToConfirmPayment = targetInst
+            } else {
+                viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
+            }
+        }
+    }
 
     val installmentItems = remember(uiState.filteredItems) {
         uiState.filteredItems.filter { it.bill.type == BillType.INSTALLMENT }
@@ -276,9 +291,7 @@ fun RecurringInstallmentsScreen(
                                 TimelineMonthCard(
                                     month = month,
                                     allItems = uiState.items,
-                                    onTogglePayment = { instId, paid ->
-                                        viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
-                                    },
+                                    onTogglePayment = handleTogglePayment,
                                     onSelectPlan = { plan ->
                                         planToViewDetails = plan
                                     }
@@ -520,9 +533,7 @@ fun RecurringInstallmentsScreen(
             RecurringDetailBottomSheet(
                 item = currentPlan,
                 onDismiss = { planToViewDetails = null },
-                onTogglePayment = { instId, paid ->
-                    viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(instId, paid))
-                },
+                onTogglePayment = handleTogglePayment,
                 onOpenAdjust = { inst ->
                     viewModel.onAction(RecurringInstallmentsUiAction.OpenAdjustInstallment(inst))
                 },
@@ -562,6 +573,21 @@ fun RecurringInstallmentsScreen(
                 },
                 onDeleteFuture = { billId, fromDueDate ->
                     viewModel.onAction(RecurringInstallmentsUiAction.DeleteFutureInstallments(billId, fromDueDate))
+                }
+            )
+        }
+
+        installmentToConfirmPayment?.let { inst ->
+            ConfirmPaymentDialog(
+                installmentTitle = "${inst.billTitle} (${inst.installmentNumber}/${inst.totalInstallments})",
+                amountCents = inst.amountCents,
+                dueDate = inst.dueDate,
+                onConfirm = { actualPaymentDate ->
+                    viewModel.onAction(RecurringInstallmentsUiAction.TogglePayment(inst.id, inst.isPaid, actualPaymentDate))
+                    installmentToConfirmPayment = null
+                },
+                onDismiss = {
+                    installmentToConfirmPayment = null
                 }
             )
         }

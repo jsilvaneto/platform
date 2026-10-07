@@ -247,7 +247,7 @@ class FinancialRepositoryImpl @Inject constructor(
             val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
             val now = System.currentTimeMillis()
             invoiceInsts.forEach { inst ->
-                installmentDao.updatePayment(inst.id, now, "PAID")
+                installmentDao.updatePayment(inst.id, now, now, "PAID")
             }
         }
     }
@@ -258,7 +258,7 @@ class FinancialRepositoryImpl @Inject constructor(
             val allInsts = installmentDao.getAllInstallmentsList()
             val invoiceInsts = allInsts.filter { it.invoiceId == invoiceId }
             invoiceInsts.forEach { inst ->
-                installmentDao.updatePayment(inst.id, null, "PENDING")
+                installmentDao.updatePayment(inst.id, null, null, "PENDING")
             }
         }
     }
@@ -421,10 +421,13 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun toggleInstallmentPayment(
         installmentId: String,
         isPaid: Boolean,
-        paidTimestamp: Long?
+        paidTimestamp: Long?,
+        actualPaymentDate: Long?
     ) {
         val status = if (isPaid) "PAID" else "PENDING"
-        installmentDao.updatePayment(installmentId, paidTimestamp, status)
+        val effectivePaidAt = if (isPaid) (paidTimestamp ?: System.currentTimeMillis()) else null
+        val effectiveActualDate = if (isPaid) (actualPaymentDate ?: effectivePaidAt) else null
+        installmentDao.updatePayment(installmentId, effectivePaidAt, effectiveActualDate, status)
     }
 
     override suspend fun updateInstallment(

@@ -49,7 +49,7 @@ class ContactsViewModel @Inject constructor(
             is ContactsUiAction.DeleteContact -> handleDeleteContact(action.contactId)
             is ContactsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is ContactsUiAction.LoadContactDetails -> loadContactDetails(action.contactId)
-            is ContactsUiAction.ToggleInstallmentPayment -> handleTogglePayment(action.installmentId, action.isPaid)
+            is ContactsUiAction.ToggleInstallmentPayment -> handleTogglePayment(action.installmentId, action.isPaid, action.actualPaymentDate)
             is ContactsUiAction.Refresh -> loadContacts()
         }
     }
@@ -142,10 +142,10 @@ class ContactsViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun handleTogglePayment(installmentId: String, currentPaid: Boolean) {
+    private fun handleTogglePayment(installmentId: String, currentPaid: Boolean, actualPaymentDate: Long? = null) {
         viewModelScope.launch {
             try {
-                togglePaymentUseCase(installmentId, currentPaid)
+                togglePaymentUseCase(installmentId, currentPaid, actualPaymentDate)
                 val msg = if (!currentPaid) "Parcela marcada como paga!" else "Pagamento desfeito."
                 _effectChannel.send(ContactsUiEffect.ShowSnackbar(msg))
             } catch (e: Exception) {

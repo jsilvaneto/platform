@@ -176,4 +176,97 @@ class GetFinancialDashboardUseCaseTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `should consider retroactive payment on-time when actualPaymentDate is on or before dueDate`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+        val dueDate = currentMonthEpoch + (5L * 86400000L) // 5º dia do mês
+        val paidAtActionTime = dueDate + (5L * 86400000L) // 10º dia do mês (quando tocou no app)
+        val actualPaymentDate = dueDate // Realmente pago no dia do vencimento
+
+        val retroactivePaidInst = BillInstallment(
+            id = "inst-retro-1",
+            billId = "bill-retro-1",
+            billTitle = "Energia",
+            amountCents = 10000L,
+            dueDate = dueDate,
+            paidAt = paidAtActionTime,
+            actualPaymentDate = actualPaymentDate
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(retroactivePaidInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(retroactivePaidInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+            // Como actualPaymentDate <= dueDate, deve ser contabilizado como pontual (100%)
+            assertEquals(100, metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should consider retroactive payment late when actualPaymentDate is after dueDate`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+        val dueDate = currentMonthEpoch + (5L * 86400000L) // 5º dia do mês
+        val paidAtActionTime = dueDate + (10L * 86400000L) // 15º dia do mês
+        val actualPaymentDate = dueDate + (3L * 86400000L) // Pago de fato no 8º dia (atrasado)
+
+        val latePaidInst = BillInstallment(
+            id = "inst-late-1",
+            billId = "bill-late-1",
+            billTitle = "Telefone",
+            amountCents = 8000L,
+            dueDate = dueDate,
+            paidAt = paidAtActionTime,
+            actualPaymentDate = actualPaymentDate
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(latePaidInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(latePaidInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+            // Como actualPaymentDate > dueDate, deve ser contabilizado como atrasado (0%)
+            assertEquals(0, metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should fallback to paidAt when actualPaymentDate is not provided`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+        val dueDate = currentMonthEpoch + (5L * 86400000L) // 5º dia do mês
+        val paidAtActionTime = dueDate + (5L * 86400000L) // 10º dia do mês
+
+        // Sem actualPaymentDate preenchido: fallback para paidAt (> dueDate -> atrasado)
+        val fallbackInst = BillInstallment(
+            id = "inst-fallback-1",
+            billId = "bill-fallback-1",
+            billTitle = "Água",
+            amountCents = 5000L,
+            dueDate = dueDate,
+            paidAt = paidAtActionTime,
+            actualPaymentDate = null
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(fallbackInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(fallbackInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+            // Fallback para paidAt > dueDate -> 0%
+            assertEquals(0, metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

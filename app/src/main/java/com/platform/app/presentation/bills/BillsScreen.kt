@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.foundation.verticalScroll
+import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -144,6 +145,7 @@ fun BillsScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    var installmentToConfirmPayment by remember { mutableStateOf<BillInstallment?>(null) }
     val currentMonthLabel = remember { DateUtils.formatMonthYear(System.currentTimeMillis()) }
     var expandedMonths by rememberSaveable { mutableStateOf(setOf(DateUtils.formatMonthYear(System.currentTimeMillis()))) }
 
@@ -456,7 +458,13 @@ fun BillsScreen(
                                                 isSelectionMode = true
                                                 selectedInstallmentIds = selectedInstallmentIds + installment.id
                                             },
-                                            onTogglePayment = { onAction(BillsUiAction.TogglePayment(installment)) },
+                                            onTogglePayment = {
+                                                if (installment.isPaid) {
+                                                    onAction(BillsUiAction.TogglePayment(installment))
+                                                } else {
+                                                    installmentToConfirmPayment = installment
+                                                }
+                                            },
                                             onSelectInstallment = {
                                                 if (isSelectionMode) {
                                                     selectedInstallmentIds = if (isSelected) {
@@ -538,7 +546,11 @@ fun BillsScreen(
                             onAction(BillsUiAction.DeleteBill(billId))
                         },
                         onTogglePayment = {
-                            onAction(BillsUiAction.TogglePayment(inst))
+                            if (inst.isPaid) {
+                                onAction(BillsUiAction.TogglePayment(inst))
+                            } else {
+                                installmentToConfirmPayment = inst
+                            }
                         }
                     )
                 }
@@ -582,6 +594,21 @@ fun BillsScreen(
                 OutlinedButton(onClick = { showBatchDeleteDialog = false }) {
                     Text("Cancelar")
                 }
+            }
+        )
+    }
+
+    installmentToConfirmPayment?.let { inst ->
+        ConfirmPaymentDialog(
+            installmentTitle = "${inst.billTitle} (${inst.installmentNumber}/${inst.totalInstallments})",
+            amountCents = inst.amountCents,
+            dueDate = inst.dueDate,
+            onConfirm = { actualPaymentDate ->
+                onAction(BillsUiAction.TogglePayment(inst, actualPaymentDate))
+                installmentToConfirmPayment = null
+            },
+            onDismiss = {
+                installmentToConfirmPayment = null
             }
         )
     }

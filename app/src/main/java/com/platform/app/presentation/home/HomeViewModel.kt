@@ -114,7 +114,8 @@ class HomeViewModel @Inject constructor(
                     repository.toggleInstallmentPayment(
                         installmentId = action.installmentId,
                         isPaid = true,
-                        paidTimestamp = System.currentTimeMillis()
+                        paidTimestamp = System.currentTimeMillis(),
+                        actualPaymentDate = action.actualPaymentDate
                     )
                     _uiEffect.emit(
                         HomeUiEffect.ShowUndoSnackbar(

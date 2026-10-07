@@ -497,6 +497,31 @@ fun EditInstallmentBottomSheet(
                 }
             }
 
+            if (installment.isPaid) {
+                val paymentDateToDisplay = installment.actualPaymentDate ?: installment.paidAt
+                if (paymentDateToDisplay != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Pago em",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = DateUtils.formatDate(paymentDateToDisplay),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SuccessGreen
+                        )
+                    }
+                }
+            }
+
             // 8. Botão de Alternar Pagamento
             OutlinedButton(
                 onClick = onTogglePayment,

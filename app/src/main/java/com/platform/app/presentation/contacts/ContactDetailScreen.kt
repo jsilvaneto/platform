@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.platform.app.presentation.components.PlatformAvatar
+import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -88,6 +89,7 @@ fun ContactDetailScreen(
     var isEditDialogOpen by remember { mutableStateOf(false) }
     var showOptionsMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    var installmentToConfirmPayment by remember { mutableStateOf<BillInstallment?>(null) }
     val editSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     LaunchedEffect(contactId) {
@@ -219,12 +221,16 @@ fun ContactDetailScreen(
                         1 -> PlannedInstallmentsTab(
                             installments = details.plannedInstallments,
                             onTogglePayment = { inst ->
-                                viewModel.onAction(
-                                    ContactsUiAction.ToggleInstallmentPayment(
-                                        installmentId = inst.id,
-                                        isPaid = inst.isPaid
+                                if (inst.isPaid) {
+                                    viewModel.onAction(
+                                        ContactsUiAction.ToggleInstallmentPayment(
+                                            installmentId = inst.id,
+                                            isPaid = inst.isPaid
+                                        )
                                     )
-                                )
+                                } else {
+                                    installmentToConfirmPayment = inst
+                                }
                             }
                         )
                     }
@@ -282,6 +288,27 @@ fun ContactDetailScreen(
                     ) {
                         Text("Cancelar")
                     }
+                }
+            )
+        }
+
+        installmentToConfirmPayment?.let { inst ->
+            ConfirmPaymentDialog(
+                installmentTitle = "${inst.billTitle} (${inst.installmentNumber}/${inst.totalInstallments})",
+                amountCents = inst.amountCents,
+                dueDate = inst.dueDate,
+                onConfirm = { actualPaymentDate ->
+                    viewModel.onAction(
+                        ContactsUiAction.ToggleInstallmentPayment(
+                            installmentId = inst.id,
+                            isPaid = inst.isPaid,
+                            actualPaymentDate = actualPaymentDate
+                        )
+                    )
+                    installmentToConfirmPayment = null
+                },
+                onDismiss = {
+                    installmentToConfirmPayment = null
                 }
             )
         }

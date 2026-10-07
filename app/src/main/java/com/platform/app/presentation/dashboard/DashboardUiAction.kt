@@ -10,6 +10,10 @@ sealed interface DashboardUiAction : UiAction {
     data class SelectTab(val tab: StatisticsTab) : DashboardUiAction
     object TogglePrivacyMode : DashboardUiAction
     data class ChangeViewMode(val mode: DashboardViewMode) : DashboardUiAction
-    data class TogglePayment(val installmentId: String, val currentPaid: Boolean) : DashboardUiAction
+    data class TogglePayment(
+        val installmentId: String,
+        val currentPaid: Boolean,
+        val actualPaymentDate: Long? = null
+    ) : DashboardUiAction
     object Refresh : DashboardUiAction
 }

@@ -6,7 +6,10 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 
 sealed interface BillsUiAction : UiAction {
-    data class TogglePayment(val installment: BillInstallment) : BillsUiAction
+    data class TogglePayment(
+        val installment: BillInstallment,
+        val actualPaymentDate: Long? = null
+    ) : BillsUiAction
     data class DeleteBill(val billId: String) : BillsUiAction
     data class SearchQueryChanged(val query: String) : BillsUiAction
     data class TypeFilterChanged(val type: BillType?) : BillsUiAction

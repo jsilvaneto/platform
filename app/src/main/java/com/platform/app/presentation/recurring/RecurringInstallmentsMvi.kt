@@ -66,7 +66,11 @@ sealed interface RecurringInstallmentsUiAction : UiAction {
     data class SelectFilter(val type: BillType?) : RecurringInstallmentsUiAction
     data class StatusFilterChanged(val status: RecurringStatusFilter) : RecurringInstallmentsUiAction
     data class SearchQueryChanged(val query: String) : RecurringInstallmentsUiAction
-    data class TogglePayment(val installmentId: String, val currentPaid: Boolean) : RecurringInstallmentsUiAction
+    data class TogglePayment(
+        val installmentId: String,
+        val currentPaid: Boolean,
+        val actualPaymentDate: Long? = null
+    ) : RecurringInstallmentsUiAction
     data class DeleteBill(val billId: String) : RecurringInstallmentsUiAction
     data class OpenAdjustInstallment(val installment: BillInstallment) : RecurringInstallmentsUiAction
     object DismissAdjustInstallment : RecurringInstallmentsUiAction

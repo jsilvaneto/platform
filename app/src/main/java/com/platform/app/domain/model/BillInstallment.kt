@@ -23,6 +23,7 @@ data class BillInstallment(
     val amountCents: Long,
     val dueDate: Long,
     val paidAt: Long? = null,
+    val actualPaymentDate: Long? = null,
     val status: BillStatus = BillStatus.PENDING,
     val type: BillType = BillType.SINGLE
 ) {

@@ -42,7 +42,8 @@ data class BillInstallmentEntity(
     val invoiceId: String? = null,
     val contactId: String? = null,
     val financialAccountId: String? = null,
-    val paymentMethodId: String? = null
+    val paymentMethodId: String? = null,
+    val actualPaymentDate: Long? = null
 ) {
     fun toDomain(
         billTitle: String,
@@ -80,6 +81,7 @@ data class BillInstallmentEntity(
             amountCents = amountCents,
             dueDate = dueDate,
             paidAt = paidAt,
+            actualPaymentDate = actualPaymentDate,
             status = try {
                 BillStatus.valueOf(status)
             } catch (e: Exception) {
@@ -104,7 +106,8 @@ data class BillInstallmentEntity(
                 invoiceId = installment.invoiceId,
                 contactId = installment.contactId,
                 financialAccountId = installment.financialAccountId,
-                paymentMethodId = installment.paymentMethodId
+                paymentMethodId = installment.paymentMethodId,
+                actualPaymentDate = installment.actualPaymentDate
             )
         }
     }

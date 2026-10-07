@@ -43,7 +43,7 @@ import com.platform.app.data.local.entity.TransactionEntity
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -161,6 +161,12 @@ abstract class PlatformDatabase : RoomDatabase() {
         val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE bills ADD COLUMN isPaused INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE bill_installments ADD COLUMN actualPaymentDate INTEGER DEFAULT NULL")
             }
         }
     }

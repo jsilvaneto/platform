@@ -52,7 +52,7 @@ class BillsViewModel @Inject constructor(
 
     fun onAction(action: BillsUiAction) {
         when (action) {
-            is BillsUiAction.TogglePayment -> handleTogglePayment(action.installment)
+            is BillsUiAction.TogglePayment -> handleTogglePayment(action.installment, action.actualPaymentDate)
             is BillsUiAction.DeleteBill -> handleDeleteBill(action.billId)
             is BillsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is BillsUiAction.TypeFilterChanged -> handleTypeFilter(action.type)
@@ -224,10 +224,10 @@ class BillsViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
-    private fun handleTogglePayment(installment: BillInstallment) {
+    private fun handleTogglePayment(installment: BillInstallment, actualPaymentDate: Long? = null) {
         viewModelScope.launch {
             try {
-                togglePaymentUseCase(installment.id, installment.isPaid)
+                togglePaymentUseCase(installment.id, installment.isPaid, actualPaymentDate)
                 val msg = if (!installment.isPaid) "Parcela marcada como paga!" else "Pagamento desfeito."
                 _effectChannel.send(BillsUiEffect.ShowSnackbar(msg))
             } catch (e: Exception) {

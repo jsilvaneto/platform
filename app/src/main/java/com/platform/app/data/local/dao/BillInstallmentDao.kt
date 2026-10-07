@@ -211,8 +211,8 @@ interface BillInstallmentDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(installments: List<BillInstallmentEntity>)
 
-    @Query("UPDATE bill_installments SET paidAt = :paidAt, status = :status WHERE id = :id")
-    suspend fun updatePayment(id: String, paidAt: Long?, status: String)
+    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE id = :id")
+    suspend fun updatePayment(id: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
 
     @Query("UPDATE bill_installments SET amountCents = :newAmountCents, dueDate = :newDueDate WHERE id = :id")
     suspend fun updateInstallmentAmountAndDate(id: String, newAmountCents: Long, newDueDate: Long)

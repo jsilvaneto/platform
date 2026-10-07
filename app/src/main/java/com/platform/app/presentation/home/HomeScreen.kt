@@ -57,6 +57,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -117,6 +118,15 @@ fun HomeScreen(
     val monthPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
+    var itemToConfirmPayment by remember { mutableStateOf<PayableItem.BillPayable?>(null) }
+
+    val handlePayItem: (PayableItem) -> Unit = { item ->
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        when (item) {
+            is PayableItem.BillPayable -> itemToConfirmPayment = item
+            is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
+        }
+    }
 
     LaunchedEffect(uiEffect) {
         uiEffect?.collect { effect ->
@@ -204,13 +214,7 @@ fun HomeScreen(
                                 onToggleExpanded = {
                                     onAction(HomeUiAction.ToggleOverdueBanner(!uiState.isOverdueBannerExpanded))
                                 },
-                                onPayItem = { item ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    when (item) {
-                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                    }
-                                }
+                                onPayItem = handlePayItem
                             )
                         }
                     }
@@ -221,13 +225,7 @@ fun HomeScreen(
                             renderPanoramaView(
                                 uiState = uiState,
                                 isPrivate = isPrivate,
-                                onPay = { item ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    when (item) {
-                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                    }
-                                },
+                                onPay = handlePayItem,
                                 onAddExpense = onNavigateToNewExpense
                             )
                         }
@@ -236,22 +234,16 @@ fun HomeScreen(
                                 uiState = uiState,
                                 isPrivate = isPrivate,
                                 onSelectDay = { dayMillis -> onAction(HomeUiAction.SelectCalendarDay(dayMillis)) },
-                                onPay = { item ->
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    when (item) {
-                                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                                    }
-                                }
+                                onPay = handlePayItem
                             )
                         }
                         HomeViewMode.MONTHLY -> {
                             renderMonthlyView(
                                 uiState = uiState,
                                 isPrivate = isPrivate,
-                                onAction = onAction,
+                                onPayItem = handlePayItem,
                                 onAddExpense = onNavigateToNewExpense,
-                                haptic = haptic
+                                onAction = onAction
                             )
                         }
                     }
@@ -271,6 +263,21 @@ fun HomeScreen(
             onDismiss = { showMonthPickerSheet = false },
             onMonthSelected = { monthMillis ->
                 onAction(HomeUiAction.SelectMonth(monthMillis))
+            }
+        )
+    }
+
+    itemToConfirmPayment?.let { payable ->
+        ConfirmPaymentDialog(
+            installmentTitle = payable.title,
+            amountCents = payable.amountCents,
+            dueDate = payable.dueDate,
+            onConfirm = { actualPaymentDate ->
+                onAction(HomeUiAction.PayBill(payable.id, actualPaymentDate))
+                itemToConfirmPayment = null
+            },
+            onDismiss = {
+                itemToConfirmPayment = null
             }
         )
     }
@@ -1262,9 +1269,9 @@ fun CalendarDayCard(
 fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
     uiState: HomeUiState,
     isPrivate: Boolean,
-    onAction: (HomeUiAction) -> Unit,
+    onPayItem: (PayableItem) -> Unit,
     onAddExpense: () -> Unit,
-    haptic: androidx.compose.ui.hapticfeedback.HapticFeedback
+    onAction: (HomeUiAction) -> Unit
 ) {
     val forecast = uiState.forecastResult ?: return
     val isMonthFullyPaid = forecast.totalItemsCount > 0 &&
@@ -1317,13 +1324,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
             PayableItemCard(
                 item = item,
                 isPrivate = isPrivate,
-                onPay = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    when (item) {
-                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                    }
-                }
+                onPay = { onPayItem(item) }
             )
         }
     }
@@ -1342,13 +1343,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
             PayableItemCard(
                 item = item,
                 isPrivate = isPrivate,
-                onPay = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    when (item) {
-                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                    }
-                }
+                onPay = { onPayItem(item) }
             )
         }
     }
@@ -1367,13 +1362,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
             PayableItemCard(
                 item = item,
                 isPrivate = isPrivate,
-                onPay = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    when (item) {
-                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                    }
-                }
+                onPay = { onPayItem(item) }
             )
         }
     }
@@ -1392,13 +1381,7 @@ fun androidx.compose.foundation.lazy.LazyListScope.renderMonthlyView(
             PayableItemCard(
                 item = item,
                 isPrivate = isPrivate,
-                onPay = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    when (item) {
-                        is PayableItem.BillPayable -> onAction(HomeUiAction.PayBill(item.id))
-                        is PayableItem.InvoicePayable -> onAction(HomeUiAction.PayInvoice(item.id))
-                    }
-                }
+                onPay = { onPayItem(item) }
             )
         }
     }

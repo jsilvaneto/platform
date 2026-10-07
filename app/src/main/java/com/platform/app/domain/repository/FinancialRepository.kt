@@ -70,7 +70,12 @@ interface FinancialRepository {
     fun getAllInstallments(): Flow<List<BillInstallment>>
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
-    suspend fun toggleInstallmentPayment(installmentId: String, isPaid: Boolean, paidTimestamp: Long? = null)
+    suspend fun toggleInstallmentPayment(
+        installmentId: String,
+        isPaid: Boolean,
+        paidTimestamp: Long? = null,
+        actualPaymentDate: Long? = null
+    )
     suspend fun updateInstallment(installmentId: String, newAmountCents: Long, newDueDate: Long)
     suspend fun updateBillAndInstallment(
         installmentId: String,

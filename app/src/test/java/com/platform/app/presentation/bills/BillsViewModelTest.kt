@@ -117,7 +117,37 @@ class BillsViewModelTest {
             viewModel.onAction(BillsUiAction.TogglePayment(installment))
             testDispatcher.scheduler.advanceUntilIdle()
 
-            coVerify(exactly = 1) { togglePaymentUseCase("inst-1", false) }
+            coVerify(exactly = 1) { togglePaymentUseCase("inst-1", false, null) }
+
+            val effect = awaitItem()
+            assertTrue(effect is BillsUiEffect.ShowSnackbar)
+        }
+    }
+
+    @Test
+    fun `TogglePayment action with actualPaymentDate should forward date to togglePaymentUseCase`() = runTest {
+        val installment = BillInstallment(
+            id = "inst-1",
+            billId = "bill-1",
+            billTitle = "Conta de Luz",
+            categoryId = null,
+            installmentNumber = 1,
+            totalInstallments = 1,
+            amountCents = 12000L,
+            dueDate = 1759000000000L,
+            status = BillStatus.PENDING,
+            type = BillType.SINGLE
+        )
+        val customPaymentDate = 1759000000000L
+
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiEffect.test {
+            viewModel.onAction(BillsUiAction.TogglePayment(installment, customPaymentDate))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { togglePaymentUseCase("inst-1", false, customPaymentDate) }
 
             val effect = awaitItem()
             assertTrue(effect is BillsUiEffect.ShowSnackbar)

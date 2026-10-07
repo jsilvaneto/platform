@@ -61,7 +61,7 @@ class DashboardViewModel @Inject constructor(
             }
             is DashboardUiAction.TogglePayment -> {
                 viewModelScope.launch {
-                    togglePaymentUseCase(action.installmentId, action.currentPaid)
+                    togglePaymentUseCase(action.installmentId, action.currentPaid, action.actualPaymentDate)
                 }
             }
             is DashboardUiAction.Refresh -> {

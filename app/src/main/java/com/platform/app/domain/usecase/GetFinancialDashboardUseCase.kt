@@ -144,7 +144,10 @@ class GetFinancialDashboardUseCase @Inject constructor(
             // Histórico Total e Pontualidade
             val allPaidInsts = allInstallments.filter { it.isPaid }
             val totalHistPaid = allPaidInsts.sumOf { it.amountCents }
-            val onTimeCount = allPaidInsts.count { (it.paidAt ?: it.dueDate) <= it.dueDate }
+            val onTimeCount = allPaidInsts.count {
+                val effectivePaymentDate = it.actualPaymentDate ?: it.paidAt ?: it.dueDate
+                effectivePaymentDate <= it.dueDate || DateUtils.getStartOfDay(effectivePaymentDate) <= DateUtils.getStartOfDay(it.dueDate)
+            }
             val onTimeRate = if (allPaidInsts.isNotEmpty()) {
                 ((onTimeCount.toFloat() / allPaidInsts.size.toFloat()) * 100).toInt()
             } else 100

@@ -74,7 +74,8 @@ class HomeViewModelTest {
                 repository.toggleInstallmentPayment(
                     installmentId = "inst-123",
                     isPaid = true,
-                    paidTimestamp = any()
+                    paidTimestamp = any(),
+                    actualPaymentDate = any()
                 )
             }
 
@@ -97,7 +98,8 @@ class HomeViewModelTest {
             repository.toggleInstallmentPayment(
                 installmentId = "inst-123",
                 isPaid = false,
-                paidTimestamp = null
+                paidTimestamp = null,
+                actualPaymentDate = null
             )
         }
     }

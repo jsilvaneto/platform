@@ -3,6 +3,25 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.12.0] - 2026-10-07
+
+### 🧹 Remoção de `syncStatus` Residual, Resíduo Zero e Migração Room v15
+
+- **Expurgo de Resíduo Morto e Preparação para Fase 11**:
+  - Removido o campo legado `syncStatus: String = "PENDENTE"` de todos os modelos de domínio (`Category`, `ExpenseItem`, `CreditCard`, `CreditCardInvoice`) e entidades Room (`CategoryEntity`, `ExpenseItemEntity`, `CreditCardEntity`, `CreditCardInvoiceEntity`).
+  - O campo consistia em uma tentativa histórica e fragmentada de sincronização sem qualquer consumo na lógica do aplicativo, que gerava assimetrias em relação às entidades principais (`Bill`, `BillInstallment`, `Contact`, `FinancialAccount`, `Goal`, `Budget`).
+  - Adotada formalmente a decisão arquitetural de conceber a sincronização bidirecional na nuvem (Fase 11) do zero, com fila de mutações transacional (Outbox), controle de exclusão (Tombstones) e detecção de conflitos, em vez de flags estáticas pontuais.
+- **Migração Física no SQLite (`PlatformDatabase` v15)**:
+  - Incrementada a versão do banco de dados Room para `version = 15`.
+  - Implementada e registrada a migração atômica `MIGRATION_14_15` com recriação segura de tabelas (`categories`, `expense_items`, `credit_cards`, `credit_card_invoices`) sob `PRAGMA foreign_keys = OFF / ON`, garantindo compatibilidade universal com qualquer versão do SQLite nativo.
+- **Higiene e Compactação de Backups**:
+  - Arquivos de backup JSON locais protegidos por senha agora são gerados sem chaves `syncStatus` redundantes.
+- **Testes Automatizados & Governança**:
+  - Atualizado `PlatformDatabaseMigrationTest` validando a execução estrutural da migração `14 -> 15`.
+  - Registrada a decisão técnica no [ADR 027](.ai/DECISIONS/027-remocao-sync-status-residuo-zero-preparacao-fase-11.md).
+
+---
+
 ## [1.11.1] - 2026-10-07
 
 ### 🧹 Limpeza de Typealias Obsoleto (`AppDatabase`)

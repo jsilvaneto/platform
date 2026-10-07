@@ -12,8 +12,7 @@ data class CreditCardEntity(
     val totalLimitCents: Long,
     val closingDay: Int,
     val dueDay: Int,
-    val colorHex: String = "#3B82F6",
-    val syncStatus: String = "PENDENTE"
+    val colorHex: String = "#3B82F6"
 ) {
     fun toDomain(): CreditCard {
         return CreditCard(
@@ -22,8 +21,7 @@ data class CreditCardEntity(
             totalLimitCents = totalLimitCents,
             closingDay = closingDay,
             dueDay = dueDay,
-            colorHex = colorHex,
-            syncStatus = syncStatus
+            colorHex = colorHex
         )
     }
 
@@ -35,8 +33,7 @@ data class CreditCardEntity(
                 totalLimitCents = card.totalLimitCents,
                 closingDay = card.closingDay,
                 dueDay = card.dueDay,
-                colorHex = card.colorHex,
-                syncStatus = card.syncStatus
+                colorHex = card.colorHex
             )
         }
     }

@@ -5,6 +5,6 @@ data class Category(
     val name: String,
     val colorHex: String,
     val iconName: String = "folder",
-    val nature: ExpenseNature = ExpenseNature.NECESSARIO,
-    val syncStatus: String = "PENDENTE"
+    val nature: ExpenseNature = ExpenseNature.NECESSARIO
 )
+

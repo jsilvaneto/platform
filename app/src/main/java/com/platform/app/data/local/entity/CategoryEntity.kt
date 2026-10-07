@@ -12,8 +12,7 @@ data class CategoryEntity(
     val name: String,
     val colorHex: String,
     val iconName: String,
-    val nature: String = "NECESSARIO",
-    val syncStatus: String = "PENDENTE"
+    val nature: String = "NECESSARIO"
 ) {
     fun toDomain(): Category {
         return Category(
@@ -25,8 +24,7 @@ data class CategoryEntity(
                 ExpenseNature.valueOf(nature)
             } catch (e: Exception) {
                 ExpenseNature.NECESSARIO
-            },
-            syncStatus = syncStatus
+            }
         )
     }
 
@@ -37,8 +35,7 @@ data class CategoryEntity(
                 name = domain.name,
                 colorHex = domain.colorHex,
                 iconName = domain.iconName,
-                nature = domain.nature.name,
-                syncStatus = domain.syncStatus
+                nature = domain.nature.name
             )
         }
     }

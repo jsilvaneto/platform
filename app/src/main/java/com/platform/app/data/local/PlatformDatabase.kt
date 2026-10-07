@@ -44,7 +44,7 @@ import com.platform.app.data.local.entity.PaymentMethodEntity
         GoalContributionEntity::class,
         BudgetEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
@@ -210,6 +210,86 @@ abstract class PlatformDatabase : RoomDatabase() {
         val MIGRATION_13_14 = object : Migration(13, 14) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("DROP TABLE IF EXISTS transactions")
+            }
+        }
+
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("PRAGMA foreign_keys = OFF")
+
+                // 1. categories: remover syncStatus
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS categories_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        colorHex TEXT NOT NULL,
+                        iconName TEXT NOT NULL,
+                        nature TEXT NOT NULL DEFAULT 'NECESSARIO'
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO categories_new (id, name, colorHex, iconName, nature)
+                    SELECT id, name, colorHex, iconName, nature FROM categories
+                """.trimIndent())
+                db.execSQL("DROP TABLE categories")
+                db.execSQL("ALTER TABLE categories_new RENAME TO categories")
+
+                // 2. expense_items: remover syncStatus
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS expense_items_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        categoryId TEXT NOT NULL,
+                        FOREIGN KEY(categoryId) REFERENCES categories(id) ON DELETE RESTRICT
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO expense_items_new (id, name, categoryId)
+                    SELECT id, name, categoryId FROM expense_items
+                """.trimIndent())
+                db.execSQL("DROP TABLE expense_items")
+                db.execSQL("ALTER TABLE expense_items_new RENAME TO expense_items")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_expense_items_categoryId ON expense_items(categoryId)")
+
+                // 3. credit_cards: remover syncStatus
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS credit_cards_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        totalLimitCents INTEGER NOT NULL,
+                        closingDay INTEGER NOT NULL,
+                        dueDay INTEGER NOT NULL,
+                        colorHex TEXT NOT NULL DEFAULT '#3B82F6'
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO credit_cards_new (id, name, totalLimitCents, closingDay, dueDay, colorHex)
+                    SELECT id, name, totalLimitCents, closingDay, dueDay, colorHex FROM credit_cards
+                """.trimIndent())
+                db.execSQL("DROP TABLE credit_cards")
+                db.execSQL("ALTER TABLE credit_cards_new RENAME TO credit_cards")
+
+                // 4. credit_card_invoices: remover syncStatus
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS credit_card_invoices_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        creditCardId TEXT NOT NULL,
+                        referenceMonth TEXT NOT NULL,
+                        closingDate INTEGER NOT NULL,
+                        dueDate INTEGER NOT NULL,
+                        status TEXT NOT NULL DEFAULT 'ABERTA',
+                        FOREIGN KEY(creditCardId) REFERENCES credit_cards(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO credit_card_invoices_new (id, creditCardId, referenceMonth, closingDate, dueDate, status)
+                    SELECT id, creditCardId, referenceMonth, closingDate, dueDate, status FROM credit_card_invoices
+                """.trimIndent())
+                db.execSQL("DROP TABLE credit_card_invoices")
+                db.execSQL("ALTER TABLE credit_card_invoices_new RENAME TO credit_card_invoices")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_invoices_creditCardId ON credit_card_invoices(creditCardId)")
+
+                db.execSQL("PRAGMA foreign_keys = ON")
             }
         }
     }

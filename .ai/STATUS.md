@@ -155,6 +155,13 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Expurgo de Código Morto Residual**: Remoção de `AppDatabase.kt` (`typealias AppDatabase = PlatformDatabase`), eliminando código morto de compatibilidade sem uso no app.
 - [x] **Zero Efeito Colateral**: 100% dos testes unitários e compilação validados.
 
+### Remoção de `syncStatus` Residual, Resíduo Zero e Preparação Fase 11 (v1.12.0)
+- [x] **Política de Resíduo Zero & Eliminação de Código Zumbi**: Expurgo do campo `syncStatus` de `Category`, `ExpenseItem`, `CreditCard`, `CreditCardInvoice` e respectivas entidades Room.
+- [x] **Arquitetura Anti-Especulativa (YAGNI)**: Decisão consciente de conceber o protocolo da Fase 11 (Outbox, Tombstones, API + Postgres) do zero em vez de flags estáticas pontuais.
+- [x] **Migração de Schema Room v15 (`PlatformDatabase`)**: `MIGRATION_14_15` com recriação atômica de 4 tabelas sob `PRAGMA foreign_keys = OFF / ON` para retrocompatibilidade universal com qualquer SQLite nativo.
+- [x] **Suíte de Testes Automatizados**: Atualizado `PlatformDatabaseMigrationTest` validando a migração 14 -> 15. 100% dos testes aprovados.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 027](.ai/DECISIONS/027-remocao-sync-status-residuo-zero-preparacao-fase-11.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

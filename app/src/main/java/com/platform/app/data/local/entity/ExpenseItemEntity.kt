@@ -23,8 +23,7 @@ import java.util.UUID
 data class ExpenseItemEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val categoryId: String,
-    val syncStatus: String = "PENDENTE"
+    val categoryId: String
 ) {
     fun toDomain(
         categoryName: String = "",
@@ -39,8 +38,7 @@ data class ExpenseItemEntity(
             categoryName = categoryName,
             categoryColorHex = categoryColorHex,
             categoryIconName = categoryIconName,
-            nature = nature,
-            syncStatus = syncStatus
+            nature = nature
         )
     }
 
@@ -49,8 +47,7 @@ data class ExpenseItemEntity(
             return ExpenseItemEntity(
                 id = item.id,
                 name = item.name,
-                categoryId = item.categoryId,
-                syncStatus = item.syncStatus
+                categoryId = item.categoryId
             )
         }
     }

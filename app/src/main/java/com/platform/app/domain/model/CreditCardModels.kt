@@ -8,8 +8,7 @@ data class CreditCard(
     val totalLimitCents: Long,
     val closingDay: Int,
     val dueDay: Int,
-    val colorHex: String = "#3B82F6",
-    val syncStatus: String = "PENDENTE"
+    val colorHex: String = "#3B82F6"
 )
 
 enum class InvoiceStatus { ABERTA, FECHADA, PAGA }
@@ -21,8 +20,7 @@ data class CreditCardInvoice(
     val closingDate: Long,
     val dueDate: Long,
     val status: InvoiceStatus = InvoiceStatus.ABERTA,
-    val totalAmountCents: Long = 0L,
-    val syncStatus: String = "PENDENTE"
+    val totalAmountCents: Long = 0L
 )
 
 data class CreditCardWithInvoiceSummary(

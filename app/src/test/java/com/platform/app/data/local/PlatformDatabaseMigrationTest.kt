@@ -21,4 +21,28 @@ class PlatformDatabaseMigrationTest {
             db.execSQL("DROP TABLE IF EXISTS transactions")
         }
     }
+
+    @Test
+    fun `migration 14 to 15 should remove syncStatus from tables`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(14, PlatformDatabase.MIGRATION_14_15.startVersion)
+        assertEquals(15, PlatformDatabase.MIGRATION_14_15.endVersion)
+
+        PlatformDatabase.MIGRATION_14_15.migrate(db)
+
+        verify(atLeast = 1) {
+            db.execSQL("PRAGMA foreign_keys = OFF")
+            db.execSQL(match { it.contains("categories_new") })
+            db.execSQL(match { it.contains("DROP TABLE categories") })
+            db.execSQL(match { it.contains("ALTER TABLE categories_new RENAME TO categories") })
+            db.execSQL(match { it.contains("expense_items_new") })
+            db.execSQL(match { it.contains("DROP TABLE expense_items") })
+            db.execSQL(match { it.contains("credit_cards_new") })
+            db.execSQL(match { it.contains("DROP TABLE credit_cards") })
+            db.execSQL(match { it.contains("credit_card_invoices_new") })
+            db.execSQL(match { it.contains("DROP TABLE credit_card_invoices") })
+            db.execSQL("PRAGMA foreign_keys = ON")
+        }
+    }
 }

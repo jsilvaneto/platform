@@ -9,6 +9,6 @@ data class ExpenseItem(
     val categoryName: String = "",
     val categoryColorHex: String = "#64748B",
     val categoryIconName: String = "category",
-    val nature: ExpenseNature = ExpenseNature.NECESSARIO,
-    val syncStatus: String = "PENDENTE"
+    val nature: ExpenseNature = ExpenseNature.NECESSARIO
 )
+

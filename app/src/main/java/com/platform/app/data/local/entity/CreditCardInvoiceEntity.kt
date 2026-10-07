@@ -26,8 +26,7 @@ data class CreditCardInvoiceEntity(
     val referenceMonth: String, // "YYYY-MM"
     val closingDate: Long,
     val dueDate: Long,
-    val status: String = "ABERTA", // "ABERTA", "FECHADA", "PAGA"
-    val syncStatus: String = "PENDENTE"
+    val status: String = "ABERTA" // "ABERTA", "FECHADA", "PAGA"
 ) {
     fun toDomain(totalAmountCents: Long = 0L): CreditCardInvoice {
         return CreditCardInvoice(
@@ -37,8 +36,7 @@ data class CreditCardInvoiceEntity(
             closingDate = closingDate,
             dueDate = dueDate,
             status = try { InvoiceStatus.valueOf(status) } catch (e: Exception) { InvoiceStatus.ABERTA },
-            totalAmountCents = totalAmountCents,
-            syncStatus = syncStatus
+            totalAmountCents = totalAmountCents
         )
     }
 
@@ -50,8 +48,7 @@ data class CreditCardInvoiceEntity(
                 referenceMonth = invoice.referenceMonth,
                 closingDate = invoice.closingDate,
                 dueDate = invoice.dueDate,
-                status = invoice.status.name,
-                syncStatus = invoice.syncStatus
+                status = invoice.status.name
             )
         }
     }

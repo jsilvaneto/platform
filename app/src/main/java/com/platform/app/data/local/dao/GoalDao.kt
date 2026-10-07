@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -32,4 +33,22 @@ interface GoalDao {
 
     @Query("DELETE FROM goals")
     suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertContribution(contribution: GoalContributionEntity)
+
+    @Query("SELECT * FROM goal_contributions WHERE date >= :startDate AND date <= :endDate ORDER BY date DESC")
+    fun getContributionsForPeriod(startDate: Long, endDate: Long): Flow<List<GoalContributionEntity>>
+
+    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM goal_contributions WHERE date >= :startDate AND date <= :endDate")
+    fun getMonthlyContributionSum(startDate: Long, endDate: Long): Flow<Long>
+
+    @Query("SELECT * FROM goal_contributions")
+    suspend fun getAllContributions(): List<GoalContributionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllContributions(contributions: List<GoalContributionEntity>)
+
+    @Query("DELETE FROM goal_contributions")
+    suspend fun deleteAllContributions()
 }

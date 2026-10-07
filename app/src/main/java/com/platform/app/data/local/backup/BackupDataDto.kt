@@ -10,6 +10,7 @@ import com.platform.app.data.local.entity.CreditCardEntity
 import com.platform.app.data.local.entity.CreditCardInvoiceEntity
 import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
+import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
 import com.platform.app.data.local.entity.TransactionEntity
@@ -28,6 +29,7 @@ data class BackupDataDto(
     @SerializedName("installments") val installments: List<BillInstallmentEntity> = emptyList(),
     @SerializedName("budgets") val budgets: List<BudgetEntity> = emptyList(),
     @SerializedName("goals") val goals: List<GoalEntity> = emptyList(),
+    @SerializedName("goalContributions") val goalContributions: List<GoalContributionEntity> = emptyList(),
     @SerializedName("transactions") val transactions: List<TransactionEntity> = emptyList()
 ) {
     companion object {

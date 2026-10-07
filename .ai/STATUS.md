@@ -87,6 +87,15 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Cobertura expandida em `ToggleInstallmentPaymentUseCaseTest`, `GetFinancialDashboardUseCaseTest`, `BillsViewModelTest` e `HomeViewModelTest`.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 020](.ai/DECISIONS/020-data-real-pagamento-e-baixa-retroativa.md).
 
+### Rigidez Orçamentária Real 50-30-20 & Metas (Poupança) (v1.5.0)
+- [x] **Integração Holística de Metas Financeiras como Poupança (`GetFinancialDashboardUseCase`)**: Injeção de `GoalRepository` e cálculo reativo dos aportes do mês (`goalRepository.getMonthlyContribution`), somando como poupança ao lado da distribuição de `ExpenseNature`.
+- [x] **Base de Cálculo Orçamentária Unificada**: Orçamento total integrado $\text{Total Orçado} = \text{Total Contas} + \text{Aportes em Metas}$, com percentuais somando exatamente 100%.
+- [x] **Motor de Diagnóstico Multifaixas (`BudgetRigidityCalculator`)**: 8 estados de rigidez (`VAZIO`, `SOBRECARREGADO`, `ENGESSADO`, `ESTILO_DE_VIDA_ELEVADO`, `SEM_POUPANCA`, `NAO_CLASSIFICADO`, `EQUILIBRADO`, `EXCELENTE`), eliminando falsos positivos de "Excelente" quando Deseja e Poupança estiverem zerados.
+- [x] **Histórico de Aportes no Room & Migração v11 (`PlatformDatabase`)**: Tabela `goal_contributions` com migração `MIGRATION_10_11`, chave estrangeira em cascata e integração nos backups SAF JSON (`BackupDataDto` e `BackupRepositoryImpl`).
+- [x] **Card Visual Aprimorado (`NatureDistributionCard`)**: Diagnóstico semafórico contextual com títulos em destaque, barra dedicada para "Poupança (Metas)" em esmeralda (`#10B981`) e rodapé com total orçado.
+- [x] **Suíte de Testes Automatizados**: Novos testes em `GetFinancialDashboardUseCaseTest` e `BudgetRigidityCalculatorTest` cobrindo 0% Deseja/Poupança, 50-30-20 real e todas as fronteiras de classificação com 100% de sucesso.
+- [x] **Decisão Arquitetural Documentada**: Criada [ADR 021](.ai/DECISIONS/021-rigidez-orcamentaria-50-30-20-com-metas.md).
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

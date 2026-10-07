@@ -56,6 +56,7 @@ class BackupRepositoryImpl @Inject constructor(
                 installments = billInstallmentDao.getAllInstallmentsList(),
                 budgets = budgetDao.getAllList(),
                 goals = goalDao.getAllList(),
+                goalContributions = goalDao.getAllContributions(),
                 transactions = transactionDao.getAllList()
             )
             gson.toJson(dto)
@@ -81,6 +82,7 @@ class BackupRepositoryImpl @Inject constructor(
                 creditCardDao.deleteAllCards()
                 categoryDao.deleteAll()
                 budgetDao.deleteAll()
+                goalDao.deleteAllContributions()
                 goalDao.deleteAll()
                 contactDao.deleteAll()
                 financialAccountDao.deleteAll()
@@ -119,6 +121,9 @@ class BackupRepositoryImpl @Inject constructor(
                 }
                 if (payload.goals.isNotEmpty()) {
                     goalDao.insertAll(payload.goals)
+                }
+                if (payload.goalContributions.isNotEmpty()) {
+                    goalDao.insertAllContributions(payload.goalContributions)
                 }
                 if (payload.transactions.isNotEmpty()) {
                     transactionDao.insertAll(payload.transactions)

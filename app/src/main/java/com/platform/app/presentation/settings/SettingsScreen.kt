@@ -638,33 +638,33 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
+                    emoji = "🎯",
+                    title = "Rigidez Orçamentária Real 50-30-20",
+                    description = "Avaliação holística do orçamento integrando as 4 naturezas de gastos (Obrigatório, Necessário, Deseja, Nenhum) com aportes mensais em Metas."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🏦",
+                    title = "Integração de Metas como Poupança",
+                    description = "Seus aportes em metas agora compõem o pilar de Poupança (20%) nas estatísticas, viabilizando o cálculo completo da regra 50-30-20."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🏷️",
+                    title = "Diagnóstico Orçamentário Preciso",
+                    description = "Novos selos e alertas inteligentes por faixa, eliminando falsos positivos de 'Excelente' quando lazer e poupança estiverem zerados."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "💳",
+                    title = "Data Real de Pagamento e Baixa Retroativa",
+                    description = "Registre a data efetiva de pagamento na quitação de contas e preserve sua taxa de pontualidade real sem falsos atrasos."
+                )
+
+                ReleaseNoteItem(
                     emoji = "✏️",
                     title = "Edição Completa de Itens de Despesa",
-                    description = "Agora você pode editar qualquer item de despesa existente, alterando seu nome ou categoria vinculada com atualização instantânea da natureza."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "📋",
-                    title = "Detalhes do Item com BottomSheet",
-                    description = "Toque em qualquer item na listagem para visualizar seus vínculos, natureza financeira e acessar as ações de edição e exclusão segura."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "⚡",
-                    title = "Atalhos em Nova Despesa",
-                    description = "Acesso direto para gerenciar e editar itens a partir do seletor e chip de natureza no formulário de Nova Despesa."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🎬",
-                    title = "Transições Cinemáticas",
-                    description = "Navegação suave e fluida entre todas as telas principais do aplicativo com animações integradas."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "↩️",
-                    title = "Desfazer Pagamento Instantâneo",
-                    description = "Reverta baixas de contas e faturas acidentais com um único toque no Snackbar de confirmação."
+                    description = "Edite o nome ou a categoria de qualquer item de despesa existente com herança e sincronização instantânea de natureza."
                 )
             }
         },

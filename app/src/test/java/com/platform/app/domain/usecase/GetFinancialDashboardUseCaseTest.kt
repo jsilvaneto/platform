@@ -3,24 +3,32 @@ package com.platform.app.domain.usecase
 import app.cash.turbine.test
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.BudgetRigidityStatus
+import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.repository.GoalRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 
 class GetFinancialDashboardUseCaseTest {
 
     private lateinit var repository: FinancialRepository
+    private lateinit var goalRepository: GoalRepository
     private lateinit var useCase: GetFinancialDashboardUseCase
 
     @Before
     fun setUp() {
         repository = mockk(relaxed = true)
-        useCase = GetFinancialDashboardUseCase(repository)
+        goalRepository = mockk(relaxed = true)
+        every { goalRepository.getMonthlyContribution(any(), any()) } returns flowOf(0L)
+        useCase = GetFinancialDashboardUseCase(repository, goalRepository)
     }
 
     @Test
@@ -266,6 +274,164 @@ class GetFinancialDashboardUseCaseTest {
             val metrics = awaitItem()
             // Fallback para paidAt > dueDate -> 0%
             assertEquals(0, metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should not classify as Excelente when Deseja and Poupanca are zero percent`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+
+        // Cenário: 50% Obrigatório, 50% Necessário, 0% Deseja, 0% Poupança
+        // Anteriormente, Obrigatório <= 55% e Deseja <= 30% classificava erroneamente como "Excelente"
+        val mandatoryInst = BillInstallment(
+            id = "inst-obrig",
+            billId = "bill-obrig",
+            billTitle = "Aluguel",
+            nature = ExpenseNature.OBRIGATORIO,
+            amountCents = 50000L, // R$ 500,00 (50%)
+            dueDate = currentMonthEpoch + 1000L
+        )
+
+        val necessaryInst = BillInstallment(
+            id = "inst-neces",
+            billId = "bill-neces",
+            billTitle = "Supermercado Básico",
+            nature = ExpenseNature.NECESSARIO,
+            amountCents = 50000L, // R$ 500,00 (50%)
+            dueDate = currentMonthEpoch + 2000L
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(mandatoryInst, necessaryInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(mandatoryInst, necessaryInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+        every { goalRepository.getMonthlyContribution(any(), any()) } returns flowOf(0L) // 0% Poupança
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+
+            assertNotNull(metrics.budgetRigidity)
+            // Valida que NÃO classifica como Excelente
+            assertNotEquals(BudgetRigidityStatus.EXCELENTE, metrics.budgetRigidity?.status)
+            assertEquals(BudgetRigidityStatus.SOBRECARREGADO, metrics.budgetRigidity?.status)
+            assertEquals("Atenção: Sobrecarga Essencial", metrics.budgetRigidity?.badgeLabel)
+            assertEquals(0L, metrics.savingsCents)
+            assertEquals(0f, metrics.savingsPercentage, 0.01f)
+            assertEquals(100000L, metrics.totalDueMonthCents)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should classify as Excelente when real 50-30-20 distribution is achieved with Goal savings`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+
+        // Cenário 50-30-20 real:
+        // Essenciais = 50% (35% Obrigatório + 15% Necessário)
+        // Desejos = 30%
+        // Poupança (Goal) = 20%
+        // Total orçado = R$ 1.000,00 (100000L)
+        val mandatoryInst = BillInstallment(
+            id = "inst-obrig",
+            billId = "bill-obrig",
+            billTitle = "Aluguel",
+            nature = ExpenseNature.OBRIGATORIO,
+            amountCents = 35000L, // R$ 350,00 (35%)
+            dueDate = currentMonthEpoch + 1000L
+        )
+
+        val necessaryInst = BillInstallment(
+            id = "inst-neces",
+            billId = "bill-neces",
+            billTitle = "Mercado",
+            nature = ExpenseNature.NECESSARIO,
+            amountCents = 15000L, // R$ 150,00 (15%)
+            dueDate = currentMonthEpoch + 2000L
+        )
+
+        val wantsInst = BillInstallment(
+            id = "inst-wants",
+            billId = "bill-wants",
+            billTitle = "Jantar Fora",
+            nature = ExpenseNature.DESEJA,
+            amountCents = 30000L, // R$ 300,00 (30%)
+            dueDate = currentMonthEpoch + 3000L
+        )
+
+        val monthInstallments = listOf(mandatoryInst, necessaryInst, wantsInst)
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(monthInstallments)
+        every { repository.getAllInstallments() } returns flowOf(monthInstallments)
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+        every { goalRepository.getMonthlyContribution(any(), any()) } returns flowOf(20000L) // R$ 200,00 (20%) em metas
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+
+            assertNotNull(metrics.budgetRigidity)
+            assertEquals(BudgetRigidityStatus.EXCELENTE, metrics.budgetRigidity?.status)
+            assertEquals("Excelente: Padrão 50-30-20 Equilibrado", metrics.budgetRigidity?.badgeLabel)
+            assertEquals(20000L, metrics.savingsCents)
+            assertEquals(20f, metrics.savingsPercentage, 0.01f)
+
+            // Percentuais das naturezas relativas ao orçamento total (R$ 1000,00)
+            val wants = metrics.natureDistribution.first { it.nature == ExpenseNature.DESEJA }
+            assertEquals(30f, wants.percentage, 0.01f)
+            val mandatory = metrics.natureDistribution.first { it.nature == ExpenseNature.OBRIGATORIO }
+            assertEquals(35f, mandatory.percentage, 0.01f)
+            val necessary = metrics.natureDistribution.first { it.nature == ExpenseNature.NECESSARIO }
+            assertEquals(15f, necessary.percentage, 0.01f)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should classify as Sem Poupanca when wants are present but savings are zero`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+
+        val mandatoryInst = BillInstallment(
+            id = "inst-obrig",
+            billId = "bill-obrig",
+            billTitle = "Aluguel",
+            nature = ExpenseNature.OBRIGATORIO,
+            amountCents = 50000L, // 50%
+            dueDate = currentMonthEpoch + 1000L
+        )
+        val necessaryInst = BillInstallment(
+            id = "inst-neces",
+            billId = "bill-neces",
+            billTitle = "Supermercado",
+            nature = ExpenseNature.NECESSARIO,
+            amountCents = 20000L, // 20% (essenciais 70%)
+            dueDate = currentMonthEpoch + 1500L
+        )
+        val wantsInst = BillInstallment(
+            id = "inst-wants",
+            billId = "bill-wants",
+            billTitle = "Lazer",
+            nature = ExpenseNature.DESEJA,
+            amountCents = 30000L, // 30%
+            dueDate = currentMonthEpoch + 2000L
+        )
+
+        val monthInsts = listOf(mandatoryInst, necessaryInst, wantsInst)
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(monthInsts)
+        every { repository.getAllInstallments() } returns flowOf(monthInsts)
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+        every { goalRepository.getMonthlyContribution(any(), any()) } returns flowOf(0L) // 0%
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+
+            assertEquals(BudgetRigidityStatus.SEM_POUPANCA, metrics.budgetRigidity?.status)
+            assertEquals("Atenção: Poupança Insuficiente", metrics.budgetRigidity?.badgeLabel)
             cancelAndIgnoreRemainingEvents()
         }
     }

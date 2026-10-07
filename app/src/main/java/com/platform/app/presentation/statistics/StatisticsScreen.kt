@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +65,9 @@ import androidx.core.graphics.toColorInt
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.AccountSpend
+import com.platform.app.domain.model.BudgetRigidityAnalysis
+import com.platform.app.domain.model.BudgetRigidityCalculator
+import com.platform.app.domain.model.BudgetRigidityStatus
 import com.platform.app.domain.model.CategorySpend
 import com.platform.app.domain.model.CompletingInstallmentSummary
 import com.platform.app.domain.model.ContactSpend
@@ -218,6 +222,9 @@ fun StatisticsScreen(
                                 item {
                                     NatureDistributionCard(
                                         natureDistribution = metrics.natureDistribution,
+                                        savingsCents = metrics.savingsCents,
+                                        savingsPercentage = metrics.savingsPercentage,
+                                        budgetRigidity = metrics.budgetRigidity,
                                         totalDueCents = metrics.totalDueMonthCents,
                                         isPrivate = uiState.isPrivacyMode
                                     )
@@ -838,16 +845,25 @@ fun PresentHeroCard(
 @Composable
 fun NatureDistributionCard(
     natureDistribution: List<NatureSpend>,
+    savingsCents: Long = 0L,
+    savingsPercentage: Float = 0f,
+    budgetRigidity: BudgetRigidityAnalysis? = null,
     totalDueCents: Long,
     isPrivate: Boolean
 ) {
-    val mandatorySpend = natureDistribution.firstOrNull { it.nature == ExpenseNature.OBRIGATORIO }
-    val mandatoryPct = mandatorySpend?.percentage ?: 0f
-    val wantsSpend = natureDistribution.firstOrNull { it.nature == ExpenseNature.DESEJA }
-    val wantsPct = wantsSpend?.percentage ?: 0f
+    val analysis = budgetRigidity ?: BudgetRigidityCalculator.calculate(
+        mandatoryAmountCents = natureDistribution.firstOrNull { it.nature == ExpenseNature.OBRIGATORIO }?.amountCents ?: 0L,
+        necessaryAmountCents = natureDistribution.firstOrNull { it.nature == ExpenseNature.NECESSARIO }?.amountCents ?: 0L,
+        wantsAmountCents = natureDistribution.firstOrNull { it.nature == ExpenseNature.DESEJA }?.amountCents ?: 0L,
+        noneAmountCents = natureDistribution.firstOrNull { it.nature == ExpenseNature.NENHUM }?.amountCents ?: 0L,
+        savingsAmountCents = savingsCents
+    )
 
-    val isRigidBudget = mandatoryPct > 55f
-    val isHighLifestyle = wantsPct > 30f
+    val isAlert = analysis.status == BudgetRigidityStatus.ENGESSADO ||
+            analysis.status == BudgetRigidityStatus.SOBRECARREGADO ||
+            analysis.status == BudgetRigidityStatus.SEM_POUPANCA
+    val isLifestyle = analysis.status == BudgetRigidityStatus.ESTILO_DE_VIDA_ELEVADO
+    val isExcellent = analysis.status == BudgetRigidityStatus.EXCELENTE
 
     PlatformCard {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -858,20 +874,22 @@ fun NatureDistributionCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Classificação por essencialidade e grau de flexibilidade dos custos",
+                text = "Avaliação de despesas essenciais, estilo de vida e metas (poupança)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Diagnóstico de Rigidez
+            // Diagnóstico de Rigidez Inteligente
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 color = when {
-                    isRigidBudget -> WarningAmberContainer.copy(alpha = 0.4f)
-                    isHighLifestyle -> InfoCyanContainer.copy(alpha = 0.4f)
-                    else -> SuccessGreenContainer.copy(alpha = 0.4f)
+                    isAlert -> WarningAmberContainer.copy(alpha = 0.4f)
+                    isLifestyle -> InfoCyanContainer.copy(alpha = 0.4f)
+                    isExcellent -> SuccessGreenContainer.copy(alpha = 0.4f)
+                    analysis.status == BudgetRigidityStatus.EQUILIBRADO -> SuccessGreenContainer.copy(alpha = 0.35f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -880,26 +898,41 @@ fun NatureDistributionCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (isRigidBudget) Icons.Default.Warning else Icons.Default.Lightbulb,
+                        imageVector = when {
+                            isAlert -> Icons.Default.Warning
+                            isLifestyle -> Icons.Default.Info
+                            isExcellent -> Icons.Default.CheckCircle
+                            analysis.status == BudgetRigidityStatus.EQUILIBRADO -> Icons.Default.Lightbulb
+                            else -> Icons.Default.Info
+                        },
                         contentDescription = null,
-                        tint = if (isRigidBudget) WarningAmber else SuccessGreen,
+                        tint = when {
+                            isAlert -> WarningAmber
+                            isLifestyle -> InfoCyan
+                            isExcellent || analysis.status == BudgetRigidityStatus.EQUILIBRADO -> SuccessGreen
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when {
-                            isRigidBudget -> "Atenção: Orçamento engessado (${String.format(Locale.getDefault(), "%.0f", mandatoryPct)}% obrigatório). Margem de ajuste estreita."
-                            isHighLifestyle -> "Alerta: Gastos com estilo de vida/desejos estão elevados (${String.format(Locale.getDefault(), "%.0f", wantsPct)}%)."
-                            else -> "Excelente: Distribuição equilibrada com margem de segurança orçamentária."
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Column {
+                        Text(
+                            text = analysis.badgeLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = analysis.description,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 natureDistribution.forEach { item ->
@@ -941,6 +974,71 @@ fun NatureDistributionCard(
                             height = 6.dp,
                             progressColor = color,
                             trackColor = color.copy(alpha = 0.15f)
+                        )
+                    }
+                }
+
+                // Perna de Poupança (Metas Financeiras)
+                val savingsColor = Color(0xFF10B981)
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(savingsColor, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Poupança (Metas)",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Text(
+                            text = "${formatValueOrPrivate(savingsCents, isPrivate)} (${String.format(Locale.getDefault(), "%.1f", savingsPercentage)}%)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    PlatformProgressBar(
+                        progress = (savingsPercentage / 100f).coerceIn(0f, 1f),
+                        height = 6.dp,
+                        progressColor = savingsColor,
+                        trackColor = savingsColor.copy(alpha = 0.15f)
+                    )
+                }
+
+                val displayTotalCents = if (analysis.totalBudgetCents > 0L) analysis.totalBudgetCents else totalDueCents
+                if (displayTotalCents > 0L) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Total Orçado (Despesas + Aportes)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = formatValueOrPrivate(displayTotalCents, isPrivate),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

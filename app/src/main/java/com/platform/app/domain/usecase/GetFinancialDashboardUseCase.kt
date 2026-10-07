@@ -4,17 +4,21 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.AccountSpend
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillType
+import com.platform.app.domain.model.BudgetRigidityCalculator
 import com.platform.app.domain.model.CategorySpend
+import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
 import com.platform.app.domain.model.NatureSpend
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.repository.GoalRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
 class GetFinancialDashboardUseCase @Inject constructor(
-    private val repository: FinancialRepository
+    private val repository: FinancialRepository,
+    private val goalRepository: GoalRepository
 ) {
     operator fun invoke(monthMillis: Long): Flow<FinancialDashboardMetrics> {
         val startOfMonth = DateUtils.getStartOfMonth(monthMillis)
@@ -25,8 +29,9 @@ class GetFinancialDashboardUseCase @Inject constructor(
             repository.getInstallmentsForPeriod(startOfMonth, endOfMonth),
             repository.getAllInstallments(),
             repository.getBills(),
-            repository.getFinancialAccounts()
-        ) { installments, allInstallments, bills, accounts ->
+            repository.getFinancialAccounts(),
+            goalRepository.getMonthlyContribution(startOfMonth, endOfMonth)
+        ) { installments, allInstallments, bills, accounts, monthlySavingsCents ->
             var totalDue = 0L
             var totalPaid = 0L
             var totalPending = 0L
@@ -63,12 +68,31 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 )
             }.sortedByDescending { it.amountCents }
 
-            val natureMap = installments.groupBy { it.nature }
+            val savingsCents = monthlySavingsCents.coerceAtLeast(0L)
+            val totalBudget = totalDue + savingsCents
+
+            val activeInstallmentsForMonth = installments.filter { !it.isPaused }
+            val natureMap = activeInstallmentsForMonth.groupBy { it.nature }
             val natureDistribution = natureMap.map { (nature, instList) ->
                 val amount = instList.sumOf { it.amountCents }
-                val percentage = if (totalDue > 0) (amount.toFloat() / totalDue.toFloat()) * 100f else 0f
+                val percentage = if (totalBudget > 0) (amount.toFloat() / totalBudget.toFloat()) * 100f else 0f
                 NatureSpend(nature = nature, amountCents = amount, percentage = percentage)
             }.sortedByDescending { it.amountCents }
+
+            val savingsPercentage = if (totalBudget > 0) (savingsCents.toFloat() / totalBudget.toFloat()) * 100f else 0f
+
+            val mandatoryAmount = natureDistribution.firstOrNull { it.nature == ExpenseNature.OBRIGATORIO }?.amountCents ?: 0L
+            val necessaryAmount = natureDistribution.firstOrNull { it.nature == ExpenseNature.NECESSARIO }?.amountCents ?: 0L
+            val wantsAmount = natureDistribution.firstOrNull { it.nature == ExpenseNature.DESEJA }?.amountCents ?: 0L
+            val noneAmount = natureDistribution.firstOrNull { it.nature == ExpenseNature.NENHUM }?.amountCents ?: 0L
+
+            val budgetRigidity = BudgetRigidityCalculator.calculate(
+                mandatoryAmountCents = mandatoryAmount,
+                necessaryAmountCents = necessaryAmount,
+                wantsAmountCents = wantsAmount,
+                noneAmountCents = noneAmount,
+                savingsAmountCents = savingsCents
+            )
 
             val upcoming = installments
                 .filter { !it.isPaid }
@@ -257,6 +281,9 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 upcomingWeekInstallments = upcomingWeek,
                 categoryDistribution = categoryDistribution,
                 natureDistribution = natureDistribution,
+                savingsCents = savingsCents,
+                savingsPercentage = savingsPercentage,
+                budgetRigidity = budgetRigidity,
                 futureMonthsProjections = futureProjections,
                 totalCommittedFutureCents = totalCommittedFuture,
                 futureInstallmentsCount = futureInstallmentsCount,

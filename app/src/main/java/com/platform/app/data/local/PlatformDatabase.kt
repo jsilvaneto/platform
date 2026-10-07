@@ -24,6 +24,7 @@ import com.platform.app.data.local.entity.CreditCardEntity
 import com.platform.app.data.local.entity.CreditCardInvoiceEntity
 import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
+import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
 import com.platform.app.data.local.entity.TransactionEntity
@@ -40,10 +41,11 @@ import com.platform.app.data.local.entity.TransactionEntity
         BillEntity::class,
         BillInstallmentEntity::class,
         GoalEntity::class,
+        GoalContributionEntity::class,
         BudgetEntity::class,
         TransactionEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class PlatformDatabase : RoomDatabase() {
@@ -167,6 +169,26 @@ abstract class PlatformDatabase : RoomDatabase() {
         val MIGRATION_9_10 = object : Migration(9, 10) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE bill_installments ADD COLUMN actualPaymentDate INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS goal_contributions (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        goalId TEXT NOT NULL,
+                        amountCents INTEGER NOT NULL,
+                        date INTEGER NOT NULL,
+                        FOREIGN KEY(goalId) REFERENCES goals(id) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_goal_contributions_goalId ON goal_contributions(goalId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_goal_contributions_date ON goal_contributions(date)")
+                db.execSQL("""
+                    INSERT INTO goal_contributions (id, goalId, amountCents, date)
+                    SELECT id || '_init', id, currentAmountCents, createdAt FROM goals WHERE currentAmountCents > 0
+                """.trimIndent())
             }
         }
     }

@@ -32,6 +32,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -290,7 +291,7 @@ fun AdjustInstallmentDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Cancelar")
+                Text(AppStrings.Actions.CANCEL)
             }
         }
     )
@@ -406,7 +407,7 @@ fun AdjustInstallmentDialog(
                         deleteOptionSelected = null
                     }
                 ) {
-                    Text("Voltar")
+                    Text(AppStrings.Actions.BACK)
                 }
             }
         )

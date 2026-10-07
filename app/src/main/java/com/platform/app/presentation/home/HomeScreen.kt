@@ -57,6 +57,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -412,7 +413,7 @@ fun GlobalOverdueAlertBanner(
                             color = UrgentRed
                         )
                         Text(
-                            text = "Total vencido: ${formatValueOrPrivate(totalOverdueCents, isPrivate)}",
+                            text = "${AppStrings.Home.TOTAL_OVERDUE} ${formatValueOrPrivate(totalOverdueCents, isPrivate)}",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -1576,7 +1577,7 @@ fun ForecastImpactCard(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Tudo quitado",
+                                text = AppStrings.Status.ALL_PAID,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = SuccessGreen
@@ -1585,7 +1586,7 @@ fun ForecastImpactCard(
                     }
 
                     Text(
-                        text = "100% quitado",
+                        text = AppStrings.Status.ALL_PAID_PERCENT,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = SuccessGreen
@@ -1595,7 +1596,7 @@ fun ForecastImpactCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Restante a Pagar no Mês",
+                    text = AppStrings.Home.FORECAST_REMAINING,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1617,7 +1618,7 @@ fun ForecastImpactCard(
                 ) {
                     Column {
                         Text(
-                            text = "Restante a Pagar no Mês",
+                            text = AppStrings.Home.FORECAST_REMAINING,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2027,7 +2028,7 @@ fun PayableItemCard(
                                         modifier = Modifier.size(10.dp)
                                     )
                                     Text(
-                                        text = "Pago",
+                                        text = AppStrings.Status.PAID,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = SuccessGreen
@@ -2117,7 +2118,7 @@ fun PayableItemCard(
                         color = SuccessGreen.copy(alpha = 0.12f)
                     ) {
                         Text(
-                            text = "Pago",
+                            text = AppStrings.Status.PAID,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = SuccessGreen,

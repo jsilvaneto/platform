@@ -55,6 +55,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -771,7 +772,7 @@ fun GoalDetailBottomSheet(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
@@ -779,7 +780,7 @@ fun GoalDetailBottomSheet(
                     onClick = { showDeleteConfirmDialog = false },
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -861,7 +862,7 @@ fun AddEditGoalDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }
@@ -911,7 +912,7 @@ fun AddContributionDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }

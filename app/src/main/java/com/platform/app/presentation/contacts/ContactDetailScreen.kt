@@ -40,6 +40,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAvatar
 import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.runtime.Composable
@@ -255,7 +256,7 @@ fun ContactDetailScreen(
                 onDismissRequest = { showDeleteConfirmDialog = false },
                 title = {
                     Text(
-                        text = "Excluir Contato",
+                        text = AppStrings.Dialogs.DELETE_CONTACT_TITLE,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -278,7 +279,7 @@ fun ContactDetailScreen(
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                        Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                     }
                 },
                 dismissButton = {
@@ -286,7 +287,7 @@ fun ContactDetailScreen(
                         onClick = { showDeleteConfirmDialog = false },
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text("Cancelar")
+                        Text(AppStrings.Actions.CANCEL)
                     }
                 }
             )
@@ -590,7 +591,7 @@ fun PlannedInstallmentsTab(
                         IconButton(onClick = { onTogglePayment(inst) }) {
                             Icon(
                                 imageVector = if (inst.isPaid) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
-                                contentDescription = if (inst.isPaid) "Pago" else "Pendente",
+                                contentDescription = if (inst.isPaid) AppStrings.Status.PAID else AppStrings.Status.PENDING,
                                 tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.outline
                             )
                         }
@@ -604,7 +605,7 @@ fun PlannedInstallmentsTab(
                             )
 
                             val statusLabel = when {
-                                inst.isPaid -> "Pago"
+                                inst.isPaid -> AppStrings.Status.PAID
                                 isOverdue -> "Venceu ${DateUtils.formatDate(inst.dueDate)}"
                                 isToday -> "Vence hoje"
                                 else -> "Vence ${DateUtils.formatDate(inst.dueDate)}"

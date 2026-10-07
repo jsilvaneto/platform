@@ -75,6 +75,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.TopAppBar
@@ -604,7 +605,7 @@ fun SettingsScreen(
                         onClick = { showRestoreConfirmDialog = false },
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Cancelar")
+                        Text(AppStrings.Actions.CANCEL)
                     }
                 }
             )
@@ -1362,7 +1363,7 @@ fun CreateBackupPasswordDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Cancelar")
+                Text(AppStrings.Actions.CANCEL)
             }
         }
     )
@@ -1442,7 +1443,7 @@ fun RestorePasswordDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Cancelar")
+                Text(AppStrings.Actions.CANCEL)
             }
         }
     )

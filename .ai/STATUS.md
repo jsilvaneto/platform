@@ -138,6 +138,12 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Suíte de Testes Automatizados**: Novos testes em `BackupCryptoHelperTest` e atualizações em `BackupRepositoryImplTest` e `SettingsViewModelTest`.
 - [x] **Decisão Arquitetural Documentada**: Criada [ADR 025](.ai/DECISIONS/025-criptografia-aes-gcm-backups-protegidos-por-senha.md).
 
+### Centralização de Strings de Interface (UI) e Fonte Única da Verdade (v1.10.0)
+- [x] **Objeto Estruturado `AppStrings` (`presentation/common/AppStrings.kt`)**: Fonte única da verdade para constantes textuais de interface com namespaces organizados (`Status`, `Nature`, `AccountType`, `ContactType`, `BillType`, `Actions`, `Home`, `Dialogs`).
+- [x] **Espelhamento em Recursos Android (`res/values/strings.xml`)**: Todas as chaves equivalentes adicionadas aos recursos nativos XML do projeto.
+- [x] **Substituição 1:1 sem Alterações de Texto**: Mapeamento e substituição de strings hardcoded em `HomeScreen`, `BillsScreen`, `NewExpenseScreen`, `EditInstallmentBottomSheet`, `ConfirmPaymentDialog`, `ContactsScreen`, `ContactDetailScreen`, `ManagementScreen`, `StatisticsScreen`, `CreditCardsScreen`, `ExpenseItemsScreen`, `GoalsScreen`, `BudgetsScreen`, `RecurringInstallmentsScreen`, `AdjustInstallmentDialog` e `SettingsScreen`.
+- [x] **Suíte de Testes Automatizados**: Criado `AppStringsTest` garantindo integridade das constantes de interface e prevenindo regressões. 100% dos testes unitários passando.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

@@ -73,6 +73,7 @@ import com.platform.app.domain.model.CreditCardCalculator
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.CreditCardWithInvoiceSummary
 import com.platform.app.domain.model.InvoiceStatus
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformCreditCardView
@@ -415,7 +416,7 @@ fun CreditCardsScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { onAction(CreditCardsUiAction.CancelDeleteCard) }) {
-                        Text("Cancelar")
+                        Text(AppStrings.Actions.CANCEL)
                     }
                 }
             )
@@ -508,7 +509,7 @@ fun CreditCardItemCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Excluir",
+                            contentDescription = AppStrings.Actions.DELETE,
                             tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -568,9 +569,9 @@ fun InvoiceItemCard(
     onPay: () -> Unit
 ) {
     val statusLabel = when (invoice.status) {
-        InvoiceStatus.ABERTA -> "Aberta"
-        InvoiceStatus.FECHADA -> "Fechada"
-        InvoiceStatus.PAGA -> "Paga"
+        InvoiceStatus.ABERTA -> AppStrings.Status.OPEN
+        InvoiceStatus.FECHADA -> AppStrings.Status.CLOSED
+        InvoiceStatus.PAGA -> AppStrings.Status.PAID_FEMALE
     }
     val chipType = when (invoice.status) {
         InvoiceStatus.ABERTA -> StatusChipType.INFO
@@ -815,7 +816,7 @@ fun CardFormBottomSheet(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
                 Spacer(modifier = Modifier.width(Dimens.spacingSmall))
                 Button(
@@ -914,9 +915,9 @@ fun InvoiceDetailsBottomSheet(
                     }
 
                     val statusLabel = when (invoice.status) {
-                        InvoiceStatus.ABERTA -> "Aberta"
-                        InvoiceStatus.FECHADA -> "Fechada"
-                        InvoiceStatus.PAGA -> "Paga"
+                        InvoiceStatus.ABERTA -> AppStrings.Status.OPEN
+                        InvoiceStatus.FECHADA -> AppStrings.Status.CLOSED
+                        InvoiceStatus.PAGA -> AppStrings.Status.PAID_FEMALE
                     }
                     val chipType = when (invoice.status) {
                         InvoiceStatus.ABERTA -> StatusChipType.INFO

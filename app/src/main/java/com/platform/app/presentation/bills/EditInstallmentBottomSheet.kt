@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -555,11 +556,11 @@ fun EditInstallmentBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Excluir",
+                        contentDescription = AppStrings.Actions.DELETE,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Excluir")
+                    Text(AppStrings.Actions.DELETE)
                 }
 
                 Button(
@@ -583,7 +584,7 @@ fun EditInstallmentBottomSheet(
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Salvar Alterações", fontWeight = FontWeight.Bold)
+                    Text(AppStrings.Actions.SAVE_CHANGES, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -594,7 +595,7 @@ fun EditInstallmentBottomSheet(
             onDismissRequest = { showDeleteConfirmDialog = false },
             title = {
                 Text(
-                    text = "Excluir Registro",
+                    text = AppStrings.Dialogs.DELETE_REGISTRATION_TITLE,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -613,12 +614,12 @@ fun EditInstallmentBottomSheet(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Excluir")
+                    Text(AppStrings.Actions.DELETE)
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )

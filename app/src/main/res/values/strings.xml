@@ -1,3 +1,84 @@
 <resources>
     <string name="app_name">Platform</string>
+
+    <!-- Status -->
+    <string name="status_pending">Pendente</string>
+    <string name="status_paid">Pago</string>
+    <string name="status_paid_female">Paga</string>
+    <string name="status_already_paid">Já Paga</string>
+    <string name="status_to_pay">A Pagar</string>
+    <string name="status_overdue">Vencida</string>
+    <string name="status_overdue_male">Vencido</string>
+    <string name="status_overdue_past">Atrasado</string>
+    <string name="status_settled">Liquidado</string>
+    <string name="status_all_paid">Tudo quitado</string>
+    <string name="status_all_paid_percent">100% quitado</string>
+    <string name="status_open">Aberta</string>
+    <string name="status_closed">Fechada</string>
+    <string name="status_paused">Pausada</string>
+
+    <!-- Naturezas de Despesa -->
+    <string name="nature_mandatory">Obrigatório</string>
+    <string name="nature_necessary">Necessário</string>
+    <string name="nature_wants">Deseja</string>
+    <string name="nature_none">Nenhum</string>
+    <string name="nature_savings">Poupança</string>
+    <string name="nature_label">Natureza do Gasto</string>
+    <string name="nature_label_colon">Natureza do Gasto:</string>
+    <string name="nature_desc_mandatory">Gastos indispensáveis para sobrevivência ou compromissos jurídicos inegociáveis.</string>
+    <string name="nature_desc_necessary">Gastos essenciais para a rotina diária, saúde, trabalho e conforto básico.</string>
+    <string name="nature_desc_wants">Gastos de estilo de vida, lazer, supérfluos e compras por desejo pessoal.</string>
+    <string name="nature_desc_none">Classificação financeira sem restrição específica.</string>
+
+    <!-- Tipos de Conta Financeira -->
+    <string name="account_type_checking">Conta Corrente</string>
+    <string name="account_type_wallet">Carteira / Dinheiro</string>
+    <string name="account_type_savings">Poupança</string>
+    <string name="account_type_investment">Investimento</string>
+
+    <!-- Tipos de Contato -->
+    <string name="contact_type_individual">Pessoa Física</string>
+    <string name="contact_type_supplier">Fornecedor</string>
+    <string name="contact_type_public_entity">Órgão Público</string>
+    <string name="contact_type_individual_short">Pessoa</string>
+    <string name="contact_type_supplier_short">Empresa</string>
+    <string name="contact_type_public_entity_short">Público</string>
+
+    <!-- Tipos de Despesa -->
+    <string name="bill_type_single">Avulsa</string>
+    <string name="bill_type_installment">Parcelada</string>
+    <string name="bill_type_installment_male">Parcelado</string>
+    <string name="bill_type_recurring">Recorrente</string>
+
+    <!-- Ações Comuns -->
+    <string name="action_save">Salvar</string>
+    <string name="action_save_changes">Salvar Alterações</string>
+    <string name="action_update">Atualizar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Excluir</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_close">Fechar</string>
+    <string name="action_back">Voltar</string>
+    <string name="action_filter">Filtrar</string>
+    <string name="action_all">Todos</string>
+    <string name="action_all_female">Todas</string>
+    <string name="action_add">Adicionar</string>
+    <string name="action_new">Novo</string>
+    <string name="action_new_female">Nova</string>
+    <string name="action_share">Compartilhar</string>
+    <string name="action_restore">Restaurar</string>
+    <string name="action_backup">Fazer Backup</string>
+    <string name="action_apply">Aplicar</string>
+    <string name="action_clear">Limpar</string>
+
+    <!-- Dashboard / Home -->
+    <string name="home_forecast_remaining">Restante a Pagar no Mês</string>
+    <string name="home_total_overdue">Total vencido:</string>
+
+    <!-- Diálogos -->
+    <string name="dialog_confirm_title">Confirmação</string>
+    <string name="dialog_delete_registration_title">Excluir Registro</string>
+    <string name="dialog_delete_contact_title">Excluir Contato</string>
+    <string name="dialog_warning">Atenção</string>
 </resources>

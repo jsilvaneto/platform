@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.presentation.common.AppStrings
 import java.util.Calendar
 
 @Composable
@@ -246,7 +247,7 @@ fun ConfirmPaymentDialog(
                 onClick = { onConfirm(selectedPaymentDate) },
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Confirmar")
+                Text(AppStrings.Actions.CONFIRM)
             }
         },
         dismissButton = {
@@ -254,7 +255,7 @@ fun ConfirmPaymentDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Cancelar")
+                Text(AppStrings.Actions.CANCEL)
             }
         }
     )

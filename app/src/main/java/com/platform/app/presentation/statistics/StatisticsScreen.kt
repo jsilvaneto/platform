@@ -51,6 +51,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -817,14 +818,14 @@ fun PresentHeroCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatusBreakdownBox(
-                    label = "Pago",
+                    label = AppStrings.Status.PAID,
                     value = formatValueOrPrivate(metrics.totalPaidMonthCents, isPrivate),
                     color = SuccessGreen,
                     containerColor = SuccessGreenContainer,
                     modifier = Modifier.weight(1f)
                 )
                 StatusBreakdownBox(
-                    label = "Pendente",
+                    label = AppStrings.Status.PENDING,
                     value = formatValueOrPrivate(metrics.totalPendingMonthCents, isPrivate),
                     color = MaterialTheme.colorScheme.primary,
                     containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
@@ -832,7 +833,7 @@ fun PresentHeroCard(
                 )
                 if (metrics.totalOverdueMonthCents > 0L) {
                     StatusBreakdownBox(
-                        label = "Atrasado",
+                        label = AppStrings.Status.OVERDUE_PAST,
                         value = formatValueOrPrivate(metrics.totalOverdueMonthCents, isPrivate),
                         color = ErrorRed,
                         containerColor = ErrorRedContainer,

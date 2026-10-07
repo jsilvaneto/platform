@@ -55,6 +55,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -523,7 +524,7 @@ fun NewExpenseScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Pendente",
+                                    text = AppStrings.Status.PENDING,
                                     fontWeight = if (!uiState.isPaid) FontWeight.Bold else FontWeight.Normal,
                                     color = if (!uiState.isPaid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -552,7 +553,7 @@ fun NewExpenseScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Já Paga",
+                                    text = AppStrings.Status.ALREADY_PAID,
                                     fontWeight = if (uiState.isPaid) FontWeight.Bold else FontWeight.Normal,
                                     color = if (uiState.isPaid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1202,12 +1203,12 @@ fun NewExpenseScreen(
                     },
                     enabled = newContactName.isNotBlank()
                 ) {
-                    Text("Salvar")
+                    Text(AppStrings.Actions.SAVE)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showQuickContactDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )

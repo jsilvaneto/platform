@@ -68,6 +68,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TopAppBar
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -1444,12 +1445,12 @@ fun RecurringDetailBottomSheet(
                         onDelete()
                     }
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.error)
+                    Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1477,7 +1478,7 @@ fun RecurringDetailBottomSheet(
             },
             dismissButton = {
                 TextButton(onClick = { showStopConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1577,7 +1578,7 @@ fun InstallmentRow(
                     }
                     Text(
                         text = when {
-                            installment.isPaid -> "Pago"
+                            installment.isPaid -> AppStrings.Status.PAID
                             installment.isPaused -> "Cobrança Pausada"
                             isOverdue -> "Venceu ${DateUtils.formatDate(installment.dueDate)}"
                             isToday -> "Vence hoje"
@@ -2068,7 +2069,7 @@ fun EditBillMonthlyAmountDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }

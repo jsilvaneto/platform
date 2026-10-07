@@ -60,6 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAvatar
 import com.platform.app.presentation.components.PlatformSearchTopBar
 import androidx.compose.runtime.Composable
@@ -485,9 +486,9 @@ fun AddContactBottomSheet(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = when (contactType) {
-                                    ContactType.PESSOA_FISICA -> "Pessoa"
-                                    ContactType.FORNECEDOR -> "Empresa"
-                                    ContactType.ORGAO_PUBLICO -> "Público"
+                                    ContactType.PESSOA_FISICA -> AppStrings.ContactType.INDIVIDUAL_SHORT
+                                    ContactType.FORNECEDOR -> AppStrings.ContactType.SUPPLIER_SHORT
+                                    ContactType.ORGAO_PUBLICO -> AppStrings.ContactType.PUBLIC_ENTITY_SHORT
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
@@ -683,7 +684,7 @@ fun AddContactBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Button(
@@ -711,7 +712,7 @@ fun AddContactBottomSheet(
                     enabled = name.isNotBlank(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(if (contact == null) "Salvar Contato" else "Atualizar Contato")
+                    Text(if (contact == null) AppStrings.ContactType.SAVE_CONTACT else AppStrings.ContactType.UPDATE_CONTACT)
                 }
             }
             Spacer(modifier = Modifier.height(28.dp))
@@ -778,9 +779,9 @@ fun ContactTypeBadge(
     val (contentColor, containerColor) = getContactTypeColors(type)
     val icon = getContactTypeIcon(type)
     val label = when (type) {
-        ContactType.PESSOA_FISICA -> "Pessoa"
-        ContactType.FORNECEDOR -> "Fornecedor"
-        ContactType.ORGAO_PUBLICO -> "Órgão Público"
+        ContactType.PESSOA_FISICA -> AppStrings.ContactType.INDIVIDUAL_SHORT
+        ContactType.FORNECEDOR -> AppStrings.ContactType.SUPPLIER
+        ContactType.ORGAO_PUBLICO -> AppStrings.ContactType.PUBLIC_ENTITY
     }
 
     Surface(
@@ -828,7 +829,7 @@ fun ContactTypeFilterRow(
     ) {
         item {
             FilterChipItem(
-                label = "Todos ($totalCount)",
+                label = "${AppStrings.Actions.ALL} ($totalCount)",
                 icon = null,
                 isSelected = selectedType == null,
                 onClick = { onSelectType(null) }
@@ -836,7 +837,7 @@ fun ContactTypeFilterRow(
         }
         item {
             FilterChipItem(
-                label = "Pessoa Física ($pfCount)",
+                label = "${AppStrings.ContactType.INDIVIDUAL} ($pfCount)",
                 icon = Icons.Default.Person,
                 isSelected = selectedType == ContactType.PESSOA_FISICA,
                 onClick = { onSelectType(ContactType.PESSOA_FISICA) }
@@ -844,7 +845,7 @@ fun ContactTypeFilterRow(
         }
         item {
             FilterChipItem(
-                label = "Fornecedor ($fornCount)",
+                label = "${AppStrings.ContactType.SUPPLIER} ($fornCount)",
                 icon = Icons.Default.Business,
                 isSelected = selectedType == ContactType.FORNECEDOR,
                 onClick = { onSelectType(ContactType.FORNECEDOR) }
@@ -852,7 +853,7 @@ fun ContactTypeFilterRow(
         }
         item {
             FilterChipItem(
-                label = "Órgão Público ($orgCount)",
+                label = "${AppStrings.ContactType.PUBLIC_ENTITY} ($orgCount)",
                 icon = Icons.Default.AccountBalance,
                 isSelected = selectedType == ContactType.ORGAO_PUBLICO,
                 onClick = { onSelectType(ContactType.ORGAO_PUBLICO) }

@@ -57,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -680,7 +681,7 @@ fun AccountDetailBottomSheet(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Pendente",
+                                        text = AppStrings.Status.PENDING,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
@@ -711,7 +712,7 @@ fun AccountDetailBottomSheet(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Liquidado",
+                                        text = AppStrings.Status.SETTLED,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
@@ -846,12 +847,12 @@ fun AccountDetailBottomSheet(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1135,7 +1136,7 @@ fun PaymentMethodDetailBottomSheet(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Pendente",
+                                        text = AppStrings.Status.PENDING,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     )
@@ -1166,7 +1167,7 @@ fun PaymentMethodDetailBottomSheet(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Liquidado",
+                                        text = AppStrings.Status.SETTLED,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     )
@@ -1245,12 +1246,12 @@ fun PaymentMethodDetailBottomSheet(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1569,7 +1570,7 @@ fun CategoryDetailBottomSheet(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Pago",
+                                        text = AppStrings.Status.PAID,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     )
@@ -1649,12 +1650,12 @@ fun CategoryDetailBottomSheet(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.onError)
+                    Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1782,11 +1783,11 @@ fun AddEditAccountDialog(
                 shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
-                Text(if (account == null) "Salvar" else "Atualizar")
+                Text(if (account == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }
@@ -1954,11 +1955,11 @@ fun AddEditPaymentMethodDialog(
                 shape = RoundedCornerShape(8.dp),
                 enabled = (!isCustomName && selectedPreset != "Outro") || (isCustomName && name.isNotBlank())
             ) {
-                Text(if (method == null) "Salvar" else "Atualizar")
+                Text(if (method == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }
@@ -1995,7 +1996,7 @@ fun AddEditCategoryDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Natureza do Gasto:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                Text(AppStrings.Nature.LABEL_NATURE_COLON, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     items(ExpenseNature.entries.toTypedArray()) { natureOption ->
                         FilterChip(
@@ -2036,11 +2037,11 @@ fun AddEditCategoryDialog(
                 shape = RoundedCornerShape(8.dp),
                 enabled = name.isNotBlank()
             ) {
-                Text(if (category == null) "Salvar" else "Atualizar")
+                Text(if (category == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(AppStrings.Actions.CANCEL) }
         }
     )
 }

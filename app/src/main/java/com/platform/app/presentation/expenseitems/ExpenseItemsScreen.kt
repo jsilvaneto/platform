@@ -58,6 +58,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -296,12 +297,12 @@ fun ExpenseItemsScreen(
                         ),
                         shape = RoundedCornerShape(Dimens.buttonCornerRadius)
                     ) {
-                        Text("Excluir")
+                        Text(AppStrings.Actions.DELETE)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { itemToDelete = null }) {
-                        Text("Cancelar")
+                        Text(AppStrings.Actions.CANCEL)
                     }
                 }
             )
@@ -593,7 +594,7 @@ fun ExpenseItemDetailBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Natureza do Gasto",
+                            text = AppStrings.Nature.LABEL_NATURE,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -610,10 +611,10 @@ fun ExpenseItemDetailBottomSheet(
 
                     // Descrição da Natureza
                     val natureDescription = when (item.nature.name) {
-                        "OBRIGATORIO" -> "Gastos indispensáveis para sobrevivência ou compromissos jurídicos inegociáveis."
-                        "NECESSARIO" -> "Gastos essenciais para a rotina diária, saúde, trabalho e conforto básico."
-                        "DESEJA" -> "Gastos de estilo de vida, lazer, supérfluos e compras por desejo pessoal."
-                        else -> "Classificação financeira sem restrição específica."
+                        "OBRIGATORIO" -> AppStrings.Nature.DESC_MANDATORY
+                        "NECESSARIO" -> AppStrings.Nature.DESC_NECESSARY
+                        "DESEJA" -> AppStrings.Nature.DESC_WANTS
+                        else -> AppStrings.Nature.DESC_NONE
                     }
                     Text(
                         text = natureDescription,
@@ -791,7 +792,7 @@ fun AddEditExpenseItemBottomSheet(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
                 Spacer(modifier = Modifier.width(Dimens.spacingSmall))
                 Button(
@@ -813,7 +814,7 @@ fun AddEditExpenseItemBottomSheet(
                     shape = RoundedCornerShape(Dimens.buttonCornerRadius),
                     enabled = name.isNotBlank() && selectedCategory != null
                 ) {
-                    Text(if (isEditing) "Salvar Alterações" else "Salvar")
+                    Text(if (isEditing) AppStrings.Actions.SAVE_CHANGES else AppStrings.Actions.SAVE)
                 }
             }
         }

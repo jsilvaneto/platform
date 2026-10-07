@@ -3,6 +3,44 @@
 Todas as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes notÃƒÆ’Ã‚Â¡veis neste projeto serÃƒÆ’Ã‚Â£o documentadas neste arquivo.
 O formato ÃƒÆ’Ã‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã‚Â¢ntico](https://semver.org/lang/pt-BR/).
 
+## [1.10.0] - 2026-10-07
+
+### 🌐 Centralização de Strings de Interface (UI) e Fonte Única da Verdade (`AppStrings`)
+
+- **Fonte Única da Verdade (`AppStrings.kt`)**:
+  - Criado o objeto estruturado `AppStrings` em `com.platform.app.presentation.common` agrupando constantes textuais de interface de usuário sem overhead de contexto Android.
+  - Sub-namespaces organizados: `Status`, `Nature`, `AccountType`, `ContactType`, `BillType`, `Actions`, `Home`, `Dialogs`.
+  - Sincronização espelhada em `res/values/strings.xml` para paridade com recursos nativos do framework Android e suporte nativo a internacionalização futura.
+- **Refatoração 1:1 Sem Alterações de Texto**:
+  - Substituição de termos literais repetidos na camada `presentation/` preservando rigorosamente 1:1 todos os caracteres originais:
+    - **Status**: "Pendente", "Pago", "Paga", "Já Paga", "A Pagar", "Vencida", "Vencido", "Atrasado", "Liquidado", "Tudo quitado", "100% quitado", "Aberta", "Fechada", "Pausada".
+    - **Natureza do Gasto**: "Obrigatório", "Necessário", "Deseja", "Nenhum", "Poupança", "Natureza do Gasto", rótulos e descrições conceituais.
+    - **Tipos de Conta**: "Conta Corrente", "Carteira / Dinheiro", "Poupança", "Investimento".
+    - **Tipos de Contato**: "Pessoa Física", "Fornecedor", "Órgão Público", "Pessoa", "Empresa", "Público", "Salvar Contato", "Atualizar Contato", "Excluir Contato".
+    - **Ações Comuns**: "Salvar", "Salvar Alterações", "Atualizar", "Cancelar", "Excluir", "Confirmar", "Voltar", "Filtrar", "Todos".
+    - **Dashboard**: "Restante a Pagar no Mês", "Total vencido:".
+- **Telas e Componentes Atualizados**:
+  - `HomeScreen`: status badges ("Tudo quitado", "100% quitado", "Pago"), "Total vencido:", "Restante a Pagar no Mês".
+  - `BillsScreen`: status de pagamento ("Pago"), ações de exclusão em lote ("Excluir", "Cancelar").
+  - `NewExpenseScreen`: status chips ("Pendente", "Já Paga"), botões de diálogo rápido ("Salvar", "Cancelar").
+  - `EditInstallmentBottomSheet`: títulos e ações de confirmação/exclusão ("Salvar Alterações", "Excluir Registro", "Excluir", "Cancelar").
+  - `ConfirmPaymentDialog`: ações de confirmação ("Confirmar", "Cancelar").
+  - `ContactsScreen` & `ContactDetailScreen`: chips de tipo ("Pessoa", "Empresa", "Público"), badges, filtros agregados ("Todos", "Pessoa Física", "Fornecedor", "Órgão Público"), botões de ação e exclusão.
+  - `ManagementScreen`: abas e cards de gestão com status ("Pendente", "Liquidado", "Pago"), "Natureza do Gasto:", diálogos de contas, métodos e categorias ("Salvar", "Atualizar", "Cancelar", "Excluir").
+  - `StatisticsScreen`: breakdown de status do mês ("Pago", "Pendente", "Atrasado").
+  - `CreditCardsScreen`: badges de fatura ("Aberta", "Fechada", "Paga"), diálogo de exclusão de cartão ("Cancelar", "Excluir").
+  - `ExpenseItemsScreen`: chips e descrições de natureza, botões do modal ("Salvar", "Salvar Alterações", "Cancelar", "Excluir").
+  - `GoalsScreen` & `BudgetsScreen`: botões de salvamento, edição, cancelamento e exclusão.
+  - `RecurringInstallmentsScreen` & `AdjustInstallmentDialog`: rótulos de status ("Pago"), diálogos de cancelamento/exclusão/pausa ("Excluir", "Cancelar", "Voltar").
+  - `SettingsScreen`: diálogos de backup criptografado e restauração ("Cancelar").
+- **Testes Automatizados**:
+  - Criado `AppStringsTest` garantindo que todos os namespaces e constantes de interface possuam os valores contratuais esperados e previnam regressões acidentais.
+  - Suíte completa de 125+ testes unitários executada com 100% de sucesso (`BUILD SUCCESSFUL`).
+- **Segurança para Refatorações Futuras**:
+  - Quaisquer futuras renomeações conceituais (ex: "Pendente" $\rightarrow$ "A Pagar", "Vencida" $\rightarrow$ "Em Atraso") agora são realizadas de forma pontual e atômica em um único arquivo, com zero risco de divergência entre telas.
+
+---
+
 ## [1.9.0] - 2026-10-07
 
 ### 🔒 Criptografia AES-256-GCM para Backups com Proteção por Senha/PIN

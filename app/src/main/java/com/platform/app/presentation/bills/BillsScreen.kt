@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.foundation.verticalScroll
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -587,12 +588,12 @@ fun BillsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Excluir")
+                    Text(AppStrings.Actions.DELETE)
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showBatchDeleteDialog = false }) {
-                    Text("Cancelar")
+                    Text(AppStrings.Actions.CANCEL)
                 }
             }
         )
@@ -1049,7 +1050,7 @@ fun BillInstallmentItemCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Pago",
+                                contentDescription = AppStrings.Status.PAID,
                                 tint = Color.White,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -1166,7 +1167,7 @@ fun BillInstallmentItemCard(
                                 modifier = Modifier.size(10.dp)
                             )
                             Text(
-                                text = "Pago",
+                                text = AppStrings.Status.PAID,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = SuccessGreen

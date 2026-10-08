@@ -60,6 +60,9 @@ graph TD
    - Todas as telas e componentes visuais DEVEM suportar nativamente **Modo Claro** e **Modo Escuro** utilizando as cores semânticas do `MaterialTheme.colorScheme` (ex: `surface`, `background`, `onSurface`, `primary`).
 8. **Política de Resíduo Zero em Testes**:
    - Testes devem utilizar banco em memória (`Room.inMemoryDatabaseBuilder`) e mocks isolados com `Dispatchers.setMain(testDispatcher)`.
+9. **Modularidade e Limite de Tamanho de Arquivos Composable (Token Optimization)**:
+   - Máximo de ~600 linhas por arquivo Composable. Arquivos que ultrapassarem esse limite devem ser decompostos, extraindo seções, cards, diálogos e bottom sheets para o subpacote `components/` da própria tela (ex: `presentation/<feature>/components/`).
+   - Isola escopos de recomposição, previne acoplamento e otimiza o consumo de tokens/contexto nas manutenções.
 
 ---
 

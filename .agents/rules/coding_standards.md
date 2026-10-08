@@ -18,3 +18,5 @@ trigger: always_on
   - Proibido uso de cores literais como `Color.Black` ou `Color.White` nos componentes. Use `MaterialTheme.colorScheme.*`.
 - **Tratamento de Exceções**:
   - Trate falhas de rede e banco de forma amigável com `Result<T>` ou classes `Resource.Error(message)`.
+- **Modularidade de Telas e Arquivos Composable**:
+  - Máximo de ~600 linhas por arquivo `@Composable`. Seções, cards, diálogos e bottom sheets devem ser extraídos para arquivos no subpacote `components/` da feature correspondente.

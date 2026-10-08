@@ -1,48 +1,24 @@
 package com.platform.app.presentation.bills
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,12 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,28 +34,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
-import com.platform.app.core.util.CurrencyUtils
-import com.platform.app.core.util.DateUtils
-import com.platform.app.domain.model.BillType
-import com.platform.app.domain.model.RecurrenceEndType
-import com.platform.app.domain.model.RecurrenceFrequency
+import com.platform.app.presentation.bills.components.ExpenseCommitmentTypeCard
+import com.platform.app.presentation.bills.components.ExpenseItemAndAmountCard
+import com.platform.app.presentation.bills.components.ExpensePaymentMethodCard
+import com.platform.app.presentation.bills.components.ExpensePaymentStatusCard
+import com.platform.app.presentation.bills.components.ExpenseRecipientAndDueDateCard
+import com.platform.app.presentation.bills.components.QuickContactDialog
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.Dimens
-import com.platform.app.presentation.theme.PlatformIconCatalog
-import com.platform.app.presentation.theme.SuccessGreen
-import com.platform.app.presentation.theme.UrgentRed
-import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
-import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,15 +58,7 @@ fun NewExpenseScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
-
-    var itemDropdownExpanded by remember { mutableStateOf(false) }
-    var contactDropdownExpanded by remember { mutableStateOf(false) }
-    var methodDropdownExpanded by remember { mutableStateOf(false) }
-    var accountDropdownExpanded by remember { mutableStateOf(false) }
-    var cardDropdownExpanded by remember { mutableStateOf(false) }
     var showQuickContactDialog by remember { mutableStateOf(false) }
-    var newContactName by remember { mutableStateOf("") }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -147,970 +101,48 @@ fun NewExpenseScreen(
             verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
         ) {
             // 1. ITEM DE DESPESA E VALOR (OBRIGATÓRIO & PROTAGONISTA)
-            PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Dimens.spacingNormal),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "1. Item & Valor *",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // SELETOR DE ITEM DE DESPESA (OBRIGATÓRIO)
-                    ExposedDropdownMenuBox(
-                        expanded = itemDropdownExpanded,
-                        onExpandedChange = { itemDropdownExpanded = !itemDropdownExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = uiState.selectedItem?.let { "${it.name} (${it.categoryName})" } ?: "",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Item de Despesa * (Obrigatório)") },
-                            placeholder = { Text("Selecione o item categorizado") },
-                            leadingIcon = {
-                                val itemIcon = uiState.selectedItem?.let { PlatformIconCatalog.getIcon(it.categoryIconName) } ?: Icons.Default.Payments
-                                val itemColor = uiState.selectedItem?.let {
-                                    try { Color(android.graphics.Color.parseColor(it.categoryColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                                } ?: MaterialTheme.colorScheme.primary
-                                Icon(
-                                    imageVector = itemIcon,
-                                    contentDescription = null,
-                                    tint = itemColor
-                                )
-                            },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = itemDropdownExpanded) },
-                            isError = uiState.selectedItemId == null && uiState.amountCents > 0L,
-                            supportingText = if (uiState.selectedItemId == null && uiState.amountCents > 0L) {
-                                { Text("Item é obrigatório para classificar a despesa", color = MaterialTheme.colorScheme.error) }
-                            } else null,
-                            shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = itemDropdownExpanded,
-                            onDismissRequest = { itemDropdownExpanded = false }
-                        ) {
-                            if (uiState.allExpenseItems.isEmpty()) {
-                                DropdownMenuItem(
-                                    text = { Text("Nenhum item cadastrado") },
-                                    onClick = { itemDropdownExpanded = false }
-                                )
-                            }
-                            for (item in uiState.allExpenseItems) {
-                                val itemColor = try { Color(android.graphics.Color.parseColor(item.categoryColorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                                DropdownMenuItem(
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = PlatformIconCatalog.getIcon(item.categoryIconName),
-                                            contentDescription = null,
-                                            tint = itemColor,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    },
-                                    text = {
-                                        Column {
-                                            Text(item.name, fontWeight = FontWeight.SemiBold)
-                                            Text(
-                                                text = "${item.categoryName} • ${item.nature.displayName}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        viewModel.onItemSelect(item.id)
-                                        itemDropdownExpanded = false
-                                    }
-                                )
-                            }
-                            if (onNavigateToExpenseItems != null) {
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Gerenciar Itens (Criar / Editar)",
-                                                style = MaterialTheme.typography.bodySmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
-                                    },
-                                    onClick = {
-                                        itemDropdownExpanded = false
-                                        onNavigateToExpenseItems()
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    // Chip de Natureza Financeira Herdada
-                    if (uiState.selectedItem != null) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Natureza:",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = uiState.inheritedNature.displayName,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                Text(
-                                    text = "Categoria: ${uiState.selectedCategory?.name ?: ""}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (onNavigateToExpenseItems != null) {
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    IconButton(
-                                        onClick = onNavigateToExpenseItems,
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Editar Item",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Valor
-                    val displayCurrency = CurrencyUtils.formatCentsToCurrency(uiState.amountCents)
-                    OutlinedTextField(
-                        value = displayCurrency,
-                        onValueChange = { newValue ->
-                            val cleanDigits = newValue.filter { it.isDigit() }
-                            val cents = cleanDigits.toLongOrNull() ?: 0L
-                            viewModel.onAmountChange(cents)
-                        },
-                        label = { Text("Valor da Despesa *") },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Payments,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+            ExpenseItemAndAmountCard(
+                uiState = uiState,
+                onItemSelect = viewModel::onItemSelect,
+                onAmountChange = viewModel::onAmountChange,
+                onNavigateToExpenseItems = onNavigateToExpenseItems
+            )
 
             // 2. DESTINATÁRIO E VENCIMENTO (OBRIGATÓRIO)
-            PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Dimens.spacingNormal),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "2. Destinatário & Vencimento *",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+            ExpenseRecipientAndDueDateCard(
+                uiState = uiState,
+                onContactSelect = viewModel::onContactSelect,
+                onDueDateChange = viewModel::onDueDateChange,
+                onNewQuickContactClick = { showQuickContactDialog = true }
+            )
 
-                    // SELETOR DE CONTATO / FORNECEDOR (OBRIGATÓRIO)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ExposedDropdownMenuBox(
-                            expanded = contactDropdownExpanded,
-                            onExpandedChange = { contactDropdownExpanded = !contactDropdownExpanded },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.selectedContact?.name ?: "",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Contato / Fornecedor *") },
-                                placeholder = { Text("Selecione o favorecido") },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = contactDropdownExpanded) },
-                                isError = uiState.selectedContactId == null && uiState.amountCents > 0L,
-                                supportingText = if (uiState.selectedContactId == null && uiState.amountCents > 0L) {
-                                    { Text("Contato é obrigatório no lançamento", color = MaterialTheme.colorScheme.error) }
-                                } else null,
-                                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = contactDropdownExpanded,
-                                onDismissRequest = { contactDropdownExpanded = false }
-                            ) {
-                                if (uiState.contacts.isEmpty()) {
-                                    DropdownMenuItem(
-                                        text = { Text("Nenhum contato cadastrado") },
-                                        onClick = { contactDropdownExpanded = false }
-                                    )
-                                }
-                                for (contact in uiState.contacts) {
-                                    DropdownMenuItem(
-                                        text = { Text(contact.name, fontWeight = FontWeight.Medium) },
-                                        onClick = {
-                                            viewModel.onContactSelect(contact.id)
-                                            contactDropdownExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
+            // 3. SITUAÇÃO DA CONTA
+            ExpensePaymentStatusCard(
+                isPaid = uiState.isPaid,
+                onPaymentStatusChange = viewModel::onPaymentStatusChange
+            )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+            // 4. MODALIDADE: À VISTA, PARCELADO OU RECORRENTE
+            ExpenseCommitmentTypeCard(
+                uiState = uiState,
+                onExpenseTypeChange = viewModel::onExpenseTypeChange,
+                onInstallmentsCountChange = viewModel::onInstallmentsCountChange,
+                onRecurrenceFrequencyChange = viewModel::onRecurrenceFrequencyChange,
+                onRecurrenceEndTypeChange = viewModel::onRecurrenceEndTypeChange,
+                onRecurrenceEndDateChange = viewModel::onRecurrenceEndDateChange,
+                onRecurrenceOccurrencesCountChange = viewModel::onRecurrenceOccurrencesCountChange
+            )
 
-                        IconButton(
-                            onClick = {
-                                newContactName = ""
-                                showQuickContactDialog = true
-                            },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), CircleShape)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Novo Contato Rápido",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
+            // 5. MEIO DE PAGAMENTO
+            ExpensePaymentMethodCard(
+                uiState = uiState,
+                onToggleCreditCard = viewModel::onToggleCreditCard,
+                onCreditCardSelect = viewModel::onCreditCardSelect,
+                onPaymentMethodSelect = viewModel::onPaymentMethodSelect,
+                onFinancialAccountSelect = viewModel::onFinancialAccountSelect
+            )
 
-                    // Vencimento e Data
-                    val dateFormatted = DateUtils.formatDate(uiState.dueDate)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "Vencimento Inicial *",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = dateFormatted,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Button(
-                            onClick = {
-                                val cal = Calendar.getInstance().apply { timeInMillis = uiState.dueDate }
-                                DatePickerDialog(
-                                    context,
-                                    { _, year, month, day ->
-                                        val selectedCal = Calendar.getInstance().apply {
-                                            set(year, month, day, 12, 0, 0)
-                                        }
-                                        viewModel.onDueDateChange(selectedCal.timeInMillis)
-                                    },
-                                    cal.get(Calendar.YEAR),
-                                    cal.get(Calendar.MONTH),
-                                    cal.get(Calendar.DAY_OF_MONTH)
-                                ).show()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            shape = RoundedCornerShape(Dimens.buttonCornerRadius)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Alterar Data")
-                        }
-                    }
-                }
-            }
-
-            // 2. STATUS DO PAGAMENTO: PENDENTE OU JÁ PAGA
-            PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Dimens.spacingNormal),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "Situação da Conta",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Opção: Pendente
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (!uiState.isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                            border = if (!uiState.isPaid) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { viewModel.onPaymentStatusChange(false) }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Schedule,
-                                    contentDescription = null,
-                                    tint = if (!uiState.isPaid) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = AppStrings.Status.PENDING,
-                                    fontWeight = if (!uiState.isPaid) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (!uiState.isPaid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        // Opção: Já Paga
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (uiState.isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                            border = if (uiState.isPaid) androidx.compose.foundation.BorderStroke(1.dp, SuccessGreen) else null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { viewModel.onPaymentStatusChange(true) }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = if (uiState.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = AppStrings.Status.ALREADY_PAID,
-                                    fontWeight = if (uiState.isPaid) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (uiState.isPaid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 3. MODALIDADE: À VISTA, PARCELADO OU RECORRENTE
-            PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Dimens.spacingNormal),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Tipo de Compromisso",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = uiState.expenseType == BillType.SINGLE,
-                            onClick = { viewModel.onExpenseTypeChange(BillType.SINGLE) },
-                            label = { Text("À Vista") },
-                            leadingIcon = if (uiState.expenseType == BillType.SINGLE) {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        FilterChip(
-                            selected = uiState.expenseType == BillType.INSTALLMENT,
-                            onClick = { viewModel.onExpenseTypeChange(BillType.INSTALLMENT) },
-                            label = { Text("Parcelado") },
-                            leadingIcon = if (uiState.expenseType == BillType.INSTALLMENT) {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        FilterChip(
-                            selected = uiState.expenseType == BillType.RECURRING,
-                            onClick = { viewModel.onExpenseTypeChange(BillType.RECURRING) },
-                            label = { Text("Recorrente") },
-                            leadingIcon = if (uiState.expenseType == BillType.RECURRING) {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                            } else null,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // Se for Parcelado: Quantidade de Parcelas
-                    if (uiState.expenseType == BillType.INSTALLMENT) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "Número de Parcelas:",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { viewModel.onInstallmentsCountChange(uiState.installmentsCount - 1) },
-                                    enabled = uiState.installmentsCount > 2
-                                ) {
-                                    Text("—", fontWeight = FontWeight.Bold)
-                                }
-
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    modifier = Modifier.padding(horizontal = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "${uiState.installmentsCount}x",
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { viewModel.onInstallmentsCountChange(uiState.installmentsCount + 1) },
-                                    enabled = uiState.installmentsCount < 72
-                                ) {
-                                    Text("+", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-
-                        // Preview do valor de cada parcela
-                        Text(
-                            text = "Plano: ${uiState.installmentsCount}x de ${CurrencyUtils.formatCentsToCurrency(uiState.installmentPreviewAmount)} mensais",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    // Se for Recorrente
-                    if (uiState.expenseType == BillType.RECURRING) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
-
-                        Text(
-                            text = "Frequência de Repetição",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = uiState.recurrenceFrequency == RecurrenceFrequency.DAILY,
-                                onClick = { viewModel.onRecurrenceFrequencyChange(RecurrenceFrequency.DAILY) },
-                                label = { Text("Diariamente") },
-                                leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.DAILY) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilterChip(
-                                selected = uiState.recurrenceFrequency == RecurrenceFrequency.WEEKLY,
-                                onClick = { viewModel.onRecurrenceFrequencyChange(RecurrenceFrequency.WEEKLY) },
-                                label = { Text("Semanalmente") },
-                                leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.WEEKLY) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = uiState.recurrenceFrequency == RecurrenceFrequency.MONTHLY,
-                                onClick = { viewModel.onRecurrenceFrequencyChange(RecurrenceFrequency.MONTHLY) },
-                                label = { Text("Mensalmente") },
-                                leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.MONTHLY) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilterChip(
-                                selected = uiState.recurrenceFrequency == RecurrenceFrequency.YEARLY,
-                                onClick = { viewModel.onRecurrenceFrequencyChange(RecurrenceFrequency.YEARLY) },
-                                label = { Text("Anualmente") },
-                                leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.YEARLY) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text = "Término da Repetição",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            FilterChip(
-                                selected = uiState.recurrenceEndType == RecurrenceEndType.FOREVER,
-                                onClick = { viewModel.onRecurrenceEndTypeChange(RecurrenceEndType.FOREVER) },
-                                label = { Text("Para sempre") },
-                                leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.FOREVER) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                            FilterChip(
-                                selected = uiState.recurrenceEndType == RecurrenceEndType.UNTIL_DATE,
-                                onClick = { viewModel.onRecurrenceEndTypeChange(RecurrenceEndType.UNTIL_DATE) },
-                                label = { Text("Até uma data") },
-                                leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) {
-                                    { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                                } else null,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-
-                        FilterChip(
-                            selected = uiState.recurrenceEndType == RecurrenceEndType.BY_OCCURRENCES,
-                            onClick = { viewModel.onRecurrenceEndTypeChange(RecurrenceEndType.BY_OCCURRENCES) },
-                            label = { Text("Por número de eventos") },
-                            leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.BY_OCCURRENCES) {
-                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                            } else null,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        when (uiState.recurrenceEndType) {
-                            RecurrenceEndType.FOREVER -> {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = "Compromisso contínuo sem data final definida.",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                                    )
-                                }
-                            }
-                            RecurrenceEndType.UNTIL_DATE -> {
-                                val endDateFormatted = DateUtils.formatDate(uiState.recurrenceEndDate)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = "Repetir até:",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = endDateFormatted,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-
-                                    Button(
-                                        onClick = {
-                                            val cal = Calendar.getInstance().apply { timeInMillis = uiState.recurrenceEndDate }
-                                            DatePickerDialog(
-                                                context,
-                                                { _, year, month, day ->
-                                                    val selectedCal = Calendar.getInstance().apply {
-                                                        set(year, month, day, 23, 59, 59)
-                                                    }
-                                                    viewModel.onRecurrenceEndDateChange(selectedCal.timeInMillis)
-                                                },
-                                                cal.get(Calendar.YEAR),
-                                                cal.get(Calendar.MONTH),
-                                                cal.get(Calendar.DAY_OF_MONTH)
-                                            ).show()
-                                        },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        ),
-                                        shape = RoundedCornerShape(Dimens.buttonCornerRadius)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Alterar Data Final")
-                                    }
-                                }
-                            }
-                            RecurrenceEndType.BY_OCCURRENCES -> {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = "Número de eventos:",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
-                                    )
-
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        IconButton(
-                                            onClick = { viewModel.onRecurrenceOccurrencesCountChange(uiState.recurrenceOccurrencesCount - 1) },
-                                            enabled = uiState.recurrenceOccurrencesCount > 2
-                                        ) {
-                                            Text("—", fontWeight = FontWeight.Bold)
-                                        }
-
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            modifier = Modifier.padding(horizontal = 4.dp)
-                                        ) {
-                                            Text(
-                                                text = "${uiState.recurrenceOccurrencesCount}x",
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                            )
-                                        }
-
-                                        IconButton(
-                                            onClick = { viewModel.onRecurrenceOccurrencesCountChange(uiState.recurrenceOccurrencesCount + 1) },
-                                            enabled = uiState.recurrenceOccurrencesCount < 365
-                                        ) {
-                                            Text("+", fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Preview do resumo
-                        val freqText = when (uiState.recurrenceFrequency) {
-                            RecurrenceFrequency.DAILY -> "diariamente"
-                            RecurrenceFrequency.WEEKLY -> "semanalmente"
-                            RecurrenceFrequency.MONTHLY -> "mensalmente"
-                            RecurrenceFrequency.YEARLY -> "anualmente"
-                        }
-                        val endText = when (uiState.recurrenceEndType) {
-                            RecurrenceEndType.FOREVER -> "para sempre"
-                            RecurrenceEndType.UNTIL_DATE -> "até ${DateUtils.formatDate(uiState.recurrenceEndDate)}"
-                            RecurrenceEndType.BY_OCCURRENCES -> "por ${uiState.recurrenceOccurrencesCount} eventos"
-                        }
-                        Text(
-                            text = "Plano: Repete $freqText, $endText (${CurrencyUtils.formatCentsToCurrency(uiState.amountCents)} cada)",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
-            // 4. FORMA DE PAGAMENTO, CONTA OU CARTÃO DE CRÉDITO
-            PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(Dimens.spacingNormal),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "Meio de Pagamento",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // Toggle: Cartão de Crédito?
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CreditCard,
-                                contentDescription = null,
-                                tint = if (uiState.isCreditCard) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Pagar com Cartão de Crédito",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        Switch(
-                            checked = uiState.isCreditCard,
-                            onCheckedChange = viewModel::onToggleCreditCard,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        )
-                    }
-
-                    // Se CARTÃO DE CRÉDITO selecionado:
-                    if (uiState.isCreditCard) {
-                        ExposedDropdownMenuBox(
-                            expanded = cardDropdownExpanded,
-                            onExpandedChange = { cardDropdownExpanded = !cardDropdownExpanded }
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.selectedCreditCard?.let { card ->
-                                    val avail = uiState.availableLimitForSelectedCard ?: 0L
-                                    "${card.name} (Disp: ${CurrencyUtils.formatCentsToCurrency(avail)})"
-                                } ?: "Selecione o Cartão de Crédito",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Cartão de Crédito *") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cardDropdownExpanded) },
-                                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = cardDropdownExpanded,
-                                onDismissRequest = { cardDropdownExpanded = false }
-                            ) {
-                                for (card in uiState.creditCards) {
-                                    val avail = uiState.creditCardSummaries[card.id] ?: card.totalLimitCents
-                                    DropdownMenuItem(
-                                        text = {
-                                            Column {
-                                                Text(card.name, fontWeight = FontWeight.Bold)
-                                                Text(
-                                                    text = "Limite Disp: ${CurrencyUtils.formatCentsToCurrency(avail)} • Corte dia ${card.closingDay}",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        },
-                                        onClick = {
-                                            viewModel.onCreditCardSelect(card.id)
-                                            cardDropdownExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        // Alerta se excede o limite
-                        if (uiState.isExceedingCreditLimit) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = WarningAmber.copy(alpha = 0.15f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Warning,
-                                        contentDescription = null,
-                                        tint = WarningAmber,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Aviso: O valor da despesa excede o limite disponível deste cartão.",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        // Se NÃO FOR CARTÃO: Seletor de Forma de Pagamento e Conta
-                        ExposedDropdownMenuBox(
-                            expanded = methodDropdownExpanded,
-                            onExpandedChange = { methodDropdownExpanded = !methodDropdownExpanded }
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.selectedPaymentMethod?.name ?: "Selecione a Forma",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Forma de Pagamento (PIX, Boleto, etc.)") },
-                                leadingIcon = uiState.selectedPaymentMethod?.let { pm ->
-                                    {
-                                        Icon(
-                                            imageVector = PlatformIconCatalog.getIcon(pm.iconName),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = methodDropdownExpanded) },
-                                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = methodDropdownExpanded,
-                                onDismissRequest = { methodDropdownExpanded = false }
-                            ) {
-                                for (pm in uiState.paymentMethods) {
-                                    DropdownMenuItem(
-                                        text = { Text(pm.name) },
-                                        leadingIcon = {
-                                            Icon(
-                                                imageVector = PlatformIconCatalog.getIcon(pm.iconName),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.onPaymentMethodSelect(pm.id)
-                                            methodDropdownExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        ExposedDropdownMenuBox(
-                            expanded = accountDropdownExpanded,
-                            onExpandedChange = { accountDropdownExpanded = !accountDropdownExpanded }
-                        ) {
-                            OutlinedTextField(
-                                value = uiState.selectedFinancialAccount?.name ?: "Selecione a Conta",
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Conta Financeira / Banco") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountDropdownExpanded) },
-                                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                            )
-                            ExposedDropdownMenu(
-                                expanded = accountDropdownExpanded,
-                                onDismissRequest = { accountDropdownExpanded = false }
-                            ) {
-                                for (acc in uiState.financialAccounts) {
-                                    DropdownMenuItem(
-                                        text = { Text(acc.name) },
-                                        onClick = {
-                                            viewModel.onFinancialAccountSelect(acc.id)
-                                            accountDropdownExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 5. OBSERVAÇÕES COMPLEMENTARES (OPCIONAL)
+            // 6. OBSERVAÇÕES COMPLEMENTARES (OPCIONAL)
             PlatformCard(
                 shape = RoundedCornerShape(Dimens.cardCornerRadius)
             ) {
@@ -1179,37 +211,12 @@ fun NewExpenseScreen(
         }
     }
 
-    // DIÁLOGO RÁPIDO DE NOVO CONTATO
     if (showQuickContactDialog) {
-        AlertDialog(
-            onDismissRequest = { showQuickContactDialog = false },
-            title = { Text("Novo Contato / Fornecedor") },
-            text = {
-                OutlinedTextField(
-                    value = newContactName,
-                    onValueChange = { newContactName = it },
-                    label = { Text("Nome do Contato ou Estabelecimento *") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (newContactName.isNotBlank()) {
-                            viewModel.createQuickContact(newContactName)
-                            showQuickContactDialog = false
-                        }
-                    },
-                    enabled = newContactName.isNotBlank()
-                ) {
-                    Text(AppStrings.Actions.SAVE)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showQuickContactDialog = false }) {
-                    Text(AppStrings.Actions.CANCEL)
-                }
+        QuickContactDialog(
+            onDismiss = { showQuickContactDialog = false },
+            onConfirm = { contactName ->
+                viewModel.createQuickContact(contactName)
+                showQuickContactDialog = false
             }
         )
     }

@@ -195,6 +195,18 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Transações Atômicas Mantidas**: Execução protegida por `database.withTransaction` garantindo integridade entre `credit_card_invoices` e `bill_installments`.
 - [x] **Suíte de Testes Automatizados**: Criado `FinancialRepositoryInvoiceTest` validando isolamento por fatura na quitação/reabertura, fallback para data corrente e mapeamento de totais. 100% dos testes unitários verdes (154 testes).
 
+### Modularização e Decomposição de Telas Composable (v1.18.0)
+- [x] **Decomposição Modular das 7 Telas Gigantes (Refactor 1:1)**:
+  - `HomeScreen.kt`: De 2.215 para 199 linhas (-91%). Componentes: `HomeTopBar.kt`, `HomePanoramaView.kt`, `HomeCalendarView.kt`, `HomeMonthlyView.kt`, `HomePayableComponents.kt`.
+  - `ManagementScreen.kt`: De 2.050 para 326 linhas (-84%). Componentes: `AccountsComponents.kt`, `PaymentMethodsComponents.kt`, `CategoriesComponents.kt`, `ManagementDialogs.kt`.
+  - `RecurringInstallmentsScreen.kt`: De 2.076 para 457 linhas (-78%). Componentes: `BillPlanCard.kt`, `RecurringBillCard.kt`, `RecurringDetailBottomSheet.kt`, `InstallmentRow.kt`, `TimelineMonthCard.kt`, `RecurringDialogs.kt`.
+  - `StatisticsScreen.kt`: De 1.927 para 185 linhas (-90%). Componentes: `MonthNavigationHeader.kt`, `PastStatisticsCards.kt`, `PresentStatisticsCards.kt`, `NatureDistributionCard.kt`, `PaymentMethodDistributionCard.kt`, `FutureStatisticsCards.kt`, `StatisticsCommonComponents.kt`.
+  - `SettingsScreen.kt`: De 1.454 para 273 linhas (-81%). Componentes: `SettingsSections.kt`, `ReleaseNotesDialog.kt`, `BackupPasswordDialogs.kt`, `AppearanceBottomSheet.kt`, `SettingsCommonComponents.kt`.
+  - `NewExpenseScreen.kt`: De 1.217 para 216 linhas (-82%). Componentes: `ExpenseItemAndAmountCard.kt`, `QuickContactDialog.kt`, `ExpenseRecipientAndDueDateCard.kt`, `ExpensePaymentStatusCard.kt`, `ExpenseCommitmentTypeCard.kt`, `ExpensePaymentMethodCard.kt`.
+  - `BillsScreen.kt`: De 1.210 para 598 linhas (-50%). Componentes: `BillsFilterBar.kt`, `BillsMiniKpiBar.kt`, `BillInstallmentItemCard.kt`, `EmptyBillsState.kt`, `BatchDeleteDialog.kt`.
+- [x] **Regra de Governança Composable (~600 linhas)**: Registrada no `AGENT_RULES.md` e `.agents/rules/coding_standards.md` a regra mandatória de que nenhum arquivo Composable deve ultrapassar ~600 linhas, promovendo componentização cirúrgica e otimização de contexto para IA.
+- [x] **100% de Paridade e Testes Unitários Verdes**: Comportamento visual e de negócio estritamente preservado 1:1, com validação e aprovação de toda a suíte de testes unitários a cada tela.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

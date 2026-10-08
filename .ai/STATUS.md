@@ -234,6 +234,17 @@ Este documento registra o checklist de funcionalidades, fases de implementação
   - `CalculateInstallmentsUseCaseTest`: testes para `invoiceId = null` e estabilidade de `recurrenceAnchorDate`.
   - `PlatformDatabaseMigrationTest`: validação de esquema e preservação de dados da migração 15 -> 16. 100% dos testes unitários verdes.
 
+### Concorrência Thread-Safe com Mutex e Índice Único de Parcelas (v1.21.0)
+- [x] **ExtendRecurringBillsUseCase @Singleton com Mutex**: Proteção de todo o ciclo de extensão com `mutex.withLock`, impedindo concorrência desordenada.
+- [x] **Ponto Único de Disparo (`PlatformApplication`)**: Centralização da execução no `onCreate()` da Application (`applicationScope`), eliminando as 5 chamadas concorrentes anteriores em `MainActivity`, `DueReminderReceiver`, `BillsViewModel`, `RecurringInstallmentsViewModel` e `DashboardViewModel`.
+- [x] **Migração Room v17 (`MIGRATION_16_17`) & UNIQUE INDEX**:
+  - Eliminação de duplicatas pré-existentes via SQL, mantendo a mais antiga e preservando as já quitadas (`PAID`).
+  - Criação de `UNIQUE INDEX index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)`.
+  - Configuração de `OnConflictStrategy.IGNORE` em `BillInstallmentDao.insertAll` e `insertAllIgnore`.
+- [x] **Suíte de Testes Automatizados**:
+  - `ExtendRecurringBillsUseCaseTest`: validação de chamadas assíncronas concorrentes (`async(Dispatchers.Default)`) gerando exatamente 1 conjunto de parcelas sem duplicidade.
+  - `PlatformDatabaseMigrationTest`: validação de schema e comandos da migração 16 -> 17. 100% dos testes unitários verdes.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

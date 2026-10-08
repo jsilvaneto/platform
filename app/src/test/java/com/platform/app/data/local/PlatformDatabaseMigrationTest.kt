@@ -32,7 +32,7 @@ class PlatformDatabaseMigrationTest {
         PlatformDatabase.MIGRATION_14_15.migrate(db)
 
         verify(atLeast = 1) {
-            db.execSQL("PRAGMA foreign_keys = OFF")
+            db.execSQL("PRAGMA defer_foreign_keys = ON")
             db.execSQL(match { it.contains("categories_new") })
             db.execSQL(match { it.contains("DROP TABLE categories") })
             db.execSQL(match { it.contains("ALTER TABLE categories_new RENAME TO categories") })
@@ -42,7 +42,6 @@ class PlatformDatabaseMigrationTest {
             db.execSQL(match { it.contains("DROP TABLE credit_cards") })
             db.execSQL(match { it.contains("credit_card_invoices_new") })
             db.execSQL(match { it.contains("DROP TABLE credit_card_invoices") })
-            db.execSQL("PRAGMA foreign_keys = ON")
         }
     }
 
@@ -60,6 +59,22 @@ class PlatformDatabaseMigrationTest {
             db.execSQL("ALTER TABLE bills ADD COLUMN creditCardId TEXT DEFAULT NULL")
             db.execSQL(match { it.contains("UPDATE bills") && it.contains("recurrenceAnchorDate") })
             db.execSQL(match { it.contains("UPDATE bills") && it.contains("creditCardId") })
+        }
+    }
+
+    @Test
+    fun `migration 16 to 17 should remove duplicates and create unique index on bill_installments`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(16, PlatformDatabase.MIGRATION_16_17.startVersion)
+        assertEquals(17, PlatformDatabase.MIGRATION_16_17.endVersion)
+
+        PlatformDatabase.MIGRATION_16_17.migrate(db)
+
+        verify(atLeast = 1) {
+            db.execSQL(match { it.contains("DELETE FROM bill_installments") && it.contains("installmentNumber") })
+            db.execSQL(match { it.contains("UPDATE bills") && it.contains("totalInstallments") })
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)")
         }
     }
 }

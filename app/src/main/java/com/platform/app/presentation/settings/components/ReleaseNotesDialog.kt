@@ -71,27 +71,21 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
-                    emoji = "💳",
-                    title = "Assinaturas e Recorrências no Cartão",
-                    description = "Suas assinaturas mensais agora aparecem automaticamente em cada fatura de cartão sob demanda, garantindo total conferência com o extrato bancário."
+                    emoji = "🔒",
+                    title = "Proteção Anti-Duplicidade",
+                    description = "Garantia de que nenhuma conta recorrente seja duplicada, com sincronização em nível de processo e no banco de dados."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "⚡",
-                    title = "Materialização Sob Demanda",
-                    description = "As faturas futuras de cartões anexam de forma transparente as ocorrências de ciclo no momento exato de consulta ou na rotina diária."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "📅",
-                    title = "Vencimentos e Ciclos Estáveis",
-                    description = "Cálculo aprimorado de extensões recorrentes mantendo a data original de compra preservada para sempre sem desvio de ciclo."
+                    emoji = "🚀",
+                    title = "Inicialização Mais Leve e Rápida",
+                    description = "A extensão contínua de contas agora roda em um único ponto centralizado ao abrir o app, tornando a navegação mais fluida."
                 )
 
                 ReleaseNoteItem(
                     emoji = "🛡️",
-                    title = "Integridade e Limite Real",
-                    description = "As parcelas futuras não vinculam mais a faturas anteriores já quitadas, assegurando limites de crédito precisos e sem distorções."
+                    title = "Integridade Estrutural do Banco",
+                    description = "Novo índice único e limpeza inteligente preservam 100% dos seus pagamentos já realizados e a exatidão das parcelas."
                 )
             }
         },

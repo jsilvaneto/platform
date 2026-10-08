@@ -45,8 +45,8 @@ import com.platform.app.data.local.entity.PaymentMethodEntity
         GoalContributionEntity::class,
         BudgetEntity::class
     ],
-    version = 16,
-    exportSchema = false
+    version = 17,
+    exportSchema = true
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
 abstract class PlatformDatabase : RoomDatabase() {
@@ -217,9 +217,10 @@ abstract class PlatformDatabase : RoomDatabase() {
 
         val MIGRATION_14_15 = object : Migration(14, 15) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("PRAGMA foreign_keys = OFF")
+                // Ativa o diferimento de verificacao de chaves estrangeiras durante a transacao da migracao
+                db.execSQL("PRAGMA defer_foreign_keys = ON")
 
-                // 1. categories: remover syncStatus
+                // 1. categories: preparar categories_new
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS categories_new (
                         id TEXT NOT NULL PRIMARY KEY,
@@ -233,10 +234,8 @@ abstract class PlatformDatabase : RoomDatabase() {
                     INSERT INTO categories_new (id, name, colorHex, iconName, nature)
                     SELECT id, name, colorHex, iconName, nature FROM categories
                 """.trimIndent())
-                db.execSQL("DROP TABLE categories")
-                db.execSQL("ALTER TABLE categories_new RENAME TO categories")
 
-                // 2. expense_items: remover syncStatus
+                // 2. expense_items: preparar expense_items_new (filha de categories)
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS expense_items_new (
                         id TEXT NOT NULL PRIMARY KEY,
@@ -249,29 +248,8 @@ abstract class PlatformDatabase : RoomDatabase() {
                     INSERT INTO expense_items_new (id, name, categoryId)
                     SELECT id, name, categoryId FROM expense_items
                 """.trimIndent())
-                db.execSQL("DROP TABLE expense_items")
-                db.execSQL("ALTER TABLE expense_items_new RENAME TO expense_items")
-                db.execSQL("CREATE INDEX IF NOT EXISTS index_expense_items_categoryId ON expense_items(categoryId)")
 
-                // 3. credit_cards: remover syncStatus
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS credit_cards_new (
-                        id TEXT NOT NULL PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        totalLimitCents INTEGER NOT NULL,
-                        closingDay INTEGER NOT NULL,
-                        dueDay INTEGER NOT NULL,
-                        colorHex TEXT NOT NULL DEFAULT '#3B82F6'
-                    )
-                """.trimIndent())
-                db.execSQL("""
-                    INSERT INTO credit_cards_new (id, name, totalLimitCents, closingDay, dueDay, colorHex)
-                    SELECT id, name, totalLimitCents, closingDay, dueDay, colorHex FROM credit_cards
-                """.trimIndent())
-                db.execSQL("DROP TABLE credit_cards")
-                db.execSQL("ALTER TABLE credit_cards_new RENAME TO credit_cards")
-
-                // 4. credit_card_invoices: remover syncStatus
+                // 3. credit_card_invoices: preparar credit_card_invoices_new (filha de credit_cards) ANTES de dropar o pai
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS credit_card_invoices_new (
                         id TEXT NOT NULL PRIMARY KEY,
@@ -287,11 +265,36 @@ abstract class PlatformDatabase : RoomDatabase() {
                     INSERT INTO credit_card_invoices_new (id, creditCardId, referenceMonth, closingDate, dueDate, status)
                     SELECT id, creditCardId, referenceMonth, closingDate, dueDate, status FROM credit_card_invoices
                 """.trimIndent())
+
+                // 4. credit_cards: preparar credit_cards_new
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS credit_cards_new (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        totalLimitCents INTEGER NOT NULL,
+                        closingDay INTEGER NOT NULL,
+                        dueDay INTEGER NOT NULL,
+                        colorHex TEXT NOT NULL DEFAULT '#3B82F6'
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    INSERT INTO credit_cards_new (id, name, totalLimitCents, closingDay, dueDay, colorHex)
+                    SELECT id, name, totalLimitCents, closingDay, dueDay, colorHex FROM credit_cards
+                """.trimIndent())
+
+                // Dropar e renomear credit_cards e credit_card_invoices (filha dropada antes do pai)
                 db.execSQL("DROP TABLE credit_card_invoices")
+                db.execSQL("DROP TABLE credit_cards")
+                db.execSQL("ALTER TABLE credit_cards_new RENAME TO credit_cards")
                 db.execSQL("ALTER TABLE credit_card_invoices_new RENAME TO credit_card_invoices")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_invoices_creditCardId ON credit_card_invoices(creditCardId)")
 
-                db.execSQL("PRAGMA foreign_keys = ON")
+                // Dropar e renomear categories e expense_items (filha dropada antes da mae)
+                db.execSQL("DROP TABLE expense_items")
+                db.execSQL("DROP TABLE categories")
+                db.execSQL("ALTER TABLE categories_new RENAME TO categories")
+                db.execSQL("ALTER TABLE expense_items_new RENAME TO expense_items")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_expense_items_categoryId ON expense_items(categoryId)")
             }
         }
 
@@ -313,6 +316,43 @@ abstract class PlatformDatabase : RoomDatabase() {
                     )
                     WHERE invoiceId IS NOT NULL
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Remover duplicatas existentes: manter a mais antiga por (billId, installmentNumber), preservando as ja pagas
+                db.execSQL("""
+                    DELETE FROM bill_installments 
+                    WHERE rowid IN (
+                        SELECT b.rowid
+                        FROM bill_installments b
+                        JOIN bill_installments a 
+                          ON a.billId = b.billId 
+                         AND a.installmentNumber = b.installmentNumber
+                         AND (
+                             ((a.status = 'PAID' OR a.paidAt IS NOT NULL) AND (b.status != 'PAID' AND b.paidAt IS NULL))
+                             OR
+                             ((a.status = 'PAID' OR a.paidAt IS NOT NULL) AND (b.status = 'PAID' OR b.paidAt IS NOT NULL) AND a.rowid < b.rowid)
+                             OR
+                             ((a.status != 'PAID' AND a.paidAt IS NULL) AND (b.status != 'PAID' AND b.paidAt IS NULL) AND a.rowid < b.rowid)
+                         )
+                    )
+                """.trimIndent())
+
+                // 2. Atualizar contagem total de parcelas de contas recorrentes
+                db.execSQL("""
+                    UPDATE bills 
+                    SET totalInstallments = (
+                        SELECT COUNT(*) 
+                        FROM bill_installments 
+                        WHERE bill_installments.billId = bills.id
+                    )
+                    WHERE type = 'RECURRING'
+                """.trimIndent())
+
+                // 3. Criar UNIQUE INDEX (billId, installmentNumber)
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)")
             }
         }
     }

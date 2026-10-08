@@ -123,6 +123,13 @@ class RecurringCardSubscription14MonthsTest {
         coEvery { installmentDao.insertAll(any()) } answers {
             val list = firstArg<List<BillInstallmentEntity>>()
             savedInstallments.addAll(list)
+            Unit
+        }
+
+        coEvery { installmentDao.insertAllIgnore(any()) } answers {
+            val list = firstArg<List<BillInstallmentEntity>>()
+            savedInstallments.addAll(list)
+            Unit
         }
 
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(sampleCard.id) } answers {

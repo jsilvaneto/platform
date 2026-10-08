@@ -478,7 +478,7 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>) {
         if (installments.isEmpty()) return
         database.withTransaction {
-            installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+            installmentDao.insertAllIgnore(installments.map { BillInstallmentEntity.fromDomain(it) })
             val allForBill = installmentDao.getInstallmentsByBillId(bill.id)
             val maxDueDate = allForBill.maxOfOrNull { it.dueDate }
             billDao.updateBillEndDateAndTotalInstallments(

@@ -251,8 +251,11 @@ interface BillInstallmentDao {
     @Query("UPDATE bill_installments SET invoiceId = :invoiceId, dueDate = :invoiceDueDate WHERE id IN (:installmentIds)")
     suspend fun attachInstallmentsToInvoice(installmentIds: List<String>, invoiceId: String, invoiceDueDate: Long)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(installments: List<BillInstallmentEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllIgnore(installments: List<BillInstallmentEntity>)
 
     @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE id = :id")
     suspend fun updatePayment(id: String, paidAt: Long?, actualPaymentDate: Long?, status: String)

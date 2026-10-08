@@ -25,7 +25,8 @@ import com.platform.app.domain.model.ExpenseNature
         Index("contactId"),
         Index("financialAccountId"),
         Index("itemId"),
-        Index("invoiceId")
+        Index("invoiceId"),
+        Index(value = ["billId", "installmentNumber"], unique = true)
     ]
 )
 data class BillInstallmentEntity(

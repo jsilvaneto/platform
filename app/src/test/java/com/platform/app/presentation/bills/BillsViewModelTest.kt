@@ -5,7 +5,6 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
-import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -30,7 +29,6 @@ class BillsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: FinancialRepository
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
-    private lateinit var extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
     private lateinit var viewModel: BillsViewModel
 
     @Before
@@ -38,9 +36,7 @@ class BillsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
-        extendRecurringBillsUseCase = mockk(relaxed = true)
 
-        coEvery { extendRecurringBillsUseCase(any()) } returns 0
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
         every { repository.getAllInstallments() } returns flowOf(emptyList())
         every { repository.getCategories() } returns flowOf(emptyList())
@@ -57,7 +53,7 @@ class BillsViewModelTest {
 
     @Test
     fun `SaveInstallmentEdit should invoke updateBillAndInstallment and emit ShowSnackbar`() = runTest {
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -115,7 +111,7 @@ class BillsViewModelTest {
             type = BillType.SINGLE
         )
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -145,7 +141,7 @@ class BillsViewModelTest {
         )
         val customPaymentDate = 1759000000000L
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -173,7 +169,7 @@ class BillsViewModelTest {
         )
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(BillsUiAction.SearchQueryChanged("Internet"))

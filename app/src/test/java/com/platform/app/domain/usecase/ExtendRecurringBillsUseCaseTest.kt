@@ -12,12 +12,15 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.Collections
 
 class ExtendRecurringBillsUseCaseTest {
 
@@ -138,5 +141,55 @@ class ExtendRecurringBillsUseCaseTest {
 
         assertEquals(0, countGenerated)
         coVerify(exactly = 0) { repository.addInstallments(any(), any()) }
+    }
+
+    @Test
+    fun `two concurrent async calls to extendRecurringBillsUseCase do not generate duplicate installments`() = runTest {
+        val referenceNow = 1727395200000L
+        val bill = Bill(
+            id = "bill-concurrent",
+            title = "Academia Concorrente",
+            type = BillType.RECURRING,
+            totalAmountCents = 10000L,
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER,
+            totalInstallments = 12
+        )
+
+        val startDate = DateUtils.addMonths(referenceNow, -10)
+        val initialInstallments = calculateInstallmentsUseCase(bill, startDate).mapIndexed { index, inst ->
+            if (index < 10) inst.copy(status = BillStatus.PAID, paidAt = inst.dueDate)
+            else inst
+        }
+
+        val storedInstallments = Collections.synchronizedList(initialInstallments.toMutableList())
+
+        every { repository.getBills() } returns flowOf(listOf(bill))
+        coEvery { repository.getInstallmentsByBillId(bill.id) } answers {
+            synchronized(storedInstallments) { storedInstallments.toList() }
+        }
+        coEvery { repository.addInstallments(bill, any()) } answers {
+            val newBatch = secondArg<List<BillInstallment>>()
+            synchronized(storedInstallments) {
+                storedInstallments.addAll(newBatch)
+            }
+        }
+
+        // Duas chamadas concorrentes assíncronas com referência idêntica
+        val deferred1 = async(Dispatchers.Default) { useCase(referenceNow) }
+        val deferred2 = async(Dispatchers.Default) { useCase(referenceNow) }
+
+        val res1 = deferred1.await()
+        val res2 = deferred2.await()
+
+        // Graças ao Mutex.withLock no useCase @Singleton, exatamente um estende e o outro vê o banco já estendido
+        val totalCountGenerated = res1 + res2
+        assertEquals(12, totalCountGenerated)
+
+        synchronized(storedInstallments) {
+            assertEquals(24, storedInstallments.size)
+            val uniqueInstallmentNumbers = storedInstallments.map { it.installmentNumber }.toSet()
+            assertEquals(24, uniqueInstallmentNumbers.size)
+        }
     }
 }

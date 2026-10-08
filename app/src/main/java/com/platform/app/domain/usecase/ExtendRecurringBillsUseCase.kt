@@ -6,22 +6,31 @@ import com.platform.app.domain.model.RecurrenceEndType
 import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.domain.repository.FinancialRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Caso de uso responsável pela extensão contínua de janelas temporais de contas recorrentes do tipo [RecurrenceEndType.FOREVER].
  *
  * Em vez de encerrar silenciosamente a exibição após o lote inicial (ex: 12 meses, 30 dias),
- * este caso de uso verifica periodicamente (ao abrir Dashboard/Registros ou via alarme matinal)
+ * este caso de uso verifica periodicamente (ao abrir o aplicativo via Application Scope)
  * se a conta está a menos de N ocorrências do fim da janela projetada e gera novas parcelas
  * sem desvio de dia de vencimento, preservando a integridade histórica e a regra de continuidade contábil.
+ *
+ * É anotado como [@Singleton] e protegido por um [Mutex] interno para garantir que chamadas concorrentes
+ * não entrem em condição de corrida, evitando geração duplicada de parcelas.
  */
+@Singleton
 class ExtendRecurringBillsUseCase @Inject constructor(
     private val repository: FinancialRepository,
     private val calculateInstallmentsUseCase: CalculateInstallmentsUseCase
 ) {
 
-    suspend operator fun invoke(referenceTimeMillis: Long = System.currentTimeMillis()): Int {
+    private val mutex = Mutex()
+
+    suspend operator fun invoke(referenceTimeMillis: Long = System.currentTimeMillis()): Int = mutex.withLock {
         val allBills = repository.getBills().first()
         val foreverBills = allBills.filter { bill ->
             bill.type == BillType.RECURRING &&
@@ -76,7 +85,7 @@ class ExtendRecurringBillsUseCase @Inject constructor(
 
         repository.materializeRecurringCardInvoices(referenceTimeMillis)
 
-        return totalGenerated
+        totalGenerated
     }
 
     companion object {

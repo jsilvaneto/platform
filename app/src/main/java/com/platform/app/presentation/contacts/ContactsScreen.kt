@@ -81,6 +81,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.ContactType
 import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -761,11 +762,11 @@ fun getContactTypeColors(type: ContactType): Pair<Color, Color> {
             content to content.copy(alpha = 0.12f)
         }
         ContactType.FORNECEDOR -> {
-            val content = Color(0xFFD97706)
+            val content = WarningAmber
             content to content.copy(alpha = 0.12f)
         }
         ContactType.ORGAO_PUBLICO -> {
-            val content = Color(0xFF7C3AED)
+            val content = MaterialTheme.colorScheme.tertiary
             content to content.copy(alpha = 0.12f)
         }
     }

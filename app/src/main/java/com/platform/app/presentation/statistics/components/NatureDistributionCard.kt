@@ -183,7 +183,7 @@ fun NatureDistributionCard(
                 }
 
                 // Perna de Poupança (Metas Financeiras)
-                val savingsColor = Color(0xFF10B981)
+                val savingsColor = SuccessGreen
                 Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

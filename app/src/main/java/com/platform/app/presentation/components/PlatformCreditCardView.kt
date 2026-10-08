@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.CreditCardWithInvoiceSummary
+import com.platform.app.presentation.theme.CardSkinColors
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.UrgentRed
 import com.platform.app.presentation.theme.WarningAmber
@@ -69,7 +70,7 @@ fun PlatformCreditCardView(
         colors = listOf(
             baseColor.copy(alpha = 0.95f),
             baseColor.copy(alpha = 0.75f),
-            Color(0xFF121418)
+            CardSkinColors.BaseGradientDark
         )
     )
 
@@ -123,7 +124,7 @@ fun PlatformCreditCardView(
                         Icon(
                             imageVector = Icons.Default.Sensors,
                             contentDescription = "Contactless",
-                            tint = Color.White.copy(alpha = 0.75f),
+                            tint = CardSkinColors.ContactlessIcon,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -131,14 +132,14 @@ fun PlatformCreditCardView(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.25f),
+                            color = CardSkinColors.ActionOverlay,
                             modifier = Modifier.size(28.dp)
                         ) {
                             IconButton(onClick = onEdit) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Editar",
-                                    tint = Color.White.copy(alpha = 0.9f),
+                                    tint = CardSkinColors.ActionIcon,
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -148,14 +149,14 @@ fun PlatformCreditCardView(
 
                         Surface(
                             shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.25f),
+                            color = CardSkinColors.ActionOverlay,
                             modifier = Modifier.size(28.dp)
                         ) {
                             IconButton(onClick = onDelete) {
                                 Icon(
                                     imageVector = Icons.Default.DeleteOutline,
                                     contentDescription = "Excluir",
-                                    tint = Color.White.copy(alpha = 0.9f),
+                                    tint = CardSkinColors.ActionIcon,
                                     modifier = Modifier.size(14.dp)
                                 )
                             }
@@ -169,7 +170,7 @@ fun PlatformCreditCardView(
                         text = card.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = CardSkinColors.TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -180,7 +181,7 @@ fun PlatformCreditCardView(
                         text = "Disponível: ${CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents)}",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
+                        color = CardSkinColors.TextPrimary,
                         letterSpacing = 0.5.sp
                     )
 
@@ -190,7 +191,7 @@ fun PlatformCreditCardView(
                     PlatformProgressBar(
                         progress = usageRatio,
                         height = 5.dp,
-                        trackColor = Color.White.copy(alpha = 0.2f),
+                        trackColor = CardSkinColors.TrackBackground,
                         progressColor = limitGaugeColor
                     )
                 }
@@ -205,7 +206,7 @@ fun PlatformCreditCardView(
                         Text(
                             text = "Limite: ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = CardSkinColors.TextMuted
                         )
                         Text(
                             text = "Usado: ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} (${(usageRatio * 100).toInt()}%)",
@@ -219,13 +220,13 @@ fun PlatformCreditCardView(
                         Text(
                             text = "Fecha dia ${card.closingDay}",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.75f)
+                            color = CardSkinColors.TextSubtle
                         )
                         Text(
                             text = "Vence dia ${card.dueDay}",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = CardSkinColors.TextPrimary
                         )
                     }
                 }
@@ -243,14 +244,14 @@ private fun EmvChipGraphic(modifier: Modifier = Modifier) {
         modifier = modifier
             .size(width = 30.dp, height = 22.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(Color(0xFFD4AF37))
-            .border(1.dp, Color(0xFFB8860B), RoundedCornerShape(4.dp))
+            .background(CardSkinColors.EmvChipBase)
+            .border(1.dp, CardSkinColors.EmvChipBorder, RoundedCornerShape(4.dp))
             .padding(2.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(0.5.dp, Color(0xFF8B7500), RoundedCornerShape(2.dp))
+                .border(0.5.dp, CardSkinColors.EmvChipContactLine, RoundedCornerShape(2.dp))
         )
     }
 }

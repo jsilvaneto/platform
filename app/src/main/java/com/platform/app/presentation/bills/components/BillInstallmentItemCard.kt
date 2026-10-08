@@ -128,7 +128,7 @@ fun BillInstallmentItemCard(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = AppStrings.Status.PAID,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.surface,
                                 modifier = Modifier.size(15.dp)
                             )
                         }

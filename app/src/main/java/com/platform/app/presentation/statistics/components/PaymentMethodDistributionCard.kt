@@ -38,6 +38,7 @@ import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.formatValueOrPrivate
 import com.platform.app.presentation.theme.BrandPrimary
 import com.platform.app.presentation.theme.InfoCyan
+import com.platform.app.presentation.theme.PlatformColorPalette
 import java.util.Locale
 
 @Composable
@@ -52,17 +53,7 @@ fun PaymentMethodDistributionCard(
     val cardPct = metrics.creditCardPercentage
     val nonCardPct = (100f - cardPct).coerceAtLeast(0f)
 
-    val palette = remember {
-        listOf(
-            Color(0xFF2563EB), // Azul Royal (Cartão / Principal)
-            Color(0xFF06B6D4), // Ciano / Pix
-            Color(0xFF8B5CF6), // Roxo / Boleto
-            Color(0xFF10B981), // Verde / Dinheiro
-            Color(0xFFF59E0B), // Âmbar / Débito
-            Color(0xFFEC4899), // Rosa
-            Color(0xFF64748B)  // Neutro / Outros
-        )
-    }
+    val palette = remember { PlatformColorPalette.chartPalette }
 
     PlatformCard {
         Column(modifier = Modifier.padding(16.dp)) {

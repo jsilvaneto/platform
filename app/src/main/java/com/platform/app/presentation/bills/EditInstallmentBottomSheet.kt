@@ -120,11 +120,12 @@ fun EditInstallmentBottomSheet(
     val selectedAccount = financialAccounts.find { it.id == selectedFinancialAccountId }
     val selectedMethod = paymentMethods.find { it.id == selectedPaymentMethodId }
 
-    val catColor = remember(installment.categoryColorHex) {
+    val fallbackCatColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val catColor = remember(installment.categoryColorHex, fallbackCatColor) {
         try {
             Color(android.graphics.Color.parseColor(installment.categoryColorHex))
         } catch (e: Exception) {
-            Color(0xFF64748B)
+            fallbackCatColor
         }
     }
 

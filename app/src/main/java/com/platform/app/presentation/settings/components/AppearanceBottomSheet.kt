@@ -28,10 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.presentation.settings.SettingsUiState
+import com.platform.app.presentation.theme.ThemePreviewColors
 
 @Composable
 fun AppearanceBottomSheetContent(
@@ -298,31 +298,31 @@ fun ClassicIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(Color(0xFF0B132B), RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ClassicBackground, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(Color(0xFF2563EB), RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.ClassicCard, RoundedCornerShape(5.dp))
         ) {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(Color(0xFF3B82F6), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.ClassicAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
             )
             Box(
                 modifier = Modifier
                     .size(10.dp, 8.dp)
                     .padding(start = 2.dp, top = 2.dp)
-                    .background(Color(0xFF10B981), RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ClassicBadge, RoundedCornerShape(2.dp))
             )
             Box(
                 modifier = Modifier
                     .size(8.dp)
                     .align(Alignment.BottomEnd)
                     .padding(end = 2.dp, bottom = 2.dp)
-                    .background(Color.White, CircleShape)
+                    .background(ThemePreviewColors.ClassicDot, CircleShape)
             )
         }
     }
@@ -333,7 +333,7 @@ fun ModernV2IconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(Color(0xFF0A0F1D), RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ModernV2Background, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -344,25 +344,25 @@ fun ModernV2IconPreview() {
             Box(
                 modifier = Modifier
                     .size(7.dp, 28.dp)
-                    .background(Color(0xFF2563EB), RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ModernV2Bar1, RoundedCornerShape(2.dp))
             )
             Box(
                 modifier = Modifier
                     .size(14.dp, 14.dp)
                     .align(Alignment.Top)
-                    .background(Color(0xFF3B82F6), RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+                    .background(ThemePreviewColors.ModernV2Bar2, RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
             ) {
                 Box(
                     modifier = Modifier
                         .size(4.dp)
                         .align(Alignment.Center)
-                        .background(Color(0xFF10B981), CircleShape)
+                        .background(ThemePreviewColors.ModernV2Dot, CircleShape)
                 )
             }
             Box(
                 modifier = Modifier
                     .size(6.dp, 20.dp)
-                    .background(Color(0xFF06B6D4), RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ModernV2Bar3, RoundedCornerShape(2.dp))
             )
         }
     }
@@ -373,25 +373,25 @@ fun EmeraldIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(Color(0xFF042F2E), RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.EmeraldBackground, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(Color(0xFF0D9488), RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.EmeraldCard, RoundedCornerShape(5.dp))
         ) {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(Color(0xFF14B8A6), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.EmeraldAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
             )
             Box(
                 modifier = Modifier
                     .size(8.dp)
                     .align(Alignment.BottomEnd)
                     .padding(end = 2.dp, bottom = 2.dp)
-                    .background(Color(0xFF34D399), CircleShape)
+                    .background(ThemePreviewColors.EmeraldDot, CircleShape)
             )
         }
     }
@@ -402,25 +402,25 @@ fun ObsidianIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(Color(0xFF000000), RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ObsidianBackground, RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(Color(0xFF1C1917), RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.ObsidianCard, RoundedCornerShape(5.dp))
         ) {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(Color(0xFFD97706), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.ObsidianAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
             )
             Box(
                 modifier = Modifier
                     .size(8.dp)
                     .align(Alignment.BottomEnd)
                     .padding(end = 2.dp, bottom = 2.dp)
-                    .background(Color(0xFFFBBF24), CircleShape)
+                    .background(ThemePreviewColors.ObsidianDot, CircleShape)
             )
         }
     }

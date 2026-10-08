@@ -163,7 +163,7 @@ fun ExpenseItemsScreen(
                         uiState.items.count { it.categoryId == cat.id }
                     }
                     val catColor = remember(cat.colorHex) {
-                        try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+                        try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
                     }
                     FilterChip(
                         selected = uiState.selectedCategoryId == cat.id,
@@ -328,7 +328,7 @@ fun CategorySectionHeader(
     itemsCount: Int
 ) {
     val categoryColor = remember(category.colorHex) {
-        try { Color(category.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+        try { Color(category.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
     }
     val functionalIcon = PlatformIconCatalog.getIcon(category.iconName)
 
@@ -946,7 +946,7 @@ fun CategorySearchableModal(
                         items(cats, key = { it.id }) { cat ->
                             val isSelected = cat.id == selectedCategoryId
                             val color = remember(cat.colorHex) {
-                                try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { Color.Gray }
+                                try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
                             }
 
                             Surface(

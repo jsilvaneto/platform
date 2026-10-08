@@ -81,6 +81,25 @@ object PlatformColorPalette {
         CuratedColorToken("#1E293B", "Obsidiana", "Neutro")
     )
 
+    // Paleta Semântica para Gráficos e Distribuições (Data Visualization)
+    val chartSeries1 = Color(0xFF2563EB) // Azul Royal (Principal)
+    val chartSeries2 = Color(0xFF06B6D4) // Ciano (Pix / Instantâneo)
+    val chartSeries3 = Color(0xFF8B5CF6) // Roxo (Boleto / Títulos)
+    val chartSeries4 = Color(0xFF10B981) // Esmeralda (Dinheiro / À Vista)
+    val chartSeries5 = Color(0xFFF59E0B) // Âmbar (Débito)
+    val chartSeries6 = Color(0xFFEC4899) // Rosa Orquídea
+    val chartSeries7 = Color(0xFF64748B) // Ardósia Neutro (Outros)
+
+    val chartPalette: List<Color> = listOf(
+        chartSeries1,
+        chartSeries2,
+        chartSeries3,
+        chartSeries4,
+        chartSeries5,
+        chartSeries6,
+        chartSeries7
+    )
+
     fun findToken(hex: String): CuratedColorToken? {
         return TOKENS.find { it.hex.equals(hex, ignoreCase = true) }
     }
@@ -147,7 +166,7 @@ fun PlatformColorPicker(
                         .background(color, RoundedCornerShape(8.dp))
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Black.copy(alpha = 0.15f),
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp)
                         )
                         .clickable { onColorSelected(token.hex) },
@@ -156,13 +175,13 @@ fun PlatformColorPicker(
                     if (isSelected) {
                         Surface(
                             shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.4f),
+                            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f),
                             modifier = Modifier.size(18.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Selecionada",
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier
                                     .padding(2.dp)
                                     .size(14.dp)

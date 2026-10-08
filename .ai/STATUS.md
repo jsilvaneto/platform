@@ -207,6 +207,14 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Regra de Governança Composable (~600 linhas)**: Registrada no `AGENT_RULES.md` e `.agents/rules/coding_standards.md` a regra mandatória de que nenhum arquivo Composable deve ultrapassar ~600 linhas, promovendo componentização cirúrgica e otimização de contexto para IA.
 - [x] **100% de Paridade e Testes Unitários Verdes**: Comportamento visual e de negócio estritamente preservado 1:1, com validação e aprovação de toda a suíte de testes unitários a cada tela.
 
+### Eliminação de Cores Literais Residuais & Guard Rail de Build (v1.19.0)
+- [x] **Tokenização da Paleta de Gráficos (`PlatformColorPalette`)**: `chartSeries1..7` e `chartPalette` integrados para visualização semântica de dados (utilizado em `PaymentMethodDistributionCard`).
+- [x] **Exceções Documentadas Centralizadas (`DesignExceptionColors.kt`)**:
+  - `ThemePreviewColors`: 18 cores nominais das miniaturas de tema (Classic, Modern V2, Emerald, Obsidian) isoladas com justificativa de preservação cromática pré-ativação.
+  - `CardSkinColors`: 15 cores e gradações do acabamento do cartão físico/virtual (`PlatformCreditCardView`).
+- [x] **Correção de Cores Residuais em Componentes**: Substituição de cores soltas por tokens em `BillInstallmentItemCard`, `EditInstallmentBottomSheet`, `NatureDistributionCard`, `ContactsScreen`, `ExpenseItemsScreen` e `PlatformColorPicker`.
+- [x] **Guard Rail Automatizado de Build (`checkLiteralColors`)**: Task Gradle `:app:checkLiteralColors` vinculada ao `preBuild`, interrompendo compilações em caso de nova cor literal fora de `theme/`. Scripts `scripts/check-literal-colors.ps1` e `scripts/check-literal-colors.sh`.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

@@ -114,3 +114,55 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+tasks.register("checkLiteralColors") {
+    group = "verification"
+    description = "Checks that no literal colors (Color(0x...), Color.White, Color.Black, etc.) are used outside presentation/theme"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val themeDir = file("src/main/java/com/platform/app/presentation/theme")
+        val forbiddenPatterns = listOf(
+            Regex("""\bColor\(0x[0-9a-fA-F]+\)"""),
+            Regex("""\bColor\.(White|Black|Red|Green|Blue|Yellow|Cyan|Magenta|Gray|DarkGray|LightGray)\b""")
+        )
+
+        val violations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.extension == "kt" && !file.startsWith(themeDir)) {
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        val trimmed = line.trim()
+                        if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
+                            for (pattern in forbiddenPatterns) {
+                                if (pattern.containsMatchIn(line)) {
+                                    val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+                                    violations.add("$relativePath:${index + 1}: $trimmed")
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontradas ${violations.size} violação(ões) de cor literal fora de presentation/theme:")
+                violations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra Arquitetural (coding_standards.md):")
+                appendLine("Cores literais (Color(0x...), Color.White, Color.Black, Color.Gray, etc.) são proibidas fora do pacote theme.")
+                appendLine("Utilize MaterialTheme.colorScheme.* ou tokens em PlatformColorPalette / ThemePreviewColors / CardSkinColors.")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkLiteralColors: Todas as telas respeitam estritamente os tokens de tema (0 violações encontradas).")
+        }
+    }
+}
+
+tasks.named("preBuild") {
+    dependsOn("checkLiteralColors")
+}
+

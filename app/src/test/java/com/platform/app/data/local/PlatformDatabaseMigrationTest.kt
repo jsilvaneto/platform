@@ -45,4 +45,21 @@ class PlatformDatabaseMigrationTest {
             db.execSQL("PRAGMA foreign_keys = ON")
         }
     }
+
+    @Test
+    fun `migration 15 to 16 should add recurrenceAnchorDate and creditCardId to bills table`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(15, PlatformDatabase.MIGRATION_15_16.startVersion)
+        assertEquals(16, PlatformDatabase.MIGRATION_15_16.endVersion)
+
+        PlatformDatabase.MIGRATION_15_16.migrate(db)
+
+        verify(atLeast = 1) {
+            db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceAnchorDate INTEGER DEFAULT NULL")
+            db.execSQL("ALTER TABLE bills ADD COLUMN creditCardId TEXT DEFAULT NULL")
+            db.execSQL(match { it.contains("UPDATE bills") && it.contains("recurrenceAnchorDate") })
+            db.execSQL(match { it.contains("UPDATE bills") && it.contains("creditCardId") })
+        }
+    }
 }

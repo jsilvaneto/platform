@@ -407,7 +407,9 @@ class NewExpenseViewModel @Inject constructor(
                     recurrenceFrequency = if (state.expenseType == BillType.RECURRING) state.recurrenceFrequency else null,
                     recurrenceEndType = if (state.expenseType == BillType.RECURRING) state.recurrenceEndType else null,
                     recurrenceEndDate = if (state.expenseType == BillType.RECURRING && state.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) state.recurrenceEndDate else null,
-                    createdAt = System.currentTimeMillis()
+                    createdAt = System.currentTimeMillis(),
+                    recurrenceAnchorDate = if (state.expenseType == BillType.RECURRING) state.dueDate else null,
+                    creditCardId = if (state.isCreditCard) state.selectedCreditCard?.id else null
                 )
 
                 val selectedCard = if (state.isCreditCard) state.selectedCreditCard else null

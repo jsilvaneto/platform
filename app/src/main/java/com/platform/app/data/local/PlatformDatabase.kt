@@ -45,7 +45,7 @@ import com.platform.app.data.local.entity.PaymentMethodEntity
         GoalContributionEntity::class,
         BudgetEntity::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
@@ -292,6 +292,27 @@ abstract class PlatformDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_invoices_creditCardId ON credit_card_invoices(creditCardId)")
 
                 db.execSQL("PRAGMA foreign_keys = ON")
+            }
+        }
+
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE bills ADD COLUMN recurrenceAnchorDate INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE bills ADD COLUMN creditCardId TEXT DEFAULT NULL")
+                db.execSQL("""
+                    UPDATE bills
+                    SET recurrenceAnchorDate = (
+                        SELECT MIN(dueDate) FROM bill_installments WHERE bill_installments.billId = bills.id
+                    )
+                    WHERE type = 'RECURRING'
+                """.trimIndent())
+                db.execSQL("""
+                    UPDATE bills
+                    SET creditCardId = (
+                        SELECT creditCardId FROM credit_card_invoices WHERE credit_card_invoices.id = bills.invoiceId
+                    )
+                    WHERE invoiceId IS NOT NULL
+                """.trimIndent())
             }
         }
     }

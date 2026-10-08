@@ -25,6 +25,7 @@ class DueReminderReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 extendRecurringBillsUseCase()
+                repository.materializeRecurringCardInvoices()
                 DueReminderManager.checkAndNotifyDueExpenses(context, repository)
             } finally {
                 pendingResult.finish()

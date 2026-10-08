@@ -215,6 +215,25 @@ Este documento registra o checklist de funcionalidades, fases de implementação
 - [x] **Correção de Cores Residuais em Componentes**: Substituição de cores soltas por tokens em `BillInstallmentItemCard`, `EditInstallmentBottomSheet`, `NatureDistributionCard`, `ContactsScreen`, `ExpenseItemsScreen` e `PlatformColorPicker`.
 - [x] **Guard Rail Automatizado de Build (`checkLiteralColors`)**: Task Gradle `:app:checkLiteralColors` vinculada ao `preBuild`, interrompendo compilações em caso de nova cor literal fora de `theme/`. Scripts `scripts/check-literal-colors.ps1` e `scripts/check-literal-colors.sh`.
 
+### Materialização Sob Demanda de Faturas e Ancoragem Estável de Recorrências (v1.20.0)
+- [x] **Materialização Sob Demanda de Faturas de Cartão (`FinancialRepositoryImpl`)**:
+  - `getOrCreateInvoiceForMonth`: busca e anexa atomicamente ocorrências `RECURRING` desvinculadas (`invoiceId IS NULL`) cujo ciclo pertença à competência (`determineInvoiceReferenceMonth == referenceMonth`). Unifica `dueDate` ao vencimento da fatura.
+  - `materializeRecurringCardInvoices`: rotina proativa exposta no repositório que varre todos os cartões cadastrados e materializa vínculos e faturas até a competência atual.
+  - Integração em pontos estratégicos do app: rotina diária de lembretes (`DueReminderReceiver`), expansão de horizontes (`ExtendRecurringBillsUseCase`) e seleção/abertura de faturas (`CreditCardsViewModel`).
+- [x] **Desacoplamento e Ancoragem Estável (`CalculateInstallmentsUseCase`)**:
+  - `generateNextRecurringInstallments` não copia mais `bill.invoiceId` (define explicitamente `invoiceId = null`), evitando que ocorrências estendidas no cartão apontem para a 1ª fatura já liquidada.
+  - Ancoragem temporal fixada em `bill.recurrenceAnchorDate` (data do ciclo original da compra) em vez de `firstInstallment.dueDate` (que no cartão passa a ser a data de vencimento da fatura). Evita desvios progressivos de ciclo em meses 13+.
+  - Preenchimento e propagação de `recurrenceAnchorDate` e `creditCardId` em `CreateBillUseCase` e `NewExpenseViewModel`.
+- [x] **Evolução de Schema e Migração Room v16 (`PlatformDatabase.MIGRATION_15_16`)**:
+  - Colunas `recurrenceAnchorDate INTEGER DEFAULT NULL` e `creditCardId TEXT DEFAULT NULL` na tabela `bills`.
+  - Migração inteligente com backfill de `creditCardId` derivado de `credit_card_invoices` e reconstituição de `recurrenceAnchorDate` pela menor data de vencimento de parcelas recorrentes.
+  - Otimizações no DAO: `getUnattachedRecurringInstallmentsForCard` e `attachInstallmentsToInvoice`.
+- [x] **Suíte Abrangente de Testes Automatizados**:
+  - `RecurringCardSubscription14MonthsTest`: simulação end-to-end de 14 meses de assinatura no cartão Nubank (fechamento 20, vencimento 27, compra dia 10). Valida 1 ocorrência por fatura, zero apontamento para a 1ª fatura nas estendidas e vencimento perfeitamente estável.
+  - `FinancialRepositoryInvoiceTest`: cobertura unitária para anexação sob demanda e materialização preventiva.
+  - `CalculateInstallmentsUseCaseTest`: testes para `invoiceId = null` e estabilidade de `recurrenceAnchorDate`.
+  - `PlatformDatabaseMigrationTest`: validação de esquema e preservação de dados da migração 15 -> 16. 100% dos testes unitários verdes.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

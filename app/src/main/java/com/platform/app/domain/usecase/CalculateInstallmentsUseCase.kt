@@ -73,7 +73,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                 val frequency = bill.recurrenceFrequency ?: RecurrenceFrequency.MONTHLY
                 val endType = bill.recurrenceEndType ?: RecurrenceEndType.FOREVER
                 val targetDueDates = calculateRecurrenceDueDates(
-                    firstDueDate = firstDueDate,
+                    firstDueDate = bill.recurrenceAnchorDate ?: firstDueDate,
                     frequency = frequency,
                     endType = endType,
                     endDate = bill.recurrenceEndDate,
@@ -129,8 +129,12 @@ class CalculateInstallmentsUseCase @Inject constructor() {
         val installments = mutableListOf<BillInstallment>()
         for (i in 0 until count) {
             val installmentNumber = startNumber + i
-            val stepFromFirst = installmentNumber - firstInstallment.installmentNumber
-            val dueDate = DateUtils.addRecurrenceStep(firstInstallment.dueDate, frequency, stepFromFirst)
+            val dueDate = if (bill.recurrenceAnchorDate != null) {
+                DateUtils.addRecurrenceStep(bill.recurrenceAnchorDate, frequency, installmentNumber - 1)
+            } else {
+                val stepFromFirst = installmentNumber - firstInstallment.installmentNumber
+                DateUtils.addRecurrenceStep(firstInstallment.dueDate, frequency, stepFromFirst)
+            }
 
             installments.add(
                 BillInstallment(
@@ -139,7 +143,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                     billTitle = bill.title,
                     categoryId = bill.categoryId,
                     itemId = bill.itemId,
-                    invoiceId = bill.invoiceId,
+                    invoiceId = null,
                     contactId = bill.contactId,
                     financialAccountId = bill.financialAccountId,
                     paymentMethodId = bill.paymentMethodId,

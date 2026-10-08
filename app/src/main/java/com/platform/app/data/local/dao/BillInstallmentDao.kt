@@ -236,6 +236,21 @@ interface BillInstallmentDao {
     )
     suspend fun countInstallmentsForCard(cardId: String): Int
 
+    @Query(
+        """
+        SELECT i.* FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        LEFT JOIN credit_card_invoices inv ON b.invoiceId = inv.id
+        WHERE b.type = 'RECURRING'
+          AND i.invoiceId IS NULL
+          AND (b.creditCardId = :cardId OR inv.creditCardId = :cardId)
+        """
+    )
+    suspend fun getUnattachedRecurringInstallmentsForCard(cardId: String): List<BillInstallmentEntity>
+
+    @Query("UPDATE bill_installments SET invoiceId = :invoiceId, dueDate = :invoiceDueDate WHERE id IN (:installmentIds)")
+    suspend fun attachInstallmentsToInvoice(installmentIds: List<String>, invoiceId: String, invoiceDueDate: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(installments: List<BillInstallmentEntity>)
 

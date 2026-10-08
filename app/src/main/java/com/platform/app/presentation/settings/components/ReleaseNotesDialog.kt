@@ -71,33 +71,27 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
-                    emoji = "🎯",
-                    title = "Rigidez Orçamentária Real 50-30-20",
-                    description = "Avaliação holística do orçamento integrando as 4 naturezas de gastos (Obrigatório, Necessário, Deseja, Nenhum) com aportes mensais em Metas."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🏦",
-                    title = "Integração de Metas como Poupança",
-                    description = "Seus aportes em metas agora compõem o pilar de Poupança (20%) nas estatísticas, viabilizando o cálculo completo da regra 50-30-20."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🏷️",
-                    title = "Diagnóstico Orçamentário Preciso",
-                    description = "Novos selos e alertas inteligentes por faixa, eliminando falsos positivos de 'Excelente' quando lazer e poupança estiverem zerados."
-                )
-
-                ReleaseNoteItem(
                     emoji = "💳",
-                    title = "Data Real de Pagamento e Baixa Retroativa",
-                    description = "Registre a data efetiva de pagamento na quitação de contas e preserve sua taxa de pontualidade real sem falsos atrasos."
+                    title = "Assinaturas e Recorrências no Cartão",
+                    description = "Suas assinaturas mensais agora aparecem automaticamente em cada fatura de cartão sob demanda, garantindo total conferência com o extrato bancário."
                 )
 
                 ReleaseNoteItem(
-                    emoji = "✏️",
-                    title = "Edição Completa de Itens de Despesa",
-                    description = "Edite o nome ou a categoria de qualquer item de despesa existente com herança e sincronização instantânea de natureza."
+                    emoji = "⚡",
+                    title = "Materialização Sob Demanda",
+                    description = "As faturas futuras de cartões anexam de forma transparente as ocorrências de ciclo no momento exato de consulta ou na rotina diária."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "📅",
+                    title = "Vencimentos e Ciclos Estáveis",
+                    description = "Cálculo aprimorado de extensões recorrentes mantendo a data original de compra preservada para sempre sem desvio de ciclo."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "🛡️",
+                    title = "Integridade e Limite Real",
+                    description = "As parcelas futuras não vinculam mais a faturas anteriores já quitadas, assegurando limites de crédito precisos e sem distorções."
                 )
             }
         },

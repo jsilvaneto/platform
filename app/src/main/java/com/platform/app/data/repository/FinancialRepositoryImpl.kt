@@ -25,6 +25,7 @@ import com.platform.app.domain.model.CardDependencies
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.CreditCard
+import com.platform.app.domain.model.CreditCardCalculator
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.core.preferences.PreferencesManager
@@ -233,41 +234,90 @@ class FinancialRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice {
-        val existing = creditCardDao.getInvoiceByMonth(cardId, referenceMonth)
-        if (existing != null) {
-            return existing.toDomain()
+        return database.withTransaction {
+            val existing = creditCardDao.getInvoiceByMonth(cardId, referenceMonth)
+            val invoice = if (existing != null) {
+                existing.toDomain()
+            } else {
+                val card = creditCardDao.getCardById(cardId) ?: return@withTransaction CreditCardInvoice(
+                    creditCardId = cardId,
+                    referenceMonth = referenceMonth,
+                    closingDate = System.currentTimeMillis(),
+                    dueDate = System.currentTimeMillis()
+                )
+
+                val cal = Calendar.getInstance()
+                val parts = referenceMonth.split("-")
+                val year = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(Calendar.YEAR)
+                val month = (parts.getOrNull(1)?.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
+
+                cal.set(year, month, card.closingDay, 23, 59, 59)
+                val closingDate = cal.timeInMillis
+
+                cal.set(year, month, card.dueDay, 23, 59, 59)
+                if (card.dueDay <= card.closingDay) {
+                    cal.add(Calendar.MONTH, 1)
+                }
+                val dueDate = cal.timeInMillis
+
+                val newInvoice = CreditCardInvoice(
+                    creditCardId = cardId,
+                    referenceMonth = referenceMonth,
+                    closingDate = closingDate,
+                    dueDate = dueDate,
+                    status = InvoiceStatus.ABERTA
+                )
+                creditCardDao.insertInvoice(CreditCardInvoiceEntity.fromDomain(newInvoice))
+                newInvoice
+            }
+
+            // Materialização sob demanda: anexar ocorrências RECURRING do cartão cujo ciclo cai neste referenceMonth
+            val card = creditCardDao.getCardById(cardId)
+            if (card != null) {
+                val unattached = installmentDao.getUnattachedRecurringInstallmentsForCard(cardId)
+                val matchingIds = unattached.filter { inst ->
+                    CreditCardCalculator.determineInvoiceReferenceMonth(inst.dueDate, card.closingDay) == referenceMonth
+                }.map { it.id }
+
+                if (matchingIds.isNotEmpty()) {
+                    installmentDao.attachInstallmentsToInvoice(
+                        installmentIds = matchingIds,
+                        invoiceId = invoice.id,
+                        invoiceDueDate = invoice.dueDate
+                    )
+                }
+            }
+
+            invoice
+        }
+    }
+
+    override suspend fun materializeRecurringCardInvoices(referenceTimeMillis: Long): Int {
+        val cards = creditCardDao.getAllCardsList()
+        var totalAttached = 0
+
+        for (card in cards) {
+            val currentRefMonth = CreditCardCalculator.determineInvoiceReferenceMonth(
+                purchaseTimestamp = referenceTimeMillis,
+                closingDay = card.closingDay
+            )
+
+            val unattached = installmentDao.getUnattachedRecurringInstallmentsForCard(card.id)
+            if (unattached.isEmpty()) continue
+
+            val byRefMonth = unattached.groupBy {
+                CreditCardCalculator.determineInvoiceReferenceMonth(it.dueDate, card.closingDay)
+            }
+
+            for ((refMonth, installmentsInCycle) in byRefMonth) {
+                if (refMonth <= currentRefMonth) {
+                    getOrCreateInvoiceForMonth(card.id, refMonth)
+                    totalAttached += installmentsInCycle.size
+                }
+            }
         }
 
-        val card = creditCardDao.getCardById(cardId) ?: return CreditCardInvoice(
-            creditCardId = cardId,
-            referenceMonth = referenceMonth,
-            closingDate = System.currentTimeMillis(),
-            dueDate = System.currentTimeMillis()
-        )
-
-        val cal = Calendar.getInstance()
-        val parts = referenceMonth.split("-")
-        val year = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(Calendar.YEAR)
-        val month = (parts.getOrNull(1)?.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
-
-        cal.set(year, month, card.closingDay, 23, 59, 59)
-        val closingDate = cal.timeInMillis
-
-        cal.set(year, month, card.dueDay, 23, 59, 59)
-        if (card.dueDay <= card.closingDay) {
-            cal.add(Calendar.MONTH, 1)
-        }
-        val dueDate = cal.timeInMillis
-
-        val newInvoice = CreditCardInvoice(
-            creditCardId = cardId,
-            referenceMonth = referenceMonth,
-            closingDate = closingDate,
-            dueDate = dueDate,
-            status = InvoiceStatus.ABERTA
-        )
-        creditCardDao.insertInvoice(CreditCardInvoiceEntity.fromDomain(newInvoice))
-        return newInvoice
+        return totalAttached
     }
 
     override suspend fun payInvoice(invoiceId: String, actualPaymentDate: Long?) {

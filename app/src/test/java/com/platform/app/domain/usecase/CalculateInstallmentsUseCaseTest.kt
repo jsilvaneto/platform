@@ -6,6 +6,7 @@ import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.RecurrenceEndType
 import com.platform.app.domain.model.RecurrenceFrequency
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -220,5 +221,70 @@ class CalculateInstallmentsUseCaseTest {
         val recurringBill = Bill(id = "r1", title = "Assinatura", type = BillType.RECURRING, totalAmountCents = 1000L)
         val nextForEmpty = useCase.generateNextRecurringInstallments(recurringBill, emptyList())
         assertTrue(nextForEmpty.isEmpty())
+    }
+
+    @Test
+    fun `generateNextRecurringInstallments should not copy bill invoiceId and set invoiceId to null`() {
+        val startDate = 1727395200000L
+        val bill = Bill(
+            id = "bill-forever-inv",
+            title = "Assinatura Streaming",
+            type = BillType.RECURRING,
+            totalAmountCents = 4590L,
+            invoiceId = "invoice-oct-2026", // 1ª fatura vinculada na conta
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER,
+            recurrenceAnchorDate = startDate
+        )
+        val initialInstallments = useCase(bill, startDate).mapIndexed { index, inst ->
+            if (index == 0) inst.copy(invoiceId = "invoice-oct-2026") else inst.copy(invoiceId = null)
+        }
+
+        val nextInstallments = useCase.generateNextRecurringInstallments(bill, initialInstallments, 6)
+
+        assertEquals(6, nextInstallments.size)
+        // Nenhuma parcela estendida deve herdar invoice-oct-2026
+        nextInstallments.forEach {
+            assertNull("Parcelas estendidas devem ter invoiceId nulo", it.invoiceId)
+        }
+    }
+
+    @Test
+    fun `generateNextRecurringInstallments should anchor to recurrenceAnchorDate when firstInstallment dueDate was modified by invoice`() {
+        val anchorDate = 1728518400000L // 10/10/2026 (dia 10)
+        val invoiceDueDate = 1729987200000L // 27/10/2026 (dia 27, vencimento da fatura do cartão)
+
+        val bill = Bill(
+            id = "bill-card-rec",
+            title = "GymPass",
+            type = BillType.RECURRING,
+            totalAmountCents = 8990L,
+            invoiceId = "inv-1",
+            recurrenceFrequency = RecurrenceFrequency.MONTHLY,
+            recurrenceEndType = RecurrenceEndType.FOREVER,
+            recurrenceAnchorDate = anchorDate
+        )
+
+        // Simula 12 parcelas onde a 1ª teve dueDate alterada para o vencimento da fatura (dia 27)
+        val initialInstallments = useCase(bill, anchorDate).mapIndexed { index, inst ->
+            if (index == 0) inst.copy(dueDate = invoiceDueDate, invoiceId = "inv-1")
+            else inst.copy(invoiceId = null)
+        }
+
+        // Gera parcelas 13 e 14
+        val nextInstallments = useCase.generateNextRecurringInstallments(bill, initialInstallments, 2)
+
+        assertEquals(2, nextInstallments.size)
+        assertEquals(13, nextInstallments[0].installmentNumber)
+        assertEquals(14, nextInstallments[1].installmentNumber)
+
+        // Parcela 13 deve ser exatamente 12 meses após anchorDate (10/10/2027), NÃO ancorada em 27/10/2026
+        val expectedDate13 = DateUtils.addMonths(anchorDate, 12)
+        val expectedDate14 = DateUtils.addMonths(anchorDate, 13)
+
+        assertEquals(expectedDate13, nextInstallments[0].dueDate)
+        assertEquals(expectedDate14, nextInstallments[1].dueDate)
+        assertNull(nextInstallments[0].invoiceId)
+        assertNull(nextInstallments[1].invoiceId)
     }
 }

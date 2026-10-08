@@ -44,10 +44,10 @@ platform/
 │   ├── rules/               # architecture.md, coding_standards.md, test_data_cleanup.md, governance_and_versioning.md
 │   └── skills/              # ui-elegance-and-proportions, offline-backup-and-export, financial-domain-guard, etc.
 ├── .ai/                     # Documentação canônica viva de arquitetura e contexto
-│   ├── DECISIONS/           # Architecture Decision Records (ADRs 001 a 006)
+│   ├── DECISIONS/           # Architecture Decision Records (ADRs 001 a 030)
 │   ├── ARCHITECTURE.md      # Referência técnica canônica e diagramas
 │   ├── CONTEXT.md           # Visão de produto e regras de domínio móvel 100% offline
-│   ├── STATUS.md            # Roadmap de releases e checklist de fases (Versão atual: 1.3.0)
+│   ├── STATUS.md            # Roadmap de releases e checklist de fases (Versão atual: 1.20.0)
 │   └── ANDROID_GUIDE.md     # Manual prático de desenvolvimento
 ├── app/                     # Módulo principal do aplicativo Android
 │   ├── src/

@@ -26,7 +26,9 @@ data class BillEntity(
     val recurrenceEndType: String? = null,
     val recurrenceEndDate: Long? = null,
     val isPaused: Boolean = false,
-    val createdAt: Long
+    val createdAt: Long,
+    val recurrenceAnchorDate: Long? = null,
+    val creditCardId: String? = null
 ) {
     fun toDomain(): Bill {
         return Bill(
@@ -54,7 +56,9 @@ data class BillEntity(
             },
             recurrenceEndDate = recurrenceEndDate,
             isPaused = isPaused,
-            createdAt = createdAt
+            createdAt = createdAt,
+            recurrenceAnchorDate = recurrenceAnchorDate,
+            creditCardId = creditCardId
         )
     }
 
@@ -77,7 +81,9 @@ data class BillEntity(
                 recurrenceEndType = bill.recurrenceEndType?.name,
                 recurrenceEndDate = bill.recurrenceEndDate,
                 isPaused = bill.isPaused,
-                createdAt = bill.createdAt
+                createdAt = bill.createdAt,
+                recurrenceAnchorDate = bill.recurrenceAnchorDate,
+                creditCardId = bill.creditCardId
             )
         }
     }

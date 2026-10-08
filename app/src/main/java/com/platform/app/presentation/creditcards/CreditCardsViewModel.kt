@@ -33,6 +33,9 @@ class CreditCardsViewModel @Inject constructor(
     private var invoiceDetailsJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            repository.materializeRecurringCardInvoices()
+        }
         loadData()
     }
 
@@ -44,6 +47,12 @@ class CreditCardsViewModel @Inject constructor(
             }
             is CreditCardsUiAction.SelectMonth -> {
                 _uiState.update { it.copy(selectedReferenceMonth = action.referenceMonth) }
+                val cardId = _uiState.value.selectedCardId
+                if (cardId != null) {
+                    viewModelScope.launch {
+                        repository.getOrCreateInvoiceForMonth(cardId, action.referenceMonth)
+                    }
+                }
             }
             is CreditCardsUiAction.SelectInvoiceForDetails -> {
                 _uiState.update { it.copy(selectedInvoiceForDetails = action.invoice) }

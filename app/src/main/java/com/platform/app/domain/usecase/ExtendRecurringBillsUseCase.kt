@@ -74,6 +74,8 @@ class ExtendRecurringBillsUseCase @Inject constructor(
             }
         }
 
+        repository.materializeRecurringCardInvoices(referenceTimeMillis)
+
         return totalGenerated
     }
 

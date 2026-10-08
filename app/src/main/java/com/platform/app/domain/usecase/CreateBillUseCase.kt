@@ -20,17 +20,23 @@ class CreateBillUseCase @Inject constructor(
         isFirstInstallmentPaid: Boolean = false,
         actualPaymentDate: Long? = null
     ): List<BillInstallment> {
-        val baseInstallments = calculateInstallmentsUseCase(bill, firstDueDate)
+        val anchorDate = bill.recurrenceAnchorDate ?: if (bill.type == BillType.RECURRING) firstDueDate else null
+        val preparedBill = bill.copy(
+            recurrenceAnchorDate = anchorDate,
+            creditCardId = creditCard?.id ?: bill.creditCardId
+        )
+
+        val baseInstallments = calculateInstallmentsUseCase(preparedBill, firstDueDate)
 
         val finalInstallments = baseInstallments.mapIndexed { index, installment ->
-            val isPaid = isFirstInstallmentPaid && (bill.type == BillType.SINGLE || index == 0)
+            val isPaid = isFirstInstallmentPaid && (preparedBill.type == BillType.SINGLE || index == 0)
             val paymentTimestamp = if (isPaid) (actualPaymentDate ?: System.currentTimeMillis()) else null
             val status = if (isPaid) BillStatus.PAID else BillStatus.PENDING
 
             if (creditCard != null) {
                 // Para RECURRING, apenas a ocorrência do ciclo inicial é atrelada imediatamente à fatura.
                 // As ocorrências futuras mantêm a projeção temporal sem pré-criar faturas vazias antecipadas no banco.
-                if (bill.type == BillType.RECURRING && index > 0) {
+                if (preparedBill.type == BillType.RECURRING && index > 0) {
                     installment.copy(
                         invoiceId = null,
                         status = status,
@@ -61,12 +67,12 @@ class CreateBillUseCase @Inject constructor(
             }
         }
 
-        val updatedBill = bill.copy(
-            invoiceId = if (creditCard != null) finalInstallments.firstOrNull()?.invoiceId else bill.invoiceId,
-            totalInstallments = if (bill.type == BillType.RECURRING && finalInstallments.isNotEmpty()) {
+        val updatedBill = preparedBill.copy(
+            invoiceId = if (creditCard != null) finalInstallments.firstOrNull()?.invoiceId else preparedBill.invoiceId,
+            totalInstallments = if (preparedBill.type == BillType.RECURRING && finalInstallments.isNotEmpty()) {
                 finalInstallments.size
             } else {
-                bill.totalInstallments
+                preparedBill.totalInstallments
             }
         )
 

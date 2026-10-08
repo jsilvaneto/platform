@@ -71,21 +71,21 @@ fun ReleaseNotesDialog(
                 )
 
                 ReleaseNoteItem(
-                    emoji = "🔒",
-                    title = "Proteção Anti-Duplicidade",
-                    description = "Garantia de que nenhuma conta recorrente seja duplicada, com sincronização em nível de processo e no banco de dados."
-                )
-
-                ReleaseNoteItem(
-                    emoji = "🚀",
-                    title = "Inicialização Mais Leve e Rápida",
-                    description = "A extensão contínua de contas agora roda em um único ponto centralizado ao abrir o app, tornando a navegação mais fluida."
-                )
-
-                ReleaseNoteItem(
                     emoji = "🛡️",
-                    title = "Integridade Estrutural do Banco",
-                    description = "Novo índice único e limpeza inteligente preservam 100% dos seus pagamentos já realizados e a exatidão das parcelas."
+                    title = "Integridade Referencial Robusta",
+                    description = "Proteção estrita de faturas de cartão e parcelas contra perdas ou deleções acidentais em cascata durante migrações de dados."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "📐",
+                    title = "Versionamento Estrutural do Banco",
+                    description = "Esquemas do banco de dados agora 100% versionados e testados com MigrationTestHelper, prevenindo inconsistências."
+                )
+
+                ReleaseNoteItem(
+                    emoji = "⚡",
+                    title = "Estabilidade e Vínculos de Fatura",
+                    description = "Garantia de conformidade total entre faturas abertas, contas parceladas e compras com conferência relacional validada."
                 )
             }
         },

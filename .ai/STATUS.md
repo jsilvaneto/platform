@@ -245,6 +245,21 @@ Este documento registra o checklist de funcionalidades, fases de implementação
   - `ExtendRecurringBillsUseCaseTest`: validação de chamadas assíncronas concorrentes (`async(Dispatchers.Default)`) gerando exatamente 1 conjunto de parcelas sem duplicidade.
   - `PlatformDatabaseMigrationTest`: validação de schema e comandos da migração 16 -> 17. 100% dos testes unitários verdes.
 
+### Exportação de Esquemas Room, Correção de Cascata em FKs (14→15) e MigrationTestHelper (v1.22.0)
+- [x] **Ativação e Versionamento de Esquemas Room (`exportSchema = true`)**:
+  - Habilitado `exportSchema = true` na anotação `@Database` de `PlatformDatabase`.
+  - Configurado `room.schemaLocation = "$projectDir/schemas"` no KSP e assets em `androidTest` e `test`.
+  - Versionados os esquemas 9.json a 17.json em `app/schemas/com.platform.app.data.local.PlatformDatabase/`.
+- [x] **Correção da Migração 14→15 (`PlatformDatabase.MIGRATION_14_15`)**:
+  - Remoção dos PRAGMAs ineficazes `PRAGMA foreign_keys = OFF/ON`.
+  - Inclusão de `PRAGMA defer_foreign_keys = ON` para diferir validações até o commit da transação de migração.
+  - Ordenação correta: tabelas-filhas (`credit_card_invoices_new`, `expense_items_new`) populadas antes do drop das tabelas-pai (`credit_cards`, `categories`), impedindo deleção em cascata acidental das faturas.
+- [x] **Testes Instrumentados com `MigrationTestHelper` (`PlatformDatabaseMigrationAndroidTest`)**:
+  - Dependência `androidx.room:room-testing` adicionada em `androidTestImplementation` e `testImplementation`.
+  - Teste instrumentado cobrindo o encadeamento 9→10 até 14→15 (e 9→17 ponta a ponta) sobre banco de dados populado.
+  - Comparação estrita de contagem de linhas antes e depois da migração (especialmente faturas e parcelas vinculadas).
+  - Execução e asserção de `PRAGMA foreign_key_check` retornando zero violações de chave estrangeira.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).

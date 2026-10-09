@@ -1,7 +1,7 @@
 # Changelog - Platform (Android App)
 
-Todas as alteraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes notÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡veis neste projeto serÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o documentadas neste arquivo.
-O formato ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento SemÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ntico](https://semver.org/lang/pt-BR/).
+Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
+O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
 ## [1.22.0] - 2026-10-08
 
@@ -26,23 +26,23 @@ O formato ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚�
 
 ## [1.21.0] - 2026-10-08
 
-### ðŸ”’ ConcorrÃªncia Thread-Safe com Mutex, Ponto Ãšnico de Disparo e Ãndice Ãšnico de Parcelas
+### 🔒 Concorrência Thread-Safe com Mutex, Ponto Único de Disparo e Índice Único de Parcelas
 
-- **Use Case Singleton com ProteÃ§Ã£o AtÃ´mica de Mutex (`ExtendRecurringBillsUseCase`)**:
-  - AnotaÃ§Ã£o `@Singleton` aplicada ao `ExtendRecurringBillsUseCase`.
-  - Todo o ciclo de extensÃ£o (`ler -> decidir -> calcular -> inserir`) foi envolvido em `Mutex.withLock`, impedindo condiÃ§Ãµes de corrida onde chamadas simultÃ¢neas leem o mesmo estado e geram parcelas em duplicidade.
-- **CentralizaÃ§Ã£o em Ponto Ãšnico de Disparo (`PlatformApplication`)**:
-  - A execuÃ§Ã£o de `ExtendRecurringBillsUseCase` foi centralizada exclusivamente no ciclo de vida de inicializaÃ§Ã£o da aplicaÃ§Ã£o (`PlatformApplication.onCreate()`) dentro do `applicationScope`.
-  - RemoÃ§Ã£o completa das 5 chamadas concorrentes dispersas: `MainActivity`, `DueReminderReceiver`, `BillsViewModel`, `RecurringInstallmentsViewModel` e `DashboardViewModel`.
-- **EvoluÃ§Ã£o de Schema e MigraÃ§Ã£o Room v17 (`PlatformDatabase.MIGRATION_16_17`)**:
-  - Limpeza de dados legados no SQLite: remoÃ§Ã£o de duplicatas histÃ³ricas mantendo a ocorrÃªncia mais antiga por `(billId, installmentNumber)` e preservando estritamente as jÃ¡ pagas (`status = 'PAID'` ou `paidAt IS NOT NULL`).
-  - CriaÃ§Ã£o de `UNIQUE INDEX index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)`.
-  - AtualizaÃ§Ã£o de `BillInstallmentDao`: `insertAll` e novo `insertAllIgnore` configurados com `OnConflictStrategy.IGNORE`, protegendo o banco contra sobreposiÃ§Ãµes concorrentes.
-  - RecÃ¡lculo de `totalInstallments` em `bills` apÃ³s saneamento de duplicatas.
-- **SuÃ­te de Testes Automatizados**:
-  - `ExtendRecurringBillsUseCaseTest`: novo teste com chamadas assÃ­ncronas concorrentes (`async(Dispatchers.Default)`), comprovando que invocaÃ§Ãµes simultÃ¢neas produzem exatamente o conjunto correto de parcelas sem nenhuma duplicata de `installmentNumber`.
-  - `PlatformDatabaseMigrationTest`: validaÃ§Ã£o de schema da migraÃ§Ã£o 16 -> 17, conferindo a deleÃ§Ã£o de duplicatas, recÃ¡lculo de totais e criaÃ§Ã£o do Ã­ndice Ãºnico.
-  - 100% dos testes unitÃ¡rios verdes em todo o projeto.
+- **Use Case Singleton com Proteção Atômica de Mutex (`ExtendRecurringBillsUseCase`)**:
+  - Anotação `@Singleton` aplicada ao `ExtendRecurringBillsUseCase`.
+  - Todo o ciclo de extensão (`ler -> decidir -> calcular -> inserir`) foi envolvido em `Mutex.withLock`, impedindo condições de corrida onde chamadas simultâneas leem o mesmo estado e geram parcelas em duplicidade.
+- **Centralização em Ponto Único de Disparo (`PlatformApplication`)**:
+  - A execução de `ExtendRecurringBillsUseCase` foi centralizada exclusivamente no ciclo de vida de inicialização da aplicação (`PlatformApplication.onCreate()`) dentro do `applicationScope`.
+  - Remoção completa das 5 chamadas concorrentes dispersas: `MainActivity`, `DueReminderReceiver`, `BillsViewModel`, `RecurringInstallmentsViewModel` e `DashboardViewModel`.
+- **Evolução de Schema e Migração Room v17 (`PlatformDatabase.MIGRATION_16_17`)**:
+  - Limpeza de dados legados no SQLite: remoção de duplicatas históricas mantendo a ocorrência mais antiga por `(billId, installmentNumber)` e preservando estritamente as já pagas (`status = 'PAID'` ou `paidAt IS NOT NULL`).
+  - Criação de `UNIQUE INDEX index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)`.
+  - Atualização de `BillInstallmentDao`: `insertAll` e novo `insertAllIgnore` configurados com `OnConflictStrategy.IGNORE`, protegendo o banco contra sobreposições concorrentes.
+  - Recálculo de `totalInstallments` em `bills` após saneamento de duplicatas.
+- **Suíte de Testes Automatizados**:
+  - `ExtendRecurringBillsUseCaseTest`: novo teste com chamadas assíncronas concorrentes (`async(Dispatchers.Default)`), comprovando que invocações simultâneas produzem exatamente o conjunto correto de parcelas sem nenhuma duplicata de `installmentNumber`.
+  - `PlatformDatabaseMigrationTest`: validação de schema da migração 16 -> 17, conferindo a deleção de duplicatas, recálculo de totais e criação do índice único.
+  - 100% dos testes unitários verdes em todo o projeto.
 
 ---
 

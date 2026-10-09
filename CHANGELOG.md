@@ -3,6 +3,27 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.23.0] - 2026-10-09
+
+### 🔐 Fortalecimento Criptográfico de Backups (AES-256-GCM v2, AAD, OWASP 600k e Indicador de Força)
+
+- **PBKDF2-HMAC-SHA256 Atualizado para 600.000 Iterações (v2)**:
+  - Adotada a recomendação atual da OWASP para KDF PBKDF2 com 600.000 iterações em novos backups (`EncryptedBackupDto.CURRENT_VERSION = 2`).
+  - Suporte total à leitura e restauração de arquivos v1 legados utilizando o valor registrado no campo `iterations` (ex: 65.536).
+- **Autenticação de Cabeçalho via AAD (`cipher.updateAAD`)**:
+  - O cabeçalho estrutural (`format`, `version`, `iterations`) passa a ser autenticado criptograficamente como Dados Adicionais Associados (AAD) via `cipher.updateAAD` em envelopes v2.
+  - Qualquer adulteração em `format`, `version` ou `iterations` resulta em rejeição imediata com falha de autenticação GCM (`AEADBadTagException` / `SecurityException`).
+- **Proteção Contra Ataques DoS no Restore (Limites de Iterações)**:
+  - Validação estrita limitando o número de iterações entre `10_000` e `2_000_000`. Arquivos forjados com valores abusivos são rejeitados antes da derivação da chave.
+- **Segurança e Ergonomia na UI (Mínimo de 8 Caracteres & Indicador de Força)**:
+  - Atualizada a exigência mínima de senha para 8 caracteres, mitigando riscos de força bruta offline associados a PINs curtos.
+  - Ajustados todos os diálogos de exportação e restauração (`CreateBackupPasswordDialog`, `RestorePasswordDialog`), removendo menções a "PIN".
+  - Implementado componente `PasswordStrengthIndicator` com feedback visual de 4 níveis de força da senha em conformidade estrita com o Material 3 e tokens de tema.
+- **Suíte de Testes Automatizados de Segurança**:
+  - Testes unitários cobrindo rejeição de senha incorreta, detecção de ciphertext adulterado, detecção de cabeçalho adulterado (versão, iterações e formato), validação de limites de iterações e compatibilidade de restauração com arquivos v1 legados sem AAD.
+
+---
+
 ## [1.22.0] - 2026-10-08
 
 ### 🛡️ Exportação de Esquemas Room, Correção de Cascata em FKs (14→15) e Testes Instrumentados com MigrationTestHelper

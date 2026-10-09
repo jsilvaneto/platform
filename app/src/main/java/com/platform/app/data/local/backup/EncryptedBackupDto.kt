@@ -10,7 +10,7 @@ import com.google.gson.annotations.SerializedName
  */
 data class EncryptedBackupDto(
     @SerializedName("format") val format: String = FORMAT_NAME,
-    @SerializedName("version") val version: Int = 1,
+    @SerializedName("version") val version: Int = CURRENT_VERSION,
     @SerializedName("algorithm") val algorithm: String = ALGORITHM_NAME,
     @SerializedName("kdf") val kdf: String = KDF_NAME,
     @SerializedName("iterations") val iterations: Int = DEFAULT_ITERATIONS,
@@ -23,6 +23,9 @@ data class EncryptedBackupDto(
         const val FORMAT_NAME = "PLATFORM_ENCRYPTED_BACKUP"
         const val ALGORITHM_NAME = "AES/GCM/NoPadding"
         const val KDF_NAME = "PBKDF2WithHmacSHA256"
-        const val DEFAULT_ITERATIONS = 65536
+        const val CURRENT_VERSION = 2
+        const val DEFAULT_ITERATIONS = 600_000
+        const val MIN_ITERATIONS = 10_000
+        const val MAX_ITERATIONS = 2_000_000
     }
 }

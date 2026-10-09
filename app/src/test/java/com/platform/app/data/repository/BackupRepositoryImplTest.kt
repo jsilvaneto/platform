@@ -25,6 +25,9 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import com.google.gson.Gson
+import com.platform.app.data.local.backup.BackupDataDto
+import com.platform.app.data.local.backup.EncryptedBackupDto
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,6 +37,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class BackupRepositoryImplTest {
 
+    private val gson = Gson()
     private val testDispatcher = StandardTestDispatcher()
     private val dispatcherProvider = object : DispatcherProvider {
         override val main: CoroutineDispatcher = testDispatcher
@@ -116,9 +120,20 @@ class BackupRepositoryImplTest {
         assertTrue(result.isSuccess)
         val json = result.getOrThrow()
         assertTrue("Deve conter identificador de envelope criptografado", json.contains("PLATFORM_ENCRYPTED_BACKUP"))
+        assertTrue("Deve conter versão 2", json.contains("\"version\": 2"))
         assertTrue("Deve conter algoritmo AES/GCM", json.contains("AES/GCM/NoPadding"))
         assertTrue("Deve conter KDF PBKDF2", json.contains("PBKDF2WithHmacSHA256"))
+        assertTrue("Deve conter 600.000 iterações", json.contains("600000"))
         assertFalse("Não deve expor entidade em texto claro", json.contains("Alimentação"))
+    }
+
+    @Test
+    fun `exportBackupJson with password shorter than 8 characters fails`() = runTest(testDispatcher) {
+        val result = repository.exportBackupJson("1234567")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
     }
 
     @Test
@@ -139,6 +154,67 @@ class BackupRepositoryImplTest {
         val encryptedJson = exportResult.getOrThrow()
 
         val restoreResult = repository.restoreBackupFromJson(encryptedJson, password)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(restoreResult.isSuccess)
+    }
+
+    @Test
+    fun `restoreBackupFromJson with legacy v1 backup successfully restores entities`() = runTest(testDispatcher) {
+        val legacyPassword = "MinhaSenhaV1@2026"
+        val sampleDto = BackupDataDto(
+            version = BackupDataDto.CURRENT_VERSION,
+            exportedAt = System.currentTimeMillis(),
+            categories = listOf(
+                CategoryEntity(
+                    id = "cat-legado",
+                    name = "Legado V1",
+                    colorHex = "#00FF00",
+                    iconName = "History"
+                )
+            ),
+            expenseItems = emptyList(),
+            creditCards = emptyList(),
+            creditCardInvoices = emptyList(),
+            financialAccounts = emptyList(),
+            paymentMethods = emptyList(),
+            contacts = emptyList(),
+            bills = emptyList(),
+            installments = emptyList(),
+            budgets = emptyList(),
+            goals = emptyList(),
+            goalContributions = emptyList()
+        )
+        val plaintextJson = gson.toJson(sampleDto)
+
+        // Simula criação do backup no formato v1 legado (sem AAD, 65536 iterações)
+        val random = java.security.SecureRandom()
+        val salt = ByteArray(16).also { random.nextBytes(it) }
+        val iv = ByteArray(12).also { random.nextBytes(it) }
+        val pbeSpec = javax.crypto.spec.PBEKeySpec(legacyPassword.toCharArray(), salt, 65536, 256)
+        val key = javax.crypto.spec.SecretKeySpec(
+            javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(pbeSpec).encoded,
+            "AES"
+        )
+        pbeSpec.clearPassword()
+        val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(javax.crypto.Cipher.ENCRYPT_MODE, key, javax.crypto.spec.GCMParameterSpec(128, iv))
+        val ciphertext = cipher.doFinal(plaintextJson.toByteArray(Charsets.UTF_8))
+
+        val legacyDto = EncryptedBackupDto(
+            format = EncryptedBackupDto.FORMAT_NAME,
+            version = 1,
+            algorithm = EncryptedBackupDto.ALGORITHM_NAME,
+            kdf = EncryptedBackupDto.KDF_NAME,
+            iterations = 65536,
+            saltBase64 = java.util.Base64.getEncoder().encodeToString(salt),
+            ivBase64 = java.util.Base64.getEncoder().encodeToString(iv),
+            ciphertextBase64 = java.util.Base64.getEncoder().encodeToString(ciphertext),
+            createdAt = System.currentTimeMillis()
+        )
+        val legacyJson = gson.toJson(legacyDto)
+
+        val restoreResult = repository.restoreBackupFromJson(legacyJson, legacyPassword)
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(restoreResult.isSuccess)

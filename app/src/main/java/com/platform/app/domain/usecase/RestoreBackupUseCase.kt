@@ -8,7 +8,7 @@ class RestoreBackupUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(encryptedBackupJson: String, password: String): Result<Unit> {
         if (password.isBlank()) {
-            return Result.failure(IllegalArgumentException("A senha ou PIN para restauração é obrigatória."))
+            return Result.failure(IllegalArgumentException("A senha para restauração é obrigatória."))
         }
         if (encryptedBackupJson.isBlank()) {
             return Result.failure(IllegalArgumentException("O arquivo de backup selecionado está vazio."))

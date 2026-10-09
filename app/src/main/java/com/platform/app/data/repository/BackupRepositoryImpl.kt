@@ -42,7 +42,9 @@ class BackupRepositoryImpl @Inject constructor(
 
     override suspend fun exportBackupJson(password: String): Result<String> = withContext(dispatcherProvider.io) {
         runCatching {
-            require(password.isNotBlank()) { "A senha ou PIN de backup não pode estar vazia." }
+            require(password.isNotBlank() && password.length >= BackupCryptoHelper.MIN_PASSWORD_LENGTH) {
+                "A senha de backup deve possuir no mínimo ${BackupCryptoHelper.MIN_PASSWORD_LENGTH} caracteres."
+            }
             val dto = BackupDataDto(
                 version = BackupDataDto.CURRENT_VERSION,
                 exportedAt = System.currentTimeMillis(),
@@ -70,7 +72,7 @@ class BackupRepositoryImpl @Inject constructor(
             if (encryptedBackupJson.isBlank()) {
                 throw IllegalArgumentException("Arquivo de backup inválido ou vazio.")
             }
-            require(password.isNotBlank()) { "A senha ou PIN para restauração é obrigatória." }
+            require(password.isNotBlank()) { "A senha para restauração é obrigatória." }
 
             val encryptedDto = try {
                 gson.fromJson(encryptedBackupJson, EncryptedBackupDto::class.java)

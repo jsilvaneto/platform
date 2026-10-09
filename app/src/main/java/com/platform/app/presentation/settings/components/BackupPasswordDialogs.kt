@@ -1,9 +1,12 @@
 package com.platform.app.presentation.settings.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,11 +31,92 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.platform.app.presentation.common.AppStrings
+
+enum class PasswordStrength(
+    val label: String,
+    val score: Int
+) {
+    VERY_WEAK("Muito fraca", 1),
+    WEAK("Fraca", 2),
+    MEDIUM("Média", 3),
+    STRONG("Forte", 4)
+}
+
+fun calculatePasswordStrength(password: String): PasswordStrength {
+    if (password.length < 8) return PasswordStrength.VERY_WEAK
+
+    var bonus = 0
+    if (password.length >= 12) bonus++
+    if (password.any { it.isUpperCase() } && password.any { it.isLowerCase() }) bonus++
+    if (password.any { it.isDigit() }) bonus++
+    if (password.any { !it.isLetterOrDigit() }) bonus++
+
+    return when {
+        bonus <= 1 -> PasswordStrength.WEAK
+        bonus in 2..3 -> PasswordStrength.MEDIUM
+        else -> PasswordStrength.STRONG
+    }
+}
+
+@Composable
+fun PasswordStrengthIndicator(
+    strength: PasswordStrength,
+    modifier: Modifier = Modifier
+) {
+    val (labelColor, barColor) = when (strength) {
+        PasswordStrength.VERY_WEAK,
+        PasswordStrength.WEAK -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.error
+        PasswordStrength.MEDIUM -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.tertiary
+        PasswordStrength.STRONG -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.primary
+    }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            for (step in 1..4) {
+                val isActive = step <= strength.score
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(
+                            if (isActive) barColor
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Força da senha",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = strength.label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = labelColor
+            )
+        }
+    }
+}
 
 @Composable
 fun CreateBackupPasswordDialog(
@@ -43,10 +127,12 @@ fun CreateBackupPasswordDialog(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    val isLengthValid = password.length >= 4
+    val isLengthValid = password.length >= 8
     val isMatching = password == confirmPassword
     val isValid = isLengthValid && isMatching
+    val strength = remember(password) { calculatePasswordStrength(password) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -76,7 +162,7 @@ fun CreateBackupPasswordDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Defina uma senha ou PIN para proteger seus dados financeiros com criptografia simétrica AES-256 (PBKDF2).\n\n⚠️ Esta senha será estritamente necessária para restaurar este arquivo.",
+                    text = "Defina uma senha segura para proteger seus dados financeiros com criptografia simétrica AES-256 (PBKDF2).\n\n⚠️ Esta senha será estritamente necessária para restaurar este arquivo.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -84,7 +170,7 @@ fun CreateBackupPasswordDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Senha / PIN (mínimo 4 caracteres)") },
+                    label = { Text("Senha do backup (mínimo 8 caracteres)") },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -95,14 +181,26 @@ fun CreateBackupPasswordDialog(
                             )
                         }
                     },
+                    supportingText = {
+                        if (password.isNotEmpty() && password.length < 8) {
+                            Text(
+                                text = "Mínimo de 8 caracteres (${password.length}/8).",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
 
+                if (password.isNotEmpty()) {
+                    PasswordStrengthIndicator(strength = strength)
+                }
+
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar Senha / PIN") },
+                    label = { Text("Confirmar Senha") },
                     singleLine = true,
                     isError = confirmPassword.isNotBlank() && !isMatching,
                     supportingText = {
@@ -110,7 +208,15 @@ fun CreateBackupPasswordDialog(
                             Text("As senhas não coincidem.", color = MaterialTheme.colorScheme.error)
                         }
                     },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (confirmPasswordVisible) "Ocultar confirmação" else "Mostrar confirmação"
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
@@ -172,7 +278,7 @@ fun RestorePasswordDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Informe a senha ou PIN definida no momento da geração deste backup para desbloquear e restaurar os dados com segurança.",
+                    text = "Informe a senha definida no momento da geração deste backup para desbloquear e restaurar os dados com segurança.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -180,7 +286,7 @@ fun RestorePasswordDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Senha / PIN do Backup") },
+                    label = { Text("Senha do Backup") },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {

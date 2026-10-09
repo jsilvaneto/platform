@@ -8,7 +8,10 @@ class ExportBackupUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(password: String): Result<String> {
         if (password.isBlank()) {
-            return Result.failure(IllegalArgumentException("A senha ou PIN de backup não pode estar vazia."))
+            return Result.failure(IllegalArgumentException("A senha de backup não pode estar vazia."))
+        }
+        if (password.length < 8) {
+            return Result.failure(IllegalArgumentException("A senha de backup deve possuir no mínimo 8 caracteres."))
         }
         return backupRepository.exportBackupJson(password)
     }

@@ -12,9 +12,12 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Utilitário criptográfico para exportação e importação segura de backups.
  *
- * Em conformidade com as diretrizes da skill security-guard:
- * - Algoritmo: AES-256-GCM (Autenticado, integridade e confidencialidade)
- * - Derivação de Chave: PBKDF2WithHmacSHA256 com sal aleatório e 65.536 iterações
+ * Em conformidade com as diretrizes da skill security-guard e OWASP:
+ * - Algoritmo: AES-256-GCM (Autenticado com AAD, integridade e confidencialidade)
+ * - Derivação de Chave: PBKDF2WithHmacSHA256 com sal aleatório e 600.000 iterações (v2)
+ * - Cabeçalho autenticado via AAD (format, version, iterations) na v2
+ * - Compatibilidade retroativa de restauração com envelopes legados v1
+ * - Validação estrita de limites de iterações (10.000 a 2.000.000)
  * - Limpeza defensiva de memória de senhas em char[]
  */
 object BackupCryptoHelper {
@@ -25,34 +28,61 @@ object BackupCryptoHelper {
     private const val GCM_TAG_LENGTH_BITS = 128
     private const val SALT_LENGTH_BYTES = 16
     private const val IV_LENGTH_BYTES = 12
+    const val MIN_PASSWORD_LENGTH = 8
 
     private val secureRandom = SecureRandom()
 
+    internal fun computeHeaderAad(format: String, version: Int, iterations: Int): ByteArray {
+        return "$format:$version:$iterations".toByteArray(Charsets.UTF_8)
+    }
+
     fun encrypt(plaintext: String, password: String): EncryptedBackupDto {
-        require(password.isNotBlank()) { "A senha ou PIN de backup não pode estar vazia." }
+        require(password.isNotBlank() && password.length >= MIN_PASSWORD_LENGTH) {
+            "A senha de backup deve possuir no mínimo $MIN_PASSWORD_LENGTH caracteres."
+        }
 
         val salt = ByteArray(SALT_LENGTH_BYTES).also { secureRandom.nextBytes(it) }
         val iv = ByteArray(IV_LENGTH_BYTES).also { secureRandom.nextBytes(it) }
-        val secretKey = deriveKey(password.toCharArray(), salt, EncryptedBackupDto.DEFAULT_ITERATIONS)
+        val iterations = EncryptedBackupDto.DEFAULT_ITERATIONS
+        val version = EncryptedBackupDto.CURRENT_VERSION
+        val format = EncryptedBackupDto.FORMAT_NAME
+
+        val secretKey = deriveKey(password.toCharArray(), salt, iterations)
 
         val cipher = Cipher.getInstance(ALGORITHM)
         val spec = GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv)
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec)
 
+        val aad = computeHeaderAad(format, version, iterations)
+        cipher.updateAAD(aad)
+
         val ciphertext = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
 
         return EncryptedBackupDto(
+            format = format,
+            version = version,
+            algorithm = EncryptedBackupDto.ALGORITHM_NAME,
+            kdf = EncryptedBackupDto.KDF_NAME,
+            iterations = iterations,
             saltBase64 = Base64.getEncoder().encodeToString(salt),
             ivBase64 = Base64.getEncoder().encodeToString(iv),
             ciphertextBase64 = Base64.getEncoder().encodeToString(ciphertext),
-            iterations = EncryptedBackupDto.DEFAULT_ITERATIONS
+            createdAt = System.currentTimeMillis()
         )
     }
 
     fun decrypt(dto: EncryptedBackupDto, password: String): String {
-        require(password.isNotBlank()) { "A senha ou PIN para restauração é obrigatória." }
+        require(password.isNotBlank()) { "A senha para restauração é obrigatória." }
         if (dto.format != EncryptedBackupDto.FORMAT_NAME) {
             throw IllegalArgumentException("Formato de backup incompatível ou desconhecido: ${dto.format}")
+        }
+        if (dto.version < 1 || dto.version > EncryptedBackupDto.CURRENT_VERSION) {
+            throw IllegalArgumentException("Versão de backup não suportada: ${dto.version}")
+        }
+        if (dto.iterations < EncryptedBackupDto.MIN_ITERATIONS || dto.iterations > EncryptedBackupDto.MAX_ITERATIONS) {
+            throw IllegalArgumentException(
+                "Número de iterações fora dos limites permitidos (${EncryptedBackupDto.MIN_ITERATIONS} a ${EncryptedBackupDto.MAX_ITERATIONS}): ${dto.iterations}"
+            )
         }
 
         val salt = try {
@@ -73,18 +103,23 @@ object BackupCryptoHelper {
             throw IllegalArgumentException("Criptograma do arquivo corrompido.")
         }
 
-        val iterations = if (dto.iterations > 0) dto.iterations else EncryptedBackupDto.DEFAULT_ITERATIONS
+        val iterations = dto.iterations
         val secretKey = deriveKey(password.toCharArray(), salt, iterations)
 
         val cipher = Cipher.getInstance(ALGORITHM)
         val spec = GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv)
         cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
 
+        if (dto.version >= 2) {
+            val aad = computeHeaderAad(dto.format, dto.version, dto.iterations)
+            cipher.updateAAD(aad)
+        }
+
         return try {
             val decryptedBytes = cipher.doFinal(ciphertext)
             String(decryptedBytes, Charsets.UTF_8)
         } catch (e: GeneralSecurityException) {
-            throw SecurityException("Senha ou PIN incorreto. Não foi possível descriptografar o backup.", e)
+            throw SecurityException("Senha incorreta ou arquivo adulterado. Não foi possível descriptografar o backup.", e)
         }
     }
 

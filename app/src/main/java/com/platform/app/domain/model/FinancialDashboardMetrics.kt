@@ -10,7 +10,7 @@ data class FinancialDashboardMetrics(
     val previousMonthDueCents: Long = 0L,
     val previousMonthPaidCents: Long = 0L,
     val totalHistoricalPaidCents: Long = 0L,
-    val onTimePaymentRate: Int = 100,
+    val onTimePaymentRate: Int? = null,
     val upcomingInstallments: List<BillInstallment> = emptyList(),
     val upcomingWeekInstallments: List<BillInstallment> = emptyList(),
     val categoryDistribution: List<CategorySpend> = emptyList(),

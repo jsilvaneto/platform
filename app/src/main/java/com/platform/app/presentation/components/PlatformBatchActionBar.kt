@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -50,6 +51,7 @@ fun PlatformBatchActionBar(
     onPayBatch: () -> Unit,
     onDeleteBatch: () -> Unit,
     onClearSelection: () -> Unit,
+    onSetActualPaymentDate: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -122,6 +124,29 @@ fun PlatformBatchActionBar(
                             contentDescription = "Excluir selecionados",
                             modifier = Modifier.size(14.dp)
                         )
+                    }
+
+                    if (onSetActualPaymentDate != null) {
+                        OutlinedButton(
+                            onClick = onSetActualPaymentDate,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.EditCalendar,
+                                contentDescription = "Data real em lote",
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Data Real",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
 
                     Button(

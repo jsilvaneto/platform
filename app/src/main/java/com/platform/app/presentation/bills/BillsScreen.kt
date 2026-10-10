@@ -24,6 +24,7 @@ import com.platform.app.presentation.bills.components.BillsFilterBar
 import com.platform.app.presentation.bills.components.BillsMiniKpiBar
 import com.platform.app.presentation.bills.components.EmptyBillsState
 import com.platform.app.presentation.bills.components.BatchDeleteDialog
+import com.platform.app.presentation.bills.components.BatchSetActualPaymentDateDialog
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.foundation.verticalScroll
@@ -151,6 +152,7 @@ fun BillsScreen(
     var isSelectionMode by remember { mutableStateOf(false) }
     var selectedInstallmentIds by remember { mutableStateOf(setOf<String>()) }
     var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    var showBatchSetActualPaymentDialog by remember { mutableStateOf(false) }
     var installmentToConfirmPayment by remember { mutableStateOf<BillInstallment?>(null) }
     val currentMonthLabel = remember { DateUtils.formatMonthYear(System.currentTimeMillis()) }
     var expandedMonths by rememberSaveable { mutableStateOf(setOf(DateUtils.formatMonthYear(System.currentTimeMillis()))) }
@@ -514,6 +516,11 @@ fun BillsScreen(
                     onDeleteBatch = {
                         showBatchDeleteDialog = true
                     },
+                    onSetActualPaymentDate = if (selectedInstallmentIds.any { id ->
+                            uiState.installments.find { it.id == id }?.isPaid == true
+                        }) {
+                        { showBatchSetActualPaymentDialog = true }
+                    } else null,
                     onClearSelection = {
                         selectedInstallmentIds = emptySet()
                         isSelectionMode = false
@@ -577,6 +584,24 @@ fun BillsScreen(
                 showBatchDeleteDialog = false
             },
             onDismiss = { showBatchDeleteDialog = false }
+        )
+    }
+
+    if (showBatchSetActualPaymentDialog) {
+        BatchSetActualPaymentDateDialog(
+            selectedCount = selectedInstallmentIds.size,
+            onConfirm = { actualPaymentDate ->
+                onAction(
+                    BillsUiAction.BatchSetActualPaymentDate(
+                        installmentIds = selectedInstallmentIds.toList(),
+                        actualPaymentDate = actualPaymentDate
+                    )
+                )
+                selectedInstallmentIds = emptySet()
+                isSelectionMode = false
+                showBatchSetActualPaymentDialog = false
+            },
+            onDismiss = { showBatchSetActualPaymentDialog = false }
         )
     }
 

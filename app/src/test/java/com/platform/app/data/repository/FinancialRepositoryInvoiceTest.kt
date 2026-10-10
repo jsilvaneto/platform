@@ -354,4 +354,14 @@ class FinancialRepositoryInvoiceTest {
         coVerify(exactly = 1) { creditCardDao.insertInvoice(match { it.referenceMonth == "2026-11" }) }
         coVerify(exactly = 0) { creditCardDao.insertInvoice(match { it.referenceMonth == "2026-12" }) }
     }
+
+    @Test
+    fun `updateInstallmentsActualPaymentDateBatch should forward list of ids and actualPaymentDate to DAO`() = runTest {
+        val ids = listOf("inst-1", "inst-2", "inst-3")
+        val customDate = 1759000000000L
+
+        repository.updateInstallmentsActualPaymentDateBatch(ids, customDate)
+
+        coVerify(exactly = 1) { installmentDao.updateActualPaymentDateBatch(ids, customDate) }
+    }
 }

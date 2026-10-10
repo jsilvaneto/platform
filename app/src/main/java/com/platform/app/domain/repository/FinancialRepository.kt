@@ -81,6 +81,7 @@ interface FinancialRepository {
         paidTimestamp: Long? = null,
         actualPaymentDate: Long? = null
     )
+    suspend fun updateInstallmentsActualPaymentDateBatch(installmentIds: List<String>, actualPaymentDate: Long)
     suspend fun updateInstallment(installmentId: String, newAmountCents: Long, newDueDate: Long)
     suspend fun updateBillAndInstallment(
         installmentId: String,

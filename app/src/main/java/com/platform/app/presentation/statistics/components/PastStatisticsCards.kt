@@ -73,11 +73,16 @@ fun PastHeroCard(
                     valueColor = SuccessGreen,
                     modifier = Modifier.weight(1f)
                 )
+                val onTimeRate = metrics.onTimePaymentRate
                 MetricKpiBox(
                     label = "Pontualidade",
-                    value = "${metrics.onTimePaymentRate}%",
+                    value = if (onTimeRate != null) "$onTimeRate%" else "Sem dados",
                     sublabel = "Pagas no prazo",
-                    valueColor = if (metrics.onTimePaymentRate >= 90) SuccessGreen else WarningAmber,
+                    valueColor = when {
+                        onTimeRate == null -> MaterialTheme.colorScheme.onSurfaceVariant
+                        onTimeRate >= 90 -> SuccessGreen
+                        else -> WarningAmber
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }

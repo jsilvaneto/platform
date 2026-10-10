@@ -168,13 +168,18 @@ class GetFinancialDashboardUseCase @Inject constructor(
             // Histórico Total e Pontualidade
             val allPaidInsts = allInstallments.filter { it.isPaid }
             val totalHistPaid = allPaidInsts.sumOf { it.amountCents }
-            val onTimeCount = allPaidInsts.count {
-                val effectivePaymentDate = it.actualPaymentDate ?: it.paidAt ?: it.dueDate
-                effectivePaymentDate <= it.dueDate || DateUtils.getStartOfDay(effectivePaymentDate) <= DateUtils.getStartOfDay(it.dueDate)
+
+            // Parcelas elegíveis para cálculo de pontualidade: apenas baixas com data real preenchida
+            val eligibleForOnTime = allPaidInsts.filter { it.actualPaymentDate != null }
+            val onTimeRate: Int? = if (eligibleForOnTime.isNotEmpty()) {
+                val onTimeCount = eligibleForOnTime.count {
+                    val effectivePaymentDate = it.actualPaymentDate!!
+                    effectivePaymentDate <= it.dueDate || DateUtils.getStartOfDay(effectivePaymentDate) <= DateUtils.getStartOfDay(it.dueDate)
+                }
+                ((onTimeCount.toFloat() / eligibleForOnTime.size.toFloat()) * 100).toInt()
+            } else {
+                null
             }
-            val onTimeRate = if (allPaidInsts.isNotEmpty()) {
-                ((onTimeCount.toFloat() / allPaidInsts.size.toFloat()) * 100).toInt()
-            } else 100
 
             // Divisão por Meio de Pagamento no Mês Selecionado (Cartão vs Outros)
             val creditCardSpend = installments.filter { it.invoiceId != null }.sumOf { it.amountCents }

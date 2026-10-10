@@ -501,6 +501,14 @@ class FinancialRepositoryImpl @Inject constructor(
         installmentDao.updatePayment(installmentId, effectivePaidAt, effectiveActualDate, status)
     }
 
+    override suspend fun updateInstallmentsActualPaymentDateBatch(
+        installmentIds: List<String>,
+        actualPaymentDate: Long
+    ) {
+        if (installmentIds.isEmpty()) return
+        installmentDao.updateActualPaymentDateBatch(installmentIds, actualPaymentDate)
+    }
+
     override suspend fun updateInstallment(
         installmentId: String,
         newAmountCents: Long,

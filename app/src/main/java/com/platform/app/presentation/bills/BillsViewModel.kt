@@ -55,6 +55,7 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.PeriodFilterChanged -> handlePeriodFilter(action.period)
             is BillsUiAction.YearChanged -> handleYearChanged(action.year)
             is BillsUiAction.PayBatch -> handlePayBatch(action.installmentIds)
+            is BillsUiAction.BatchSetActualPaymentDate -> handleBatchSetActualPaymentDate(action.installmentIds, action.actualPaymentDate)
             is BillsUiAction.DeleteBatch -> handleDeleteBatch(action.billIds)
             is BillsUiAction.OpenEditInstallment -> handleOpenEdit(action.installment)
             is BillsUiAction.DismissEditInstallment -> handleDismissEdit()
@@ -134,6 +135,17 @@ class BillsViewModel @Inject constructor(
                 _effectChannel.send(BillsUiEffect.ShowSnackbar("${installmentIds.size} conta(s) marcada(s) como paga(s)!"))
             } catch (e: Exception) {
                 _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro no pagamento em lote: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleBatchSetActualPaymentDate(installmentIds: List<String>, actualPaymentDate: Long) {
+        viewModelScope.launch {
+            try {
+                repository.updateInstallmentsActualPaymentDateBatch(installmentIds, actualPaymentDate)
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Data real de pagamento atualizada para ${installmentIds.size} parcela(s)!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao atualizar datas reais: ${e.message}"))
             }
         }
     }

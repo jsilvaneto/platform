@@ -178,4 +178,24 @@ class BillsViewModelTest {
         assertEquals(1, viewModel.uiState.value.filteredInstallments.size)
         assertEquals("Internet Fibra", viewModel.uiState.value.filteredInstallments[0].billTitle)
     }
+
+    @Test
+    fun `BatchSetActualPaymentDate action should invoke repository updateInstallmentsActualPaymentDateBatch and emit snackbar`() = runTest {
+        viewModel = BillsViewModel(repository, togglePaymentUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val ids = listOf("inst-1", "inst-2")
+        val customDate = 1759000000000L
+
+        viewModel.uiEffect.test {
+            viewModel.onAction(BillsUiAction.BatchSetActualPaymentDate(ids, customDate))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { repository.updateInstallmentsActualPaymentDateBatch(ids, customDate) }
+
+            val effect = awaitItem()
+            assertTrue(effect is BillsUiEffect.ShowSnackbar)
+            assertTrue((effect as BillsUiEffect.ShowSnackbar).message.contains("2 parcela(s)"))
+        }
+    }
 }

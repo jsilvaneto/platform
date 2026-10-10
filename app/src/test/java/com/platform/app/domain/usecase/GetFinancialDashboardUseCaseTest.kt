@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -248,32 +249,102 @@ class GetFinancialDashboardUseCaseTest {
     }
 
     @Test
-    fun `should fallback to paidAt when actualPaymentDate is not provided`() = runTest {
+    fun `should exclude paid installments with null actualPaymentDate from onTime calculation`() = runTest {
         val now = System.currentTimeMillis()
         val currentMonthEpoch = DateUtils.getStartOfMonth(now)
         val dueDate = currentMonthEpoch + (5L * 86400000L) // 5º dia do mês
-        val paidAtActionTime = dueDate + (5L * 86400000L) // 10º dia do mês
+        val paidAtActionTime = dueDate + (5L * 86400000L) // 10º dia do mês (momento do clique)
 
-        // Sem actualPaymentDate preenchido: fallback para paidAt (> dueDate -> atrasado)
-        val fallbackInst = BillInstallment(
-            id = "inst-fallback-1",
-            billId = "bill-fallback-1",
-            billTitle = "Água",
+        // Parcela 1: legada com actualPaymentDate == null (deve sair do cálculo, sem veredito)
+        val legacyInst = BillInstallment(
+            id = "inst-legacy-1",
+            billId = "bill-legacy-1",
+            billTitle = "Água Antiga",
             amountCents = 5000L,
             dueDate = dueDate,
             paidAt = paidAtActionTime,
             actualPaymentDate = null
         )
 
-        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(fallbackInst))
-        every { repository.getAllInstallments() } returns flowOf(listOf(fallbackInst))
+        // Parcela 2: com actualPaymentDate pontual (deve definir 100%)
+        val onTimeInst = BillInstallment(
+            id = "inst-ontime-2",
+            billId = "bill-ontime-2",
+            billTitle = "Internet Nova",
+            amountCents = 7000L,
+            dueDate = dueDate,
+            paidAt = paidAtActionTime,
+            actualPaymentDate = dueDate
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(legacyInst, onTimeInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(legacyInst, onTimeInst))
         every { repository.getBills() } returns flowOf(emptyList())
         every { repository.getFinancialAccounts() } returns flowOf(emptyList())
 
         useCase(currentMonthEpoch).test {
             val metrics = awaitItem()
-            // Fallback para paidAt > dueDate -> 0%
-            assertEquals(0, metrics.onTimePaymentRate)
+            // Apenas onTimeInst é amostrada -> 1 de 1 pontual -> 100% (em vez de 50% se legacy entrasse como atrasada)
+            assertEquals(100, metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should return null onTimePaymentRate when sample has no installments with actualPaymentDate`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+        val dueDate = currentMonthEpoch + (5L * 86400000L)
+
+        // Pagas apenas com actualPaymentDate = null
+        val legacyInst = BillInstallment(
+            id = "inst-legacy-only",
+            billId = "bill-legacy-only",
+            billTitle = "Conta Antiga",
+            amountCents = 5000L,
+            dueDate = dueDate,
+            paidAt = dueDate + 100000L,
+            actualPaymentDate = null
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(legacyInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(legacyInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+            // Sem nenhuma data real informada, taxa deve ser null (UI exibe "Sem dados")
+            assertNull(metrics.onTimePaymentRate)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `should return null onTimePaymentRate when there are no paid installments at all`() = runTest {
+        val now = System.currentTimeMillis()
+        val currentMonthEpoch = DateUtils.getStartOfMonth(now)
+        val dueDate = currentMonthEpoch + (5L * 86400000L)
+
+        val pendingInst = BillInstallment(
+            id = "inst-pending-only",
+            billId = "bill-pending-only",
+            billTitle = "Conta Pendente",
+            amountCents = 5000L,
+            dueDate = dueDate,
+            paidAt = null,
+            actualPaymentDate = null
+        )
+
+        every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(listOf(pendingInst))
+        every { repository.getAllInstallments() } returns flowOf(listOf(pendingInst))
+        every { repository.getBills() } returns flowOf(emptyList())
+        every { repository.getFinancialAccounts() } returns flowOf(emptyList())
+
+        useCase(currentMonthEpoch).test {
+            val metrics = awaitItem()
+            // Sem pagamentos realizados, taxa deve ser null (UI exibe "Sem dados")
+            assertNull(metrics.onTimePaymentRate)
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -260,6 +260,12 @@ interface BillInstallmentDao {
     @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE id = :id")
     suspend fun updatePayment(id: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
 
+    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate WHERE id = :id")
+    suspend fun updateActualPaymentDate(id: String, actualPaymentDate: Long?)
+
+    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate WHERE id IN (:ids)")
+    suspend fun updateActualPaymentDateBatch(ids: List<String>, actualPaymentDate: Long?)
+
     @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE invoiceId = :invoiceId")
     suspend fun updatePaymentByInvoiceId(invoiceId: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
 

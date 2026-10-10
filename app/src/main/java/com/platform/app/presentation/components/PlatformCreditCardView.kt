@@ -1,5 +1,7 @@
 package com.platform.app.presentation.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -91,19 +93,19 @@ fun PlatformCreditCardView(
     }
 
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = PlatformShapes.large,
         border = selectionBorder,
         modifier = modifier
-            .width(300.dp)
+            .width(240.dp)
             .aspectRatio(1.586f)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(PlatformShapes.large)
             .clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(gradientBrush)
-                .padding(16.dp)
+                .padding(12.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -243,15 +245,15 @@ private fun EmvChipGraphic(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .size(width = 30.dp, height = 22.dp)
-            .clip(RoundedCornerShape(4.dp))
+            .clip(PlatformShapes.extraSmall)
             .background(CardSkinColors.EmvChipBase)
-            .border(1.dp, CardSkinColors.EmvChipBorder, RoundedCornerShape(4.dp))
+            .border(1.dp, CardSkinColors.EmvChipBorder, PlatformShapes.extraSmall)
             .padding(2.dp)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .border(0.5.dp, CardSkinColors.EmvChipContactLine, RoundedCornerShape(2.dp))
+                .border(0.5.dp, CardSkinColors.EmvChipContactLine, PlatformShapes.extraSmall)
         )
     }
 }

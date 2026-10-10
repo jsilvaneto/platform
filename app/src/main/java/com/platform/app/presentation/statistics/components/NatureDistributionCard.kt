@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +37,7 @@ import com.platform.app.domain.model.BudgetRigidityCalculator
 import com.platform.app.domain.model.BudgetRigidityStatus
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.domain.model.NatureSpend
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.formatValueOrPrivate
@@ -72,13 +75,13 @@ fun NatureDistributionCard(
     PlatformCard {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Rigidez Orçamentária (Regra 50-30-20)",
+                text = AppStrings.Glossary.BUDGET_BALANCE,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Avaliação de despesas essenciais, estilo de vida e metas (poupança)",
+                text = "Divisão por essenciais, desejos e poupança",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -87,7 +90,7 @@ fun NatureDistributionCard(
 
             // Diagnóstico de Rigidez Inteligente
             Surface(
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 color = when {
                     isAlert -> WarningAmberContainer.copy(alpha = 0.4f)
                     isLifestyle -> InfoCyanContainer.copy(alpha = 0.4f)

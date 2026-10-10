@@ -1,5 +1,10 @@
 package com.platform.app.presentation.management.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -81,12 +86,11 @@ fun PaymentMethodsTab(
             items(methods, key = { it.id }) { method ->
                 val icon = PlatformIconCatalog.getIcon(method.iconName)
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectMethod(method) },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.large,
+                    onClick = { onSelectMethod(method) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
@@ -119,7 +123,7 @@ fun PaymentMethodsTab(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = PlatformShapes.small,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             ) {
                                 Text(
@@ -218,7 +222,7 @@ fun PaymentMethodDetailBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -281,12 +285,10 @@ fun PaymentMethodDetailBottomSheet(
             }
 
             // Card de Métricas Financeiras Vinculadas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -323,7 +325,7 @@ fun PaymentMethodDetailBottomSheet(
                         // Pendente
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -354,7 +356,7 @@ fun PaymentMethodDetailBottomSheet(
                         // Pago / Liquidado
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -388,7 +390,7 @@ fun PaymentMethodDetailBottomSheet(
                     // Total Movimentado
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(
@@ -444,7 +446,7 @@ fun PaymentMethodDetailBottomSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }

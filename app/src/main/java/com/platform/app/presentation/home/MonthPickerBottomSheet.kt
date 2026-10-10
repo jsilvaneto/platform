@@ -1,5 +1,7 @@
 package com.platform.app.presentation.home
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -106,7 +108,7 @@ fun MonthPickerBottomSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(PlatformShapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,13 +178,13 @@ fun MonthPickerBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(PlatformShapes.medium)
                             .clickable {
                                 val targetMillis = DateUtils.createMonthMillis(displayedYear, index)
                                 onMonthSelected(targetMillis)
                                 onDismiss()
                             },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         color = containerColor,
                         border = border
                     ) {
@@ -210,7 +212,7 @@ fun MonthPickerBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp),
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary
                 ),

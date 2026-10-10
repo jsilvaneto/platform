@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 import javax.inject.Inject
 
@@ -108,12 +109,16 @@ data class NewExpenseUiState(
     val effectiveTitle: String
         get() = if (description.isNotBlank()) description.trim() else (selectedItem?.name ?: if (selectedItemId != null) "Despesa" else "")
 
+    val validationError: String?
+        get() = when {
+            amountCents <= 0L -> "Informe um valor maior que R$ 0,00"
+            selectedItemId == null -> "Selecione um item de despesa"
+            isCreditCard && selectedCreditCardId == null -> "Selecione o cartão de crédito"
+            else -> null
+        }
+
     val isValid: Boolean
-        get() = effectiveTitle.isNotBlank() &&
-                amountCents > 0L &&
-                selectedItemId != null &&
-                selectedContactId != null &&
-                (!isCreditCard || selectedCreditCardId != null)
+        get() = validationError == null
 }
 
 sealed interface NewExpenseUiEffect {
@@ -221,6 +226,23 @@ class NewExpenseViewModel @Inject constructor(
             } else current.recurrenceEndDate
             current.copy(dueDate = dueDate, recurrenceEndDate = updatedEndDate)
         }
+    }
+
+    fun setDueDateToday() {
+        onDueDateChange(System.currentTimeMillis())
+    }
+
+    fun setDueDateTomorrow() {
+        onDueDateChange(DateUtils.addDays(System.currentTimeMillis(), 1))
+    }
+
+    fun setDueDateDay5() {
+        val cal = Calendar.getInstance()
+        if (cal.get(Calendar.DAY_OF_MONTH) >= 5) {
+            cal.add(Calendar.MONTH, 1)
+        }
+        cal.set(Calendar.DAY_OF_MONTH, 5)
+        onDueDateChange(cal.timeInMillis)
     }
 
     fun onCategorySelect(categoryId: String?) {
@@ -364,14 +386,7 @@ class NewExpenseViewModel @Inject constructor(
     fun saveExpense() {
         val state = _uiState.value
         if (!state.isValid) {
-            val error = when {
-                state.selectedItemId == null -> "Selecione o Item da despesa (obrigatório)."
-                state.amountCents <= 0L -> "Informe um valor válido maior que R$ 0,00."
-                state.selectedContactId == null -> "Selecione o Contato / Fornecedor (obrigatório)."
-                state.effectiveTitle.isBlank() -> "Selecione um item ou informe a descrição."
-                state.isCreditCard && state.selectedCreditCardId == null -> "Selecione o Cartão de Crédito."
-                else -> "Preencha todos os campos obrigatórios."
-            }
+            val error = state.validationError ?: "Preencha todos os campos obrigatórios."
             viewModelScope.launch { _uiEffect.emit(NewExpenseUiEffect.ShowError(error)) }
             return
         }

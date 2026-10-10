@@ -15,6 +15,9 @@ import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.data.local.entity.CreditCardEntity
 import com.platform.app.data.local.entity.CreditCardInvoiceEntity
+import com.platform.app.data.repository.BillDataSource
+import com.platform.app.data.repository.CatalogDataSource
+import com.platform.app.data.repository.CreditCardDataSource
 import com.platform.app.data.repository.FinancialRepositoryImpl
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillType
@@ -114,6 +117,11 @@ class RecurringCardSubscription14MonthsTest {
             savedInvoices.add(inv)
         }
 
+        coEvery { creditCardDao.getInvoiceById(any()) } answers {
+            val invId = firstArg<String>()
+            savedInvoices.find { it.id == invId }
+        }
+
         coEvery { billDao.insert(any()) } answers {
             val bill = firstArg<BillEntity>()
             savedBills.removeIf { it.id == bill.id }
@@ -150,17 +158,29 @@ class RecurringCardSubscription14MonthsTest {
             }
         }
 
-        repository = FinancialRepositoryImpl(
+        val billDataSource = BillDataSource(
+            database = database,
+            billDao = billDao,
+            installmentDao = installmentDao
+        )
+        val creditCardDataSource = CreditCardDataSource(
+            creditCardDao = creditCardDao,
+            installmentDao = installmentDao
+        )
+        val catalogDataSource = CatalogDataSource(
             database = database,
             categoryDao = categoryDao,
             expenseItemDao = expenseItemDao,
-            creditCardDao = creditCardDao,
             contactDao = contactDao,
             financialAccountDao = financialAccountDao,
             paymentMethodDao = paymentMethodDao,
-            billDao = billDao,
-            installmentDao = installmentDao,
             preferencesManager = mockk(relaxed = true)
+        )
+
+        repository = FinancialRepositoryImpl(
+            billDataSource = billDataSource,
+            creditCardDataSource = creditCardDataSource,
+            catalogDataSource = catalogDataSource
         )
 
         calculateInstallmentsUseCase = CalculateInstallmentsUseCase()
@@ -266,8 +286,9 @@ class RecurringCardSubscription14MonthsTest {
         )
 
         for (refMonth in expectedReferenceMonths.drop(1)) {
-            // Chama a materialização sob demanda da fatura daquele mês
+            // Chama a criação da fatura (pura) e a materialização das ocorrências daquele mês (comando)
             val invoice = repository.getOrCreateInvoiceForMonth(sampleCard.id, refMonth)
+            repository.materializeRecurringForInvoice(sampleCard.id, invoice.id, refMonth)
             assertNotNull("Fatura $refMonth deve ser gerada sob demanda", invoice)
             assertNotEquals("Fatura $refMonth deve ter ID exclusivo", firstInvoiceId, invoice.id)
         }

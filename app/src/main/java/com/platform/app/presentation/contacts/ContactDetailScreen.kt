@@ -1,5 +1,12 @@
 package com.platform.app.presentation.contacts
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
+import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.contacts.components.AddContactBottomSheet
 import com.platform.app.presentation.contacts.components.LinkedBillsTab
 import com.platform.app.presentation.contacts.components.PlannedInstallmentsTab
 
@@ -115,16 +122,9 @@ fun ContactDetailScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Detalhes do Contato") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
-                    }
-                },
+            PlatformAppBar(
+                title = "Detalhes do Contato",
+                onNavigateBack = onNavigateBack,
                 actions = {
                     val details = uiState.selectedContactDetails
                     if (details != null) {
@@ -171,10 +171,7 @@ fun ContactDetailScreen(
                             }
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
         }
     ) { padding ->
@@ -280,7 +277,7 @@ fun ContactDetailScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error
                         ),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = PlatformShapes.small
                     ) {
                         Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                     }
@@ -288,7 +285,7 @@ fun ContactDetailScreen(
                 dismissButton = {
                     OutlinedButton(
                         onClick = { showDeleteConfirmDialog = false },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = PlatformShapes.small
                     ) {
                         Text(AppStrings.Actions.CANCEL)
                     }
@@ -323,14 +320,12 @@ fun ContactDetailScreen(
 fun ContactHeaderCard(details: ContactDetails) {
     val contact = details.contact
 
-    Card(
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.large,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
+            .padding(horizontal = 16.dp, vertical = 10.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -421,7 +416,7 @@ fun ContactHeaderCard(details: ContactDetails) {
             ) {
                 Surface(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
@@ -441,7 +436,7 @@ fun ContactHeaderCard(details: ContactDetails) {
 
                 Surface(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     color = SuccessGreen.copy(alpha = 0.15f)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {

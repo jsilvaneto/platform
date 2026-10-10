@@ -1,5 +1,10 @@
 package com.platform.app.presentation.contacts
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import com.platform.app.presentation.contacts.components.AddContactBottomSheet
 
 import androidx.compose.foundation.BorderStroke
@@ -82,6 +87,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.ContactType
+import com.platform.app.core.util.CurrencyUtils
+import androidx.compose.ui.text.style.TextOverflow
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.WarningAmber
 import kotlinx.coroutines.flow.collectLatest
@@ -198,6 +205,7 @@ fun ContactsScreen(
                                 items(contactsInType, key = { it.id }) { contact ->
                                     ContactCard(
                                         contact = contact,
+                                        openBalanceCents = uiState.openBalances[contact.id] ?: 0L,
                                         onClick = { onNavigateToDetail(contact.id) }
                                     )
                                 }
@@ -207,6 +215,7 @@ fun ContactsScreen(
                             items(uiState.filteredContacts, key = { it.id }) { contact ->
                                 ContactCard(
                                     contact = contact,
+                                    openBalanceCents = uiState.openBalances[contact.id] ?: 0L,
                                     onClick = { onNavigateToDetail(contact.id) }
                                 )
                             }
@@ -236,18 +245,17 @@ fun ContactsScreen(
 @Composable
 fun ContactCard(
     contact: Contact,
+    openBalanceCents: Long = 0L,
     onClick: () -> Unit
 ) {
     val (avatarColor, _) = getContactTypeColors(contact.type)
+    val typeLabel = getContactTypeLabel(contact.type)
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        )
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.medium,
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -255,87 +263,37 @@ fun ContactCard(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar Inicial com cor temática do tipo
             PlatformAvatar(
                 name = contact.name,
-                size = 42.dp,
+                size = 40.dp,
                 color = avatarColor
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = contact.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f, fill = false)
-                    )
+                Text(
+                    text = contact.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-                    Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
-                    ContactTypeBadge(type = contact.type)
+                val balanceText = if (openBalanceCents > 0L) {
+                    "${CurrencyUtils.formatCentsToCurrency(openBalanceCents)} em aberto"
+                } else {
+                    "Em dia"
                 }
 
-                if (contact.phone.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = contact.phone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-
-                if (contact.email.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = contact.email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-
-                if (contact.city.isNotBlank() || contact.state.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = listOf(contact.city, contact.state).filter { it.isNotBlank() }.joinToString(" - "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
+                Text(
+                    text = "$typeLabel · $balanceText",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             Icon(
@@ -400,6 +358,12 @@ fun getContactTypeColors(type: ContactType): Pair<Color, Color> {
     }
 }
 
+fun getContactTypeLabel(type: ContactType): String = when (type) {
+    ContactType.PESSOA_FISICA -> AppStrings.ContactType.INDIVIDUAL_SHORT
+    ContactType.FORNECEDOR -> AppStrings.ContactType.SUPPLIER
+    ContactType.ORGAO_PUBLICO -> AppStrings.ContactType.PUBLIC_ENTITY
+}
+
 @Composable
 fun ContactTypeBadge(
     type: ContactType,
@@ -407,14 +371,10 @@ fun ContactTypeBadge(
 ) {
     val (contentColor, containerColor) = getContactTypeColors(type)
     val icon = getContactTypeIcon(type)
-    val label = when (type) {
-        ContactType.PESSOA_FISICA -> AppStrings.ContactType.INDIVIDUAL_SHORT
-        ContactType.FORNECEDOR -> AppStrings.ContactType.SUPPLIER
-        ContactType.ORGAO_PUBLICO -> AppStrings.ContactType.PUBLIC_ENTITY
-    }
+    val label = getContactTypeLabel(type)
 
     Surface(
-        shape = RoundedCornerShape(6.dp),
+        shape = PlatformShapes.small,
         color = containerColor,
         modifier = modifier
     ) {
@@ -499,7 +459,7 @@ fun FilterChipItem(
     onClick: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = PlatformShapes.small,
         color = if (isSelected) {
             MaterialTheme.colorScheme.primary
         } else {

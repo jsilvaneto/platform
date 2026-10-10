@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.CompletingInstallmentSummary
 import com.platform.app.domain.model.FinancialDashboardMetrics
 import com.platform.app.domain.model.FutureMonthProjection
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.formatValueOrPrivate
@@ -107,13 +110,13 @@ fun DeescalationCurveCard(
             ) {
                 Column {
                     Text(
-                        text = "Curva de Desoneração (6 Meses)",
+                        text = AppStrings.Glossary.NEXT_MONTHS_PAYMENTS,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Evolução decrescente dos pagamentos com amortização",
+                        text = "Previsão dos compromissos futuros assumidos",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -121,7 +124,7 @@ fun DeescalationCurveCard(
 
                 if (lowestProj != null && lowestProj.totalCommittedCents < (highestProj?.totalCommittedCents ?: 0L)) {
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         color = SuccessGreenContainer.copy(alpha = 0.5f)
                     ) {
                         Row(
@@ -170,7 +173,7 @@ fun DeescalationCurveCard(
                                 if (isPeak) {
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
-                                        shape = RoundedCornerShape(4.dp),
+                                        shape = PlatformShapes.extraSmall,
                                         color = ErrorRedContainer.copy(alpha = 0.45f)
                                     ) {
                                         Row(
@@ -195,7 +198,7 @@ fun DeescalationCurveCard(
                                 } else if (isLowest) {
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
-                                        shape = RoundedCornerShape(4.dp),
+                                        shape = PlatformShapes.extraSmall,
                                         color = SuccessGreenContainer.copy(alpha = 0.45f)
                                     ) {
                                         Row(
@@ -279,7 +282,7 @@ fun CompletingInstallmentsCard(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(999.dp),
+                    shape = PlatformShapes.pill,
                     color = SuccessGreenContainer
                 ) {
                     Text(
@@ -297,7 +300,7 @@ fun CompletingInstallmentsCard(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 completingList.forEach { item ->
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -375,13 +378,13 @@ fun DecisionAdvisorCard(
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Cockpit de Tomada de Decisão",
+                        text = AppStrings.Glossary.SUGGESTIONS,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Recomendações estratégicas antes de assumir novos gastos",
+                        text = "Dicas úteis antes de assumir novas compras",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -391,7 +394,7 @@ fun DecisionAdvisorCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Surface(
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 color = if (canAffordNewInstallment) SuccessGreenContainer.copy(alpha = 0.4f) else WarningAmberContainer.copy(alpha = 0.4f),
                 modifier = Modifier.fillMaxWidth()
             ) {

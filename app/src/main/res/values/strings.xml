@@ -17,6 +17,28 @@
     <string name="status_closed">Fechada</string>
     <string name="status_paused">Pausada</string>
 
+    <!-- Navegação BottomBar -->
+    <string name="nav_today">Hoje</string>
+    <string name="nav_bills">Contas</string>
+    <string name="nav_credit_cards">Cartões</string>
+    <string name="nav_analytics">Análises</string>
+    <string name="nav_more">Mais</string>
+
+    <!-- Glossário Amigável -->
+    <string name="glossary_upcoming_payments">Próximos pagamentos</string>
+    <string name="glossary_bills_summary">Resumo das contas</string>
+    <string name="glossary_open_installments">Parcelamentos em aberto</string>
+    <string name="glossary_due_soon">Vence em breve</string>
+    <string name="glossary_next_months_payments">Pagamentos nos próximos meses</string>
+    <string name="glossary_suggestions">Sugestões</string>
+    <string name="glossary_budget_balance">Equilíbrio do orçamento</string>
+    <string name="glossary_how_you_pay">Como você paga</string>
+    <string name="glossary_spending_by_account">Gastos por conta</string>
+    <string name="glossary_fixed_bill">Conta fixa</string>
+    <string name="glossary_bills">Contas</string>
+    <string name="glossary_recurring_and_installments">Recorrentes e parceladas</string>
+    <string name="glossary_items">Itens</string>
+
     <!-- Naturezas de Despesa -->
     <string name="nature_mandatory">Obrigatório</string>
     <string name="nature_necessary">Necessário</string>

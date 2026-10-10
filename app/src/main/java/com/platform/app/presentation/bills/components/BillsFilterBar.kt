@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -203,7 +205,7 @@ fun BillsFilterBar(
         if (hasActiveFilters) {
             item {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.10f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f)),
                     modifier = Modifier.clickable(onClick = onResetFilters)
@@ -242,7 +244,7 @@ fun FilterDropdownChip(
 ) {
     Box(modifier = modifier) {
         Surface(
-            shape = RoundedCornerShape(8.dp),
+            shape = PlatformShapes.small,
             color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
             border = BorderStroke(
                 width = 1.dp,

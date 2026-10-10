@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -136,7 +138,7 @@ fun SettingsBackupSection(
         Spacer(modifier = Modifier.height(12.dp))
 
         Surface(
-            shape = RoundedCornerShape(10.dp),
+            shape = PlatformShapes.medium,
             color = if (lastBackupFormatted != null)
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
             else
@@ -195,7 +197,7 @@ fun SettingsBackupSection(
             Button(
                 onClick = onBackupClick,
                 enabled = !isLoading,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
             ) {
@@ -215,7 +217,7 @@ fun SettingsBackupSection(
             OutlinedButton(
                 onClick = onRestoreClick,
                 enabled = !isLoading,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 10.dp)
             ) {
@@ -281,7 +283,7 @@ fun SettingsAboutSection(
                                 MaterialTheme.colorScheme.tertiary
                             )
                         ),
-                        RoundedCornerShape(10.dp)
+                        PlatformShapes.medium
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -305,7 +307,7 @@ fun SettingsAboutSection(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -373,7 +375,7 @@ fun RestoreConfirmDialog(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error
                 ),
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text("Selecionar Arquivo")
             }
@@ -381,7 +383,7 @@ fun RestoreConfirmDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CANCEL)
             }

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -90,7 +92,7 @@ fun PasswordStrengthIndicator(
                     modifier = Modifier
                         .weight(1f)
                         .height(4.dp)
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(PlatformShapes.extraSmall)
                         .background(
                             if (isActive) barColor
                             else MaterialTheme.colorScheme.surfaceVariant
@@ -190,7 +192,7 @@ fun CreateBackupPasswordDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = PlatformShapes.medium
                 )
 
                 if (password.isNotEmpty()) {
@@ -218,7 +220,7 @@ fun CreateBackupPasswordDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = PlatformShapes.medium
                 )
             }
         },
@@ -226,7 +228,7 @@ fun CreateBackupPasswordDialog(
             Button(
                 onClick = { onConfirm(password) },
                 enabled = isValid,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(if (isSharing) AppStrings.Dialogs.ENCRYPT_AND_SEND else AppStrings.Dialogs.SAVE_FILE)
             }
@@ -234,7 +236,7 @@ fun CreateBackupPasswordDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CANCEL)
             }
@@ -298,7 +300,7 @@ fun RestorePasswordDialog(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = PlatformShapes.medium
                 )
             }
         },
@@ -306,7 +308,7 @@ fun RestorePasswordDialog(
             Button(
                 onClick = { onConfirm(password) },
                 enabled = password.isNotBlank(),
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Dialogs.DECRYPT_AND_RESTORE)
             }
@@ -314,7 +316,7 @@ fun RestorePasswordDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CANCEL)
             }

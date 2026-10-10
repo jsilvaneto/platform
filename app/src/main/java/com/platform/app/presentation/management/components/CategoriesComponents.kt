@@ -1,5 +1,10 @@
 package com.platform.app.presentation.management.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -87,12 +92,11 @@ fun CategoriesTab(
                     try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
                 }
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectCategory(cat) },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.large,
+                    onClick = { onSelectCategory(cat) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
@@ -125,7 +129,7 @@ fun CategoriesTab(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = PlatformShapes.small,
                                 color = color.copy(alpha = 0.12f)
                             ) {
                                 Text(
@@ -226,7 +230,7 @@ fun CategoryDetailBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = PlatformShapes.small,
                         color = catColor.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -289,12 +293,10 @@ fun CategoryDetailBottomSheet(
             }
 
             // Card de Métricas Financeiras Vinculadas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -331,7 +333,7 @@ fun CategoryDetailBottomSheet(
                         // Pendente
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -362,7 +364,7 @@ fun CategoryDetailBottomSheet(
                         // Pago
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -396,7 +398,7 @@ fun CategoryDetailBottomSheet(
                     // Total Movimentado
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         color = MaterialTheme.colorScheme.surface
                     ) {
                         Row(
@@ -452,7 +454,7 @@ fun CategoryDetailBottomSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }

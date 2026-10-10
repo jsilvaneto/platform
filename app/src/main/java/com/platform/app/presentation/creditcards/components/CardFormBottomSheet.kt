@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,9 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.CreditCard
+import com.platform.app.domain.model.CreditCardCalculator
 import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformShapes
 
 
 @OptIn(ExperimentalMaterial3Api::class)

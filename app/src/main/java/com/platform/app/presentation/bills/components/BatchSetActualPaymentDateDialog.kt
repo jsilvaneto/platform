@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,7 +57,7 @@ fun BatchSetActualPaymentDateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(16.dp),
+        shape = PlatformShapes.large,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -108,7 +110,7 @@ fun BatchSetActualPaymentDateDialog(
                         selected = isSelectedToday,
                         onClick = { selectedPaymentDate = System.currentTimeMillis() },
                         label = { Text(AppStrings.Dialogs.TODAY, style = MaterialTheme.typography.labelMedium) },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -123,9 +125,9 @@ fun BatchSetActualPaymentDateDialog(
                         .border(
                             1.dp,
                             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                            RoundedCornerShape(10.dp)
+                            PlatformShapes.medium
                         )
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(PlatformShapes.medium)
                         .clickable {
                             DatePickerDialog(
                                 context,
@@ -182,7 +184,7 @@ fun BatchSetActualPaymentDateDialog(
         confirmButton = {
             Button(
                 onClick = { onConfirm(selectedPaymentDate) },
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CONFIRM)
             }
@@ -190,7 +192,7 @@ fun BatchSetActualPaymentDateDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CANCEL)
             }

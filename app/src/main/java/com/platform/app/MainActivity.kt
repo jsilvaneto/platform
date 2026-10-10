@@ -4,20 +4,30 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -25,14 +35,19 @@ import com.platform.app.core.notification.DueReminderManager
 import com.platform.app.core.preferences.PreferencesManager
 import com.platform.app.core.security.BiometricAuthManager
 import com.platform.app.domain.repository.FinancialRepository
-import com.platform.app.presentation.navigation.AppDrawer
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.navigation.NavGraph
 import com.platform.app.presentation.navigation.Screen
 import com.platform.app.presentation.security.BiometricLockOverlay
 import com.platform.app.presentation.theme.PlatformTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private data class BottomNavItem(
+    val screen: Screen,
+    val title: String,
+    val icon: ImageVector
+)
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -111,44 +126,72 @@ class MainActivity : FragmentActivity() {
                         )
                     } else {
                         val navController = rememberNavController()
-                        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                        val coroutineScope = rememberCoroutineScope()
                         val navBackStackEntry by navController.currentBackStackEntryAsState()
                         val currentRoute = navBackStackEntry?.destination?.route
 
-                        ModalNavigationDrawer(
-                            drawerState = drawerState,
-                            drawerContent = {
-                                AppDrawer(
-                                    currentRoute = currentRoute,
-                                    onNavigate = { screen ->
-                                        coroutineScope.launch { drawerState.close() }
-                                        if (currentRoute != screen.route) {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(Screen.Dashboard.route) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
+                        val bottomNavItems = listOf(
+                            BottomNavItem(Screen.Dashboard, AppStrings.Navigation.TODAY, Icons.Default.Home),
+                            BottomNavItem(Screen.Bills, AppStrings.Navigation.BILLS, Icons.AutoMirrored.Filled.ReceiptLong),
+                            BottomNavItem(Screen.CreditCards, AppStrings.Navigation.CREDIT_CARDS, Icons.Default.CreditCard),
+                            BottomNavItem(Screen.Statistics, AppStrings.Navigation.ANALYTICS, Icons.Default.BarChart),
+                            BottomNavItem(Screen.More, AppStrings.Navigation.MORE, Icons.Default.MoreHoriz)
+                        )
+
+                        val showBottomBar = bottomNavItems.any { it.screen.route == currentRoute }
+
+                        Scaffold(
+                            bottomBar = {
+                                if (showBottomBar) {
+                                    NavigationBar(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        tonalElevation = 3.dp
+                                    ) {
+                                        bottomNavItems.forEach { item ->
+                                            val selected = currentRoute == item.screen.route
+                                            NavigationBarItem(
+                                                selected = selected,
+                                                onClick = {
+                                                    if (currentRoute != item.screen.route) {
+                                                        navController.navigate(item.screen.route) {
+                                                            popUpTo(Screen.Dashboard.route) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
+                                                        }
+                                                    }
+                                                },
+                                                icon = {
+                                                    Icon(
+                                                        imageVector = item.icon,
+                                                        contentDescription = item.title
+                                                    )
+                                                },
+                                                label = {
+                                                    Text(
+                                                        text = item.title,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                                    )
+                                                },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
+                                            )
                                         }
-                                    },
-                                    onCloseDrawer = {
-                                        coroutineScope.launch { drawerState.close() }
                                     }
-                                )
+                                }
                             }
-                        ) {
-                            Scaffold { innerPadding ->
-                                NavGraph(
-                                    navController = navController,
-                                    paddingValues = innerPadding,
-                                    biometricAuthManager = biometricAuthManager,
-                                    onOpenDrawer = {
-                                        coroutineScope.launch { drawerState.open() }
-                                    }
-                                )
-                            }
+                        ) { innerPadding ->
+                            NavGraph(
+                                navController = navController,
+                                paddingValues = innerPadding,
+                                biometricAuthManager = biometricAuthManager
+                            )
                         }
                     }
                 }

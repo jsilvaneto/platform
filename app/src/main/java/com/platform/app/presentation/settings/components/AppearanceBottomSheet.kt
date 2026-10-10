@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -233,7 +235,7 @@ fun AppIconPreviewCard(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = PlatformShapes.large,
         color = if (isSelected)
             MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
         else
@@ -254,7 +256,7 @@ fun AppIconPreviewCard(
             Box(
                 modifier = Modifier
                     .size(54.dp)
-                    .clip(RoundedCornerShape(12.dp)),
+                    .clip(PlatformShapes.medium),
                 contentAlignment = Alignment.Center
             ) {
                 iconContent()
@@ -272,7 +274,7 @@ fun AppIconPreviewCard(
             Spacer(modifier = Modifier.height(4.dp))
 
             Surface(
-                shape = RoundedCornerShape(6.dp),
+                shape = PlatformShapes.small,
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primary
                 else
@@ -298,13 +300,13 @@ fun ClassicIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(ThemePreviewColors.ClassicBackground, RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ClassicBackground, PlatformShapes.medium),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(ThemePreviewColors.ClassicCard, RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.ClassicCard, PlatformShapes.small)
         ) {
             Box(
                 modifier = Modifier
@@ -315,7 +317,7 @@ fun ClassicIconPreview() {
                 modifier = Modifier
                     .size(10.dp, 8.dp)
                     .padding(start = 2.dp, top = 2.dp)
-                    .background(ThemePreviewColors.ClassicBadge, RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ClassicBadge, PlatformShapes.extraSmall)
             )
             Box(
                 modifier = Modifier
@@ -333,7 +335,7 @@ fun ModernV2IconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(ThemePreviewColors.ModernV2Background, RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ModernV2Background, PlatformShapes.medium),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -344,7 +346,7 @@ fun ModernV2IconPreview() {
             Box(
                 modifier = Modifier
                     .size(7.dp, 28.dp)
-                    .background(ThemePreviewColors.ModernV2Bar1, RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ModernV2Bar1, PlatformShapes.extraSmall)
             )
             Box(
                 modifier = Modifier
@@ -362,7 +364,7 @@ fun ModernV2IconPreview() {
             Box(
                 modifier = Modifier
                     .size(6.dp, 20.dp)
-                    .background(ThemePreviewColors.ModernV2Bar3, RoundedCornerShape(2.dp))
+                    .background(ThemePreviewColors.ModernV2Bar3, PlatformShapes.extraSmall)
             )
         }
     }
@@ -373,13 +375,13 @@ fun EmeraldIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(ThemePreviewColors.EmeraldBackground, RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.EmeraldBackground, PlatformShapes.medium),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(ThemePreviewColors.EmeraldCard, RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.EmeraldCard, PlatformShapes.small)
         ) {
             Box(
                 modifier = Modifier
@@ -402,13 +404,13 @@ fun ObsidianIconPreview() {
     Box(
         modifier = Modifier
             .size(54.dp)
-            .background(ThemePreviewColors.ObsidianBackground, RoundedCornerShape(12.dp)),
+            .background(ThemePreviewColors.ObsidianBackground, PlatformShapes.medium),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .size(34.dp, 26.dp)
-                .background(ThemePreviewColors.ObsidianCard, RoundedCornerShape(5.dp))
+                .background(ThemePreviewColors.ObsidianCard, PlatformShapes.small)
         ) {
             Box(
                 modifier = Modifier

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.security
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -106,7 +108,7 @@ fun BiometricLockOverlay(
 
                 Button(
                     onClick = onUnlockRequest,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = PlatformShapes.large,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp)

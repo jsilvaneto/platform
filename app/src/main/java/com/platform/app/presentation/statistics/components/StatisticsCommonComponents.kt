@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,7 +81,7 @@ fun MetricKpiBox(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
+        shape = PlatformShapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -121,7 +123,7 @@ fun StatusBreakdownBox(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
+        shape = PlatformShapes.medium,
         color = containerColor
     ) {
         Column(modifier = Modifier.padding(10.dp)) {

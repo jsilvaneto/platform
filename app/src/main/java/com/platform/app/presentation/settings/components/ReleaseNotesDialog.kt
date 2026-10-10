@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,7 +92,7 @@ fun ReleaseNotesDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss, shape = RoundedCornerShape(10.dp)) {
+            Button(onClick = onDismiss, shape = PlatformShapes.medium) {
                 Text("Entendido")
             }
         }

@@ -41,6 +41,7 @@ class ContactsViewModelTest {
         lookupAddressByCepUseCase = mockk(relaxed = true)
 
         every { repository.getContacts() } returns flowOf(emptyList())
+        every { repository.getAllInstallments() } returns flowOf(emptyList())
     }
 
     @After

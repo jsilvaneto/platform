@@ -20,11 +20,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.platform.app.presentation.bills.components.BillInstallmentItemCard
-import com.platform.app.presentation.bills.components.BillsFilterBar
+import com.platform.app.presentation.bills.components.BillsFilterBottomSheet
+import com.platform.app.presentation.bills.components.BillsInstallmentList
 import com.platform.app.presentation.bills.components.BillsMiniKpiBar
+import com.platform.app.presentation.bills.components.BillsMonthSectionHeader
 import com.platform.app.presentation.bills.components.EmptyBillsState
 import com.platform.app.presentation.bills.components.BatchDeleteDialog
 import com.platform.app.presentation.bills.components.BatchSetActualPaymentDateDialog
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformIconCatalog
 import androidx.compose.foundation.verticalScroll
@@ -147,6 +152,7 @@ fun BillsScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     var isSearchExpanded by remember { mutableStateOf(false) }
+    var showFilterBottomSheet by remember { mutableStateOf(false) }
 
     // Estado do modo de seleção múltipla em lote
     var isSelectionMode by remember { mutableStateOf(false) }
@@ -155,6 +161,10 @@ fun BillsScreen(
     var showBatchSetActualPaymentDialog by remember { mutableStateOf(false) }
     var installmentToConfirmPayment by remember { mutableStateOf<BillInstallment?>(null) }
     val currentMonthLabel = remember { DateUtils.formatMonthYear(System.currentTimeMillis()) }
+    val currentYear = remember { Calendar.getInstance().get(Calendar.YEAR) }
+    val hasActiveFilters = uiState.statusFilter != null ||
+            uiState.periodFilter != BillPeriodFilter.ALL ||
+            (uiState.selectedYear != null && uiState.selectedYear != currentYear)
     var expandedMonths by rememberSaveable { mutableStateOf(setOf(DateUtils.formatMonthYear(System.currentTimeMillis()))) }
 
     LaunchedEffect(uiEffect) {
@@ -170,7 +180,7 @@ fun BillsScreen(
     Scaffold(
         topBar = {
             PlatformSearchTopBar(
-                title = if (isSelectionMode) "${selectedInstallmentIds.size} selecionado(s)" else "Registros",
+                title = if (isSelectionMode) "${selectedInstallmentIds.size} selecionado(s)" else "Contas",
                 searchQuery = uiState.searchQuery,
                 isSearchActive = isSearchExpanded,
                 onSearchQueryChange = { onAction(BillsUiAction.SearchQueryChanged(it)) },
@@ -192,8 +202,25 @@ fun BillsScreen(
                         }
                     }
                 } else null,
-                onOpenDrawer = onOpenDrawer,
+                onOpenDrawer = null,
                 actions = {
+                    if (!isSelectionMode) {
+                        IconButton(onClick = { showFilterBottomSheet = true }) {
+                            BadgedBox(
+                                badge = {
+                                    if (hasActiveFilters) {
+                                        Badge()
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = "Filtrar contas",
+                                    tint = if (hasActiveFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                     IconButton(
                         onClick = {
                             isSelectionMode = !isSelectionMode
@@ -234,23 +261,23 @@ fun BillsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // 1. Segmented Tabs Superiores: A Pagar | Pagas | Todas
-            val pendingCount = remember(uiState.installments) { uiState.installments.count { !it.isPaid } }
-            val paidCount = remember(uiState.installments) { uiState.installments.count { it.isPaid } }
+            // 1. Segmented Tabs: Todas | Recorrentes | Parceladas
             val totalCount = remember(uiState.installments) { uiState.installments.size }
+            val recurringCount = remember(uiState.installments) { uiState.installments.count { it.type == BillType.RECURRING } }
+            val installmentCount = remember(uiState.installments) { uiState.installments.count { it.type == BillType.INSTALLMENT } }
 
-            val tabItems = remember(pendingCount, paidCount, totalCount) {
+            val tabItems = remember(totalCount, recurringCount, installmentCount) {
                 listOf(
-                    SegmentedTabItem("A Pagar", pendingCount),
-                    SegmentedTabItem("Pagas", paidCount),
-                    SegmentedTabItem("Todas", totalCount)
+                    SegmentedTabItem("Todas", totalCount),
+                    SegmentedTabItem("Recorrentes", recurringCount),
+                    SegmentedTabItem("Parceladas", installmentCount)
                 )
             }
 
-            val selectedTabIndex = when (uiState.statusFilter) {
-                BillStatus.PENDING -> 0
-                BillStatus.PAID -> 1
-                null -> 2
+            val selectedTabIndex = when (uiState.typeFilter) {
+                null -> 0
+                BillType.RECURRING -> 1
+                BillType.INSTALLMENT -> 2
                 else -> 0
             }
 
@@ -259,25 +286,66 @@ fun BillsScreen(
                 selectedIndex = selectedTabIndex,
                 onTabSelected = { index ->
                     when (index) {
-                        0 -> onAction(BillsUiAction.StatusFilterChanged(BillStatus.PENDING))
-                        1 -> onAction(BillsUiAction.StatusFilterChanged(BillStatus.PAID))
-                        2 -> onAction(BillsUiAction.StatusFilterChanged(null))
+                        0 -> onAction(BillsUiAction.TypeFilterChanged(null))
+                        1 -> onAction(BillsUiAction.TypeFilterChanged(BillType.RECURRING))
+                        2 -> onAction(BillsUiAction.TypeFilterChanged(BillType.INSTALLMENT))
                     }
                 },
                 modifier = Modifier.padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
             )
 
-            // 2. Barra de Filtros Compactos e Interativos (Ano, Período, Tipo + Limpar)
-            BillsFilterBar(
-                selectedYear = uiState.selectedYear,
-                availableYears = uiState.availableYears,
-                periodFilter = uiState.periodFilter,
-                typeFilter = uiState.typeFilter,
-                onYearChange = { onAction(BillsUiAction.YearChanged(it)) },
-                onPeriodChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
-                onTypeChange = { onAction(BillsUiAction.TypeFilterChanged(it)) },
-                onResetFilters = { onAction(BillsUiAction.ResetFilters) }
-            )
+            // Resumo de filtros ativos (quando houver)
+            if (hasActiveFilters) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val filterDesc = buildList {
+                        uiState.statusFilter?.let { add(if (it == BillStatus.PAID) "Pagas" else "A Pagar") }
+                        if (uiState.periodFilter != BillPeriodFilter.ALL) add(uiState.periodFilter.label)
+                        if (uiState.selectedYear != null && uiState.selectedYear != currentYear) add("${uiState.selectedYear}")
+                    }.joinToString(" • ")
+
+                    Text(
+                        text = "Filtros: $filterDesc",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { onAction(BillsUiAction.ResetFilters) },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        modifier = Modifier.height(24.dp)
+                    ) {
+                        Text(
+                            text = "Limpar",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            if (showFilterBottomSheet) {
+                BillsFilterBottomSheet(
+                    selectedYear = uiState.selectedYear,
+                    availableYears = uiState.availableYears,
+                    periodFilter = uiState.periodFilter,
+                    statusFilter = uiState.statusFilter,
+                    onYearChange = { onAction(BillsUiAction.YearChanged(it)) },
+                    onPeriodChange = { onAction(BillsUiAction.PeriodFilterChanged(it)) },
+                    onStatusChange = { onAction(BillsUiAction.StatusFilterChanged(it)) },
+                    onResetFilters = { onAction(BillsUiAction.ResetFilters) },
+                    onDismissRequest = { showFilterBottomSheet = false }
+                )
+            }
 
             // 3. Mini KPI Strip Proporcional e Elegante
             BillsMiniKpiBar(
@@ -309,124 +377,52 @@ fun BillsScreen(
                             }
                         }
 
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            if (groupedByMonth.size > 1) {
-                                item(key = "toggle_all_months") {
-                                    val allExpanded = groupedByMonth.keys.isNotEmpty() && groupedByMonth.keys.all { it in expandedMonths }
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "${groupedByMonth.size} meses listados",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        TextButton(
-                                            onClick = {
-                                                expandedMonths = if (allExpanded) {
-                                                    emptySet()
-                                                } else {
-                                                    groupedByMonth.keys.toSet()
-                                                }
-                                            },
-                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                            modifier = Modifier.height(28.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = if (allExpanded) Icons.Default.UnfoldLess else Icons.Default.UnfoldMore,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(14.dp),
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = if (allExpanded) "Recolher todos" else "Expandir todos",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
-                                        }
+                        BillsInstallmentList(
+                            groupedByMonth = groupedByMonth,
+                            expandedMonths = expandedMonths,
+                            currentMonthLabel = currentMonthLabel,
+                            isSelectionMode = isSelectionMode,
+                            selectedInstallmentIds = selectedInstallmentIds,
+                            onToggleMonthExpand = { monthLabel ->
+                                expandedMonths = if (monthLabel in expandedMonths) {
+                                    expandedMonths - monthLabel
+                                } else {
+                                    expandedMonths + monthLabel
+                                }
+                            },
+                            onToggleAllMonths = { allExpanded ->
+                                expandedMonths = if (allExpanded) emptySet() else groupedByMonth.keys.toSet()
+                            },
+                            onToggleSelect = { id ->
+                                selectedInstallmentIds = if (id in selectedInstallmentIds) {
+                                    selectedInstallmentIds - id
+                                } else {
+                                    selectedInstallmentIds + id
+                                }
+                            },
+                            onLongClickSelect = { id ->
+                                isSelectionMode = true
+                                selectedInstallmentIds = selectedInstallmentIds + id
+                            },
+                            onTogglePayment = { installment ->
+                                if (installment.isPaid) {
+                                    onAction(BillsUiAction.TogglePayment(installment))
+                                } else {
+                                    installmentToConfirmPayment = installment
+                                }
+                            },
+                            onSelectInstallment = { installment ->
+                                if (isSelectionMode) {
+                                    selectedInstallmentIds = if (installment.id in selectedInstallmentIds) {
+                                        selectedInstallmentIds - installment.id
+                                    } else {
+                                        selectedInstallmentIds + installment.id
                                     }
+                                } else {
+                                    onAction(BillsUiAction.OpenEditInstallment(installment))
                                 }
                             }
-
-                            groupedByMonth.forEach { (monthLabel, monthItems) ->
-                                val isExpanded = monthLabel in expandedMonths
-                                val isCurrentMonth = monthLabel.equals(currentMonthLabel, ignoreCase = true)
-
-                                item(key = "header_$monthLabel") {
-                                    val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
-                                    BillsMonthSectionHeader(
-                                        monthLabel = monthLabel,
-                                        monthTotal = monthTotal,
-                                        itemCount = monthItems.size,
-                                        isExpanded = isExpanded,
-                                        isCurrentMonth = isCurrentMonth,
-                                        onToggleExpand = {
-                                            expandedMonths = if (isExpanded) {
-                                                expandedMonths - monthLabel
-                                            } else {
-                                                expandedMonths + monthLabel
-                                            }
-                                        }
-                                    )
-                                }
-
-                                if (isExpanded) {
-                                    items(monthItems, key = { it.id }) { installment ->
-                                        val isSelected = installment.id in selectedInstallmentIds
-
-                                        BillInstallmentItemCard(
-                                            installment = installment,
-                                            isSelectionMode = isSelectionMode,
-                                            isSelected = isSelected,
-                                            onToggleSelect = {
-                                                selectedInstallmentIds = if (isSelected) {
-                                                    selectedInstallmentIds - installment.id
-                                                } else {
-                                                    selectedInstallmentIds + installment.id
-                                                }
-                                            },
-                                            onLongClick = {
-                                                isSelectionMode = true
-                                                selectedInstallmentIds = selectedInstallmentIds + installment.id
-                                            },
-                                            onTogglePayment = {
-                                                if (installment.isPaid) {
-                                                    onAction(BillsUiAction.TogglePayment(installment))
-                                                } else {
-                                                    installmentToConfirmPayment = installment
-                                                }
-                                            },
-                                            onSelectInstallment = {
-                                                if (isSelectionMode) {
-                                                    selectedInstallmentIds = if (isSelected) {
-                                                        selectedInstallmentIds - installment.id
-                                                    } else {
-                                                        selectedInstallmentIds + installment.id
-                                                    }
-                                                } else {
-                                                    // 2- Ao tocar em um registro: abrir janela para editar
-                                                    onAction(BillsUiAction.OpenEditInstallment(installment))
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
-                            item {
-                                Spacer(modifier = Modifier.height(84.dp))
-                            }
-                        }
+                        )
                     }
                 }
 

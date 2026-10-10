@@ -1,7 +1,11 @@
 package com.platform.app.presentation.expenseitems
 
+import com.platform.app.presentation.theme.PlatformShapes
+
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.expenseitems.components.ExpenseItemDetailBottomSheet
 import com.platform.app.presentation.expenseitems.components.AddEditExpenseItemBottomSheet
+import com.platform.app.presentation.expenseitems.components.CategorySearchableModal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -61,7 +65,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -78,6 +81,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.ExpenseItem
+import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.presentation.components.PlatformSearchTopBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformStatusChip
@@ -103,12 +107,12 @@ fun ExpenseItemsScreen(
     Scaffold(
         topBar = {
             PlatformSearchTopBar(
-                title = "Itens de Despesa",
+                title = AppStrings.Glossary.ITEMS,
                 searchQuery = uiState.searchQuery,
                 isSearchActive = isSearchExpanded,
                 onSearchQueryChange = { onAction(ExpenseItemsUiAction.SearchQueryChanged(it)) },
                 onSearchActiveChange = { isSearchExpanded = it },
-                placeholder = "Buscar item de despesa...",
+                placeholder = "Buscar item...",
                 onNavigateBack = onNavigateBack
             )
         },
@@ -225,6 +229,7 @@ fun ExpenseItemsScreen(
                         items(catItems, key = { it.id }) { item ->
                             HierarchicalExpenseItemRow(
                                 item = item,
+                                categoryNature = cat.nature,
                                 onClick = { itemToViewDetails = item }
                             )
                         }
@@ -298,7 +303,7 @@ fun ExpenseItemsScreen(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                        shape = PlatformShapes.medium
                     ) {
                         Text(AppStrings.Actions.DELETE)
                     }
@@ -315,7 +320,7 @@ fun ExpenseItemsScreen(
             CategorySearchableModal(
                 categories = uiState.categories,
                 selectedCategoryId = uiState.selectedCategoryId,
-                onCategorySelected = { cat ->
+                onCategorySelected = { cat: Category ->
                     onAction(ExpenseItemsUiAction.CategoryFilterChanged(cat.id))
                     showCategoryFilterModal = false
                 },
@@ -363,7 +368,7 @@ fun CategorySectionHeader(
             modifier = Modifier.weight(1f)
         )
         Surface(
-            shape = RoundedCornerShape(12.dp),
+            shape = PlatformShapes.medium,
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ) {
             Text(
@@ -380,6 +385,7 @@ fun CategorySectionHeader(
 @Composable
 fun HierarchicalExpenseItemRow(
     item: ExpenseItem,
+    categoryNature: ExpenseNature? = null,
     onClick: () -> Unit
 ) {
     PlatformCard(
@@ -412,17 +418,22 @@ fun HierarchicalExpenseItemRow(
                 )
             }
 
-            Spacer(modifier = Modifier.width(Dimens.spacingSmall))
-
-            PlatformStatusChip(
-                text = item.nature.displayName,
-                type = when (item.nature.name) {
-                    "OBRIGATORIO" -> StatusChipType.ERROR
-                    "NECESSARIO" -> StatusChipType.WARNING
-                    "DESEJA" -> StatusChipType.INFO
-                    else -> StatusChipType.NEUTRAL
+            // Oculta chip de natureza quando igual à categoria; quando diferente, exibe indicador tonal neutro (Prompt 29)
+            if (categoryNature != null && item.nature != categoryNature) {
+                Spacer(modifier = Modifier.width(Dimens.spacingSmall))
+                Surface(
+                    shape = PlatformShapes.small,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = item.nature.displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
-            )
+            }
 
             Spacer(modifier = Modifier.width(Dimens.spacingSmall))
 

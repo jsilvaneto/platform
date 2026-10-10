@@ -1,5 +1,6 @@
 package com.platform.app.presentation.expenseitems.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,12 +11,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.core.graphics.toColorInt
+import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformIconCatalog
+import com.platform.app.presentation.theme.PlatformShapes
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -26,14 +34,14 @@ import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.ExpenseNature
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
-import com.platform.app.presentation.components.PlatformIconPicker
-import com.platform.app.presentation.components.PlatformIconView
+import com.platform.app.presentation.theme.PlatformIconPicker
 import com.platform.app.presentation.components.PlatformStatusChip
 import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.BrandPrimary
 import com.platform.app.presentation.theme.BrandPrimaryDark
 import java.util.UUID
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditExpenseItemBottomSheet(
     itemToEdit: ExpenseItem? = null,
@@ -76,7 +84,7 @@ fun AddEditExpenseItemBottomSheet(
                 label = { Text("Nome do Item (ex: Supermercado, Internet)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                shape = PlatformShapes.medium
             )
 
             val catColor = selectedCategory?.let {
@@ -84,7 +92,7 @@ fun AddEditExpenseItemBottomSheet(
             }
 
             Surface(
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                shape = PlatformShapes.medium,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
                 modifier = Modifier
@@ -198,7 +206,7 @@ fun AddEditExpenseItemBottomSheet(
                             )
                         }
                     },
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                    shape = PlatformShapes.medium,
                     enabled = name.isNotBlank() && selectedCategory != null
                 ) {
                     Text(if (isEditing) AppStrings.Actions.SAVE_CHANGES else AppStrings.Actions.SAVE)
@@ -231,7 +239,7 @@ fun CategorySearchableModal(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+        shape = PlatformShapes.bottomSheet,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(
@@ -282,7 +290,7 @@ fun CategorySearchableModal(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -337,7 +345,7 @@ fun CategorySearchableModal(
                             }
 
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = PlatformShapes.medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 modifier = Modifier

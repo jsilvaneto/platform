@@ -1,16 +1,26 @@
 package com.platform.app.presentation.goals.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,10 +30,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
+import com.platform.app.domain.model.Goal
 import com.platform.app.domain.model.GoalContribution
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
-import com.platform.app.presentation.goals.GoalWithContributions
 import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.SuccessGreen
 
@@ -86,7 +96,7 @@ fun GoalDetailBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = PlatformShapes.small,
                         color = if (goal.isCompleted) SuccessGreen.copy(alpha = 0.12f) else color.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -162,12 +172,10 @@ fun GoalDetailBottomSheet(
             }
 
             // Hero Card: Resumo Financeiro da Meta
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -235,12 +243,10 @@ fun GoalDetailBottomSheet(
             }
 
             // Card de Detalhes da Meta
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -339,7 +345,7 @@ fun GoalDetailBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -387,7 +393,7 @@ fun GoalDetailBottomSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
@@ -395,7 +401,7 @@ fun GoalDetailBottomSheet(
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDeleteConfirmDialog = false },
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.CANCEL)
                 }

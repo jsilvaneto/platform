@@ -1,7 +1,10 @@
 package com.platform.app.presentation.budgets.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -66,7 +69,7 @@ fun AddEditBudgetDialog(
                     label = { Text("Limite Mensal Máximo (R$)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -93,7 +96,7 @@ fun AddEditBudgetDialog(
                     }
                 },
                 enabled = (limitText.toLongOrNull() ?: 0L) > 0L,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(if (budget == null) "Salvar Teto" else "Atualizar Teto")
             }

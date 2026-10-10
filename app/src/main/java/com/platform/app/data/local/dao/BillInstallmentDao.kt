@@ -209,6 +209,7 @@ interface BillInstallmentDao {
         SELECT invoiceId, COALESCE(SUM(amountCents), 0) AS totalAmountCents
         FROM bill_installments
         WHERE invoiceId IS NOT NULL
+          AND status != 'PAUSED'
         GROUP BY invoiceId
         """
     )
@@ -219,12 +220,13 @@ interface BillInstallmentDao {
         SELECT invoiceId, COALESCE(SUM(amountCents), 0) AS totalAmountCents
         FROM bill_installments
         WHERE invoiceId IS NOT NULL
+          AND status != 'PAUSED'
         GROUP BY invoiceId
         """
     )
     suspend fun getInvoiceTotalsList(): List<InvoiceTotal>
 
-    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM bill_installments WHERE invoiceId = :invoiceId")
+    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM bill_installments WHERE invoiceId = :invoiceId AND status != 'PAUSED'")
     suspend fun getInvoiceTotal(invoiceId: String): Long
 
     @Query(
@@ -243,6 +245,7 @@ interface BillInstallmentDao {
         LEFT JOIN credit_card_invoices inv ON b.invoiceId = inv.id
         WHERE b.type = 'RECURRING'
           AND i.invoiceId IS NULL
+          AND i.status != 'PAUSED'
           AND (b.creditCardId = :cardId OR inv.creditCardId = :cardId)
         """
     )

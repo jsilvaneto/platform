@@ -42,6 +42,7 @@ import com.platform.app.presentation.management.ManagementScreen
 import com.platform.app.presentation.management.ManagementViewModel
 import com.platform.app.presentation.management.PaymentMethodsScreen
 import com.platform.app.presentation.recurring.RecurringInstallmentsScreen
+import com.platform.app.presentation.more.MoreScreen
 import com.platform.app.presentation.recurring.RecurringInstallmentsViewModel
 import com.platform.app.presentation.settings.SettingsScreen
 import com.platform.app.presentation.settings.SettingsViewModel
@@ -52,7 +53,7 @@ fun NavGraph(
     navController: NavHostController,
     paddingValues: PaddingValues,
     biometricAuthManager: BiometricAuthManager,
-    onOpenDrawer: () -> Unit,
+    onOpenDrawer: () -> Unit = {},
     startDestination: String = Screen.Dashboard.route
 ) {
     NavHost(
@@ -92,8 +93,8 @@ fun NavGraph(
                 uiState = uiState,
                 uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer,
-                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) }
+                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) },
+                onNavigateToBills = { navController.navigate(Screen.Bills.route) }
             )
         }
 
@@ -122,7 +123,8 @@ fun NavGraph(
             StatisticsScreen(
                 uiState = uiState,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer
+                onNavigateToBudgets = { navController.navigate(Screen.Budgets.route) },
+                onNavigateToGoals = { navController.navigate(Screen.Goals.route) }
             )
         }
 
@@ -134,7 +136,6 @@ fun NavGraph(
                 uiState = uiState,
                 uiEffect = viewModel.uiEffect,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer,
                 onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) },
                 onNavigateToDuplicate = { billId -> navController.navigate(Screen.NewExpense.createRoute(billId)) }
             )
@@ -157,7 +158,6 @@ fun NavGraph(
             CreditCardsScreen(
                 uiState = uiState,
                 onAction = viewModel::onAction,
-                onOpenDrawer = onOpenDrawer,
                 onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
             )
         }
@@ -282,6 +282,19 @@ fun NavGraph(
                 onNavigateToExpenseItems = {
                     navController.navigate(Screen.ExpenseItems.route)
                 }
+            )
+        }
+
+        composable(route = Screen.More.route) {
+            MoreScreen(
+                onNavigateToContacts = { navController.navigate(Screen.Contacts.route) },
+                onNavigateToAccounts = { navController.navigate(Screen.Accounts.route) },
+                onNavigateToPaymentMethods = { navController.navigate(Screen.PaymentMethods.route) },
+                onNavigateToCategories = { navController.navigate(Screen.Categories.route) },
+                onNavigateToExpenseItems = { navController.navigate(Screen.ExpenseItems.route) },
+                onNavigateToBudgets = { navController.navigate(Screen.Budgets.route) },
+                onNavigateToGoals = { navController.navigate(Screen.Goals.route) },
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
             )
         }
     }

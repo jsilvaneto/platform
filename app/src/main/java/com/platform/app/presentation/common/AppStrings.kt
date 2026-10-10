@@ -25,6 +25,30 @@ object AppStrings {
         const val PAUSED = "Pausada"
     }
 
+    object Navigation {
+        const val TODAY = "Hoje"
+        const val BILLS = "Contas"
+        const val CREDIT_CARDS = "Cartões"
+        const val ANALYTICS = "Análises"
+        const val MORE = "Mais"
+    }
+
+    object Glossary {
+        const val UPCOMING_PAYMENTS = "Próximos pagamentos"
+        const val BILLS_SUMMARY = "Resumo das contas"
+        const val OPEN_INSTALLMENTS = "Parcelamentos em aberto"
+        const val DUE_SOON = "Vence em breve"
+        const val NEXT_MONTHS_PAYMENTS = "Pagamentos nos próximos meses"
+        const val SUGGESTIONS = "Sugestões"
+        const val BUDGET_BALANCE = "Equilíbrio do orçamento"
+        const val HOW_YOU_PAY = "Como você paga"
+        const val SPENDING_BY_ACCOUNT = "Gastos por conta"
+        const val FIXED_BILL = "Conta fixa"
+        const val BILLS = "Contas"
+        const val RECURRING_AND_INSTALLMENTS = "Recorrentes e parceladas"
+        const val ITEMS = "Itens"
+    }
+
     object Nature {
         const val MANDATORY = "Obrigatório"
         const val NECESSARY = "Necessário"
@@ -86,11 +110,36 @@ object AppStrings {
         const val BACKUP = "Fazer Backup"
         const val APPLY = "Aplicar"
         const val CLEAR = "Limpar"
+        const val SEE_MORE = "Ver mais"
+        const val SEE_LESS = "Ver menos"
+    }
+
+    object Filters {
+        const val ALL_STATUS = "Todos"
+        const val TO_PAY = "A Pagar"
+        const val PAID = "Pagas"
+        const val ALL_YEARS = "Todos os anos"
+    }
+
+    object DateShortcuts {
+        const val TODAY = "Hoje"
+        const val TOMORROW = "Amanhã"
+        const val DAY_5 = "Dia 5"
+        const val OTHER = "Outro"
     }
 
     object Home {
         const val FORECAST_REMAINING = "Restante a Pagar no Mês"
         const val TOTAL_OVERDUE = "Total vencido:"
+        const val ATTENTION_NEEDED = "Precisa de atenção"
+        const val ALL_CAUGHT_UP = "Tudo em dia"
+        const val ALL_CAUGHT_UP_DESC = "Nenhuma conta atrasada ou vencendo nos próximos 7 dias."
+        const val UPCOMING_PAYMENTS_SECTION = "Próximos pagamentos"
+        const val SEE_ALL_BILLS = "Ver todas"
+        const val MONTH_TOTAL = "Total do Mês"
+        const val PAID_SO_FAR = "Já Pago"
+        const val DUE_TODAY = "Vence Hoje"
+        const val NEXT_7_DAYS = "Próximos 7 Dias"
     }
 
     object Dialogs {
@@ -148,5 +197,12 @@ object AppStrings {
         const val NEW_CATEGORY_TITLE = "Nova Categoria"
         const val EDIT_CATEGORY_TITLE = "Editar Categoria"
         const val CATEGORY_NAME_LABEL = "Nome da Categoria (ex: Alimentação, Lazer)"
+    }
+
+    object ExpenseForm {
+        const val AMOUNT_REQUIRED = "Valor *"
+        const val EXPENSE_ITEM_REQUIRED = "Item de Despesa *"
+        const val SELECT_ITEM_PLACEHOLDER = "Selecione o item"
+        const val CONTACT_OPTIONAL = "Contato / Fornecedor (Opcional)"
     }
 }

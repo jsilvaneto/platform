@@ -69,6 +69,11 @@ object DateUtils {
         return cal.get(Calendar.MONTH)
     }
 
+    fun getDayOfMonth(epochMillis: Long): Int {
+        val cal = Calendar.getInstance().apply { timeInMillis = epochMillis }
+        return cal.get(Calendar.DAY_OF_MONTH)
+    }
+
     fun createMonthMillis(year: Int, month: Int): Long {
         val cal = Calendar.getInstance().apply {
             set(Calendar.YEAR, year)

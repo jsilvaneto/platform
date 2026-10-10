@@ -28,6 +28,25 @@ class CreateBillUseCase @Inject constructor(
 
         val baseInstallments = calculateInstallmentsUseCase(preparedBill, firstDueDate)
 
+        val invoiceCache = mutableMapOf<String, com.platform.app.domain.model.CreditCardInvoice>()
+        if (creditCard != null) {
+            val relevantInstallments = if (preparedBill.type == BillType.RECURRING) {
+                baseInstallments.take(1)
+            } else {
+                baseInstallments
+            }
+            val refMonths = relevantInstallments.map { inst ->
+                CreditCardCalculator.determineInvoiceReferenceMonth(
+                    purchaseTimestamp = inst.dueDate,
+                    closingDay = creditCard.closingDay
+                )
+            }.distinct()
+
+            for (refMonth in refMonths) {
+                invoiceCache[refMonth] = repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)
+            }
+        }
+
         val finalInstallments = baseInstallments.mapIndexed { index, installment ->
             val isPaid = isFirstInstallmentPaid && (preparedBill.type == BillType.SINGLE || index == 0)
             val paymentTimestamp = if (isPaid) (actualPaymentDate ?: System.currentTimeMillis()) else null
@@ -48,7 +67,7 @@ class CreateBillUseCase @Inject constructor(
                         purchaseTimestamp = installment.dueDate,
                         closingDay = creditCard.closingDay
                     )
-                    val invoice = repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)
+                    val invoice = invoiceCache[refMonth] ?: repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)
 
                     installment.copy(
                         invoiceId = invoice.id,
@@ -77,6 +96,15 @@ class CreateBillUseCase @Inject constructor(
         )
 
         repository.saveBillWithInstallments(updatedBill, finalInstallments)
+
+        if (creditCard != null && preparedBill.type == BillType.RECURRING) {
+            val initialInvoice = finalInstallments.firstOrNull()?.invoiceId
+            val firstRefMonth = CreditCardCalculator.determineInvoiceReferenceMonth(firstDueDate, creditCard.closingDay)
+            if (initialInvoice != null) {
+                repository.materializeRecurringForInvoice(creditCard.id, initialInvoice, firstRefMonth)
+            }
+        }
+
         return finalInstallments
     }
 }

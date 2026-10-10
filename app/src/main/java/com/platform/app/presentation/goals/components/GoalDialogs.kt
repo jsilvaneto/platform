@@ -1,5 +1,7 @@
 package com.platform.app.presentation.goals.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -10,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
-import com.platform.app.domain.model.FinancialGoal
+import com.platform.app.domain.model.Goal
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.theme.PlatformColorPicker
 import java.util.UUID
@@ -37,7 +39,7 @@ fun AddEditGoalDialog(
                     onValueChange = { name = it },
                     label = { Text("Nome da Meta (ex: Reserva, Viagem, Carro)") },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -47,7 +49,7 @@ fun AddEditGoalDialog(
                     label = { Text("Valor Alvo Desejado (R$)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -57,7 +59,7 @@ fun AddEditGoalDialog(
                     label = { Text("Valor Já Poupado Inicial (R$)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -85,7 +87,7 @@ fun AddEditGoalDialog(
                     }
                 },
                 enabled = name.isNotBlank() && (targetText.toLongOrNull() ?: 0L) > 0L,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(if (goal == null) "Salvar Meta" else "Atualizar Meta")
             }
@@ -121,7 +123,7 @@ fun AddContributionDialog(
                     label = { Text("Valor do Aporte (R$)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -135,7 +137,7 @@ fun AddContributionDialog(
                     }
                 },
                 enabled = (amountText.toLongOrNull() ?: 0L) > 0L,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text("Confirmar Aporte")
             }

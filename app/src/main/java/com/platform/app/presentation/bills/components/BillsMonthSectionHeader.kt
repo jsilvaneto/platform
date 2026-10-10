@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -42,7 +44,7 @@ fun BillsMonthSectionHeader(
     )
 
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = PlatformShapes.medium,
         color = if (isCurrentMonth) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         border = if (isCurrentMonth) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)) else null,
         modifier = modifier
@@ -76,7 +78,7 @@ fun BillsMonthSectionHeader(
                 if (isCurrentMonth) {
                     Spacer(modifier = Modifier.width(6.dp))
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = PlatformShapes.extraSmall,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     ) {
                         Text(
@@ -90,7 +92,7 @@ fun BillsMonthSectionHeader(
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Surface(
-                    shape = RoundedCornerShape(6.dp),
+                    shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {
                     Text(

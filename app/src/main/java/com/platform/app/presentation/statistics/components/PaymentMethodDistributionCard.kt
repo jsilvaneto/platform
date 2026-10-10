@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.FinancialDashboardMetrics
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.formatValueOrPrivate
@@ -59,13 +62,13 @@ fun PaymentMethodDistributionCard(
         Column(modifier = Modifier.padding(16.dp)) {
             // Cabeçalho
             Text(
-                text = "Formas de Pagamento",
+                text = AppStrings.Glossary.HOW_YOU_PAY,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Distribuição e porcentagem dos gastos do mês",
+                text = "Distribuição dos pagamentos realizados no mês",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -78,7 +81,7 @@ fun PaymentMethodDistributionCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
-                        .clip(RoundedCornerShape(999.dp))
+                        .clip(PlatformShapes.pill)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     distribution.forEachIndexed { index, item ->
@@ -99,7 +102,7 @@ fun PaymentMethodDistributionCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
-                        .clip(RoundedCornerShape(999.dp))
+                        .clip(PlatformShapes.pill)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     if (cardPct > 0f) {

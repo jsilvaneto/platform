@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -110,7 +112,7 @@ fun AdjustInstallmentDialog(
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
@@ -125,7 +127,7 @@ fun AdjustInstallmentDialog(
                         .border(
                             1.dp,
                             MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-                            RoundedCornerShape(10.dp)
+                            PlatformShapes.medium
                         )
                         .clickable {
                             val cal = Calendar.getInstance().apply { timeInMillis = dueDate }
@@ -176,7 +178,7 @@ fun AdjustInstallmentDialog(
                         .border(
                             1.dp,
                             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                            RoundedCornerShape(10.dp)
+                            PlatformShapes.medium
                         )
                         .padding(8.dp)
                 ) {
@@ -280,7 +282,7 @@ fun AdjustInstallmentDialog(
                     }
                 },
                 enabled = amountCents > 0L,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(if (applyToFuturePending) "Atualizar Próximas" else "Salvar Ajuste")
@@ -289,7 +291,7 @@ fun AdjustInstallmentDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CANCEL)
             }
@@ -318,7 +320,7 @@ fun AdjustInstallmentDialog(
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         border = BorderStroke(
                             1.dp,
@@ -347,7 +349,7 @@ fun AdjustInstallmentDialog(
                     }
 
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         border = BorderStroke(
                             1.dp,

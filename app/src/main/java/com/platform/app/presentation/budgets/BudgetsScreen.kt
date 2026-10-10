@@ -1,5 +1,9 @@
 package com.platform.app.presentation.budgets
 
+import com.platform.app.presentation.theme.PlatformShapes
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
 import com.platform.app.presentation.budgets.components.AddEditBudgetDialog
 import com.platform.app.presentation.budgets.components.BudgetDetailBottomSheet
 import androidx.compose.foundation.background
@@ -211,12 +215,10 @@ fun BudgetsSummaryCard(
     val isOverLimit = totalSpentCents > totalLimitCents && totalLimitCents > 0L
     val barColor = if (isOverLimit) MaterialTheme.colorScheme.error else if (progress > 0.8f) WarningAmber else SuccessGreen
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.large,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -447,7 +449,7 @@ fun EmptyBudgetsView(onAddClick: () -> Unit) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onAddClick, shape = RoundedCornerShape(12.dp)) {
+        Button(onClick = onAddClick, shape = PlatformShapes.medium) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(6.dp))
             Text("Criar Primeiro Teto")

@@ -20,6 +20,7 @@ import com.platform.app.domain.model.InvoiceStatus
 import java.util.Calendar
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -67,17 +68,29 @@ class FinancialRepositoryInvoiceTest {
             transactionLambda.captured.invoke()
         }
 
-        repository = FinancialRepositoryImpl(
+        val billDataSource = BillDataSource(
+            database = database,
+            billDao = billDao,
+            installmentDao = installmentDao
+        )
+        val creditCardDataSource = CreditCardDataSource(
+            creditCardDao = creditCardDao,
+            installmentDao = installmentDao
+        )
+        val catalogDataSource = CatalogDataSource(
             database = database,
             categoryDao = categoryDao,
             expenseItemDao = expenseItemDao,
-            creditCardDao = creditCardDao,
             contactDao = contactDao,
             financialAccountDao = financialAccountDao,
             paymentMethodDao = paymentMethodDao,
-            billDao = billDao,
-            installmentDao = installmentDao,
             preferencesManager = preferencesManager
+        )
+
+        repository = FinancialRepositoryImpl(
+            billDataSource = billDataSource,
+            creditCardDataSource = creditCardDataSource,
+            catalogDataSource = catalogDataSource
         )
     }
 
@@ -239,7 +252,7 @@ class FinancialRepositoryInvoiceTest {
     }
 
     @Test
-    fun `getOrCreateInvoiceForMonth should attach unattached recurring installments for matching reference month`() = runTest {
+    fun `getOrCreateInvoiceForMonth should return or create invoice deterministically without side effects`() = runTest {
         val cardId = "card-1"
         val card = CreditCardEntity(
             id = cardId,
@@ -253,6 +266,39 @@ class FinancialRepositoryInvoiceTest {
 
         val capturedInvoice = slot<CreditCardInvoiceEntity>()
         coEvery { creditCardDao.insertInvoice(capture(capturedInvoice)) } returns Unit
+
+        val invoice = repository.getOrCreateInvoiceForMonth(cardId, "2026-11")
+
+        assertNotNull(invoice)
+        assertEquals("2026-11", invoice.referenceMonth)
+        assertEquals(cardId, invoice.creditCardId)
+
+        // getOrCreateInvoiceForMonth agora é consulta/criação pura e NÃO deve invocar attachInstallmentsToInvoice
+        coVerify(exactly = 0) {
+            installmentDao.attachInstallmentsToInvoice(any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `materializeRecurringForInvoice should attach unattached recurring installments for matching reference month`() = runTest {
+        val cardId = "card-1"
+        val card = CreditCardEntity(
+            id = cardId,
+            name = "Visa",
+            totalLimitCents = 500000L,
+            closingDay = 20,
+            dueDay = 27
+        )
+        val invoiceEntity = CreditCardInvoiceEntity(
+            id = "inv-nov",
+            creditCardId = cardId,
+            referenceMonth = "2026-11",
+            closingDate = 1732147199000L,
+            dueDate = 1732751999000L,
+            status = "ABERTA"
+        )
+        coEvery { creditCardDao.getCardById(cardId) } returns card
+        coEvery { creditCardDao.getInvoiceById("inv-nov") } returns invoiceEntity
 
         // Timestamp dia 10 de Novembro de 2026 (ciclo "2026-11")
         val calNov = Calendar.getInstance().apply {
@@ -289,18 +335,63 @@ class FinancialRepositoryInvoiceTest {
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(unattachedNov, unattachedDec)
         coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
 
-        val invoice = repository.getOrCreateInvoiceForMonth(cardId, "2026-11")
+        val attachedCount = repository.materializeRecurringForInvoice(cardId, "inv-nov", "2026-11")
 
-        assertNotNull(invoice)
-        assertEquals("2026-11", invoice.referenceMonth)
-
+        assertEquals(1, attachedCount)
         // Deve ter anexado apenas inst-nov, não inst-dec
         coVerify(exactly = 1) {
             installmentDao.attachInstallmentsToInvoice(
                 installmentIds = listOf("inst-nov"),
-                invoiceId = invoice.id,
-                invoiceDueDate = invoice.dueDate
+                invoiceId = "inv-nov",
+                invoiceDueDate = invoiceEntity.dueDate
             )
+        }
+    }
+
+    @Test
+    fun `payInvoice should materialize recurring installments before marking invoice and installments paid`() = runTest {
+        val invoiceId = "inv-pay-1"
+        val cardId = "card-1"
+        val invoiceEntity = CreditCardInvoiceEntity(
+            id = invoiceId,
+            creditCardId = cardId,
+            referenceMonth = "2026-11",
+            closingDate = 1732147199000L,
+            dueDate = 1732751999000L,
+            status = "ABERTA"
+        )
+        val card = CreditCardEntity(
+            id = cardId,
+            name = "Visa",
+            totalLimitCents = 500000L,
+            closingDay = 20,
+            dueDay = 27
+        )
+        coEvery { creditCardDao.getInvoiceById(invoiceId) } returns invoiceEntity
+        coEvery { creditCardDao.getCardById(cardId) } returns card
+
+        val calNov = Calendar.getInstance().apply { set(2026, Calendar.NOVEMBER, 10, 12, 0, 0) }
+        val unattachedNov = BillInstallmentEntity(
+            id = "inst-nov",
+            billId = "bill-1",
+            installmentNumber = 2,
+            totalInstallments = 12,
+            amountCents = 3990L,
+            dueDate = calNov.timeInMillis,
+            paidAt = null,
+            status = "PENDING",
+            invoiceId = null
+        )
+        coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(unattachedNov)
+        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
+
+        repository.payInvoice(invoiceId = invoiceId, actualPaymentDate = 1732751999000L)
+
+        // 1. Garante que materializou as recorrências do mês antes de quitar
+        coVerifyOrder {
+            installmentDao.attachInstallmentsToInvoice(listOf("inst-nov"), invoiceId, invoiceEntity.dueDate)
+            creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.PAGA.name)
+            installmentDao.updatePaymentByInvoiceId(invoiceId, any(), 1732751999000L, "PAID")
         }
     }
 
@@ -343,6 +434,16 @@ class FinancialRepositoryInvoiceTest {
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(instOct, instNov, instDec)
         coEvery { creditCardDao.getInvoiceByMonth(cardId, any()) } returns null
         coEvery { creditCardDao.insertInvoice(any()) } returns Unit
+        coEvery { creditCardDao.getInvoiceById(any()) } answers {
+            CreditCardInvoiceEntity(
+                id = firstArg(),
+                creditCardId = cardId,
+                referenceMonth = "2026-11",
+                closingDate = 1000L,
+                dueDate = 2000L,
+                status = "ABERTA"
+            )
+        }
         coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
 
         val count = repository.materializeRecurringCardInvoices(refTime)

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -118,7 +120,7 @@ fun PreviousMonthComparisonCard(
 
                 if (hasPrevData) {
                     Surface(
-                        shape = RoundedCornerShape(999.dp),
+                        shape = PlatformShapes.pill,
                         color = if (isHigher) ErrorRedContainer else SuccessGreenContainer
                     ) {
                         Row(
@@ -217,7 +219,7 @@ fun PastHistoryChartCard(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(PlatformShapes.small)
                             .clickable { onSelectMonth(item.monthMillis) }
                             .padding(vertical = 4.dp)
                     ) {
@@ -241,7 +243,7 @@ fun PastHistoryChartCard(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Surface(
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = PlatformShapes.extraSmall,
                                     color = if (item.paidRate >= 95) SuccessGreenContainer else MaterialTheme.colorScheme.surfaceVariant
                                 ) {
                                     Text(
@@ -286,7 +288,7 @@ fun PastExtremesCard(
         ) {
             Surface(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 color = ErrorRedContainer.copy(alpha = 0.35f)
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
@@ -314,7 +316,7 @@ fun PastExtremesCard(
 
             Surface(
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 color = SuccessGreenContainer.copy(alpha = 0.35f)
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -66,7 +68,7 @@ fun TimelineMonthCard(
 
     PlatformCard(
         modifier = modifier,
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Column(
             modifier = Modifier
@@ -114,7 +116,7 @@ fun TimelineMonthCard(
                             if (isCurrentMonth) {
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Surface(
-                                    shape = RoundedCornerShape(4.dp),
+                                    shape = PlatformShapes.extraSmall,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                 ) {
                                     Text(
@@ -186,7 +188,7 @@ fun TimelineMonthCard(
                             val isOverdue = !inst.isPaid && inst.dueDate < System.currentTimeMillis() && !isToday
 
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = PlatformShapes.medium,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
                                 modifier = Modifier
@@ -234,7 +236,7 @@ fun TimelineMonthCard(
                                             ) {
                                                 if (!contact.isNullOrBlank()) {
                                                     Surface(
-                                                        shape = RoundedCornerShape(4.dp),
+                                                        shape = PlatformShapes.extraSmall,
                                                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
                                                     ) {
                                                         Row(
@@ -304,7 +306,7 @@ fun TimelineMonthCard(
                                         )
                                         if (parentPlan?.hasVariableFirstInstallment == true && inst.installmentNumber == 1 && inst.type == BillType.RECURRING) {
                                             Surface(
-                                                shape = RoundedCornerShape(3.dp),
+                                                shape = PlatformShapes.extraSmall,
                                                 color = WarningAmber.copy(alpha = 0.15f)
                                             ) {
                                                 Text(

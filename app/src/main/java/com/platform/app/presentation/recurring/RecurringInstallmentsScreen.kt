@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +33,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -110,13 +113,13 @@ fun RecurringInstallmentsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             PlatformSearchTopBar(
-                title = "Pagamentos Planejados",
+                title = AppStrings.Glossary.RECURRING_AND_INSTALLMENTS,
                 searchQuery = uiState.searchQuery,
                 isSearchActive = isSearchExpanded,
                 onSearchQueryChange = { viewModel.onAction(RecurringInstallmentsUiAction.SearchQueryChanged(it)) },
                 onSearchActiveChange = { isSearchExpanded = it },
                 placeholder = "Buscar plano...",
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = null
             )
         },
         floatingActionButton = {
@@ -166,7 +169,7 @@ fun RecurringInstallmentsScreen(
                         uiState.futureTimeline.sumOf { it.paidCents }
                     }
 
-                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                    PlatformCard(shape = PlatformShapes.large) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -193,7 +196,7 @@ fun RecurringInstallmentsScreen(
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = PlatformShapes.small,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 ) {
                                     Text(
@@ -258,7 +261,7 @@ fun RecurringInstallmentsScreen(
                                 selected = uiState.statusFilter == filter,
                                 onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
                                 label = { Text(filter.label) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = PlatformShapes.small
                             )
                         }
                     }
@@ -270,7 +273,7 @@ fun RecurringInstallmentsScreen(
                         uiState.totalPaidInstallmentsCents.toFloat() / uiState.totalOriginalFinancedCents.toFloat()
                     } else 0f
 
-                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                    PlatformCard(shape = PlatformShapes.large) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -297,7 +300,7 @@ fun RecurringInstallmentsScreen(
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = PlatformShapes.small,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 ) {
                                     Text(
@@ -375,14 +378,14 @@ fun RecurringInstallmentsScreen(
                                 selected = uiState.statusFilter == filter,
                                 onClick = { viewModel.onAction(RecurringInstallmentsUiAction.StatusFilterChanged(filter)) },
                                 label = { Text(filter.label) },
-                                shape = RoundedCornerShape(8.dp)
+                                shape = PlatformShapes.small
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+                    PlatformCard(shape = PlatformShapes.large) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()

@@ -1,25 +1,40 @@
 package com.platform.app.presentation.contacts.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import kotlinx.coroutines.launch
+import com.platform.app.presentation.contacts.getContactTypeColors
+import com.platform.app.presentation.contacts.getContactTypeIcon
 import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.ContactType
 import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.theme.SuccessGreen
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,7 +151,7 @@ fun AddContactBottomSheet(
                         modifier = Modifier
                             .weight(1f)
                             .clickable { type = contactType },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         color = if (isSelected) {
                             typeColor.copy(alpha = 0.15f)
                         } else {
@@ -192,7 +207,7 @@ fun AddContactBottomSheet(
                 label = { Text("Nome Completo / Razão Social *") },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -207,7 +222,7 @@ fun AddContactBottomSheet(
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -218,7 +233,7 @@ fun AddContactBottomSheet(
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -260,7 +275,7 @@ fun AddContactBottomSheet(
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 isError = cepError != null,
                 supportingText = cepError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                 modifier = Modifier.fillMaxWidth()
@@ -273,7 +288,7 @@ fun AddContactBottomSheet(
                 label = { Text("Logradouro (Rua, Avenida, Praça)") },
                 leadingIcon = { Icon(Icons.Default.Home, contentDescription = null) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -288,7 +303,7 @@ fun AddContactBottomSheet(
                     label = { Text("Número") },
                     placeholder = { Text("Ex: 123, S/N") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.width(130.dp)
                 )
 
@@ -298,7 +313,7 @@ fun AddContactBottomSheet(
                     label = { Text("Complemento") },
                     placeholder = { Text("Apto 42, Bloco B") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -313,7 +328,7 @@ fun AddContactBottomSheet(
                     onValueChange = { neighborhood = it },
                     label = { Text("Bairro") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -322,7 +337,7 @@ fun AddContactBottomSheet(
                     onValueChange = { city = it },
                     label = { Text("Cidade") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -338,7 +353,7 @@ fun AddContactBottomSheet(
                     label = { Text("Estado (UF)") },
                     placeholder = { Text("Ex: SP") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.width(110.dp)
                 )
 
@@ -347,7 +362,7 @@ fun AddContactBottomSheet(
                     onValueChange = { country = it },
                     label = { Text("País") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -387,7 +402,7 @@ fun AddContactBottomSheet(
                         }
                     },
                     enabled = name.isNotBlank(),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = PlatformShapes.medium
                 ) {
                     Text(if (contact == null) AppStrings.ContactType.SAVE_CONTACT else AppStrings.ContactType.UPDATE_CONTACT)
                 }

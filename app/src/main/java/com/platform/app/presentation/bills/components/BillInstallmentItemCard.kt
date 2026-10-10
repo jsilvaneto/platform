@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -82,11 +84,11 @@ fun BillInstallmentItemCard(
         else -> MaterialTheme.colorScheme.surface
     }
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor),
+    Surface(
+        shape = PlatformShapes.medium,
+        color = cardColor,
         border = cardBorder,
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        tonalElevation = 0.dp,
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
@@ -171,7 +173,7 @@ fun BillInstallmentItemCard(
                     // Indicador de parcelamento se for parcelamento real (totalInstallments > 1)
                     if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
+                            shape = PlatformShapes.extraSmall,
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                         ) {
                             Text(
@@ -228,7 +230,7 @@ fun BillInstallmentItemCard(
                 if (installment.isPaid) {
                     // Badge moderna e positiva "Pago" com micro ícone
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = PlatformShapes.extraSmall,
                         color = SuccessGreen.copy(alpha = 0.12f),
                         border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
                     ) {

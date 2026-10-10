@@ -1,5 +1,10 @@
 package com.platform.app.presentation.contacts.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,7 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,6 +25,7 @@ import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.BillType
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.SuccessGreen
@@ -46,12 +54,10 @@ fun LinkedBillsTab(bills: List<Bill>) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             items(bills, key = { it.id }) { bill ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    )
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.medium,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
@@ -135,16 +141,10 @@ fun PlannedInstallmentsTab(
                 val isToday = !inst.isPaid && DateUtils.isToday(inst.dueDate)
                 val isOverdue = !inst.isPaid && inst.dueDate < now && !isToday
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when {
-                            isOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
-                            isToday -> WarningAmber.copy(alpha = 0.12f)
-                            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        }
-                    )
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.medium,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
@@ -154,7 +154,7 @@ fun PlannedInstallmentsTab(
                     ) {
                         IconButton(onClick = { onTogglePayment(inst) }) {
                             Icon(
-                                imageVector = if (inst.isPaid) Icons.Filled.CheckCircle else Icons.Outlined.CheckCircle,
+                                imageVector = if (inst.isPaid) Icons.Default.CheckCircle else Icons.Outlined.CheckCircle,
                                 contentDescription = if (inst.isPaid) AppStrings.Status.PAID else AppStrings.Status.PENDING,
                                 tint = if (inst.isPaid) SuccessGreen else if (isOverdue) MaterialTheme.colorScheme.error else if (isToday) WarningAmber else MaterialTheme.colorScheme.outline
                             )

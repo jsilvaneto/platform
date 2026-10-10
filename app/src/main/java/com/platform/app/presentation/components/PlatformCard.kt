@@ -14,11 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformShapes
 
 @Composable
 fun PlatformCard(
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(Dimens.cardCornerRadius),
+    shape: Shape = PlatformShapes.large,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     borderColor: Color? = MaterialTheme.colorScheme.outline,
     onClick: (() -> Unit)? = null,

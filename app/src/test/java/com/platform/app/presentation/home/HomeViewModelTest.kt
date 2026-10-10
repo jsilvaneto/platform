@@ -29,6 +29,7 @@ class HomeViewModelTest {
     private lateinit var repository: FinancialRepository
     private lateinit var calculateMonthlyForecastUseCase: CalculateMonthlyForecastUseCase
     private lateinit var getFinancialDashboardUseCase: GetFinancialDashboardUseCase
+    private lateinit var createBillUseCase: com.platform.app.domain.usecase.CreateBillUseCase
     private lateinit var viewModel: HomeViewModel
 
     @Before
@@ -37,6 +38,7 @@ class HomeViewModelTest {
         repository = mockk(relaxed = true)
         calculateMonthlyForecastUseCase = mockk(relaxed = true)
         getFinancialDashboardUseCase = mockk(relaxed = true)
+        createBillUseCase = mockk(relaxed = true)
 
         val dummyForecast = MonthlyForecastResult(
             monthMillis = System.currentTimeMillis(),
@@ -54,6 +56,7 @@ class HomeViewModelTest {
         every { repository.getAllInstallments() } returns flowOf(emptyList())
         every { repository.getAllCreditCardInvoices() } returns flowOf(emptyList())
         every { repository.getCreditCards() } returns flowOf(emptyList())
+        every { repository.getExpenseItems() } returns flowOf(emptyList())
     }
 
     @After
@@ -63,7 +66,7 @@ class HomeViewModelTest {
 
     @Test
     fun `PayBill action should toggle payment and emit ShowUndoSnackbar effect`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -88,7 +91,7 @@ class HomeViewModelTest {
 
     @Test
     fun `UndoPayBill action should revert installment payment to unpaid`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(HomeUiAction.UndoPayBill("inst-123"))
@@ -106,7 +109,7 @@ class HomeViewModelTest {
 
     @Test
     fun `PayInvoice action should call payInvoice and emit ShowUndoSnackbar effect`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -124,12 +127,42 @@ class HomeViewModelTest {
 
     @Test
     fun `UndoPayInvoice action should reopen invoice in repository`() = runTest {
-        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository)
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(HomeUiAction.UndoPayInvoice("inv-456"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.reopenInvoice("inv-456") }
+    }
+
+    @Test
+    fun `SaveQuickExpense action should call createBillUseCase and emit ShowUndoSnackbar effect`() = runTest {
+        io.mockk.coEvery { createBillUseCase.invoke(any(), any(), any(), any(), any()) } returns emptyList()
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiEffect.test {
+            viewModel.onAction(HomeUiAction.SaveQuickExpense(amountCents = 4500L, itemId = "item-1", isPaid = false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { createBillUseCase.invoke(any(), any(), any(), any(), any()) }
+
+            val effect = awaitItem()
+            assertTrue(effect is HomeUiEffect.ShowUndoSnackbar)
+            val undoEffect = effect as HomeUiEffect.ShowUndoSnackbar
+            assertTrue(undoEffect.undoAction is HomeUiAction.UndoSaveBill)
+        }
+    }
+
+    @Test
+    fun `UndoSaveBill action should call repository deleteBill`() = runTest {
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(HomeUiAction.UndoSaveBill("bill-quick-123"))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.deleteBill("bill-quick-123") }
     }
 }

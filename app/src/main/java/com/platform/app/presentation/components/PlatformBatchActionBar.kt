@@ -1,5 +1,7 @@
 package com.platform.app.presentation.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -61,7 +63,7 @@ fun PlatformBatchActionBar(
         modifier = modifier
     ) {
         Surface(
-            shape = RoundedCornerShape(14.dp),
+            shape = PlatformShapes.large,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             shadowElevation = 6.dp,
@@ -113,7 +115,7 @@ fun PlatformBatchActionBar(
                 ) {
                     OutlinedButton(
                         onClick = onDeleteBatch,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = UrgentRed),
                         border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.5f)),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
@@ -129,7 +131,7 @@ fun PlatformBatchActionBar(
                     if (onSetActualPaymentDate != null) {
                         OutlinedButton(
                             onClick = onSetActualPaymentDate,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = PlatformShapes.small,
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
@@ -151,7 +153,7 @@ fun PlatformBatchActionBar(
 
                     Button(
                         onClick = onPayBatch,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = PlatformShapes.small,
                         colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         modifier = Modifier.height(32.dp)

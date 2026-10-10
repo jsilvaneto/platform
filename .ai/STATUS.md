@@ -260,8 +260,42 @@ Este documento registra o checklist de funcionalidades, fases de implementação
   - Comparação estrita de contagem de linhas antes e depois da migração (especialmente faturas e parcelas vinculadas).
   - Execução e asserção de `PRAGMA foreign_key_check` retornando zero violações de chave estrangeira.
 
+### Fortalecimento Criptográfico de Backups com AES-256-GCM v2 e AAD (v1.23.0)
+- [x] **OWASP PBKDF2 600.000 Iterações**: KDF atualizado para padrão de alta segurança, com backward compatibility para envelopes v1.
+- [x] **Autenticação Criptográfica de Metadados via AAD**: Cabeçalho de versão, iterações e formato blindados contra adulteração.
+- [x] **Proteção Anti-DoS no Restore & UI Segura**: Validação de faixas de iterações, senha mínima de 8 caracteres e indicador de força de senha (`PasswordStrengthIndicator`).
+
+### Higiene Arquitetural, Decomposição do Repositório, Guard Rails e Ciclo de Vida de Faturas (v1.24.0)
+- [x] **Filtro de Status PAUSED em Faturas e Totais**:
+  - `getUnattachedRecurringInstallmentsForCard` e queries de totais (`getInvoiceTotals`, `getInvoiceTotalsList`, `getInvoiceTotal`) filtram estritamente `status != 'PAUSED'`.
+- [x] **Materialização Preventiva na Liquidação de Faturas (`payInvoice`)**:
+  - `payInvoice` materializa atomicamente as despesas recorrentes do ciclo antes de atualizar o status para `PAID`, eliminando pendências fantasmas pós-pagamento.
+- [x] **Desacoplamento CQS de Consulta vs Materialização**:
+  - `getOrCreateInvoiceForMonth` purificado para busca/criação determinística sem efeito colateral.
+  - `materializeRecurringForInvoice` implementado como comando atômico dedicado.
+  - `CreateBillUseCase` otimizado com cache de competências (`invoiceCache`).
+- [x] **Decomposição Modular de `FinancialRepositoryImpl` por Agregados**:
+  - `BillDataSource`: Contas e Parcelas.
+  - `CreditCardDataSource`: Cartões e Faturas.
+  - `CatalogDataSource`: Categorias, Itens, Contatos, Contas Bancárias e Meios de Pagamento.
+  - `FinancialRepositoryImpl` atuando como fachada limpa e concisa (~212 linhas).
+- [x] **Extensão do Guard Rail `checkFileSize` (Teto de 600 Linhas)**:
+  - Validação estendida para varrer recursivamente `presentation/`, `data/` e `domain/`.
+  - Zero violações no projeto com baseline limpa.
+- [x] **Overhaul do Design System e Nova Arquitetura de Informação (Prompts 28-36)**:
+  - Tokens padronizados de forma e superfícies: `PlatformShapes`, `PlatformSurface` e guard rail `:app:checkRawShapes`.
+  - Papéis estritos de cor: status semafórico como única cor viva por linha, natureza em ponto discreto.
+  - Nova navegação com `NavigationBar` inferior (Hoje, Contas, Cartões, Análises, Mais), eliminando o AppDrawer.
+  - Tela "Hoje" racionalizada: hero único, grid 2x2 de KPIs, "Precisa de atenção" prioritário e toggle Lista | Calendário.
+  - Nova Despesa humanizada: valor no topo, atalhos de vencimento, contato opcional e FAB com `QuickExpenseBottomSheet` e suporte a Desfazer.
+  - Estatísticas essenciais (1 frase de insight + máx 4 cards), contatos com subtítulo limpo `tipo · total em aberto` e configurações agrupadas.
+- [x] **Registro de Governança e Decisões**:
+  - ADR 033: Guard rails de qualidade, decomposição do repositório e ciclo de faturas.
+  - ADR 034: Nova arquitetura de informação, Bottom Navigation e overhaul do design system.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
+- [x] Guard rails de build ativos no preBuild (`checkLiteralColors`, `checkHardcodedStrings`, `checkFileSize`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).
 - [x] Regra mandatória de governança e sincronização de versão em `.agents/rules/governance_and_versioning.md`.
 

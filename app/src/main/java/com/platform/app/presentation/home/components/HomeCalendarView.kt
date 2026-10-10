@@ -1,5 +1,7 @@
 package com.platform.app.presentation.home.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -56,7 +58,7 @@ fun LazyListScope.renderCalendarView(
     // 1. Detector de Picos Financeiros (Stress de Caixa)
     if (peakDay != null && peakDay.totalAmountCents > 0L) {
         item {
-            PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+            PlatformCard(shape = PlatformShapes.large) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -89,7 +91,7 @@ fun LazyListScope.renderCalendarView(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = WarningAmber.copy(alpha = 0.15f)
                             ) {
                                 Text(
@@ -119,7 +121,7 @@ fun LazyListScope.renderCalendarView(
         val week3Cents = activeDays.filter { it.dayOfMonth in 15..21 }.sumOf { it.totalAmountCents }
         val week4Cents = activeDays.filter { it.dayOfMonth >= 22 }.sumOf { it.totalAmountCents }
 
-        PlatformCard(shape = RoundedCornerShape(Dimens.cardCornerRadius)) {
+        PlatformCard(shape = PlatformShapes.large) {
             Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
                 Text(
                     text = "Demanda de Caixa por Semana",
@@ -233,7 +235,7 @@ fun LazyListScope.renderCalendarView(
         if (uiState.daySelectedItems.isEmpty()) {
             item {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -365,7 +367,7 @@ fun ActiveDayCard(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
+        shape = PlatformShapes.medium,
         color = when {
             isSelected -> MaterialTheme.colorScheme.primary
             isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
@@ -431,7 +433,7 @@ fun CalendarDayCard(
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
+        shape = PlatformShapes.medium,
         color = when {
             isSelected -> MaterialTheme.colorScheme.primary
             isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)

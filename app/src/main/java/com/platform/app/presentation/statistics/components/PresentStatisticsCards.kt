@@ -1,5 +1,7 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +67,7 @@ fun PresentHeroCard(
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(999.dp),
+                    shape = PlatformShapes.pill,
                     color = if (paidRate == 100) SuccessGreenContainer else MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Text(
@@ -202,13 +204,13 @@ fun AccountsDistributionCard(
     PlatformCard {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Concentração por Contas Bancárias",
+                text = AppStrings.Glossary.SPENDING_BY_ACCOUNT,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Instituições que concentram as liquidações do mês",
+                text = "Onde seus pagamentos foram realizados",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

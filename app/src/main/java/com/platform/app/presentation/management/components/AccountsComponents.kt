@@ -1,5 +1,10 @@
 package com.platform.app.presentation.management.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -85,12 +90,11 @@ fun AccountsTab(
                     try { Color(android.graphics.Color.parseColor(account.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
                 }
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectAccount(account) },
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.large,
+                    onClick = { onSelectAccount(account) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
@@ -123,7 +127,7 @@ fun AccountsTab(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
+                                shape = PlatformShapes.small,
                                 color = color.copy(alpha = 0.12f)
                             ) {
                                 Text(
@@ -220,7 +224,7 @@ fun AccountDetailBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
+                        shape = PlatformShapes.small,
                         color = accountColor.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -283,12 +287,10 @@ fun AccountDetailBottomSheet(
             }
 
             // Card de Métricas Financeiras Vinculadas
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -325,7 +327,7 @@ fun AccountDetailBottomSheet(
                         // Pendente
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -356,7 +358,7 @@ fun AccountDetailBottomSheet(
                         // Pago / Liquidado
                         Surface(
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -388,12 +390,10 @@ fun AccountDetailBottomSheet(
             }
 
             // Propriedades e Detalhes de Cadastro
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -502,7 +502,7 @@ fun AccountDetailBottomSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }

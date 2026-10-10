@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -53,7 +55,7 @@ fun InstallmentRow(
     }
 
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = PlatformShapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
         modifier = modifier.fillMaxWidth()
@@ -99,7 +101,7 @@ fun InstallmentRow(
                         if (isVariableFirst && installment.installmentNumber == 1 && installment.type == BillType.RECURRING) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
-                                shape = RoundedCornerShape(3.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = WarningAmber.copy(alpha = 0.15f)
                             ) {
                                 Text(

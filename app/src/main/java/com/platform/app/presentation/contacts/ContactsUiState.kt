@@ -10,6 +10,7 @@ data class ContactsUiState(
     val filteredContacts: List<Contact> = emptyList(),
     val searchQuery: String = "",
     val selectedTypeFilter: ContactType? = null,
+    val openBalances: Map<String, Long> = emptyMap(),
     val isLoading: Boolean = false,
     val selectedContactDetails: ContactDetails? = null,
     val isDetailsLoading: Boolean = false,

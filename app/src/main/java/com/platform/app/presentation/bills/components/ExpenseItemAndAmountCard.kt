@@ -1,5 +1,8 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,7 +58,7 @@ fun ExpenseItemAndAmountCard(
     var itemDropdownExpanded by remember { mutableStateOf(false) }
 
     PlatformCard(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = PlatformShapes.large,
         modifier = modifier
     ) {
         Column(
@@ -65,10 +68,34 @@ fun ExpenseItemAndAmountCard(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             Text(
-                text = "1. Item & Valor *",
+                text = "1. Valor & Item *",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // VALOR DA DESPESA (PROTAGONISTA)
+            val displayCurrency = CurrencyUtils.formatCentsToCurrency(uiState.amountCents)
+            OutlinedTextField(
+                value = displayCurrency,
+                onValueChange = { newValue ->
+                    val cleanDigits = newValue.filter { it.isDigit() }
+                    val cents = cleanDigits.toLongOrNull() ?: 0L
+                    onAmountChange(cents)
+                },
+                label = { Text(AppStrings.ExpenseForm.AMOUNT_REQUIRED) },
+                textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Payments,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = PlatformShapes.medium,
+                modifier = Modifier.fillMaxWidth()
             )
 
             // SELETOR DE ITEM DE DESPESA (OBRIGATÓRIO)
@@ -80,7 +107,7 @@ fun ExpenseItemAndAmountCard(
                     value = uiState.selectedItem?.let { "${it.name} (${it.categoryName})" } ?: "",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Item de Despesa * (Obrigatório)") },
+                    label = { Text(AppStrings.ExpenseForm.EXPENSE_ITEM_REQUIRED) },
                     placeholder = { Text("Selecione o item categorizado") },
                     leadingIcon = {
                         val itemIcon = uiState.selectedItem?.let { PlatformIconCatalog.getIcon(it.categoryIconName) } ?: Icons.Default.Payments
@@ -98,7 +125,7 @@ fun ExpenseItemAndAmountCard(
                     supportingText = if (uiState.selectedItemId == null && uiState.amountCents > 0L) {
                         { Text("Item é obrigatório para classificar a despesa", color = MaterialTheme.colorScheme.error) }
                     } else null,
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor()
@@ -169,10 +196,10 @@ fun ExpenseItemAndAmountCard(
                 }
             }
 
-            // Chip de Natureza Financeira Herdada
+            // Natureza e Categoria
             if (uiState.selectedItem != null) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
@@ -216,29 +243,6 @@ fun ExpenseItemAndAmountCard(
                     }
                 }
             }
-
-            // Valor
-            val displayCurrency = CurrencyUtils.formatCentsToCurrency(uiState.amountCents)
-            OutlinedTextField(
-                value = displayCurrency,
-                onValueChange = { newValue ->
-                    val cleanDigits = newValue.filter { it.isDigit() }
-                    val cents = cleanDigits.toLongOrNull() ?: 0L
-                    onAmountChange(cents)
-                },
-                label = { Text("Valor da Despesa *") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Payments,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }

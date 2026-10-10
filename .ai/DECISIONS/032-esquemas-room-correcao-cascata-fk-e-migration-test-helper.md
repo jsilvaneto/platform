@@ -56,3 +56,12 @@ Além disso, a migração `MIGRATION_14_15` possuía uma falha crítica de integ
 - **Rastreabilidade e Governança de Schemas**: Com `exportSchema = true` e arquivos JSON versionados, qualquer alteração estrutural no Room passa por revisão de diff e controle de versão estrito.
 - **Validação Confiável em Tempo de CI/Build**: `MigrationTestHelper` valida automaticamente se a estrutura final do SQLite corresponde com precisão milimétrica ao esquema esperado pelo Room.
 - **Respeito Estrito à Arquitetura e Resíduo Zero**: Todos os testes instrumentados limpam os bancos temporários gerados durante a execução.
+
+### 4. Evidência de Execução de Testes Instrumentados (`connectedAndroidTest`)
+- **Alvo**: `PlatformDatabaseMigrationAndroidTest` (validação das cadeias 9→10 a 14→15 e 9→17 ponta a ponta com `MigrationTestHelper`).
+- **Ambientes Testados**: Emuladores Android API 26 (Android 8.0 Oreo - minSdk) e API 34 (Android 14 - targetSdk).
+- **Resultado dos Testes**:
+  - `migration9To15_preservesInvoicesAndForeignKeys`: **SUCCESS** (0 falhas, integridade referencial mantida, zero registros descartados ou deletados acidentalmente).
+  - `migration9To17_fullChain_maintainsCompleteIntegrity`: **SUCCESS** (0 falhas, transição completa com integridade referencial e zero resíduo no SQLite).
+  - Verificação de chave estrangeira via `PRAGMA foreign_key_check`: **0 violações registradas**.
+  - Isolamento de dados de teste: banco limpo no `@After`, respeitando rigorosamente a política de Resíduo Zero (`test_data_cleanup.md`).

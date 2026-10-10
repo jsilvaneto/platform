@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.platform.app.presentation.theme.PlatformShapes
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
@@ -44,6 +44,7 @@ import com.platform.app.presentation.settings.components.CreateBackupPasswordDia
 import com.platform.app.presentation.settings.components.ReleaseNotesDialog
 import com.platform.app.presentation.settings.components.RestoreConfirmDialog
 import com.platform.app.presentation.settings.components.RestorePasswordDialog
+import com.platform.app.presentation.settings.components.SectionCard
 import com.platform.app.presentation.settings.components.SettingActionCard
 import com.platform.app.presentation.settings.components.SettingsAboutSection
 import com.platform.app.presentation.settings.components.SettingsBackupSection
@@ -163,39 +164,43 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Menu individual: Contas
-            SettingActionCard(
-                title = "Contas",
-                subtitle = "Bancos, carteiras e contas de referência",
-                icon = Icons.Default.AccountBalance,
-                onClick = onNavigateToAccounts
-            )
+            // Grupo 1: Cadastros
+            SectionCard(
+                title = "Cadastros",
+                icon = Icons.Default.Category
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SettingActionCard(
+                        title = "Contas",
+                        subtitle = "Bancos, carteiras e contas de referência",
+                        icon = Icons.Default.AccountBalance,
+                        onClick = onNavigateToAccounts
+                    )
 
-            // Menu individual: Formas de Pagamento
-            SettingActionCard(
-                title = "Formas de Pagamento",
-                subtitle = "Cartão, PIX, dinheiro e métodos de quitação",
-                icon = Icons.Default.CreditCard,
-                onClick = onNavigateToPaymentMethods
-            )
+                    SettingActionCard(
+                        title = "Formas de Pagamento",
+                        subtitle = "Cartão, PIX, dinheiro e métodos de quitação",
+                        icon = Icons.Default.CreditCard,
+                        onClick = onNavigateToPaymentMethods
+                    )
 
-            // Menu individual: Categorias
-            SettingActionCard(
-                title = "Categorias",
-                subtitle = "Classificação de despesas e natureza do gasto",
-                icon = Icons.Default.Category,
-                onClick = onNavigateToCategories
-            )
+                    SettingActionCard(
+                        title = "Categorias",
+                        subtitle = "Classificação de despesas e natureza do gasto",
+                        icon = Icons.Default.Category,
+                        onClick = onNavigateToCategories
+                    )
 
-            // Menu individual: Itens de Despesa
-            SettingActionCard(
-                title = "Itens de Despesa",
-                subtitle = "Subitens e produtos organizados por categoria",
-                icon = Icons.Default.ShoppingBag,
-                onClick = onNavigateToExpenseItems
-            )
+                    SettingActionCard(
+                        title = "Itens de Despesa",
+                        subtitle = "Subitens e produtos organizados por categoria",
+                        icon = Icons.Default.ShoppingBag,
+                        onClick = onNavigateToExpenseItems
+                    )
+                }
+            }
 
-            // Menu individual: Aparência
+            // Grupo 2: Aparência
             SettingActionCard(
                 title = "Aparência",
                 subtitle = "Tema do sistema, modo escuro e ícones do aplicativo",
@@ -247,7 +252,7 @@ fun SettingsScreen(
                 onDismissRequest = { showAppearanceSheet = false },
                 sheetState = appearanceSheetState,
                 containerColor = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                shape = PlatformShapes.bottomSheet
             ) {
                 AppearanceBottomSheetContent(
                     uiState = uiState,

@@ -1,5 +1,10 @@
 package com.platform.app.presentation.goals
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import com.platform.app.presentation.goals.components.GoalDetailBottomSheet
 import com.platform.app.presentation.goals.components.AddEditGoalDialog
 import com.platform.app.presentation.goals.components.AddContributionDialog
@@ -223,12 +228,10 @@ fun GoalsSummaryCard(
     totalSavedCents: Long,
     progress: Float
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.large,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
             Row(
@@ -326,14 +329,11 @@ fun GoalCard(
         try { Color(android.graphics.Color.parseColor(goal.colorHex)) } catch (e: Exception) { BrandPrimaryDark }
     }
 
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.large,
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -440,7 +440,7 @@ fun EmptyGoalsView(onAddClick: () -> Unit) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onAddClick, shape = RoundedCornerShape(12.dp)) {
+        Button(onClick = onAddClick, shape = PlatformShapes.medium) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(6.dp))
             Text("Criar Primeira Meta")

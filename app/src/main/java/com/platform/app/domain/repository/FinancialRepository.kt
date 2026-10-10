@@ -37,6 +37,7 @@ interface FinancialRepository {
     fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>>
     fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>>
     suspend fun getOrCreateInvoiceForMonth(cardId: String, referenceMonth: String): CreditCardInvoice
+    suspend fun materializeRecurringForInvoice(cardId: String, invoiceId: String, referenceMonth: String): Int
     suspend fun materializeRecurringCardInvoices(referenceTimeMillis: Long = System.currentTimeMillis()): Int
     suspend fun payInvoice(invoiceId: String, actualPaymentDate: Long? = null)
     suspend fun reopenInvoice(invoiceId: String)

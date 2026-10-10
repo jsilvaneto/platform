@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +38,7 @@ fun ExpensePaymentStatusCard(
     modifier: Modifier = Modifier
 ) {
     PlatformCard(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = PlatformShapes.large,
         modifier = modifier
     ) {
         Column(
@@ -58,7 +60,7 @@ fun ExpensePaymentStatusCard(
             ) {
                 // Opção: Pendente
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     color = if (!isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     border = if (!isPaid) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
                     modifier = Modifier
@@ -87,7 +89,7 @@ fun ExpensePaymentStatusCard(
 
                 // Opção: Já Paga
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = PlatformShapes.medium,
                     color = if (isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     border = if (isPaid) BorderStroke(1.dp, SuccessGreen) else null,
                     modifier = Modifier

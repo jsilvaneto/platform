@@ -1,5 +1,10 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,12 +37,10 @@ fun SectionCard(
     icon: ImageVector,
     content: @Composable () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-        )
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.medium,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -69,13 +72,11 @@ fun SettingActionCard(
     modifier: Modifier = Modifier,
     subtitle: String? = null
 ) {
-    Card(
+    PlatformSurface(
+        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.large,
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.50f)
-        )
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
@@ -88,7 +89,7 @@ fun SettingActionCard(
                     .size(44.dp)
                     .background(
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        RoundedCornerShape(12.dp)
+                        PlatformShapes.medium
                     ),
                 contentAlignment = Alignment.Center
             ) {

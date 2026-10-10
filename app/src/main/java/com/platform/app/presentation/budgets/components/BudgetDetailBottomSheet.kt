@@ -1,15 +1,23 @@
 package com.platform.app.presentation.budgets.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -98,7 +106,7 @@ fun BudgetDetailBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = PlatformShapes.small,
                             color = color.copy(alpha = 0.12f)
                         ) {
                             Text(
@@ -111,7 +119,7 @@ fun BudgetDetailBottomSheet(
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
+                            shape = PlatformShapes.small,
                             color = progressColor.copy(alpha = 0.12f)
                         ) {
                             Text(
@@ -174,12 +182,10 @@ fun BudgetDetailBottomSheet(
             }
 
             // Hero Card: Resumo dos Gastos vs Limite
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -247,12 +253,10 @@ fun BudgetDetailBottomSheet(
             }
 
             // Card de Detalhes da Categoria e Parâmetros
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -344,7 +348,7 @@ fun BudgetDetailBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
@@ -392,7 +396,7 @@ fun BudgetDetailBottomSheet(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.DELETE, color = MaterialTheme.colorScheme.onError)
                 }
@@ -400,7 +404,7 @@ fun BudgetDetailBottomSheet(
             dismissButton = {
                 OutlinedButton(
                     onClick = { showDeleteConfirmDialog = false },
-                    shape = RoundedCornerShape(8.dp)
+                    shape = PlatformShapes.small
                 ) {
                     Text(AppStrings.Actions.CANCEL)
                 }

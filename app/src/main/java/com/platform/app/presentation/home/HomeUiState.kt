@@ -5,9 +5,8 @@ import com.platform.app.domain.model.PayableItem
 import com.platform.app.domain.usecase.MonthlyForecastResult
 
 enum class HomeViewMode {
-    PANORAMA,
-    CALENDAR,
-    MONTHLY
+    LIST,
+    CALENDAR
 }
 
 data class CalendarDayItem(
@@ -23,7 +22,7 @@ data class CalendarDayItem(
 )
 
 data class HomeUiState(
-    val viewMode: HomeViewMode = HomeViewMode.PANORAMA,
+    val viewMode: HomeViewMode = HomeViewMode.LIST,
     val selectedMonthMillis: Long = System.currentTimeMillis(),
     val selectedCalendarDayMillis: Long? = null,
     val forecastResult: MonthlyForecastResult? = null,
@@ -36,6 +35,7 @@ data class HomeUiState(
     val daySelectedItems: List<PayableItem> = emptyList(),
     val isOverdueBannerExpanded: Boolean = true,
     val isPaidSectionExpanded: Boolean = false,
+    val allExpenseItems: List<com.platform.app.domain.model.ExpenseItem> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

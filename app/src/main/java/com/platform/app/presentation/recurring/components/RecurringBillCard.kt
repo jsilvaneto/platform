@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +52,7 @@ fun RecurringBillCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Header: Ícone, Título, Contato e Valor Recorrente
@@ -93,7 +95,7 @@ fun RecurringBillCard(
                         // Contato em destaque
                         if (!item.contactName.isNullOrBlank()) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                             ) {
                                 Row(
@@ -122,7 +124,7 @@ fun RecurringBillCard(
                         // Categoria
                         if (item.categoryName.isNotBlank() && item.categoryName != "Geral") {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                             ) {
                                 Text(
@@ -137,7 +139,7 @@ fun RecurringBillCard(
                         // Status Pausada
                         if (item.isPaused) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = WarningAmber.copy(alpha = 0.15f)
                             ) {
                                 Text(
@@ -184,12 +186,8 @@ fun RecurringBillCard(
                 Spacer(modifier = Modifier.height(10.dp))
                 val isFirstPending = item.installments.firstOrNull()?.isPaid == false
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = PlatformShapes.small,
                     color = if (isFirstPending) WarningAmber.copy(alpha = 0.12f) else SuccessGreen.copy(alpha = 0.1f),
-                    border = BorderStroke(
-                        1.dp,
-                        if (isFirstPending) WarningAmber.copy(alpha = 0.35f) else SuccessGreen.copy(alpha = 0.3f)
-                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -229,7 +227,7 @@ fun RecurringBillCard(
                     val isNextToday = DateUtils.isToday(next.dueDate)
                     val isNextOverdue = next.dueDate < System.currentTimeMillis() && !isNextToday
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = PlatformShapes.extraSmall,
                         color = when {
                             isNextOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
                             isNextToday -> WarningAmber.copy(alpha = 0.15f)

@@ -1,5 +1,10 @@
 package com.platform.app.presentation.expenseitems.components
 
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -15,13 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.toColorInt
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
-import com.platform.app.presentation.components.PlatformIconView
 import com.platform.app.presentation.components.PlatformStatusChip
 import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.BrandPrimaryDark
+import com.platform.app.presentation.theme.Dimens
+import com.platform.app.presentation.theme.PlatformIconCatalog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,12 +144,10 @@ fun ExpenseItemDetailBottomSheet(
             Spacer(modifier = Modifier.height(Dimens.spacingNormal))
 
             // Card Contextual de Vínculos
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                )
+            PlatformSurface(
+                variant = PlatformSurfaceVariant.Tonal,
+                shape = PlatformShapes.large,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
@@ -220,7 +225,7 @@ fun ExpenseItemDetailBottomSheet(
             Button(
                 onClick = onEdit,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                shape = PlatformShapes.medium
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
@@ -235,5 +240,3 @@ fun ExpenseItemDetailBottomSheet(
         }
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)

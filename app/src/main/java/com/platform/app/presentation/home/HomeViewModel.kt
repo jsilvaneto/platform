@@ -10,7 +10,10 @@ import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.domain.model.PayableItem
 import com.platform.app.domain.model.PayableUrgency
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.model.Bill
+import com.platform.app.domain.model.BillType
 import com.platform.app.domain.usecase.CalculateMonthlyForecastUseCase
+import com.platform.app.domain.usecase.CreateBillUseCase
 import com.platform.app.domain.usecase.GetFinancialDashboardUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -30,6 +33,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import javax.inject.Inject
 
 sealed interface HomeUiEffect {
@@ -44,7 +48,8 @@ sealed interface HomeUiEffect {
 class HomeViewModel @Inject constructor(
     private val calculateMonthlyForecastUseCase: CalculateMonthlyForecastUseCase,
     private val getFinancialDashboardUseCase: GetFinancialDashboardUseCase,
-    private val repository: FinancialRepository
+    private val repository: FinancialRepository,
+    private val createBillUseCase: CreateBillUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -61,13 +66,43 @@ class HomeViewModel @Inject constructor(
     private var cachedCardsMap: Map<String, CreditCard> = emptyMap()
 
     init {
+        repository.getExpenseItems()
+            .onEach { items ->
+                _uiState.update { it.copy(allExpenseItems = items) }
+            }
+            .catch { /* ignore */ }
+            .launchIn(viewModelScope)
+
         observeData(_uiState.value.selectedMonthMillis)
     }
 
     fun onAction(action: HomeUiAction) {
         when (action) {
             is HomeUiAction.ChangeViewMode -> {
-                _uiState.update { it.copy(viewMode = action.viewMode) }
+                val autoSelectDay = if (action.viewMode == HomeViewMode.CALENDAR && _uiState.value.selectedCalendarDayMillis == null) {
+                    val activeDays = _uiState.value.calendarDays.filter { it.itemsCount > 0 && !it.isFullyPaid }
+                    val now = System.currentTimeMillis()
+                    activeDays.firstOrNull { it.dateMillis >= now }?.dateMillis ?: activeDays.firstOrNull()?.dateMillis
+                } else {
+                    _uiState.value.selectedCalendarDayMillis
+                }
+                _uiState.update { state ->
+                    val selectedItems = if (autoSelectDay != null) {
+                        filterPayablesForDay(
+                            dayStartMillis = autoSelectDay,
+                            allInstallments = cachedAllInstallments,
+                            allInvoices = cachedAllInvoices,
+                            cardsMap = cachedCardsMap
+                        )
+                    } else {
+                        state.daySelectedItems
+                    }
+                    state.copy(
+                        viewMode = action.viewMode,
+                        selectedCalendarDayMillis = autoSelectDay,
+                        daySelectedItems = selectedItems
+                    )
+                }
             }
             is HomeUiAction.SelectCalendarDay -> {
                 _uiState.update { state ->
@@ -147,6 +182,41 @@ class HomeViewModel @Inject constructor(
             }
             is HomeUiAction.TogglePaidSection -> {
                 _uiState.update { it.copy(isPaidSectionExpanded = action.expanded) }
+            }
+            is HomeUiAction.SaveQuickExpense -> {
+                viewModelScope.launch {
+                    val item = _uiState.value.allExpenseItems.find { it.id == action.itemId }
+                    val billId = UUID.randomUUID().toString()
+                    val title = item?.name ?: "Despesa"
+                    val now = System.currentTimeMillis()
+                    val bill = Bill(
+                        id = billId,
+                        title = title,
+                        description = title,
+                        type = BillType.SINGLE,
+                        totalAmountCents = action.amountCents,
+                        categoryId = item?.categoryId,
+                        itemId = action.itemId,
+                        totalInstallments = 1,
+                        createdAt = now
+                    )
+                    createBillUseCase(
+                        bill = bill,
+                        firstDueDate = now,
+                        isFirstInstallmentPaid = action.isPaid
+                    )
+                    _uiEffect.emit(
+                        HomeUiEffect.ShowUndoSnackbar(
+                            message = "Despesa lançada!",
+                            undoAction = HomeUiAction.UndoSaveBill(billId)
+                        )
+                    )
+                }
+            }
+            is HomeUiAction.UndoSaveBill -> {
+                viewModelScope.launch {
+                    repository.deleteBill(action.billId)
+                }
             }
             is HomeUiAction.Refresh -> {
                 observeData(_uiState.value.selectedMonthMillis)

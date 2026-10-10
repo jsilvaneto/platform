@@ -163,11 +163,11 @@ fun PlatformColorPicker(
                 Box(
                     modifier = Modifier
                         .size(34.dp)
-                        .background(color, RoundedCornerShape(8.dp))
+                        .background(color, PlatformShapes.small)
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
                             color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = PlatformShapes.small
                         )
                         .clickable { onColorSelected(token.hex) },
                     contentAlignment = Alignment.Center

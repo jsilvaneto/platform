@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -88,6 +92,50 @@ fun NewExpenseScreen(
                 }
             )
         },
+        bottomBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Dimens.spacingNormal, vertical = 10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (!uiState.isValid && uiState.validationError != null) {
+                        Text(
+                            text = uiState.validationError ?: "",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
+
+                    Button(
+                        onClick = viewModel::saveExpense,
+                        enabled = uiState.isValid,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = PlatformShapes.medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Salvar Despesa",
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                }
+            }
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { innerPadding ->
@@ -100,7 +148,7 @@ fun NewExpenseScreen(
                 .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
             verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
         ) {
-            // 1. ITEM DE DESPESA E VALOR (OBRIGATÓRIO & PROTAGONISTA)
+            // 1. VALOR & ITEM (PROTAGONISTA)
             ExpenseItemAndAmountCard(
                 uiState = uiState,
                 onItemSelect = viewModel::onItemSelect,
@@ -108,7 +156,7 @@ fun NewExpenseScreen(
                 onNavigateToExpenseItems = onNavigateToExpenseItems
             )
 
-            // 2. DESTINATÁRIO E VENCIMENTO (OBRIGATÓRIO)
+            // 2. VENCIMENTO & DESTINATÁRIO
             ExpenseRecipientAndDueDateCard(
                 uiState = uiState,
                 onContactSelect = viewModel::onContactSelect,
@@ -116,13 +164,7 @@ fun NewExpenseScreen(
                 onNewQuickContactClick = { showQuickContactDialog = true }
             )
 
-            // 3. SITUAÇÃO DA CONTA
-            ExpensePaymentStatusCard(
-                isPaid = uiState.isPaid,
-                onPaymentStatusChange = viewModel::onPaymentStatusChange
-            )
-
-            // 4. MODALIDADE: À VISTA, PARCELADO OU RECORRENTE
+            // 3. TIPO DE COMPROMISSO
             ExpenseCommitmentTypeCard(
                 uiState = uiState,
                 onExpenseTypeChange = viewModel::onExpenseTypeChange,
@@ -133,7 +175,7 @@ fun NewExpenseScreen(
                 onRecurrenceOccurrencesCountChange = viewModel::onRecurrenceOccurrencesCountChange
             )
 
-            // 5. MEIO DE PAGAMENTO
+            // 4. COMO VOCÊ PAGA
             ExpensePaymentMethodCard(
                 uiState = uiState,
                 onToggleCreditCard = viewModel::onToggleCreditCard,
@@ -142,9 +184,15 @@ fun NewExpenseScreen(
                 onFinancialAccountSelect = viewModel::onFinancialAccountSelect
             )
 
+            // 5. SITUAÇÃO DA CONTA
+            ExpensePaymentStatusCard(
+                isPaid = uiState.isPaid,
+                onPaymentStatusChange = viewModel::onPaymentStatusChange
+            )
+
             // 6. OBSERVAÇÕES COMPLEMENTARES (OPCIONAL)
             PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                shape = PlatformShapes.large
             ) {
                 Column(
                     modifier = Modifier
@@ -153,7 +201,7 @@ fun NewExpenseScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = "5. Observações Adicionais (Opcional)",
+                        text = "Observações Adicionais (Opcional)",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -179,35 +227,13 @@ fun NewExpenseScreen(
                             )
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                        shape = PlatformShapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(Dimens.spacingSmall))
-
-            // BOTÃO SALVAR DESPESA
-            Button(
-                onClick = viewModel::saveExpense,
-                enabled = uiState.isValid,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Check, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Confirmar e Salvar Despesa",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleSmall
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -46,7 +48,7 @@ fun PlatformStatusChip(
     }
 
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = PlatformShapes.small,
         color = containerColor,
         modifier = modifier
     ) {

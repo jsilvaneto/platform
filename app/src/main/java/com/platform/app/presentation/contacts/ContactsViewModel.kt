@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -58,27 +59,32 @@ class ContactsViewModel @Inject constructor(
 
     private fun loadContacts() {
         _uiState.update { it.copy(isLoading = true) }
-        repository.getContacts()
-            .onEach { contacts ->
-                _uiState.update { current ->
-                    val filtered = applyFilters(contacts, current.searchQuery, current.selectedTypeFilter)
-                    current.copy(
-                        contacts = contacts,
-                        filteredContacts = filtered,
-                        isLoading = false,
-                        errorMessage = null
-                    )
-                }
+        combine(
+            repository.getContacts(),
+            repository.getAllInstallments()
+        ) { contacts, installments ->
+            val balances = installments.filter { !it.isPaid && it.contactId != null }
+                .groupBy { it.contactId!! }
+                .mapValues { entry -> entry.value.sumOf { it.amountCents } }
+
+            _uiState.update { current ->
+                val filtered = applyFilters(contacts, current.searchQuery, current.selectedTypeFilter)
+                current.copy(
+                    contacts = contacts,
+                    filteredContacts = filtered,
+                    openBalances = balances,
+                    isLoading = false,
+                    errorMessage = null
+                )
             }
-            .catch { error ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = error.localizedMessage ?: "Erro ao carregar contatos."
-                    )
-                }
+        }.catch { error ->
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = error.localizedMessage ?: "Erro ao carregar contatos."
+                )
             }
-            .launchIn(viewModelScope)
+        }.launchIn(viewModelScope)
     }
 
     private fun handleSearchQuery(query: String) {

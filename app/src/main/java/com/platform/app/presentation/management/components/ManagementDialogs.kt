@@ -1,5 +1,7 @@
 package com.platform.app.presentation.management.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,7 +81,7 @@ fun AddEditAccountDialog(
                     onValueChange = { name = it },
                     label = { Text(AppStrings.Dialogs.ACCOUNT_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -97,7 +99,7 @@ fun AddEditAccountDialog(
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -167,7 +169,7 @@ fun AddEditAccountDialog(
                         )
                     }
                 },
-                shape = RoundedCornerShape(8.dp),
+                shape = PlatformShapes.small,
                 enabled = name.isNotBlank()
             ) {
                 Text(if (account == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)
@@ -242,7 +244,7 @@ fun AddEditPaymentMethodDialog(
                                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                             )
                         },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -313,7 +315,7 @@ fun AddEditPaymentMethodDialog(
                         onValueChange = { name = it },
                         label = { Text(AppStrings.Dialogs.CUSTOM_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                         singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = PlatformShapes.medium,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -339,7 +341,7 @@ fun AddEditPaymentMethodDialog(
                         )
                     }
                 },
-                shape = RoundedCornerShape(8.dp),
+                shape = PlatformShapes.small,
                 enabled = (!isCustomName && selectedPreset != "Outro") || (isCustomName && name.isNotBlank())
             ) {
                 Text(if (method == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)
@@ -379,7 +381,7 @@ fun AddEditCategoryDialog(
                     onValueChange = { name = it },
                     label = { Text(AppStrings.Dialogs.CATEGORY_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -421,7 +423,7 @@ fun AddEditCategoryDialog(
                         )
                     }
                 },
-                shape = RoundedCornerShape(8.dp),
+                shape = PlatformShapes.small,
                 enabled = name.isNotBlank()
             ) {
                 Text(if (category == null) AppStrings.Actions.SAVE else AppStrings.Actions.UPDATE)

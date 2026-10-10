@@ -1,5 +1,7 @@
 package com.platform.app.presentation.navigation
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -153,14 +155,14 @@ fun AppDrawer(
                                 MaterialTheme.colorScheme.tertiary.copy(alpha = 0.06f)
                             )
                         ),
-                        RoundedCornerShape(14.dp)
+                        PlatformShapes.large
                     )
                     .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         modifier = Modifier.size(42.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = PlatformShapes.medium,
                         color = MaterialTheme.colorScheme.primary
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -268,7 +270,7 @@ fun AppDrawer(
                                     onNavigate(item.screen)
                                 }
                             },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = PlatformShapes.medium,
                             colors = NavigationDrawerItemDefaults.colors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                 unselectedContainerColor = Color.Transparent

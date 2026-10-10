@@ -1,7 +1,10 @@
 package com.platform.app.presentation.home.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +23,8 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MedicalServices
@@ -70,7 +75,7 @@ fun PayableItemCard(
 
     PlatformCard(
         modifier = alphaModifier,
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Row(
             modifier = Modifier
@@ -114,7 +119,7 @@ fun PayableItemCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (item.isPaid) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = SuccessGreen.copy(alpha = 0.12f),
                                 border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
                             ) {
@@ -159,7 +164,7 @@ fun PayableItemCard(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
+                            shape = PlatformShapes.extraSmall,
                             color = item.nature.let {
                                 try { Color(it.colorHex.toColorInt()).copy(alpha = 0.15f) }
                                 catch (e: Exception) { MaterialTheme.colorScheme.surfaceVariant }
@@ -198,7 +203,7 @@ fun PayableItemCard(
                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                             contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                        shape = PlatformShapes.medium,
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         modifier = Modifier.height(30.dp)
                     ) {
@@ -216,7 +221,7 @@ fun PayableItemCard(
                     }
                 } else if (item.isPaid) {
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = PlatformShapes.extraSmall,
                         color = SuccessGreen.copy(alpha = 0.12f)
                     ) {
                         Text(
@@ -236,7 +241,7 @@ fun PayableItemCard(
 @Composable
 fun EmptyForecastCard(onAddExpense: () -> Unit) {
     PlatformCard(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Column(
             modifier = Modifier
@@ -279,7 +284,7 @@ fun EmptyForecastCard(onAddExpense: () -> Unit) {
 
             Button(
                 onClick = onAddExpense,
-                shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(
@@ -350,5 +355,45 @@ fun getFunctionalIcon(categoryName: String, iconName: String? = null): ImageVect
         lower.contains("educa") || lower.contains("curso") || lower.contains("faculdade") -> Icons.Default.School
         lower.contains("compra") || lower.contains("shopping") -> Icons.Default.ShoppingCart
         else -> PlatformIconCatalog.getIcon(iconName ?: "")
+    }
+}
+
+@Composable
+fun CollapsiblePaidHeader(
+    isExpanded: Boolean,
+    count: Int,
+    totalCents: Long,
+    isPrivate: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(vertical = Dimens.spacingSmall),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Pagas no Mês ($count)",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = formatValueOrPrivate(totalCents, isPrivate),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

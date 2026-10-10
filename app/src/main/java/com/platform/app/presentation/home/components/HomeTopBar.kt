@@ -1,5 +1,7 @@
 package com.platform.app.presentation.home.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -47,6 +49,8 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.PayableItem
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformPrivacyToggle
+import com.platform.app.presentation.components.PlatformSegmentedTabs
+import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.components.formatValueOrPrivate
 import com.platform.app.presentation.home.HomeViewMode
 import com.platform.app.presentation.theme.Dimens
@@ -63,7 +67,7 @@ fun HomeTopBar(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onCurrentMonth: () -> Unit,
-    onOpenDrawer: () -> Unit
+    onOpenDrawer: (() -> Unit)? = null
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -77,65 +81,57 @@ fun HomeTopBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onOpenDrawer) {
+                if (onOpenDrawer != null) {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Menu Lateral",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                IconButton(onClick = onPreviousMonth) {
                     Icon(
-                        imageVector = Icons.Default.Menu,
-                        contentDescription = "Menu Lateral",
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Mês Anterior",
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                if (viewMode == HomeViewMode.PANORAMA) {
-                    Text(
-                        text = "Visão Panorâmica",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                } else {
-                    IconButton(onClick = onPreviousMonth) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = "Mês Anterior",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Cápsula Clicável do Mês
-                    Surface(
-                        onClick = onOpenMonthPicker,
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(horizontal = 2.dp)
+                // Cápsula Clicável do Mês
+                Surface(
+                    onClick = onOpenMonthPicker,
+                    shape = PlatformShapes.small,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(horizontal = 2.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
-                        ) {
-                            Text(
-                                text = monthLabel,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Selecionar mês",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    IconButton(onClick = onNextMonth) {
+                        Text(
+                            text = monthLabel,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Próximo Mês",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Selecionar mês",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
+                }
+
+                IconButton(onClick = onNextMonth) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Próximo Mês",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
 
@@ -145,18 +141,16 @@ fun HomeTopBar(
                     onToggle = onTogglePrivacy
                 )
 
-                if (viewMode != HomeViewMode.PANORAMA) {
-                    TextButton(
-                        onClick = onCurrentMonth,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius)
-                    ) {
-                        Text(
-                            text = "Hoje",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                TextButton(
+                    onClick = onCurrentMonth,
+                    shape = PlatformShapes.medium
+                ) {
+                    Text(
+                        text = "Hoje",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }
@@ -168,75 +162,22 @@ fun HomeViewModeSelector(
     selectedMode: HomeViewMode,
     onModeSelected: (HomeViewMode) -> Unit
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Dimens.spacingNormal, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ModeChip(
-                label = "Panorama Geral",
-                icon = Icons.Default.Timeline,
-                isSelected = selectedMode == HomeViewMode.PANORAMA,
-                modifier = Modifier.weight(1f),
-                onClick = { onModeSelected(HomeViewMode.PANORAMA) }
-            )
-            ModeChip(
-                label = "Cronograma",
-                icon = Icons.Default.Schedule,
-                isSelected = selectedMode == HomeViewMode.CALENDAR,
-                modifier = Modifier.weight(1f),
-                onClick = { onModeSelected(HomeViewMode.CALENDAR) }
-            )
-            ModeChip(
-                label = "Visão Mensal",
-                icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                isSelected = selectedMode == HomeViewMode.MONTHLY,
-                modifier = Modifier.weight(1f),
-                onClick = { onModeSelected(HomeViewMode.MONTHLY) }
-            )
-        }
-    }
-}
-
-@Composable
-fun ModeChip(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.height(34.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 6.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(15.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        PlatformSegmentedTabs(
+            items = listOf(
+                SegmentedTabItem("Lista"),
+                SegmentedTabItem("Calendário")
+            ),
+            selectedIndex = if (selectedMode == HomeViewMode.LIST) 0 else 1,
+            onTabSelected = { index ->
+                onModeSelected(if (index == 0) HomeViewMode.LIST else HomeViewMode.CALENDAR)
+            }
+        )
     }
 }
 
@@ -250,7 +191,7 @@ fun GlobalOverdueAlertBanner(
     onPayItem: (PayableItem) -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = PlatformShapes.large,
         color = UrgentRed.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.35f)),
         modifier = Modifier.fillMaxWidth()
@@ -296,7 +237,7 @@ fun GlobalOverdueAlertBanner(
 
                 TextButton(
                     onClick = onToggleExpanded,
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                    shape = PlatformShapes.medium
                 ) {
                     Text(
                         text = if (isExpanded) "Ocultar" else "Ver Todas",
@@ -321,7 +262,7 @@ fun GlobalOverdueAlertBanner(
                     overdueItems.forEach { item ->
                         val daysLate = ((System.currentTimeMillis() - item.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
+                            shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface,
                             border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.2f)),
                             modifier = Modifier.fillMaxWidth()
@@ -344,7 +285,7 @@ fun GlobalOverdueAlertBanner(
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Surface(
-                                            shape = RoundedCornerShape(4.dp),
+                                            shape = PlatformShapes.extraSmall,
                                             color = UrgentRed.copy(alpha = 0.15f)
                                         ) {
                                             Text(
@@ -374,7 +315,7 @@ fun GlobalOverdueAlertBanner(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Button(
                                         onClick = { onPayItem(item) },
-                                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                                        shape = PlatformShapes.medium,
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = SuccessGreen.copy(alpha = 0.15f),
                                             contentColor = SuccessGreen

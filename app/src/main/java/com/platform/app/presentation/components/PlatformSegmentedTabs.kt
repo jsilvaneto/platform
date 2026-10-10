@@ -1,5 +1,7 @@
 package com.platform.app.presentation.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -44,9 +46,9 @@ fun PlatformSegmentedTabs(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp)),
+            .clip(PlatformShapes.medium),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        shape = RoundedCornerShape(10.dp)
+        shape = PlatformShapes.medium
     ) {
         Row(
             modifier = Modifier
@@ -77,9 +79,9 @@ fun PlatformSegmentedTabs(
                     modifier = Modifier
                         .weight(1f)
                         .height(38.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(PlatformShapes.small)
                         .clickable { onTabSelected(index) },
-                    shape = RoundedCornerShape(8.dp),
+                    shape = PlatformShapes.small,
                     color = containerColor,
                     border = border
                 ) {
@@ -98,7 +100,7 @@ fun PlatformSegmentedTabs(
                         if (item.count != null) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Surface(
-                                shape = RoundedCornerShape(999.dp),
+                                shape = PlatformShapes.pill,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(

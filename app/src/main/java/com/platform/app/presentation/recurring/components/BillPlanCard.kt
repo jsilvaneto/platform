@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +52,7 @@ fun BillPlanCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Header: Ícone, Título e Valor
@@ -91,7 +93,7 @@ fun BillPlanCard(
                     ) {
                         if (!item.contactName.isNullOrBlank()) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                             ) {
                                 Row(
@@ -179,7 +181,7 @@ fun BillPlanCard(
                     val isNextToday = DateUtils.isToday(next.dueDate)
                     val isNextOverdue = next.dueDate < System.currentTimeMillis() && !isNextToday
                     Surface(
-                        shape = RoundedCornerShape(4.dp),
+                        shape = PlatformShapes.extraSmall,
                         color = when {
                             isNextOverdue -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
                             isNextToday -> WarningAmber.copy(alpha = 0.15f)

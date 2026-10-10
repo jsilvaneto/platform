@@ -1,5 +1,7 @@
 package com.platform.app.presentation.recurring.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -135,7 +137,7 @@ fun RecurringDetailBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
+                            shape = PlatformShapes.extraSmall,
                             color = if (isInstallment)
                                 MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                             else
@@ -152,7 +154,7 @@ fun RecurringDetailBottomSheet(
 
                         if (item.isPaused) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = WarningAmber.copy(alpha = 0.15f)
                             ) {
                                 Text(
@@ -167,7 +169,7 @@ fun RecurringDetailBottomSheet(
 
                         if (isInstallment) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = if (isAllPaid) SuccessGreen.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 Text(
@@ -183,7 +185,7 @@ fun RecurringDetailBottomSheet(
                         // Contato em destaque
                         if (!item.contactName.isNullOrBlank()) {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                             ) {
                                 Row(
@@ -210,7 +212,7 @@ fun RecurringDetailBottomSheet(
                         // Categoria
                         if (item.categoryName.isNotBlank() && item.categoryName != "Geral") {
                             Surface(
-                                shape = RoundedCornerShape(4.dp),
+                                shape = PlatformShapes.extraSmall,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             ) {
                                 Text(
@@ -313,7 +315,7 @@ fun RecurringDetailBottomSheet(
             // Banner se assinatura estiver pausada
             if (item.isPaused) {
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     color = WarningAmber.copy(alpha = 0.12f),
                     border = BorderStroke(1.dp, WarningAmber.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
@@ -354,7 +356,7 @@ fun RecurringDetailBottomSheet(
 
             // Hero Card: Resumo dos Valores com PlatformProgressBar
             PlatformCard(
-                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                shape = PlatformShapes.large
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),

@@ -13,7 +13,7 @@ import org.junit.Test
 class NewExpenseValidationTest {
 
     @Test
-    fun `should require both expense item and contact as mandatory fields`() {
+    fun `should require expense item as mandatory field and treat contact as optional`() {
         val baseState = NewExpenseUiState(
             description = "Energia Elétrica",
             amountCents = 25000L, // R$ 250,00
@@ -23,15 +23,15 @@ class NewExpenseValidationTest {
         )
 
         // 1. Sem item e sem contato -> Inválido
-        assertFalse("Sem item e contato deve ser inválido", baseState.isValid)
+        assertFalse("Sem item deve ser inválido", baseState.isValid)
 
-        // 2. Com item mas sem contato -> Inválido
+        // 2. Com item mas sem contato -> Válido (contato opcional no Prompt 32)
         val withItemOnly = baseState.copy(selectedItemId = "item-1")
-        assertFalse("Apenas com item deve ser inválido", withItemOnly.isValid)
+        assertTrue("Com item e sem contato deve ser válido pois contato é opcional", withItemOnly.isValid)
 
         // 3. Com contato mas sem item -> Inválido
         val withContactOnly = baseState.copy(selectedContactId = "contact-1")
-        assertFalse("Apenas com contato deve ser inválido", withContactOnly.isValid)
+        assertFalse("Apenas com contato e sem item deve ser inválido", withContactOnly.isValid)
 
         // 4. Com ambos preenchidos -> Válido
         val withBoth = baseState.copy(

@@ -1,5 +1,7 @@
 package com.platform.app.presentation.creditcards
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import com.platform.app.presentation.creditcards.components.CreditCardItemCard
 import com.platform.app.presentation.creditcards.components.InvoiceItemCard
 
@@ -97,8 +99,8 @@ import com.platform.app.presentation.theme.WarningAmber
 fun CreditCardsScreen(
     uiState: CreditCardsUiState,
     onAction: (CreditCardsUiAction) -> Unit,
-    onOpenDrawer: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenDrawer: (() -> Unit)? = null,
     onNavigateToNewExpense: () -> Unit = {}
 ) {
     var showAddCardSheet by remember { mutableStateOf(false) }
@@ -106,9 +108,9 @@ fun CreditCardsScreen(
     Scaffold(
         topBar = {
             PlatformAppBar(
-                title = "Cartões de Crédito",
-                subtitle = "Gestão de Limites e Faturas",
-                onOpenDrawer = onOpenDrawer
+                title = AppStrings.Navigation.CREDIT_CARDS,
+                subtitle = "Limites e Faturas",
+                onOpenDrawer = null
             )
         },
         floatingActionButton = {
@@ -136,7 +138,7 @@ fun CreditCardsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingMedium),
+                    contentPadding = PaddingValues(start = Dimens.spacingNormal, end = Dimens.spacingNormal, top = Dimens.spacingMedium, bottom = 88.dp),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
                 ) {
                     // 1. CARROSSEL DE CARTÕES
@@ -162,7 +164,7 @@ fun CreditCardsScreen(
 
                         if (uiState.cardsWithSummary.isEmpty()) {
                             PlatformCard(
-                                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                                shape = PlatformShapes.large
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -191,7 +193,7 @@ fun CreditCardsScreen(
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Button(
                                         onClick = { showAddCardSheet = true },
-                                        shape = RoundedCornerShape(10.dp)
+                                        shape = PlatformShapes.medium
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
@@ -228,7 +230,7 @@ fun CreditCardsScreen(
 
                             // Card Executivo do Ciclo: Melhor Dia de Compra & Atalho de Lançamento
                             PlatformCard(
-                                shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                                shape = PlatformShapes.large
                             ) {
                                 Column(
                                     modifier = Modifier
@@ -275,7 +277,7 @@ fun CreditCardsScreen(
 
                                     Button(
                                         onClick = onNavigateToNewExpense,
-                                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                                        shape = PlatformShapes.medium,
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -337,7 +339,7 @@ fun CreditCardsScreen(
                         if (invoices.isEmpty()) {
                             item {
                                 PlatformCard(
-                                    shape = RoundedCornerShape(Dimens.cardCornerRadius)
+                                    shape = PlatformShapes.large
                                 ) {
                                     Column(
                                         modifier = Modifier

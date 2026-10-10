@@ -57,17 +57,29 @@ class FinancialRepositoryImplSeedTest {
             transactionLambda.captured.invoke()
         }
 
-        repository = FinancialRepositoryImpl(
+        val billDataSource = BillDataSource(
+            database = database,
+            billDao = billDao,
+            installmentDao = installmentDao
+        )
+        val creditCardDataSource = CreditCardDataSource(
+            creditCardDao = creditCardDao,
+            installmentDao = installmentDao
+        )
+        val catalogDataSource = CatalogDataSource(
             database = database,
             categoryDao = categoryDao,
             expenseItemDao = expenseItemDao,
-            creditCardDao = creditCardDao,
             contactDao = contactDao,
             financialAccountDao = financialAccountDao,
             paymentMethodDao = paymentMethodDao,
-            billDao = billDao,
-            installmentDao = installmentDao,
             preferencesManager = preferencesManager
+        )
+
+        repository = FinancialRepositoryImpl(
+            billDataSource = billDataSource,
+            creditCardDataSource = creditCardDataSource,
+            catalogDataSource = catalogDataSource
         )
     }
 

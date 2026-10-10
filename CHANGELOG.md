@@ -3,6 +3,70 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.24.0] - 2026-10-10
+
+### 🛡️ Higiene Arquitetural, Decomposição do Repositório, Guard Rails e Ciclo de Vida de Faturas
+
+- **Exclusão de Status PAUSED da Materialização e dos Totais de Faturas (Prompt 26)**:
+  - `BillInstallmentDao.getUnattachedRecurringInstallmentsForCard` agora filtra `i.status != 'PAUSED'`, impedindo que assinaturas temporariamente suspensas sejam vinculadas a novas faturas.
+  - Queries de totais de fatura (`getInvoiceTotals`, `getInvoiceTotalsList` e `getInvoiceTotal`) agora excluem parcelas com status `PAUSED` (`WHERE invoiceId IS NOT NULL AND status != 'PAUSED'`), refletindo o valor exato a ser pago.
+- **Materialização Preventiva na Quitação da Fatura (`payInvoice`)**:
+  - `payInvoice` agora identifica a competência e o cartão da fatura antes da quitação e executa a materialização de ocorrências recorrentes do ciclo, garantindo que compras não fiquem órfãs ou atrasadas fora da fatura paga.
+- **Separação CQS: Consulta Pura vs Comando de Materialização**:
+  - `getOrCreateInvoiceForMonth` foi desacoplada de efeitos colaterais, atuando como busca/criação determinística pura.
+  - Criado o comando explícito `materializeRecurringForInvoice(cardId, invoiceId, referenceMonth)`, invocado atomicamente onde necessário.
+  - Otimizado `CreateBillUseCase` com cache por competência (`invoiceCache`), realizando apenas uma consulta por mês distinto.
+- **Decomposição Modular de `FinancialRepositoryImpl` em Agregados Coesos (Prompt 27)**:
+  - `BillDataSource` (251 linhas): Gerenciamento de contas (`Bill`) e parcelas (`BillInstallment`).
+  - `CreditCardDataSource` (189 linhas): Gestão de cartões, faturas e materialização recorrente.
+  - `CatalogDataSource` (220 linhas): Gestão de categorias, itens de despesa, contatos, contas bancárias, formas de pagamento e seeds iniciais.
+  - `FinancialRepositoryImpl` mantido como fachada limpa e transparente (212 linhas), em estrita conformidade com o limite de 600 linhas.
+- **Extensão do Guard Rail de Build `checkFileSize` para Data e Domain**:
+  - Task Gradle `:app:checkFileSize` expandida para validar não apenas `presentation/`, mas também `data/` e `domain/`.
+  - 100% dos arquivos do projeto respeitam o limite de 600 linhas, mantendo a baseline zerada.
+- **Registro Formal de Decisão Técnica (ADR 033)**:
+  - Documentada em ADR a decisão arquitetural dos novos guard rails e o comportamento de âncora para despesas de cartão legadas pré-1.20.
+
+### 🎨 Overhaul do Design System e Nova Arquitetura de Informação (Prompts 28-36)
+
+- **Tokens de Forma, Superfícies e Guard Rail de Formas (Prompt 28)**:
+  - Criação de `PlatformShapes` (small 8dp, medium 12dp, large 16dp, pill e bottomSheet) e `PlatformSurface` (Flat, Tonal, Outlined).
+  - Regra visual do design system: no máximo 1 nível de borda por tela; blocos internos utilizam superfície tonal sutil.
+  - Criação do guard rail Gradle `:app:checkRawShapes`, prevenindo usos de `RoundedCornerShape(n.dp)` crus na interface.
+- **Papéis Semânticos de Cor e Chips (Prompt 29)**:
+  - Papel exclusivo para status: verde para pago, neutro para pendente, âmbar para vence hoje/atenção e vermelho para atrasado.
+  - Natureza do gasto convertida em ponto discreto de 8dp, suprimida da linha quando idêntica à da categoria-mãe.
+  - Unificação de chips de status em torno do `PlatformStatusChip`.
+- **Nova Navegação por Barra Inferior (Prompt 30)**:
+  - Substituição definitiva do `AppDrawer` por barra de navegação inferior com 5 destinos: *Hoje*, *Contas*, *Cartões*, *Análises* e *Mais*.
+  - Unificação de *Registros* e *Pagamentos Planejados* em uma única tela *Contas*, com abas (*Todas | Recorrentes | Parceladas*) e filtros em bottom sheet.
+  - Criação do hub *Mais* para Contatos, Cadastros de apoio, Configurações e Backup.
+- **Tela "Hoje" Racionalizada (Prompt 31)**:
+  - Hero único com valor restante do mês, barra de progresso e linha descritiva de status.
+  - Seção "Precisa de atenção" sempre prioritária (contas atrasadas, vencendo hoje e em até 7 dias) com estado positivo compacto ("Tudo em dia").
+  - "Próximos pagamentos" com limite de 5 itens e atalho "Ver todas" para Contas; contas pagas colapsadas por padrão.
+  - Toggle ágil entre *Lista* e *Calendário* no topo com auto-seleção inteligente do próximo dia com pendências.
+  - KPIs dispostos em grid 2x2 harmonioso sem corte horizontal.
+- **Nova Despesa & Lançamento Rápido com FAB (Prompt 32)**:
+  - Valor no topo em tipografia grande com foco imediato no teclado numérico.
+  - Vencimento posicionado com chips de atalho (*Hoje, Amanhã, Dia 5, Outro*).
+  - Contato/Fornecedor opcional; tipo de compromisso em abas segmentadas; meio de pagamento recolhido por padrão.
+  - FAB contextual na tela inicial abrindo o `QuickExpenseBottomSheet` para lançamento ágil (Valor, Item, toggle Já Paga), com opção de "Mais detalhes" para o formulário completo.
+  - Suporte a Desfazer lançamento (`UndoSaveBill`) via Snackbar com reversão imediata.
+- **Humanização do Glossário e Tom de Voz (Prompt 33)**:
+  - Substituição sistemática de jargões corporativos por termos simples e humanos via `AppStrings` ("Radar de Desembolso" → "Próximos pagamentos", "Rigidez Orçamentária" → "Equilíbrio do orçamento", "Cockpit" → "Sugestões", etc.).
+- **Estatísticas Enxutas com 1 Insight + 4 Cards (Prompt 34)**:
+  - Cada aba de estatísticas (Passado, Presente, Futuro) exibe 1 frase de insight + até 4 cards principais; itens secundários organizados sob botão expansível "Ver mais análises".
+- **Contatos e Itens Simplificados (Prompt 35)**:
+  - Linha da lista de contatos simplificada com subtítulo único legível (`tipo · total em aberto`), reservando detalhes cadastrais para o perfil.
+  - Itens de despesa com ocultação de chip de natureza redundante quando igual à da categoria.
+- **Configurações Agrupadas (Prompt 36)**:
+  - Agrupamento em 4 blocos semânticos (Cadastros, Aparência, Backup e Sobre) e banner de status do último backup.
+- **Registro em ADR 034**:
+  - Documentação completa da nova arquitetura de informação e padrões visuais no ADR 034.
+
+---
+
 ## [1.23.0] - 2026-10-09
 
 ### 🔐 Fortalecimento Criptográfico de Backups (AES-256-GCM v2, AAD, OWASP 600k e Indicador de Força)

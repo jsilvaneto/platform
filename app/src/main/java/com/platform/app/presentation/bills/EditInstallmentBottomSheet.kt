@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -154,7 +156,7 @@ fun EditInstallmentBottomSheet(
                 onValueChange = { title = it },
                 label = { Text("Nome da Conta / Despesa *") },
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -180,7 +182,7 @@ fun EditInstallmentBottomSheet(
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -195,7 +197,7 @@ fun EditInstallmentBottomSheet(
                     .border(
                         1.dp,
                         MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
-                        RoundedCornerShape(10.dp)
+                        PlatformShapes.medium
                     )
                     .clickable {
                         val cal = Calendar.getInstance().apply { timeInMillis = dueDate }
@@ -261,7 +263,7 @@ fun EditInstallmentBottomSheet(
                         }
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
@@ -314,7 +316,7 @@ fun EditInstallmentBottomSheet(
                         )
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = contactExpanded) },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
@@ -365,7 +367,7 @@ fun EditInstallmentBottomSheet(
                         )
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountExpanded) },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
@@ -417,7 +419,7 @@ fun EditInstallmentBottomSheet(
                         )
                     },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentMethodExpanded) },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
@@ -487,7 +489,7 @@ fun EditInstallmentBottomSheet(
             OutlinedButton(
                 onClick = onTogglePayment,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
+                shape = PlatformShapes.medium,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = if (installment.isPaid) SuccessGreen else MaterialTheme.colorScheme.primary
                 )
@@ -511,7 +513,7 @@ fun EditInstallmentBottomSheet(
                 OutlinedButton(
                     onClick = { showDeleteConfirmDialog = true },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Icon(
@@ -541,7 +543,7 @@ fun EditInstallmentBottomSheet(
                     },
                     enabled = title.isNotBlank() && amountCents > 0L,
                     modifier = Modifier.weight(1.5f),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = PlatformShapes.medium,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text(AppStrings.Actions.SAVE_CHANGES, fontWeight = FontWeight.Bold)

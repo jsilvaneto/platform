@@ -1,39 +1,53 @@
 package com.platform.app.presentation.creditcards.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.core.graphics.toColorInt
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
+import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
+import com.platform.app.domain.model.CreditCardWithInvoiceSummary
 import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformCreditCardView
+import com.platform.app.presentation.components.PlatformStatusChip
+import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.BrandPrimaryDark
+import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.UrgentRed
 import com.platform.app.presentation.theme.WarningAmber
 
 
@@ -52,14 +66,14 @@ fun CreditCardItemCard(
     } else 0f
 
     Surface(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = PlatformShapes.large,
         color = cardColor,
         modifier = Modifier
             .width(280.dp)
             .height(180.dp)
             .clickable(onClick = onClick)
             .then(
-                if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, RoundedCornerShape(Dimens.cardCornerRadius))
+                if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, PlatformShapes.large)
                 else Modifier
             )
     ) {
@@ -109,7 +123,7 @@ fun CreditCardItemCard(
                         modifier = Modifier.size(28.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.DeleteOutline,
+                            imageVector = Icons.Default.Delete,
                             contentDescription = AppStrings.Actions.DELETE,
                             tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             modifier = Modifier.size(16.dp)
@@ -181,7 +195,7 @@ fun InvoiceItemCard(
     }
 
     PlatformCard(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius)
+        shape = PlatformShapes.large
     ) {
         Column(
             modifier = Modifier
@@ -246,7 +260,7 @@ fun InvoiceItemCard(
             ) {
                 OutlinedButton(
                     onClick = onViewDetails,
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                    shape = PlatformShapes.medium,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Icon(
@@ -262,7 +276,7 @@ fun InvoiceItemCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = onPay,
-                        shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                        shape = PlatformShapes.medium,
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SuccessGreen,

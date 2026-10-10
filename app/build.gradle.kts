@@ -184,6 +184,12 @@ tasks.register("checkHardcodedStrings") {
             baselineFile.readLines()
                 .map { it.trim() }
                 .filter { it.isNotBlank() && !it.startsWith("#") }
+                .map { line ->
+                    val parts = line.split(": ", limit = 2)
+                    val filePath = parts[0].substringBeforeLast(":")
+                    val content = if (parts.size > 1) parts[1] else ""
+                    "$filePath::: $content"
+                }
                 .toSet()
         } else {
             emptySet()
@@ -199,8 +205,10 @@ tasks.register("checkHardcodedStrings") {
                         if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
                             if (hardcodedPattern.containsMatchIn(line)) {
                                 val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
-                                val entry = "$relativePath:${index + 1}: $trimmed"
-                                currentViolations.add(entry)
+                                val key = "$relativePath::: $trimmed"
+                                if (key !in baselineEntries) {
+                                    currentViolations.add("$relativePath:${index + 1}: $trimmed")
+                                }
                             }
                         }
                     }
@@ -208,7 +216,7 @@ tasks.register("checkHardcodedStrings") {
             }
         }
 
-        val newViolations = currentViolations.filterNot { it in baselineEntries }
+        val newViolations = currentViolations
 
         if (newViolations.isNotEmpty()) {
             val message = buildString {
@@ -227,9 +235,13 @@ tasks.register("checkHardcodedStrings") {
 
 tasks.register("checkFileSize") {
     group = "verification"
-    description = "Checks that Composable presentation files respect the maximum limit of ~600 lines"
+    description = "Checks that presentation, data, and domain Kotlin files respect the maximum limit of ~600 lines"
     doLast {
-        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val targetDirs = listOf(
+            file("src/main/java/com/platform/app/presentation"),
+            file("src/main/java/com/platform/app/data"),
+            file("src/main/java/com/platform/app/domain")
+        )
         val baselineFile = rootProject.file("config/file-size-baseline.txt")
         val maxLines = 600
 
@@ -245,13 +257,17 @@ tasks.register("checkFileSize") {
 
         val violations = mutableListOf<String>()
 
-        presentationDir.walkTopDown().forEach { file ->
-            if (file.isFile && file.extension == "kt") {
-                val lineCount = file.readLines().size
-                if (lineCount > maxLines) {
-                    val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
-                    if (relativePath !in baselineFiles) {
-                        violations.add("$relativePath ($lineCount linhas > $maxLines)")
+        targetDirs.forEach { dir ->
+            if (dir.exists()) {
+                dir.walkTopDown().forEach { file ->
+                    if (file.isFile && file.extension == "kt") {
+                        val lineCount = file.readLines().size
+                        if (lineCount > maxLines) {
+                            val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+                            if (relativePath !in baselineFiles) {
+                                violations.add("$relativePath ($lineCount linhas > $maxLines)")
+                            }
+                        }
                     }
                 }
             }
@@ -259,20 +275,73 @@ tasks.register("checkFileSize") {
 
         if (violations.isNotEmpty()) {
             val message = buildString {
-                appendLine("FAILED: Encontrado(s) ${violations.size} arquivo(s) Composable excedendo o limite de $maxLines linhas:")
+                appendLine("FAILED: Encontrado(s) ${violations.size} arquivo(s) em presentation/, data/ ou domain/ excedendo o limite de $maxLines linhas:")
                 violations.forEach { appendLine("  - $it") }
                 appendLine("\nRegra Arquitetural (AGENT_RULES.md / coding_standards.md):")
-                appendLine("Máximo de ~600 linhas por arquivo Composable.")
-                appendLine("Decomponha o arquivo extraindo componentes para o subpacote components/ da feature correspondente.")
+                appendLine("Máximo de ~600 linhas por arquivo em presentation, data e domain.")
+                appendLine("Decomponha o arquivo extraindo componentes ou agregados especializados.")
             }
             throw GradleException(message)
         } else {
-            println("checkFileSize: Todos os novos arquivos Composable respeitam o teto de $maxLines linhas (baseline ativa para legado).")
+            println("checkFileSize: Todos os arquivos em presentation/, data/ e domain/ respeitam o teto de $maxLines linhas (baseline ativa para legado).")
+        }
+    }
+}
+
+tasks.register("checkRawShapes") {
+    group = "verification"
+    description = "Checks that no raw RoundedCornerShape are used outside presentation/theme, enforcing PlatformShapes"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val themeDir = file("src/main/java/com/platform/app/presentation/theme")
+        val baselineFile = rootProject.file("config/raw-shapes-baseline.txt")
+        val rawShapePattern = Regex("""\bRoundedCornerShape\(""")
+
+        val baselineEntries = if (baselineFile.exists()) {
+            baselineFile.readLines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() && !it.startsWith("#") }
+                .toSet()
+        } else {
+            emptySet()
+        }
+
+        val currentViolations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.extension == "kt" && !file.startsWith(themeDir) && file.name != "PlatformShapes.kt") {
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        val trimmed = line.trim()
+                        if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
+                            if (rawShapePattern.containsMatchIn(line)) {
+                                val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+                                currentViolations.add("$relativePath:${index + 1}: $trimmed")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val newViolations = currentViolations.filterNot { it in baselineEntries }
+
+        if (newViolations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontradas ${newViolations.size} nova(s) forma(s) RoundedCornerShape cruas fora de presentation/theme:")
+                newViolations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra de Design System:")
+                appendLine("Formas cruas RoundedCornerShape(...) são proibidas na presentation fora de theme/.")
+                appendLine("Utilize tokens semânticos de PlatformShapes (small, medium, large, pill).")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkRawShapes: Todas as telas respeitam os tokens de PlatformShapes (${currentViolations.size} na baseline).")
         }
     }
 }
 
 tasks.named("preBuild") {
-    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize")
+    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes")
 }
 

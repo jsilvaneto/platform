@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,6 +38,8 @@ import com.platform.app.domain.model.RecurrenceEndType
 import com.platform.app.domain.model.RecurrenceFrequency
 import com.platform.app.presentation.bills.NewExpenseUiState
 import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformSegmentedTabs
+import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.theme.Dimens
 import java.util.Calendar
 
@@ -53,7 +57,7 @@ fun ExpenseCommitmentTypeCard(
     val context = LocalContext.current
 
     PlatformCard(
-        shape = RoundedCornerShape(Dimens.cardCornerRadius),
+        shape = PlatformShapes.large,
         modifier = modifier
     ) {
         Column(
@@ -69,40 +73,25 @@ fun ExpenseCommitmentTypeCard(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilterChip(
-                    selected = uiState.expenseType == BillType.SINGLE,
-                    onClick = { onExpenseTypeChange(BillType.SINGLE) },
-                    label = { Text("À Vista") },
-                    leadingIcon = if (uiState.expenseType == BillType.SINGLE) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
-
-                FilterChip(
-                    selected = uiState.expenseType == BillType.INSTALLMENT,
-                    onClick = { onExpenseTypeChange(BillType.INSTALLMENT) },
-                    label = { Text("Parcelado") },
-                    leadingIcon = if (uiState.expenseType == BillType.INSTALLMENT) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
-
-                FilterChip(
-                    selected = uiState.expenseType == BillType.RECURRING,
-                    onClick = { onExpenseTypeChange(BillType.RECURRING) },
-                    label = { Text("Recorrente") },
-                    leadingIcon = if (uiState.expenseType == BillType.RECURRING) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                    } else null,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            PlatformSegmentedTabs(
+                items = listOf(
+                    SegmentedTabItem("À Vista"),
+                    SegmentedTabItem("Parcelado"),
+                    SegmentedTabItem("Recorrente")
+                ),
+                selectedIndex = when (uiState.expenseType) {
+                    BillType.SINGLE -> 0
+                    BillType.INSTALLMENT -> 1
+                    BillType.RECURRING -> 2
+                },
+                onTabSelected = { index ->
+                    when (index) {
+                        0 -> onExpenseTypeChange(BillType.SINGLE)
+                        1 -> onExpenseTypeChange(BillType.INSTALLMENT)
+                        2 -> onExpenseTypeChange(BillType.RECURRING)
+                    }
+                }
+            )
 
             // Se for Parcelado: Quantidade de Parcelas
             if (uiState.expenseType == BillType.INSTALLMENT) {
@@ -126,7 +115,7 @@ fun ExpenseCommitmentTypeCard(
                         }
 
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = PlatformShapes.small,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         ) {
@@ -263,7 +252,7 @@ fun ExpenseCommitmentTypeCard(
                 when (uiState.recurrenceEndType) {
                     RecurrenceEndType.FOREVER -> {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = PlatformShapes.small,
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -317,7 +306,7 @@ fun ExpenseCommitmentTypeCard(
                                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 ),
-                                shape = RoundedCornerShape(Dimens.buttonCornerRadius)
+                                shape = PlatformShapes.medium
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.CalendarToday,
@@ -350,7 +339,7 @@ fun ExpenseCommitmentTypeCard(
                                 }
 
                                 Surface(
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = PlatformShapes.small,
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.padding(horizontal = 4.dp)
                                 ) {

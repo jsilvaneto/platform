@@ -38,13 +38,13 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.PayableItem
+import com.platform.app.presentation.bills.components.QuickExpenseBottomSheet
 import com.platform.app.presentation.components.ConfirmPaymentDialog
 import com.platform.app.presentation.home.components.GlobalOverdueAlertBanner
 import com.platform.app.presentation.home.components.HomeTopBar
 import com.platform.app.presentation.home.components.HomeViewModeSelector
 import com.platform.app.presentation.home.components.renderCalendarView
-import com.platform.app.presentation.home.components.renderMonthlyView
-import com.platform.app.presentation.home.components.renderPanoramaView
+import com.platform.app.presentation.home.components.renderTodayListView
 import com.platform.app.presentation.theme.Dimens
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -53,13 +53,15 @@ import kotlinx.coroutines.flow.SharedFlow
 fun HomeScreen(
     uiState: HomeUiState,
     onAction: (HomeUiAction) -> Unit,
-    onOpenDrawer: () -> Unit,
     onNavigateToNewExpense: () -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateToBills: () -> Unit = {},
+    onOpenDrawer: (() -> Unit)? = null,
     uiEffect: SharedFlow<HomeUiEffect>? = null
 ) {
     var isPrivate by rememberSaveable { mutableStateOf(false) }
     var showMonthPickerSheet by remember { mutableStateOf(false) }
+    var showQuickExpenseSheet by remember { mutableStateOf(false) }
     val monthPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val haptic = LocalHapticFeedback.current
     val snackbarHostState = remember { SnackbarHostState() }
@@ -107,7 +109,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToNewExpense,
+                onClick = { showQuickExpenseSheet = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape
@@ -166,12 +168,14 @@ fun HomeScreen(
 
                     // Renderização de acordo com o modo selecionado
                     when (uiState.viewMode) {
-                        HomeViewMode.PANORAMA -> {
-                            renderPanoramaView(
+                        HomeViewMode.LIST -> {
+                            renderTodayListView(
                                 uiState = uiState,
                                 isPrivate = isPrivate,
-                                onPay = handlePayItem,
-                                onAddExpense = onNavigateToNewExpense
+                                onPayItem = handlePayItem,
+                                onAddExpense = onNavigateToNewExpense,
+                                onNavigateToBills = onNavigateToBills,
+                                onAction = onAction
                             )
                         }
                         HomeViewMode.CALENDAR -> {
@@ -182,19 +186,10 @@ fun HomeScreen(
                                 onPay = handlePayItem
                             )
                         }
-                        HomeViewMode.MONTHLY -> {
-                            renderMonthlyView(
-                                uiState = uiState,
-                                isPrivate = isPrivate,
-                                onPayItem = handlePayItem,
-                                onAddExpense = onNavigateToNewExpense,
-                                onAction = onAction
-                            )
-                        }
                     }
 
                     item {
-                        Spacer(modifier = Modifier.height(72.dp))
+                        Spacer(modifier = Modifier.height(88.dp))
                     }
                 }
             }
@@ -208,6 +203,21 @@ fun HomeScreen(
             onDismiss = { showMonthPickerSheet = false },
             onMonthSelected = { monthMillis ->
                 onAction(HomeUiAction.SelectMonth(monthMillis))
+            }
+        )
+    }
+
+    if (showQuickExpenseSheet) {
+        QuickExpenseBottomSheet(
+            expenseItems = uiState.allExpenseItems,
+            onDismiss = { showQuickExpenseSheet = false },
+            onConfirm = { amountCents, expenseItemId, isPaid ->
+                onAction(HomeUiAction.SaveQuickExpense(amountCents, expenseItemId, isPaid))
+                showQuickExpenseSheet = false
+            },
+            onMoreDetails = {
+                showQuickExpenseSheet = false
+                onNavigateToNewExpense()
             }
         )
     }

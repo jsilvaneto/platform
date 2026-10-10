@@ -1,0 +1,9 @@
+# Baseline para RoundedCornerShape fora de theme/
+# Contém formas assimétricas específicas de visualizações (topStart/topEnd de miniaturas de temas e bottom sheets)
+src/main/java/com/platform/app/presentation/components/PlatformProgressBar.kt:41: val shape = RoundedCornerShape(cornerRadius)
+src/main/java/com/platform/app/presentation/expenseitems/components/AddEditExpenseItemBottomSheet.kt:236: shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+src/main/java/com/platform/app/presentation/settings/SettingsScreen.kt:250: shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:314: .background(ThemePreviewColors.ClassicAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:355: .background(ThemePreviewColors.ModernV2Bar2, RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:389: .background(ThemePreviewColors.EmeraldAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:418: .background(ThemePreviewColors.ObsidianAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))

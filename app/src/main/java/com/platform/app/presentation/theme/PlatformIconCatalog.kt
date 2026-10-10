@@ -213,15 +213,15 @@ fun PlatformIconPicker(
                 Box(
                     modifier = Modifier
                         .size(34.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(PlatformShapes.small)
                         .background(
                             color = if (isSelected) activeColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = PlatformShapes.small
                         )
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
                             color = if (isSelected) activeColor else Color.Transparent,
-                            shape = RoundedCornerShape(8.dp)
+                            shape = PlatformShapes.small
                         )
                         .clickable { onIconSelected(item.key) },
                     contentAlignment = Alignment.Center

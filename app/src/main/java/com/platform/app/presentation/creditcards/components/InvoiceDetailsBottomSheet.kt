@@ -1,5 +1,7 @@
 package com.platform.app.presentation.creditcards.components
 
+import com.platform.app.presentation.theme.PlatformShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,7 +9,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LockReset
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,8 +23,12 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
+import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
+import com.platform.app.presentation.components.PlatformStatusChip
+import com.platform.app.presentation.components.StatusChipType
+import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.WarningAmber
 
@@ -72,7 +80,7 @@ fun InvoiceDetailsBottomSheet(
 
             // Total da Fatura Card
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = PlatformShapes.medium,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -119,7 +127,7 @@ fun InvoiceDetailsBottomSheet(
 
             if (installments.isEmpty()) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -140,7 +148,7 @@ fun InvoiceDetailsBottomSheet(
                 ) {
                     items(installments, key = { it.id }) { item ->
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = PlatformShapes.small,
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -184,7 +192,7 @@ fun InvoiceDetailsBottomSheet(
                         onPay()
                         onDismiss()
                     },
-                    shape = RoundedCornerShape(Dimens.buttonCornerRadius),
+                    shape = PlatformShapes.medium,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = SuccessGreen,
                         contentColor = MaterialTheme.colorScheme.surface

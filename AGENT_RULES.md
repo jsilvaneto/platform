@@ -63,6 +63,9 @@ graph TD
 9. **Modularidade e Limite de Tamanho de Arquivos Composable (Token Optimization)**:
    - Máximo de ~600 linhas por arquivo Composable. Arquivos que ultrapassarem esse limite devem ser decompostos, extraindo seções, cards, diálogos e bottom sheets para o subpacote `components/` da própria tela (ex: `presentation/<feature>/components/`).
    - Isola escopos de recomposição, previne acoplamento e otimiza o consumo de tokens/contexto nas manutenções.
+10. **Codificação Estrita de Arquivos Markdown (UTF-8 sem BOM)**:
+    - Toda e qualquer gravação ou edição em arquivos `.md` (incluindo `CHANGELOG.md`, `AGENT_RULES.md`, `.ai/STATUS.md`, ADRs e documentações em geral) DEVE forçar estritamente a codificação **UTF-8 sem BOM**.
+    - Em comandos ou scripts (especialmente em ambientes PowerShell ou Windows), é terminantemente proibido utilizar `Out-File` ou redirects (`>`) sem o parâmetro explícito `-Encoding utf8`. Em scripts Python, utilize sempre `encoding="utf-8"`. Isso previne contaminação por mojibake e reinterpretações sucessivas de caracteres acentuados.
 
 ---
 

@@ -28,7 +28,7 @@ class AppStringsTest {
     fun `nature strings match 50-30-20 domain standards`() {
         assertEquals("Obrigatório", AppStrings.Nature.MANDATORY)
         assertEquals("Necessário", AppStrings.Nature.NECESSARY)
-        assertEquals("Deseja", AppStrings.Nature.WANTS)
+        assertEquals("Desejo", AppStrings.Nature.WANTS)
         assertEquals("Nenhum", AppStrings.Nature.NONE)
         assertEquals("Poupança", AppStrings.Nature.SAVINGS)
         assertEquals("Natureza do Gasto", AppStrings.Nature.LABEL_NATURE)

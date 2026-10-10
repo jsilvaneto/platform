@@ -154,7 +154,7 @@ fun CreateBackupPasswordDialog(
         },
         title = {
             Text(
-                text = if (isSharing) "Proteger Compartilhamento" else "Criptografar Backup",
+                text = if (isSharing) AppStrings.Dialogs.PROTECT_SHARE_TITLE else AppStrings.Dialogs.ENCRYPT_BACKUP_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -162,7 +162,7 @@ fun CreateBackupPasswordDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Defina uma senha segura para proteger seus dados financeiros com criptografia simétrica AES-256 (PBKDF2).\n\n⚠️ Esta senha será estritamente necessária para restaurar este arquivo.",
+                    text = AppStrings.Dialogs.BACKUP_ENCRYPTION_DESC,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -170,7 +170,7 @@ fun CreateBackupPasswordDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Senha do backup (mínimo 8 caracteres)") },
+                    label = { Text(AppStrings.Dialogs.BACKUP_PASSWORD_LABEL) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -200,12 +200,12 @@ fun CreateBackupPasswordDialog(
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar Senha") },
+                    label = { Text(AppStrings.Dialogs.CONFIRM_PASSWORD_LABEL) },
                     singleLine = true,
                     isError = confirmPassword.isNotBlank() && !isMatching,
                     supportingText = {
                         if (confirmPassword.isNotBlank() && !isMatching) {
-                            Text("As senhas não coincidem.", color = MaterialTheme.colorScheme.error)
+                            Text(AppStrings.Dialogs.PASSWORDS_DONT_MATCH, color = MaterialTheme.colorScheme.error)
                         }
                     },
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -228,7 +228,7 @@ fun CreateBackupPasswordDialog(
                 enabled = isValid,
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text(if (isSharing) "Criptografar e Enviar" else "Salvar Arquivo")
+                Text(if (isSharing) AppStrings.Dialogs.ENCRYPT_AND_SEND else AppStrings.Dialogs.SAVE_FILE)
             }
         },
         dismissButton = {
@@ -270,7 +270,7 @@ fun RestorePasswordDialog(
         },
         title = {
             Text(
-                text = "Descriptografar Backup",
+                text = AppStrings.Dialogs.DECRYPT_BACKUP_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -278,7 +278,7 @@ fun RestorePasswordDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    text = "Informe a senha definida no momento da geração deste backup para desbloquear e restaurar os dados com segurança.",
+                    text = AppStrings.Dialogs.DECRYPT_BACKUP_DESC,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -286,7 +286,7 @@ fun RestorePasswordDialog(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Senha do Backup") },
+                    label = { Text(AppStrings.Dialogs.DECRYPT_PASSWORD_LABEL) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -308,7 +308,7 @@ fun RestorePasswordDialog(
                 enabled = password.isNotBlank(),
                 shape = RoundedCornerShape(10.dp)
             ) {
-                Text("Descriptografar e Restaurar")
+                Text(AppStrings.Dialogs.DECRYPT_AND_RESTORE)
             }
         },
         dismissButton = {

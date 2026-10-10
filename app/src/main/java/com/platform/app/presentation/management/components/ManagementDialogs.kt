@@ -67,7 +67,7 @@ fun AddEditAccountDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (account == null) "Nova Conta" else "Editar Conta",
+                text = if (account == null) AppStrings.Dialogs.NEW_ACCOUNT_TITLE else AppStrings.Dialogs.EDIT_ACCOUNT_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -77,7 +77,7 @@ fun AddEditAccountDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Conta (ex: Nubank, Itaú)", style = MaterialTheme.typography.bodySmall) },
+                    label = { Text(AppStrings.Dialogs.ACCOUNT_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -89,7 +89,7 @@ fun AddEditAccountDialog(
                         value = selectedType.displayName,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Tipo de Conta", style = MaterialTheme.typography.bodySmall) },
+                        label = { Text(AppStrings.Dialogs.ACCOUNT_TYPE_LABEL, style = MaterialTheme.typography.bodySmall) },
                         trailingIcon = {
                             Icon(
                                 imageVector = if (typeDropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -221,7 +221,7 @@ fun AddEditPaymentMethodDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (method == null) "Nova Forma de Pagamento" else "Editar Forma de Pagamento",
+                text = if (method == null) AppStrings.Dialogs.NEW_PAYMENT_METHOD_TITLE else AppStrings.Dialogs.EDIT_PAYMENT_METHOD_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -234,7 +234,7 @@ fun AddEditPaymentMethodDialog(
                         value = if (isCustomName) "Personalizado: ${name.ifBlank { "Outro" }}" else selectedPreset,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Tipo de Pagamento", style = MaterialTheme.typography.bodySmall) },
+                        label = { Text(AppStrings.Dialogs.PAYMENT_TYPE_LABEL, style = MaterialTheme.typography.bodySmall) },
                         trailingIcon = {
                             Icon(
                                 imageVector = if (dropdownExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -311,7 +311,7 @@ fun AddEditPaymentMethodDialog(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Nome Personalizado (ex: Vale Alimentação)", style = MaterialTheme.typography.bodySmall) },
+                        label = { Text(AppStrings.Dialogs.CUSTOM_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                         singleLine = true,
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -367,7 +367,7 @@ fun AddEditCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (category == null) "Nova Categoria" else "Editar Categoria",
+                text = if (category == null) AppStrings.Dialogs.NEW_CATEGORY_TITLE else AppStrings.Dialogs.EDIT_CATEGORY_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -377,7 +377,7 @@ fun AddEditCategoryDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Categoria (ex: Alimentação, Lazer)", style = MaterialTheme.typography.bodySmall) },
+                    label = { Text(AppStrings.Dialogs.CATEGORY_NAME_LABEL, style = MaterialTheme.typography.bodySmall) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()

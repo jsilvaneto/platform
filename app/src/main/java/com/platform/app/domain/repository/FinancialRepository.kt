@@ -20,14 +20,12 @@ interface FinancialRepository {
     fun getCategories(): Flow<List<Category>>
     suspend fun saveCategory(category: Category)
     suspend fun deleteCategory(categoryId: String)
-    suspend fun seedInitialCategoriesIfEmpty()
 
     // Expense Items (replaces Subcategories)
     fun getExpenseItems(): Flow<List<ExpenseItem>>
     fun getExpenseItemsByCategory(categoryId: String): Flow<List<ExpenseItem>>
     suspend fun saveExpenseItem(item: ExpenseItem)
     suspend fun deleteExpenseItem(itemId: String)
-    suspend fun seedInitialExpenseItemsIfEmpty()
 
     // Credit Cards & Invoices
     fun getCreditCards(): Flow<List<CreditCard>>
@@ -49,19 +47,16 @@ interface FinancialRepository {
     fun getContactById(contactId: String): Flow<Contact?>
     suspend fun saveContact(contact: Contact)
     suspend fun deleteContact(contactId: String)
-    suspend fun seedInitialContactsIfEmpty()
 
     // Financial Accounts
     fun getFinancialAccounts(): Flow<List<FinancialAccount>>
     suspend fun saveFinancialAccount(account: FinancialAccount)
     suspend fun deleteFinancialAccount(accountId: String)
-    suspend fun seedInitialFinancialAccountsIfEmpty()
 
     // Payment Methods
     fun getPaymentMethods(): Flow<List<PaymentMethod>>
     suspend fun savePaymentMethod(method: PaymentMethod)
     suspend fun deletePaymentMethod(methodId: String)
-    suspend fun seedInitialPaymentMethodsIfEmpty()
 
     // Bills & Installments
     fun getBills(): Flow<List<Bill>>

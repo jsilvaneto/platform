@@ -136,7 +136,7 @@ fun EditBillMonthlyAmountDialog(
         title = {
             Column {
                 Text(
-                    text = "Alterar Valor Mensal",
+                    text = AppStrings.Dialogs.CHANGE_MONTHLY_AMOUNT_TITLE,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -166,7 +166,7 @@ fun EditBillMonthlyAmountDialog(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Apenas as próximas cobranças pendentes serão atualizadas. Pagamentos já realizados não serão alterados.",
+                            text = AppStrings.Dialogs.RECURRING_FUTURE_UPDATE_INFO,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -187,15 +187,15 @@ fun EditBillMonthlyAmountDialog(
                         val filtered = raw.filter { it.isDigit() || it == ',' || it == '.' }
                         amountText = filtered
                     },
-                    label = { Text("Novo valor mensal (R$)") },
-                    placeholder = { Text("Ex: 49,90") },
+                    label = { Text(AppStrings.Dialogs.NEW_MONTHLY_AMOUNT_LABEL) },
+                    placeholder = { Text(AppStrings.Dialogs.AMOUNT_PLACEHOLDER_SAMPLE) },
                     isError = amountText.isNotBlank() && !isValid,
                     supportingText = {
                         when {
                             amountText.isNotBlank() && !isValid ->
-                                Text("Informe um valor válido", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.Dialogs.INVALID_AMOUNT, color = MaterialTheme.colorScheme.error)
                             isUnchanged && isValid ->
-                                Text("Igual ao valor atual", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(AppStrings.Dialogs.SAME_AS_CURRENT_AMOUNT, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             isValid ->
                                 Text(
                                     "Novo valor: ${CurrencyUtils.formatCentsToCurrency(parsedCents!!)}/mês",
@@ -214,7 +214,7 @@ fun EditBillMonthlyAmountDialog(
                 onClick = { parsedCents?.let { onConfirm(it) } },
                 enabled = isValid && !isUnchanged
             ) {
-                Text("Atualizar Próximas Cobranças")
+                Text(AppStrings.Dialogs.UPDATE_NEXT_CHARGES)
             }
         },
         dismissButton = {

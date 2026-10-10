@@ -11,8 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import com.platform.app.presentation.common.AppStrings
 
 @Composable
-fun BatchDeleteDialog(
-    selectedCount: Int,
+fun DeleteBillConfirmDialog(
+    billTitle: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -20,14 +20,14 @@ fun BatchDeleteDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = AppStrings.Dialogs.DELETE_SELECTED_TITLE,
+                text = AppStrings.Dialogs.DELETE_REGISTRATION_TITLE,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
         },
         text = {
             Text(
-                text = "Tem certeza de que deseja excluir as $selectedCount contas selecionadas?",
+                text = "Tem certeza de que deseja excluir '$billTitle'? Esta ação removerá a conta e suas parcelas do histórico.",
                 style = MaterialTheme.typography.bodyMedium
             )
         },

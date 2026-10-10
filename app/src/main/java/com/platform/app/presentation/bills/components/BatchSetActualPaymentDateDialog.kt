@@ -76,7 +76,7 @@ fun BatchSetActualPaymentDateDialog(
                 }
                 Column {
                     Text(
-                        text = "Revisar Baixas",
+                        text = AppStrings.Dialogs.REVIEW_SETTLEMENTS_TITLE,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -97,7 +97,7 @@ fun BatchSetActualPaymentDateDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Selecione a data real em que os pagamentos foram efetuados. As parcelas selecionadas passarão a ser contabilizadas no indicador de pontualidade.",
+                    text = AppStrings.Dialogs.REVIEW_SETTLEMENTS_DESC,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -107,7 +107,7 @@ fun BatchSetActualPaymentDateDialog(
                     FilterChip(
                         selected = isSelectedToday,
                         onClick = { selectedPaymentDate = System.currentTimeMillis() },
-                        label = { Text("Hoje", style = MaterialTheme.typography.labelMedium) },
+                        label = { Text(AppStrings.Dialogs.TODAY, style = MaterialTheme.typography.labelMedium) },
                         shape = RoundedCornerShape(8.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -156,7 +156,7 @@ fun BatchSetActualPaymentDateDialog(
                         )
                         Column {
                             Text(
-                                text = "Data Real de Pagamento",
+                                text = AppStrings.Dialogs.ACTUAL_PAYMENT_DATE_ALT,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

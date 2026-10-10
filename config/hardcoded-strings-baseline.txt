@@ -1,0 +1,124 @@
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:155: label = { Text("Nome da Conta / Despesa *") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:173: label = { Text("Valor (R$) *") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:251: label = { Text("Categoria") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:308: label = { Text("Favorecido / Fornecedor") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:332: text = { Text("Nenhum") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:359: label = { Text("Conta de Débito / Banco") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:383: text = { Text("Nenhuma") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:410: label = { Text("Forma de Pagamento") },
+src/main/java/com/platform/app/presentation/bills/EditInstallmentBottomSheet.kt:435: text = { Text("Nenhuma") },
+src/main/java/com/platform/app/presentation/bills/NewExpenseScreen.kt:165: label = { Text("Descrição / Detalhe Específico") },
+src/main/java/com/platform/app/presentation/bills/NewExpenseScreen.kt:166: placeholder = { Text("Ex: Compras no Carrefour, troca de filtro") },
+src/main/java/com/platform/app/presentation/bills/components/BillsFilterBar.kt:76: text = { Text("Todos os Anos") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:125: Text("—", fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:144: Text("+", fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:179: label = { Text("Diariamente") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:188: label = { Text("Semanalmente") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:203: label = { Text("Mensalmente") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:212: label = { Text("Anualmente") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:236: label = { Text("Para sempre") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:245: label = { Text("Até uma data") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:256: label = { Text("Por número de eventos") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:328: Text("Alterar Data Final")
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:349: Text("—", fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:368: Text("+", fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:79: label = { Text("À Vista") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:89: label = { Text("Parcelado") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseCommitmentTypeCard.kt:99: label = { Text("Recorrente") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseItemAndAmountCard.kt:112: text = { Text("Nenhum item cadastrado") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseItemAndAmountCard.kt:229: label = { Text("Valor da Despesa *") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseItemAndAmountCard.kt:83: label = { Text("Item de Despesa * (Obrigatório)") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseItemAndAmountCard.kt:84: placeholder = { Text("Selecione o item categorizado") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseItemAndAmountCard.kt:99: { Text("Item é obrigatório para classificar a despesa", color = MaterialTheme.colorScheme.error) }
+src/main/java/com/platform/app/presentation/bills/components/ExpensePaymentMethodCard.kt:117: label = { Text("Cartão de Crédito *") },
+src/main/java/com/platform/app/presentation/bills/components/ExpensePaymentMethodCard.kt:187: label = { Text("Forma de Pagamento (PIX, Boleto, etc.)") },
+src/main/java/com/platform/app/presentation/bills/components/ExpensePaymentMethodCard.kt:236: label = { Text("Conta Financeira / Banco") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseRecipientAndDueDateCard.kt:102: { Text("Contato é obrigatório no lançamento", color = MaterialTheme.colorScheme.error) }
+src/main/java/com/platform/app/presentation/bills/components/ExpenseRecipientAndDueDateCard.kt:115: text = { Text("Nenhum contato cadastrado") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseRecipientAndDueDateCard.kt:197: Text("Alterar Data")
+src/main/java/com/platform/app/presentation/bills/components/ExpenseRecipientAndDueDateCard.kt:90: label = { Text("Contato / Fornecedor *") },
+src/main/java/com/platform/app/presentation/bills/components/ExpenseRecipientAndDueDateCard.kt:91: placeholder = { Text("Selecione o favorecido") },
+src/main/java/com/platform/app/presentation/budgets/BudgetsScreen.kt:434: Text("📊", style = MaterialTheme.typography.headlineLarge)
+src/main/java/com/platform/app/presentation/budgets/BudgetsScreen.kt:453: Text("Criar Primeiro Teto")
+src/main/java/com/platform/app/presentation/budgets/components/AddEditBudgetDialog.kt:37: Text("Selecione a Categoria:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/budgets/components/AddEditBudgetDialog.kt:47: label = { Text("Geral") }
+src/main/java/com/platform/app/presentation/budgets/components/AddEditBudgetDialog.kt:66: label = { Text("Limite Mensal Máximo (R$)") },
+src/main/java/com/platform/app/presentation/budgets/components/BudgetDetailBottomSheet.kt:143: text = { Text("Editar Orçamento") },
+src/main/java/com/platform/app/presentation/budgets/components/BudgetDetailBottomSheet.kt:158: Text("Excluir Orçamento", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/contacts/ContactDetailScreen.kt:119: title = { Text("Detalhes do Contato") },
+src/main/java/com/platform/app/presentation/contacts/ContactDetailScreen.kt:143: text = { Text("Editar Contato") },
+src/main/java/com/platform/app/presentation/contacts/ContactDetailScreen.kt:157: text = { Text("Excluir Contato", color = MaterialTheme.colorScheme.error) },
+src/main/java/com/platform/app/presentation/contacts/ContactDetailScreen.kt:214: text = { Text("Registros (${details.bills.size})") }
+src/main/java/com/platform/app/presentation/contacts/ContactDetailScreen.kt:219: text = { Text("Planejados (${details.plannedInstallments.size})") }
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:192: label = { Text("Nome Completo / Razão Social *") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:206: label = { Text("Telefone / Celular") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:217: label = { Text("E-mail") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:243: label = { Text("CEP (busca automática ao digitar)") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:244: placeholder = { Text("Ex: 01001-000") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:273: label = { Text("Logradouro (Rua, Avenida, Praça)") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:288: label = { Text("Número") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:289: placeholder = { Text("Ex: 123, S/N") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:298: label = { Text("Complemento") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:299: placeholder = { Text("Apto 42, Bloco B") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:314: label = { Text("Bairro") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:323: label = { Text("Cidade") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:338: label = { Text("Estado (UF)") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:339: placeholder = { Text("Ex: SP") },
+src/main/java/com/platform/app/presentation/contacts/components/AddContactBottomSheet.kt:348: label = { Text("País") },
+src/main/java/com/platform/app/presentation/creditcards/CreditCardsScreen.kt:202: Text("Cadastrar primeiro cartão")
+src/main/java/com/platform/app/presentation/creditcards/CreditCardsScreen.kt:398: title = { Text("Excluir Cartão de Crédito") },
+src/main/java/com/platform/app/presentation/creditcards/CreditCardsScreen.kt:425: Text("Tem certeza de que deseja excluir este cartão de crédito?")
+src/main/java/com/platform/app/presentation/creditcards/CreditCardsScreen.kt:433: Text("Sim, Excluir")
+src/main/java/com/platform/app/presentation/creditcards/components/CardFormBottomSheet.kt:106: label = { Text("Dia Corte (1-31) *") },
+src/main/java/com/platform/app/presentation/creditcards/components/CardFormBottomSheet.kt:115: label = { Text("Dia Venc. (1-31) *") },
+src/main/java/com/platform/app/presentation/creditcards/components/CardFormBottomSheet.kt:76: label = { Text("Nome do Cartão *") },
+src/main/java/com/platform/app/presentation/creditcards/components/CardFormBottomSheet.kt:77: placeholder = { Text("Ex: Nubank Mastercard, Unique Visa") },
+src/main/java/com/platform/app/presentation/creditcards/components/CardFormBottomSheet.kt:92: label = { Text("Limite Total *") },
+src/main/java/com/platform/app/presentation/creditcards/components/CreditCardItemCards.kt:258: Text("Ver Compras", style = MaterialTheme.typography.labelMedium)
+src/main/java/com/platform/app/presentation/creditcards/components/CreditCardItemCards.kt:278: Text("Liquidar", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+src/main/java/com/platform/app/presentation/creditcards/components/InvoiceDetailsBottomSheet.kt:198: Text("Liquidar Fatura Agora", fontWeight = FontWeight.Bold)
+src/main/java/com/platform/app/presentation/expenseitems/ExpenseItemsScreen.kt:146: label = { Text("Todas ($totalItemsCount)") }
+src/main/java/com/platform/app/presentation/expenseitems/ExpenseItemsScreen.kt:161: label = { Text("Buscar Categoria...") }
+src/main/java/com/platform/app/presentation/expenseitems/ExpenseItemsScreen.kt:181: label = { Text("${cat.name} ($count)") }
+src/main/java/com/platform/app/presentation/expenseitems/components/AddEditExpenseItemBottomSheet.kt:76: label = { Text("Nome do Item (ex: Supermercado, Internet)") },
+src/main/java/com/platform/app/presentation/expenseitems/components/ExpenseItemDetailBottomSheet.kt:104: text = { Text("Editar Item") },
+src/main/java/com/platform/app/presentation/expenseitems/components/ExpenseItemDetailBottomSheet.kt:119: Text("Excluir Item", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/expenseitems/components/ExpenseItemDetailBottomSheet.kt:231: Text("Editar Item")
+src/main/java/com/platform/app/presentation/goals/GoalsScreen.kt:427: Text("🎯", style = MaterialTheme.typography.headlineLarge)
+src/main/java/com/platform/app/presentation/goals/GoalsScreen.kt:446: Text("Criar Primeira Meta")
+src/main/java/com/platform/app/presentation/goals/components/GoalDetailBottomSheet.kt:117: text = { Text("Adicionar Aporte") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDetailBottomSheet.kt:131: text = { Text("Editar Meta") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDetailBottomSheet.kt:146: Text("Excluir Meta", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:109: title = { Text("Aporte em '${goal.name}'") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:121: label = { Text("Valor do Aporte (R$)") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:140: Text("Confirmar Aporte")
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:38: label = { Text("Nome da Meta (ex: Reserva, Viagem, Carro)") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:47: label = { Text("Valor Alvo Desejado (R$)") },
+src/main/java/com/platform/app/presentation/goals/components/GoalDialogs.kt:57: label = { Text("Valor Já Poupado Inicial (R$)") },
+src/main/java/com/platform/app/presentation/management/ManagementScreen.kt:222: text = { Text("Contas") }
+src/main/java/com/platform/app/presentation/management/ManagementScreen.kt:227: text = { Text("Pagamentos") }
+src/main/java/com/platform/app/presentation/management/ManagementScreen.kt:232: text = { Text("Categorias") }
+src/main/java/com/platform/app/presentation/management/components/AccountsComponents.kt:251: text = { Text("Editar Conta") },
+src/main/java/com/platform/app/presentation/management/components/AccountsComponents.kt:267: Text("Excluir Conta", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/management/components/CategoriesComponents.kt:257: text = { Text("Editar Categoria") },
+src/main/java/com/platform/app/presentation/management/components/CategoriesComponents.kt:273: Text("Excluir Categoria", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/management/components/PaymentMethodsComponents.kt:249: text = { Text("Editar Forma de Pagamento") },
+src/main/java/com/platform/app/presentation/management/components/PaymentMethodsComponents.kt:265: Text("Excluir Forma de Pagamento", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/recurring/AdjustInstallmentDialog.kt:103: label = { Text("Novo Valor *") },
+src/main/java/com/platform/app/presentation/recurring/AdjustInstallmentDialog.kt:269: Text("Excluir...", style = MaterialTheme.typography.labelMedium)
+src/main/java/com/platform/app/presentation/recurring/AdjustInstallmentDialog.kt:400: Text("Confirmar Exclusão")
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:243: Text("Alterar Valor Mensal", color = MaterialTheme.colorScheme.onSurface)
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:277: Text("Encerrar Recorrência", color = MaterialTheme.colorScheme.onSurface)
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:295: Text("Excluir Tudo (Inclusive Histórico)", color = MaterialTheme.colorScheme.error)
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:349: Text("Retomar", fontWeight = FontWeight.Bold, color = SuccessGreen)
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:504: title = { Text("Excluir Lançamento") },
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:505: text = { Text("Deseja realmente excluir '${bill.title}' e todas as suas parcelas?") },
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:527: title = { Text("Encerrar Recorrência?") },
+src/main/java/com/platform/app/presentation/recurring/components/RecurringDetailBottomSheet.kt:541: Text("Encerrar Recorrência")
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:119: label = { Text("Auto", style = MaterialTheme.typography.bodySmall) },
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:128: label = { Text("Claro", style = MaterialTheme.typography.bodySmall) },
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:137: label = { Text("Navy", style = MaterialTheme.typography.bodySmall) },
+src/main/java/com/platform/app/presentation/settings/components/AppearanceBottomSheet.kt:146: label = { Text("AMOLED", style = MaterialTheme.typography.bodySmall) },
+src/main/java/com/platform/app/presentation/settings/components/ReleaseNotesDialog.kt:41: Text("🚀", style = MaterialTheme.typography.titleMedium)
+src/main/java/com/platform/app/presentation/settings/components/ReleaseNotesDialog.kt:94: Text("Entendido")
+src/main/java/com/platform/app/presentation/settings/components/SettingsSections.kt:378: Text("Selecionar Arquivo")

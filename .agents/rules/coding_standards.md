@@ -20,3 +20,5 @@ trigger: always_on
   - Trate falhas de rede e banco de forma amigável com `Result<T>` ou classes `Resource.Error(message)`.
 - **Modularidade de Telas e Arquivos Composable**:
   - Máximo de ~600 linhas por arquivo `@Composable`. Seções, cards, diálogos e bottom sheets devem ser extraídos para arquivos no subpacote `components/` da feature correspondente.
+- **Codificação Estrita de Arquivos Markdown (UTF-8 sem BOM)**:
+  - Toda escrita/edição de `.md` (CHANGELOG, regras, decisões, docs) deve forçar UTF-8 sem BOM (`-Encoding utf8` no PowerShell, `encoding="utf-8"` no Python). Proibido redirects ou escritas cegas que introduzam mojibake.

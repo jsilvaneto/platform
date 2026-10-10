@@ -1,0 +1,2 @@
+# Baseline para arquivos legados que excedem 600 linhas
+# Qualquer arquivo acima de 600 linhas deve ser registrado aqui ou decomposto.

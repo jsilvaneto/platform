@@ -89,13 +89,13 @@ fun ConfirmPaymentDialog(
                 }
                 Column {
                     Text(
-                        text = "Confirmar Pagamento",
+                        text = AppStrings.Dialogs.CONFIRM_PAYMENT_TITLE,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Informe a data real da quitação",
+                        text = AppStrings.Dialogs.CONFIRM_PAYMENT_SUBTITLE,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -151,7 +151,7 @@ fun ConfirmPaymentDialog(
                     FilterChip(
                         selected = isSelectedToday,
                         onClick = { selectedPaymentDate = System.currentTimeMillis() },
-                        label = { Text("Hoje", style = MaterialTheme.typography.labelMedium) },
+                        label = { Text(AppStrings.Dialogs.TODAY, style = MaterialTheme.typography.labelMedium) },
                         shape = RoundedCornerShape(8.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -163,7 +163,7 @@ fun ConfirmPaymentDialog(
                         FilterChip(
                             selected = isSelectedDueDate && !isSelectedToday,
                             onClick = { selectedPaymentDate = dueDate },
-                            label = { Text("No Vencimento", style = MaterialTheme.typography.labelMedium) },
+                            label = { Text(AppStrings.Dialogs.ON_DUE_DATE, style = MaterialTheme.typography.labelMedium) },
                             shape = RoundedCornerShape(8.dp),
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -213,7 +213,7 @@ fun ConfirmPaymentDialog(
                         )
                         Column {
                             Text(
-                                text = "Data Real do Pagamento",
+                                text = AppStrings.Dialogs.ACTUAL_PAYMENT_DATE,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -236,7 +236,7 @@ fun ConfirmPaymentDialog(
                 }
 
                 Text(
-                    text = "A data real informada será usada no cálculo de pontualidade no painel.",
+                    text = AppStrings.Dialogs.ACTUAL_DATE_METRICS_INFO,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )

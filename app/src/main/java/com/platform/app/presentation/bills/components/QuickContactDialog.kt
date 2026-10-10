@@ -23,12 +23,12 @@ fun QuickContactDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Novo Contato / Fornecedor") },
+        title = { Text(AppStrings.Dialogs.NEW_CONTACT_SUPPLIER_TITLE) },
         text = {
             OutlinedTextField(
                 value = newContactName,
                 onValueChange = { newContactName = it },
-                label = { Text("Nome do Contato ou Estabelecimento *") },
+                label = { Text(AppStrings.Dialogs.CONTACT_NAME_LABEL) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )

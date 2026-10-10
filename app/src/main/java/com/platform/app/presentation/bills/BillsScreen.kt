@@ -365,86 +365,20 @@ fun BillsScreen(
 
                                 item(key = "header_$monthLabel") {
                                     val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
-                                    val rotationState by animateFloatAsState(
-                                        targetValue = if (isExpanded) 180f else 0f,
-                                        label = "monthCollapseRotation_$monthLabel"
-                                    )
-
-                                    Surface(
-                                        shape = RoundedCornerShape(10.dp),
-                                        color = if (isCurrentMonth) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                        border = if (isCurrentMonth) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)) else null,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 6.dp, bottom = 2.dp)
-                                            .clickable {
-                                                expandedMonths = if (isExpanded) {
-                                                    expandedMonths - monthLabel
-                                                } else {
-                                                    expandedMonths + monthLabel
-                                                }
+                                    BillsMonthSectionHeader(
+                                        monthLabel = monthLabel,
+                                        monthTotal = monthTotal,
+                                        itemCount = monthItems.size,
+                                        isExpanded = isExpanded,
+                                        isCurrentMonth = isCurrentMonth,
+                                        onToggleExpand = {
+                                            expandedMonths = if (isExpanded) {
+                                                expandedMonths - monthLabel
+                                            } else {
+                                                expandedMonths + monthLabel
                                             }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(
-                                                    imageVector = Icons.Default.KeyboardArrowDown,
-                                                    contentDescription = if (isExpanded) "Recolher mês" else "Expandir mês",
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier
-                                                        .size(20.dp)
-                                                        .graphicsLayer(rotationZ = rotationState)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text(
-                                                    text = monthLabel,
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                                if (isCurrentMonth) {
-                                                    Spacer(modifier = Modifier.width(6.dp))
-                                                    Surface(
-                                                        shape = RoundedCornerShape(4.dp),
-                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                                    ) {
-                                                        Text(
-                                                            text = "Mês Atual",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                                        )
-                                                    }
-                                                }
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                ) {
-                                                    Text(
-                                                        text = "${monthItems.size}",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
-                                                    )
-                                                }
-                                            }
-                                            Text(
-                                                text = "Subtotal: ${CurrencyUtils.formatCentsToCurrency(monthTotal)}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
                                         }
-                                    }
+                                    )
                                 }
 
                                 if (isExpanded) {

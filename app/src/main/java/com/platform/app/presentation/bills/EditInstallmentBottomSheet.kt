@@ -142,52 +142,11 @@ fun EditInstallmentBottomSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Header: Avatar, Título e Fechar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .background(catColor.copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ReceiptLong,
-                        contentDescription = null,
-                        tint = catColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Editar Registro",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (installment.totalInstallments > 1) {
-                            "Parcela ${installment.installmentNumber} de ${installment.totalInstallments} • ${installment.type.label}"
-                        } else {
-                            installment.type.label
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Fechar",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            com.platform.app.presentation.bills.components.EditInstallmentHeader(
+                installment = installment,
+                catColor = catColor,
+                onDismiss = onDismiss
+            )
 
             // 1. Título / Descrição
             OutlinedTextField(
@@ -592,37 +551,13 @@ fun EditInstallmentBottomSheet(
     }
 
     if (showDeleteConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmDialog = false },
-            title = {
-                Text(
-                    text = AppStrings.Dialogs.DELETE_REGISTRATION_TITLE,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+        com.platform.app.presentation.bills.components.DeleteBillConfirmDialog(
+            billTitle = installment.billTitle,
+            onConfirm = {
+                showDeleteConfirmDialog = false
+                onDelete(installment.billId)
             },
-            text = {
-                Text(
-                    text = "Tem certeza de que deseja excluir '${installment.billTitle}'? Esta ação removerá a conta e suas parcelas do histórico.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteConfirmDialog = false
-                        onDelete(installment.billId)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(AppStrings.Actions.DELETE)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showDeleteConfirmDialog = false }) {
-                    Text(AppStrings.Actions.CANCEL)
-                }
-            }
+            onDismiss = { showDeleteConfirmDialog = false }
         )
     }
 }

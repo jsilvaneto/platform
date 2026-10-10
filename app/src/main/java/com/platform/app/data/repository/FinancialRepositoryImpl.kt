@@ -145,10 +145,6 @@ class FinancialRepositoryImpl @Inject constructor(
         categoryDao.deleteById(categoryId)
     }
 
-    override suspend fun seedInitialCategoriesIfEmpty() {
-        seedInitialData()
-    }
-
     // --- Expense Items ---
     override fun getExpenseItems(): Flow<List<ExpenseItem>> {
         return combine(expenseItemDao.getAll(), getCategories()) { items, categories ->
@@ -185,10 +181,6 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun deleteExpenseItem(itemId: String) {
         expenseItemDao.deleteById(itemId)
-    }
-
-    override suspend fun seedInitialExpenseItemsIfEmpty() {
-        seedInitialData()
     }
 
     // --- Credit Cards & Invoices ---
@@ -381,10 +373,6 @@ class FinancialRepositoryImpl @Inject constructor(
         contactDao.deleteById(contactId)
     }
 
-    override suspend fun seedInitialContactsIfEmpty() {
-        seedInitialData()
-    }
-
     // --- Financial Accounts ---
     override fun getFinancialAccounts(): Flow<List<FinancialAccount>> {
         return financialAccountDao.getAll().map { list ->
@@ -400,10 +388,6 @@ class FinancialRepositoryImpl @Inject constructor(
         financialAccountDao.deleteById(accountId)
     }
 
-    override suspend fun seedInitialFinancialAccountsIfEmpty() {
-        seedInitialData()
-    }
-
     // --- Payment Methods ---
     override fun getPaymentMethods(): Flow<List<PaymentMethod>> {
         return paymentMethodDao.getAll().map { list ->
@@ -417,10 +401,6 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun deletePaymentMethod(methodId: String) {
         paymentMethodDao.deleteById(methodId)
-    }
-
-    override suspend fun seedInitialPaymentMethodsIfEmpty() {
-        seedInitialData()
     }
 
     // --- Bills & Installments ---

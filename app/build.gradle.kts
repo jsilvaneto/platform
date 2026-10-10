@@ -172,7 +172,107 @@ tasks.register("checkLiteralColors") {
     }
 }
 
+tasks.register("checkHardcodedStrings") {
+    group = "verification"
+    description = "Checks that no new hardcoded string literals Text(\"...\") are introduced in presentation outside the baseline"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val baselineFile = rootProject.file("config/hardcoded-strings-baseline.txt")
+        val hardcodedPattern = Regex("""\bText\s*\(\s*"([^"]+)"""")
+
+        val baselineEntries = if (baselineFile.exists()) {
+            baselineFile.readLines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() && !it.startsWith("#") }
+                .toSet()
+        } else {
+            emptySet()
+        }
+
+        val currentViolations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.extension == "kt") {
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        val trimmed = line.trim()
+                        if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
+                            if (hardcodedPattern.containsMatchIn(line)) {
+                                val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+                                val entry = "$relativePath:${index + 1}: $trimmed"
+                                currentViolations.add(entry)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val newViolations = currentViolations.filterNot { it in baselineEntries }
+
+        if (newViolations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontradas ${newViolations.size} nova(s) string(s) literais Text(\"...\") fora da baseline:")
+                newViolations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra Arquitetural (coding_standards.md):")
+                appendLine("Strings literais em componentes Text(\"...\") são proibidas para novos componentes.")
+                appendLine("Mova os textos para AppStrings ou strings.xml.")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkHardcodedStrings: Nenhuma nova string hardcoded introduzida (${currentViolations.size} na baseline legada).")
+        }
+    }
+}
+
+tasks.register("checkFileSize") {
+    group = "verification"
+    description = "Checks that Composable presentation files respect the maximum limit of ~600 lines"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val baselineFile = rootProject.file("config/file-size-baseline.txt")
+        val maxLines = 600
+
+        val baselineFiles = if (baselineFile.exists()) {
+            baselineFile.readLines()
+                .map { it.trim() }
+                .filter { it.isNotBlank() && !it.startsWith("#") }
+                .map { it.substringBefore(":") }
+                .toSet()
+        } else {
+            emptySet()
+        }
+
+        val violations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            if (file.isFile && file.extension == "kt") {
+                val lineCount = file.readLines().size
+                if (lineCount > maxLines) {
+                    val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+                    if (relativePath !in baselineFiles) {
+                        violations.add("$relativePath ($lineCount linhas > $maxLines)")
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontrado(s) ${violations.size} arquivo(s) Composable excedendo o limite de $maxLines linhas:")
+                violations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra Arquitetural (AGENT_RULES.md / coding_standards.md):")
+                appendLine("Máximo de ~600 linhas por arquivo Composable.")
+                appendLine("Decomponha o arquivo extraindo componentes para o subpacote components/ da feature correspondente.")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkFileSize: Todos os novos arquivos Composable respeitam o teto de $maxLines linhas (baseline ativa para legado).")
+        }
+    }
+}
+
 tasks.named("preBuild") {
-    dependsOn("checkLiteralColors")
+    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize")
 }
 

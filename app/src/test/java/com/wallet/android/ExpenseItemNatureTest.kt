@@ -118,7 +118,7 @@ class ExpenseItemNatureTest {
 
         assertEquals("Obrigatório", ExpenseNature.OBRIGATORIO.displayName)
         assertEquals("Necessário", ExpenseNature.NECESSARIO.displayName)
-        assertEquals("Deseja", ExpenseNature.DESEJA.displayName)
+        assertEquals("Desejo", ExpenseNature.DESEJA.displayName)
         assertEquals("Nenhum", ExpenseNature.NENHUM.displayName)
     }
 }

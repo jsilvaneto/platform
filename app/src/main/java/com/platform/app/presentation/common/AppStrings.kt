@@ -28,7 +28,7 @@ object AppStrings {
     object Nature {
         const val MANDATORY = "Obrigatório"
         const val NECESSARY = "Necessário"
-        const val WANTS = "Deseja"
+        const val WANTS = "Desejo"
         const val NONE = "Nenhum"
         const val SAVINGS = "Poupança"
         const val LABEL_NATURE = "Natureza do Gasto"
@@ -98,5 +98,55 @@ object AppStrings {
         const val DELETE_REGISTRATION_TITLE = "Excluir Registro"
         const val DELETE_CONTACT_TITLE = "Excluir Contato"
         const val WARNING = "Atenção"
+
+        // Backup & Restore
+        const val PROTECT_SHARE_TITLE = "Proteger Compartilhamento"
+        const val ENCRYPT_BACKUP_TITLE = "Criptografar Backup"
+        const val BACKUP_ENCRYPTION_DESC = "Defina uma senha segura para proteger seus dados financeiros com criptografia simétrica AES-256 (PBKDF2).\n\n⚠️ Esta senha será estritamente necessária para restaurar este arquivo."
+        const val BACKUP_PASSWORD_LABEL = "Senha do backup (mínimo 8 caracteres)"
+        const val CONFIRM_PASSWORD_LABEL = "Confirmar Senha"
+        const val PASSWORDS_DONT_MATCH = "As senhas não coincidem."
+        const val ENCRYPT_AND_SEND = "Criptografar e Enviar"
+        const val SAVE_FILE = "Salvar Arquivo"
+        const val DECRYPT_BACKUP_TITLE = "Descriptografar Backup"
+        const val DECRYPT_BACKUP_DESC = "Informe a senha definida no momento da geração deste backup para desbloquear e restaurar os dados com segurança."
+        const val DECRYPT_PASSWORD_LABEL = "Senha do Backup"
+        const val DECRYPT_AND_RESTORE = "Descriptografar e Restaurar"
+
+        // Baixas & Pagamentos
+        const val REVIEW_SETTLEMENTS_TITLE = "Revisar Baixas"
+        const val REVIEW_SETTLEMENTS_DESC = "Selecione a data real em que os pagamentos foram efetuados. As parcelas selecionadas passarão a ser contabilizadas no indicador de pontualidade."
+        const val CONFIRM_PAYMENT_TITLE = "Confirmar Pagamento"
+        const val CONFIRM_PAYMENT_SUBTITLE = "Informe a data real da quitação"
+        const val ACTUAL_PAYMENT_DATE = "Data Real do Pagamento"
+        const val ACTUAL_PAYMENT_DATE_ALT = "Data Real de Pagamento"
+        const val TODAY = "Hoje"
+        const val ON_DUE_DATE = "No Vencimento"
+        const val ACTUAL_DATE_METRICS_INFO = "A data real informada será usada no cálculo de pontualidade no painel."
+        const val DELETE_SELECTED_TITLE = "Excluir Selecionadas"
+
+        // Recorrência
+        const val CHANGE_MONTHLY_AMOUNT_TITLE = "Alterar Valor Mensal"
+        const val RECURRING_FUTURE_UPDATE_INFO = "Apenas as próximas cobranças pendentes serão atualizadas. Pagamentos já realizados não serão alterados."
+        const val NEW_MONTHLY_AMOUNT_LABEL = "Novo valor mensal (R$)"
+        const val UPDATE_NEXT_CHARGES = "Atualizar Próximas Cobranças"
+        const val INVALID_AMOUNT = "Informe um valor válido"
+        const val SAME_AS_CURRENT_AMOUNT = "Igual ao valor atual"
+        const val AMOUNT_PLACEHOLDER_SAMPLE = "Ex: 49,90"
+
+        // Gestão & Contatos
+        const val NEW_CONTACT_SUPPLIER_TITLE = "Novo Contato / Fornecedor"
+        const val CONTACT_NAME_LABEL = "Nome do Contato ou Estabelecimento *"
+        const val NEW_ACCOUNT_TITLE = "Nova Conta"
+        const val EDIT_ACCOUNT_TITLE = "Editar Conta"
+        const val ACCOUNT_NAME_LABEL = "Nome da Conta (ex: Nubank, Itaú)"
+        const val ACCOUNT_TYPE_LABEL = "Tipo de Conta"
+        const val NEW_PAYMENT_METHOD_TITLE = "Nova Forma de Pagamento"
+        const val EDIT_PAYMENT_METHOD_TITLE = "Editar Forma de Pagamento"
+        const val PAYMENT_TYPE_LABEL = "Tipo de Pagamento"
+        const val CUSTOM_NAME_LABEL = "Nome Personalizado (ex: Vale Alimentação)"
+        const val NEW_CATEGORY_TITLE = "Nova Categoria"
+        const val EDIT_CATEGORY_TITLE = "Editar Categoria"
+        const val CATEGORY_NAME_LABEL = "Nome da Categoria (ex: Alimentação, Lazer)"
     }
 }

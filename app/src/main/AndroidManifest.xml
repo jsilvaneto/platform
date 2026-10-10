@@ -18,7 +18,7 @@
         android:theme="@style/Theme.Platform">
         <activity
             android:name=".MainActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.Platform" />
 
         <activity-alias

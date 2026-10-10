@@ -67,6 +67,18 @@ class CreditCardDataSource @Inject constructor(
         }
     }
 
+    suspend fun getPendingInvoicesInRange(startMillis: Long, endMillis: Long): List<CreditCardInvoice> {
+        val invoices = creditCardDao.getPendingInvoicesInRange(startMillis, endMillis)
+        val totals = installmentDao.getInvoiceTotalsList().associate { it.invoiceId to it.totalAmountCents }
+        return invoices.map { it.toDomain(totalAmountCents = totals[it.id] ?: 0L) }
+    }
+
+    suspend fun getOverdueInvoices(beforeMillis: Long): List<CreditCardInvoice> {
+        val invoices = creditCardDao.getOverdueInvoices(beforeMillis)
+        val totals = installmentDao.getInvoiceTotalsList().associate { it.invoiceId to it.totalAmountCents }
+        return invoices.map { it.toDomain(totalAmountCents = totals[it.id] ?: 0L) }
+    }
+
     fun getInstallmentsForInvoice(invoiceId: String): Flow<List<BillInstallment>> {
         return installmentDao.getInstallmentsForInvoice(invoiceId).map { list ->
             list.map { it.toDomain() }

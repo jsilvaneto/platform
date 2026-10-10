@@ -65,6 +65,31 @@ fun QuickExpenseBottomSheet(
 
     val selectedItem = expenseItems.find { it.id == selectedItemId }
     val isValid = amountCents > 0L && selectedItemId != null
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val notificationLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        val itemId = selectedItemId
+        if (itemId != null && amountCents > 0L) {
+            onConfirm(amountCents, itemId, isPaid)
+            onDismiss()
+        }
+    }
+
+    val handleConfirm = {
+        val itemId = selectedItemId
+        if (itemId != null && amountCents > 0L) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                !androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+            ) {
+                notificationLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                onConfirm(amountCents, itemId, isPaid)
+                onDismiss()
+            }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -209,13 +234,7 @@ fun QuickExpenseBottomSheet(
                 }
 
                 Button(
-                    onClick = {
-                        val itemId = selectedItemId
-                        if (itemId != null && amountCents > 0L) {
-                            onConfirm(amountCents, itemId, isPaid)
-                            onDismiss()
-                        }
-                    },
+                    onClick = handleConfirm,
                     enabled = isValid,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,

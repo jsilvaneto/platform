@@ -45,6 +45,7 @@ class BackupRepositoryImpl @Inject constructor(
             require(password.isNotBlank() && password.length >= BackupCryptoHelper.MIN_PASSWORD_LENGTH) {
                 "A senha de backup deve possuir no mínimo ${BackupCryptoHelper.MIN_PASSWORD_LENGTH} caracteres."
             }
+            database.checkpointWal()
             val dto = BackupDataDto(
                 version = BackupDataDto.CURRENT_VERSION,
                 exportedAt = System.currentTimeMillis(),

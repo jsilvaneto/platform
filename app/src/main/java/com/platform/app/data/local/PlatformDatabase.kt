@@ -62,6 +62,14 @@ abstract class PlatformDatabase : RoomDatabase() {
     abstract val goalContributionDao: GoalContributionDao
     abstract val budgetDao: BudgetDao
 
+    fun checkpointWal() {
+        runCatching {
+            openHelper.writableDatabase.query("PRAGMA wal_checkpoint(TRUNCATE)").use { cursor ->
+                cursor.moveToFirst()
+            }
+        }
+    }
+
     companion object {
         const val DATABASE_NAME = "platform_db"
 

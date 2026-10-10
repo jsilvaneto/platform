@@ -205,4 +205,12 @@ object AppStrings {
         const val SELECT_ITEM_PLACEHOLDER = "Selecione o item"
         const val CONTACT_OPTIONAL = "Contato / Fornecedor (Opcional)"
     }
+
+    object Notifications {
+        const val DISABLED_TITLE = "Lembretes de vencimento desativados"
+        const val DISABLED_MESSAGE = "As notificações estão desligadas. Ative para receber alertas antes do vencimento das suas contas."
+        const val ENABLE_BUTTON = "Ativar Notificações"
+        const val PERMISSION_EXPLANATION = "A Platform avisa você no dia e na véspera do vencimento das contas para você nunca atrasar um pagamento."
+        const val ALLOW_NOTIFICATIONS = "Permitir avisos"
+    }
 }

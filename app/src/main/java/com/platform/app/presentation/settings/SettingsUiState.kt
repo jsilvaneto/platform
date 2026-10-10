@@ -5,6 +5,8 @@ import com.platform.app.core.mvi.UiState
 data class SettingsUiState(
     val isBiometricSupported: Boolean = false,
     val isBiometricEnabled: Boolean = false,
+    val lockTimeoutSeconds: Int = 0,
+    val hideContentInRecents: Boolean = true,
     val isDarkMode: Boolean? = null,
     val isAmoledMode: Boolean = false,
     val appIcon: String = "classic",

@@ -6,7 +6,9 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.Budget
 import com.platform.app.domain.repository.BudgetRepository
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.GetBudgetProgressUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,18 +16,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class BudgetsViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
-    private val financialRepository: FinancialRepository
+    private val financialRepository: FinancialRepository,
+    private val getBudgetProgressUseCase: GetBudgetProgressUseCase
 ) : ViewModel() {
+
+    private val selectedMonthMillis = MutableStateFlow(System.currentTimeMillis())
 
     private val _uiState = MutableStateFlow(BudgetsUiState())
     val uiState: StateFlow<BudgetsUiState> = _uiState.asStateFlow()
@@ -34,75 +40,69 @@ class BudgetsViewModel @Inject constructor(
     val uiEffect: Flow<BudgetsUiEffect> = _effectChannel.receiveAsFlow()
 
     init {
-        loadBudgetsAndExpenses()
+        observeBudgetsAndExpenses()
     }
 
     fun onAction(action: BudgetsUiAction) {
         when (action) {
             is BudgetsUiAction.SaveBudget -> handleSaveBudget(action.budget)
             is BudgetsUiAction.DeleteBudget -> handleDeleteBudget(action.budgetId)
-            is BudgetsUiAction.Refresh -> loadBudgetsAndExpenses()
+            is BudgetsUiAction.ChangeMonth -> selectedMonthMillis.value = action.targetMonthMillis
+            is BudgetsUiAction.PreviousMonth -> {
+                selectedMonthMillis.value = DateUtils.addMonths(selectedMonthMillis.value, -1)
+            }
+            is BudgetsUiAction.NextMonth -> {
+                selectedMonthMillis.value = DateUtils.addMonths(selectedMonthMillis.value, 1)
+            }
+            is BudgetsUiAction.Refresh -> observeBudgetsAndExpenses()
         }
     }
 
-    private fun loadBudgetsAndExpenses() {
+    private fun observeBudgetsAndExpenses() {
         _uiState.update { it.copy(isLoading = true) }
 
-        val now = System.currentTimeMillis()
-        val startOfMonth = DateUtils.getStartOfMonth(now)
-        val endOfMonth = DateUtils.getEndOfMonth(now)
-
-        combine(
-            budgetRepository.getBudgets(),
-            financialRepository.getInstallmentsForPeriod(startOfMonth, endOfMonth),
-            financialRepository.getCategories()
-        ) { budgets, installments, categories ->
-            val budgetsWithSpend = budgets.map { budget ->
-                val spent = installments
-                    .filter { inst ->
-                        if (budget.categoryId != null) {
-                            inst.categoryId == budget.categoryId
-                        } else {
-                            true
-                        }
+        selectedMonthMillis
+            .flatMapLatest { monthMillis ->
+                combine(
+                    getBudgetProgressUseCase(monthMillis),
+                    financialRepository.getCategories()
+                ) { overview, categories ->
+                    val uiBudgets = overview.budgets.map { item ->
+                        BudgetWithSpend(
+                            budget = item.budget,
+                            spentCents = item.spentCents,
+                            paidCents = item.paidCents,
+                            pendingCents = item.pendingCents,
+                            progress = item.progress,
+                            isExceeded = item.isExceeded
+                        )
                     }
-                    .sumOf { it.amountCents }
 
-                val progress = if (budget.limitAmountCents > 0L) {
-                    (spent.toFloat() / budget.limitAmountCents.toFloat()).coerceIn(0f, 2f)
-                } else 0f
-
-                BudgetWithSpend(
-                    budget = budget,
-                    spentCents = spent,
-                    progress = progress,
-                    isExceeded = spent > budget.limitAmountCents
-                )
+                    _uiState.update { current ->
+                        current.copy(
+                            budgets = uiBudgets,
+                            categories = categories,
+                            selectedMonthMillis = monthMillis,
+                            totalLimitCents = overview.totalLimitCents,
+                            totalSpentCents = overview.totalSpentCents,
+                            totalPaidCents = overview.totalPaidCents,
+                            totalPendingCents = overview.totalPendingCents,
+                            overallProgress = overview.overallProgress,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    }
+                }
             }
-
-            val totalLimit = budgets.sumOf { it.limitAmountCents }
-            val totalSpent = budgetsWithSpend.sumOf { it.spentCents }
-            val overallProgress = if (totalLimit > 0L) (totalSpent.toFloat() / totalLimit.toFloat()).coerceIn(0f, 1f) else 0f
-
-            _uiState.update {
-                it.copy(
-                    budgets = budgetsWithSpend,
-                    categories = categories,
-                    totalLimitCents = totalLimit,
-                    totalSpentCents = totalSpent,
-                    overallProgress = overallProgress,
-                    isLoading = false,
-                    errorMessage = null
-                )
+            .catch { error ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.localizedMessage ?: "Erro ao carregar orçamentos."
+                    )
+                }
             }
-        }.catch { error ->
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    errorMessage = error.localizedMessage ?: "Erro ao carregar orçamentos."
-                )
-            }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
     }
 
     private fun handleSaveBudget(budget: Budget) {

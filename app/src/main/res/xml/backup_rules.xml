@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <include domain="root" path="."/>
+    <include domain="database" path="."/>
+    <include domain="sharedpref" path="."/>
+    <exclude domain="database" path="platform_db-wal"/>
+    <exclude domain="database" path="platform_db-shm"/>
+    <exclude domain="sharedpref" path="device_keystore.xml"/>
 </full-backup-content>

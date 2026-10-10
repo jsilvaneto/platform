@@ -63,6 +63,23 @@ fun NewExpenseScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showQuickContactDialog by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val notificationLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { _ ->
+        viewModel.saveExpense()
+    }
+
+    val onSaveClick = {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+            !androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+        ) {
+            notificationLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.saveExpense()
+        }
+    }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEffect.collectLatest { effect ->
@@ -114,7 +131,7 @@ fun NewExpenseScreen(
                     }
 
                     Button(
-                        onClick = viewModel::saveExpense,
+                        onClick = onSaveClick,
                         enabled = uiState.isValid,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,

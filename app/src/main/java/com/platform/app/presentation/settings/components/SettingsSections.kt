@@ -51,61 +51,133 @@ import com.platform.app.presentation.common.AppStrings
 fun SettingsSecuritySection(
     isBiometricSupported: Boolean,
     isBiometricEnabled: Boolean,
-    onToggleBiometric: (Boolean) -> Unit
+    lockTimeoutSeconds: Int = 0,
+    hideContentInRecents: Boolean = true,
+    onToggleBiometric: (Boolean) -> Unit,
+    onSetLockTimeoutSeconds: (Int) -> Unit = {},
+    onToggleHideContentInRecents: (Boolean) -> Unit = {}
 ) {
     SectionCard(
         title = "Segurança & Privacidade",
         icon = Icons.Default.Security
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Fingerprint,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Fingerprint,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Bloqueio do Aplicativo",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = if (isBiometricSupported)
+                            "Exigir biometria ou senha do celular ao abrir"
+                        else
+                            "Biometria/senha não disponível no aparelho",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+
+                Switch(
+                    checked = isBiometricEnabled,
+                    onCheckedChange = onToggleBiometric,
+                    enabled = isBiometricSupported,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    )
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            if (isBiometricEnabled && isBiometricSupported) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Ocultar em apps recentes",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Bloqueia capturas de tela e esconde valores na visão multitarefa",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Bloqueio do Aplicativo",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (isBiometricSupported)
-                        "Exigir biometria ou senha do celular ao abrir"
-                    else
-                        "Biometria/senha não disponível no aparelho",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                    Switch(
+                        checked = hideContentInRecents,
+                        onCheckedChange = onToggleHideContentInRecents,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                        )
+                    )
+                }
+
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "Bloquear novamente após",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val timeoutOptions = listOf(
+                            0 to "Imediato",
+                            30 to "30s",
+                            60 to "1 min",
+                            300 to "5 min"
+                        )
+                        timeoutOptions.forEach { (seconds, label) ->
+                            val selected = lockTimeoutSeconds == seconds
+                            androidx.compose.material3.FilterChip(
+                                selected = selected,
+                                onClick = { onSetLockTimeoutSeconds(seconds) },
+                                label = {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
-
-            Switch(
-                checked = isBiometricEnabled,
-                onCheckedChange = onToggleBiometric,
-                enabled = isBiometricSupported,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                )
-            )
         }
     }
 }

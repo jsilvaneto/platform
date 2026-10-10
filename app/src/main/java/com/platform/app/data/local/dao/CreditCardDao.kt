@@ -77,6 +77,12 @@ interface CreditCardDao {
     @Query("SELECT * FROM credit_card_invoices WHERE dueDate BETWEEN :startDate AND :endDate ORDER BY dueDate ASC")
     fun getInvoicesForDueDateRange(startDate: Long, endDate: Long): Flow<List<CreditCardInvoiceEntity>>
 
+    @Query("SELECT * FROM credit_card_invoices WHERE status != 'PAGA' AND dueDate BETWEEN :startDate AND :endDate ORDER BY dueDate ASC")
+    suspend fun getPendingInvoicesInRange(startDate: Long, endDate: Long): List<CreditCardInvoiceEntity>
+
+    @Query("SELECT * FROM credit_card_invoices WHERE status != 'PAGA' AND dueDate < :beforeDate ORDER BY dueDate ASC")
+    suspend fun getOverdueInvoices(beforeDate: Long): List<CreditCardInvoiceEntity>
+
     @Query("SELECT * FROM credit_card_invoices")
     suspend fun getAllInvoicesList(): List<CreditCardInvoiceEntity>
 

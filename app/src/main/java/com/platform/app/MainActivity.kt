@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,6 +60,9 @@ class MainActivity : FragmentActivity() {
     lateinit var biometricAuthManager: BiometricAuthManager
 
     @Inject
+    lateinit var appLockState: com.platform.app.core.security.AppLockState
+
+    @Inject
     lateinit var financialRepository: FinancialRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,28 +74,41 @@ class MainActivity : FragmentActivity() {
             val isDarkTheme = isDarkModePref ?: isSystemInDarkTheme()
 
             PlatformTheme(darkTheme = isDarkTheme, isAmoled = isAmoledPref) {
-                val isBiometricEnabled by preferencesManager.isBiometricEnabled.collectAsState(initial = false)
-                var isUnlocked by rememberSaveable { mutableStateOf(false) }
-                var unlockError by rememberSaveable { mutableStateOf<String?>(null) }
+                val isBiometricEnabled by preferencesManager.isBiometricEnabled.collectAsState(initial = null)
+                val hideContentInRecents by preferencesManager.hideContentInRecents.collectAsState(initial = true)
+                val isUnlocked by appLockState.isUnlocked.collectAsState()
+                var unlockError by remember { mutableStateOf<String?>(null) }
 
-                val isLocked = isBiometricEnabled && !isUnlocked
+                // FLAG_SECURE para ocultar conteúdo nos apps recentes e capturas de tela
+                LaunchedEffect(isBiometricEnabled, hideContentInRecents) {
+                    if (isBiometricEnabled == true && hideContentInRecents) {
+                        window.setFlags(
+                            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                            android.view.WindowManager.LayoutParams.FLAG_SECURE
+                        )
+                    } else {
+                        window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
+
+                val isLocked = isBiometricEnabled == true && !isUnlocked
 
                 // Notificações locais de contas/faturas vencendo hoje após desbloqueio
-                LaunchedEffect(isLocked) {
-                    if (!isLocked) {
+                LaunchedEffect(isLocked, isBiometricEnabled) {
+                    if (isBiometricEnabled != null && !isLocked) {
                         DueReminderManager.checkAndNotifyDueExpenses(this@MainActivity, financialRepository)
                     }
                 }
 
                 // Aciona a autenticação caso a proteção esteja habilitada e a tela bloqueada
-                LaunchedEffect(isBiometricEnabled) {
-                    if (isBiometricEnabled && !isUnlocked) {
+                LaunchedEffect(isBiometricEnabled, isUnlocked) {
+                    if (isBiometricEnabled == true && !isUnlocked) {
                         biometricAuthManager.promptAuthentication(
                             activity = this@MainActivity,
                             title = "Desbloquear Platform",
                             subtitle = "Use biometria ou a senha do celular para acessar seus dados",
                             onSuccess = {
-                                isUnlocked = true
+                                appLockState.unlock()
                                 unlockError = null
                             },
                             onError = { err ->
@@ -105,7 +122,9 @@ class MainActivity : FragmentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    if (isLocked) {
+                    if (isBiometricEnabled == null) {
+                        // Tela neutra até o DataStore responder, sem compor conteúdo privado
+                    } else if (isLocked) {
                         BiometricLockOverlay(
                             onUnlockRequest = {
                                 unlockError = null
@@ -114,7 +133,7 @@ class MainActivity : FragmentActivity() {
                                     title = "Desbloquear Platform",
                                     subtitle = "Use biometria ou a senha do celular para acessar seus dados",
                                     onSuccess = {
-                                        isUnlocked = true
+                                        appLockState.unlock()
                                         unlockError = null
                                     },
                                     onError = { err ->

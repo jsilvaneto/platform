@@ -67,6 +67,20 @@ class BillDataSource @Inject constructor(
         return installmentDao.getInstallmentsWithDetailsByBillId(billId).map { it.toDomain() }
     }
 
+    suspend fun getPendingInstallmentsInRange(startMillis: Long, endMillis: Long): List<BillInstallment> {
+        return installmentDao.getPendingInstallmentsInRange(startMillis, endMillis).map { it.toDomain() }
+    }
+
+    suspend fun getOverduePendingInstallments(beforeMillis: Long): List<BillInstallment> {
+        return installmentDao.getOverduePendingInstallments(beforeMillis).map { it.toDomain() }
+    }
+
+    suspend fun postponeInstallmentDueDate(installmentId: String, days: Int = 1) {
+        val entity = installmentDao.getEntityById(installmentId) ?: return
+        val newDueDate = entity.dueDate + (days.toLong() * 24L * 60L * 60L * 1000L)
+        installmentDao.updateInstallmentAmountAndDate(installmentId, entity.amountCents, newDueDate)
+    }
+
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) {
         database.withTransaction {
             billDao.insert(BillEntity.fromDomain(bill))

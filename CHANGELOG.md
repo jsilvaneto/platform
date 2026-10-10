@@ -3,6 +3,41 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.25.0] - 2026-10-10
+
+### 🔒 Segurança Robusta, Notificações Resilientes, Política de Backup E2E e Orçamento Preciso (Prompts 37-42)
+
+- **Notificações Confiáveis de Vencimento com WorkManager (Prompt 37)**:
+  - Substituição de `AlarmManager` inexato por `WorkManager` periódico de 24h (`ExpenseNotificationWorker`), persistente a reinicializações e inicializado em `PlatformApplication.onCreate()`.
+  - Permissão contextual em runtime para `POST_NOTIFICATIONS` no Android 13+ ao salvar despesas no `NewExpenseScreen` e `QuickExpenseBottomSheet`.
+  - Banner explicativo de notificações desativadas em `SettingsScreen` (`NotificationDisabledBanner`) com atalho direto para as configurações do sistema operacional.
+  - Ações rápidas na própria notificação: "Paguei", "Adiar 1 dia" e "Pagar Fatura" processadas pelo `ExpenseNotificationActionReceiver`.
+  - Proteção de privacidade na tela de bloqueio via `NotificationCompat.VISIBILITY_PRIVATE` com notificação pública resumida sem valores monetários explícitos.
+  - Ícone monocromático nativo (`ic_stat_notification.xml`) em conformidade com o Android 13+.
+  - Queries SQL com filtro por intervalo de datas (`getPendingInstallmentsInRange`, `getOverduePendingInstallments`, `getPendingInvoicesInRange`, `getOverdueInvoices`), eliminando carregamento total do banco em memória.
+- **Bloqueio Biométrico Robusto e Proteção Anti-Snooping em Memória (Prompt 38)**:
+  - Estado de desbloqueio migrado do `rememberSaveable` para o `AppLockState` `@Singleton` em memória RAM, prevenindo restauração indevida após recriação da Activity ou rotação de tela.
+  - Re-bloqueio automático gerenciado por `ProcessLifecycleOwner` (`onStop`/`onStart`) baseado em timeout configurável (Imediato, 30s, 1min, 5min).
+  - Inicialização com estado neutro enquanto o DataStore carrega assincronamente, eliminando o "flash" de dados sensíveis na abertura do app.
+  - Proteção dinâmica com `FLAG_SECURE` ativada por preferência do usuário para ocultar telas em aplicativos recentes e bloquear prints de tela.
+- **Política de Backup do Android e Checkpoint WAL SQLite (Prompt 39)**:
+  - Sincronização estrita de `data_extraction_rules.xml` e `backup_rules.xml` adicionando `disableIfNoEncryptionCapabilities="true"` no cloud backup (garantindo apenas backup em nuvem com criptografia de ponta a ponta E2E no Google Drive).
+  - Exclusão explícita de `platform_db-wal`, `platform_db-shm` e `device_keystore.xml` dos backups.
+  - Execução automática de `PRAGMA wal_checkpoint(TRUNCATE)` em segundo plano (`onStop`) e antes de exportações JSON em `BackupRepositoryImpl.exportBackupJson()`, garantindo consistência relacional e integridade de arquivo.
+  - Documentação formal no **ADR 035**.
+- **Endurecimento do Release e HTTPS Estrito (Prompt 40)**:
+  - `HttpLoggingInterceptor` condicionado a `BuildConfig.DEBUG` (`Level.BODY` apenas em debug, `Level.NONE` em release para não vazar CEP e endereço no logcat).
+  - Ativação de `isMinifyEnabled = true` e `isShrinkResources = true` em `buildTypes.release` com regras detalhadas de Proguard/R8 para Room, Retrofit, Gson DTOs, WorkManager e Hilt.
+  - Criação de `network_security_config.xml` com `cleartextTrafficPermitted="false"`, bloqueando qualquer tráfego HTTP desprotegido.
+  - `MainActivity` com `android:exported="false"` protegida contra inicializações arbitrárias de terceiros.
+- **Cálculo de Orçamento via UseCase e Navegação Mensal (Prompt 41)**:
+  - Extração da lógica de cálculo para `GetBudgetProgressUseCase`, eliminando duplicidade de contagem entre Teto Geral e tetos de categoria.
+  - Alocação temporal de despesas no cartão pela data de compra (`createdAt`) e não pelo vencimento futuro da fatura (`dueDate`).
+  - Exclusão estrita de despesas pausadas (`isPaused`) e segregação visual e analítica entre valores pagos (`paidCents`) e pendentes (`pendingCents`).
+  - Navegador temporal mensal integrado (`MonthNavigationHeader`) na tela de Orçamentos permitindo consulta de meses anteriores e futuros.
+- **Rede de Segurança de UI com Jetpack Compose (Prompt 42)**:
+  - Criação de testes instrumentados Compose (`createComposeRule`) em `ComposeUiFlowsTest.kt`, cobrindo overlay de bloqueio biométrico, cartões de despesa e diálogos de backup.
+
 ## [1.24.0] - 2026-10-10
 
 ### 🛡️ Higiene Arquitetural, Decomposição do Repositório, Guard Rails e Ciclo de Vida de Faturas

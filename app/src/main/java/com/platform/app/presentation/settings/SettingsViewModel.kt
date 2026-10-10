@@ -75,6 +75,18 @@ class SettingsViewModel @Inject constructor(
                 )
             }
         }.launchIn(viewModelScope)
+
+        combine(
+            preferencesManager.lockTimeoutSeconds,
+            preferencesManager.hideContentInRecents
+        ) { timeout, hideRecents ->
+            _uiState.update { current ->
+                current.copy(
+                    lockTimeoutSeconds = timeout,
+                    hideContentInRecents = hideRecents
+                )
+            }
+        }.launchIn(viewModelScope)
     }
 
     private fun observeEntityCounts() {
@@ -96,6 +108,16 @@ class SettingsViewModel @Inject constructor(
     fun onAction(action: SettingsUiAction) {
         when (action) {
             is SettingsUiAction.ToggleBiometric -> handleToggleBiometric(action.enabled)
+            is SettingsUiAction.SetLockTimeoutSeconds -> {
+                viewModelScope.launch {
+                    preferencesManager.setLockTimeoutSeconds(action.seconds)
+                }
+            }
+            is SettingsUiAction.SetHideContentInRecents -> {
+                viewModelScope.launch {
+                    preferencesManager.setHideContentInRecents(action.enabled)
+                }
+            }
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
             is SettingsUiAction.SetAmoledMode -> handleSetAmoledMode(action.enabled)
             is SettingsUiAction.SetAppIcon -> handleSetAppIcon(action.iconKey)

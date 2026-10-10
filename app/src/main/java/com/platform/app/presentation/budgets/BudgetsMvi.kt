@@ -9,6 +9,8 @@ import com.platform.app.domain.model.Category
 data class BudgetWithSpend(
     val budget: Budget,
     val spentCents: Long,
+    val paidCents: Long = 0L,
+    val pendingCents: Long = 0L,
     val progress: Float,
     val isExceeded: Boolean
 )
@@ -16,8 +18,11 @@ data class BudgetWithSpend(
 data class BudgetsUiState(
     val budgets: List<BudgetWithSpend> = emptyList(),
     val categories: List<Category> = emptyList(),
+    val selectedMonthMillis: Long = System.currentTimeMillis(),
     val totalLimitCents: Long = 0L,
     val totalSpentCents: Long = 0L,
+    val totalPaidCents: Long = 0L,
+    val totalPendingCents: Long = 0L,
     val overallProgress: Float = 0f,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
@@ -26,6 +31,9 @@ data class BudgetsUiState(
 sealed interface BudgetsUiAction : UiAction {
     data class SaveBudget(val budget: Budget) : BudgetsUiAction
     data class DeleteBudget(val budgetId: String) : BudgetsUiAction
+    data class ChangeMonth(val targetMonthMillis: Long) : BudgetsUiAction
+    object PreviousMonth : BudgetsUiAction
+    object NextMonth : BudgetsUiAction
     object Refresh : BudgetsUiAction
 }
 

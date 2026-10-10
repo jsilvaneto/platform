@@ -42,6 +42,8 @@ interface FinancialRepository {
     suspend fun payInvoice(invoiceId: String, actualPaymentDate: Long? = null)
     suspend fun reopenInvoice(invoiceId: String)
     suspend fun getCardDependencies(cardId: String): CardDependencies
+    suspend fun getPendingInvoicesInRange(startMillis: Long, endMillis: Long): List<CreditCardInvoice>
+    suspend fun getOverdueInvoices(beforeMillis: Long): List<CreditCardInvoice>
 
     // Contacts
     fun getContacts(): Flow<List<Contact>>
@@ -68,6 +70,9 @@ interface FinancialRepository {
     fun getInstallmentsForPeriod(startMillis: Long, endMillis: Long): Flow<List<BillInstallment>>
     fun getAllInstallments(): Flow<List<BillInstallment>>
     suspend fun getInstallmentsByBillId(billId: String): List<BillInstallment>
+    suspend fun getPendingInstallmentsInRange(startMillis: Long, endMillis: Long): List<BillInstallment>
+    suspend fun getOverduePendingInstallments(beforeMillis: Long): List<BillInstallment>
+    suspend fun postponeInstallmentDueDate(installmentId: String, days: Int = 1)
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
     suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>)

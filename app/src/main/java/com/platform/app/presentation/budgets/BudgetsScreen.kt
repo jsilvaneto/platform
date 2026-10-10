@@ -88,6 +88,7 @@ import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.SuccessGreen
 import com.platform.app.presentation.theme.WarningAmber
+import com.platform.app.presentation.statistics.components.MonthNavigationHeader
 import kotlinx.coroutines.flow.collectLatest
 import java.util.UUID
 
@@ -139,18 +140,31 @@ fun BudgetsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Hero Card de Resumo de Orçamentos
-            BudgetsSummaryCard(
-                totalLimitCents = uiState.totalLimitCents,
-                totalSpentCents = uiState.totalSpentCents,
-                progress = uiState.overallProgress
+            MonthNavigationHeader(
+                selectedMonthMillis = uiState.selectedMonthMillis,
+                onPreviousMonth = { viewModel.onAction(BudgetsUiAction.PreviousMonth) },
+                onNextMonth = { viewModel.onAction(BudgetsUiAction.NextMonth) },
+                onCurrentMonth = { viewModel.onAction(BudgetsUiAction.ChangeMonth(System.currentTimeMillis())) }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Hero Card de Resumo de Orçamentos
+                BudgetsSummaryCard(
+                    totalLimitCents = uiState.totalLimitCents,
+                    totalSpentCents = uiState.totalSpentCents,
+                    totalPaidCents = uiState.totalPaidCents,
+                    totalPendingCents = uiState.totalPendingCents,
+                    progress = uiState.overallProgress
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
 
             if (uiState.isLoading && uiState.budgets.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -173,8 +187,9 @@ fun BudgetsScreen(
                 }
             }
         }
+    }
 
-        if (isNewBudgetOpen || budgetToEdit != null) {
+    if (isNewBudgetOpen || budgetToEdit != null) {
             AddEditBudgetDialog(
                 budget = budgetToEdit,
                 categories = uiState.categories,
@@ -210,6 +225,8 @@ fun BudgetsScreen(
 fun BudgetsSummaryCard(
     totalLimitCents: Long,
     totalSpentCents: Long,
+    totalPaidCents: Long = 0L,
+    totalPendingCents: Long = 0L,
     progress: Float
 ) {
     val isOverLimit = totalSpentCents > totalLimitCents && totalLimitCents > 0L
@@ -287,6 +304,14 @@ fun BudgetsSummaryCard(
                         fontWeight = FontWeight.Bold,
                         color = barColor
                     )
+                    if (totalPaidCents > 0L || totalPendingCents > 0L) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Pago: ${CurrencyUtils.formatCentsToCurrency(totalPaidCents)} • Pend: ${CurrencyUtils.formatCentsToCurrency(totalPendingCents)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
                 }
 
                 Column(horizontalAlignment = Alignment.End) {

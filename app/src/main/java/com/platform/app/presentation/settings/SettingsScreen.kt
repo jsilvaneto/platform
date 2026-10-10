@@ -164,6 +164,8 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            com.platform.app.presentation.settings.components.NotificationDisabledBanner()
+
             // Grupo 1: Cadastros
             SectionCard(
                 title = "Cadastros",
@@ -212,7 +214,11 @@ fun SettingsScreen(
             SettingsSecuritySection(
                 isBiometricSupported = uiState.isBiometricSupported,
                 isBiometricEnabled = uiState.isBiometricEnabled,
-                onToggleBiometric = { viewModel.onAction(SettingsUiAction.ToggleBiometric(it)) }
+                lockTimeoutSeconds = uiState.lockTimeoutSeconds,
+                hideContentInRecents = uiState.hideContentInRecents,
+                onToggleBiometric = { viewModel.onAction(SettingsUiAction.ToggleBiometric(it)) },
+                onSetLockTimeoutSeconds = { viewModel.onAction(SettingsUiAction.SetLockTimeoutSeconds(it)) },
+                onToggleHideContentInRecents = { viewModel.onAction(SettingsUiAction.SetHideContentInRecents(it)) }
             )
 
             // Seção de Armazenamento & Backup

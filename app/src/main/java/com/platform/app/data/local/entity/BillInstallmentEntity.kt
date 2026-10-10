@@ -57,7 +57,9 @@ data class BillInstallmentEntity(
         contactName: String?,
         financialAccountName: String?,
         paymentMethodName: String?,
-        billType: BillType
+        billType: BillType,
+        billCreatedAt: Long? = null,
+        billCreditCardId: String? = null
     ): BillInstallment {
         return BillInstallment(
             id = id,
@@ -88,7 +90,9 @@ data class BillInstallmentEntity(
             } catch (e: Exception) {
                 BillStatus.PENDING
             },
-            type = billType
+            type = billType,
+            createdAt = billCreatedAt ?: dueDate,
+            creditCardId = billCreditCardId
         )
     }
 

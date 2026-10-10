@@ -293,9 +293,43 @@ Este documento registra o checklist de funcionalidades, fases de implementação
   - ADR 033: Guard rails de qualidade, decomposição do repositório e ciclo de faturas.
   - ADR 034: Nova arquitetura de informação, Bottom Navigation e overhaul do design system.
 
+### Segurança, Notificações, Backup E2E e Orçamentos Robustos (v1.25.0 - Prompts 37-42)
+- [x] **Notificações Confiáveis de Vencimento com WorkManager (Prompt 37)**:
+  - Substituição de `AlarmManager` por `WorkManager` periódico de 24h (`ExpenseNotificationWorker`), persistente a reinicializações e iniciado em `Application.onCreate`.
+  - Permissão contextual em runtime para `POST_NOTIFICATIONS` no Android 13+ e banner `NotificationDisabledBanner` em Configurações.
+  - Ações rápidas na própria notificação ("Paguei", "Adiar 1 dia", "Pagar Fatura") via `ExpenseNotificationActionReceiver`.
+  - Proteção de privacidade `VISIBILITY_PRIVATE` com layout público sem valores expostos e ícone monocromático nativo.
+  - Otimização com queries SQL por período (`getPendingInstallmentsInRange`, `getOverduePendingInstallments`), eliminando leituras massivas em memória.
+- [x] **Bloqueio Biométrico Robusto e Proteção Anti-Snooping (Prompt 38)**:
+  - Migração de `rememberSaveable` para `AppLockState` `@Singleton` volátil em memória RAM.
+  - Re-bloqueio após timeout configurável (Imediato, 30s, 1min, 5min) escutando `ProcessLifecycleOwner`.
+  - Estado inicial neutro eliminando qualquer flash de dados antes do carregamento do DataStore.
+  - Suporte a `FLAG_SECURE` para ocultar telas em recentes e bloquear capturas de tela.
+- [x] **Política de Backup do Android e Checkpoint WAL SQLite (Prompt 39)**:
+  - Sincronização de `data_extraction_rules.xml` e `backup_rules.xml` com `disableIfNoEncryptionCapabilities="true"` no cloud backup (E2E obrigatório).
+  - Truncamento de WAL `wal_checkpoint(TRUNCATE)` em segundo plano (`onStop`) e antes de exportar backups JSON.
+  - Documentação formal no **ADR 035**.
+- [x] **Endurecimento do Release e HTTPS Estrito (Prompt 40)**:
+  - `HttpLoggingInterceptor` condicionado a `BuildConfig.DEBUG` (`Level.NONE` em release para proteger dados pessoais).
+  - `isMinifyEnabled = true` e `isShrinkResources = true` em `buildTypes.release` com regras detalhadas de Proguard/R8 para Room, Retrofit, Gson DTOs, WorkManager e Hilt.
+  - `network_security_config.xml` com `cleartextTrafficPermitted="false"`, bloqueando tráfego HTTP desprotegido.
+  - `MainActivity` com `android:exported="false"`.
+- [x] **Cálculo de Orçamento via UseCase e Navegação Mensal (Prompt 41)**:
+  - `GetBudgetProgressUseCase` com eliminação de contagem dupla entre Teto Geral e tetos de categoria.
+  - Alocação temporal de despesas no cartão pela data de compra (`createdAt`) e não pelo vencimento futuro da fatura (`dueDate`).
+  - Exclusão estrita de despesas pausadas (`isPaused`) e segregação de valores pagos (`paidCents`) e pendentes (`pendingCents`).
+  - Navegador temporal mensal integrado (`MonthNavigationHeader`) na tela de Orçamentos.
+- [x] **Rede de Segurança de UI com Compose (Prompt 42)**:
+  - Testes de UI instrumentados com `createComposeRule` em `ComposeUiFlowsTest.kt` cobrindo overlay biométrico, cards e diálogos de backup.
+- [x] **Registros Formais de Decisão**:
+  - ADR 035: Política de backup E2E e checkpoint WAL SQLite.
+  - ADR 036: Bloqueio biométrico em memória via AppLockState e proteção anti-snooping.
+  - ADR 037: Notificações confiáveis via WorkManager com ações rápidas e UseCase de orçamento.
+
 ### Governança e Testes Automatizados
 - [x] Cobertura de testes unitários executada com 100% de sucesso via Gradle (`./gradlew testDebugUnitTest`).
-- [x] Guard rails de build ativos no preBuild (`checkLiteralColors`, `checkHardcodedStrings`, `checkFileSize`).
+- [x] Build de release minificado com R8 executado com 100% de sucesso (`./gradlew assembleRelease`).
+- [x] Guard rails de build ativos no preBuild (`checkLiteralColors`, `checkHardcodedStrings`, `checkRawShapes`, `checkFileSize`).
 - [x] Script de versionamento móvel sincronizado (`scripts/bump-version.ps1` e `scripts/bump-version.sh`).
 - [x] Regra mandatória de governança e sincronização de versão em `.agents/rules/governance_and_versioning.md`.
 

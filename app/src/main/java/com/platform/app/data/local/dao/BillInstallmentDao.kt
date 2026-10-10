@@ -24,7 +24,9 @@ data class InstallmentWithDetails(
     @ColumnInfo(name = "item_name") val itemName: String?,
     @ColumnInfo(name = "contact_name") val contactName: String?,
     @ColumnInfo(name = "financial_account_name") val financialAccountName: String?,
-    @ColumnInfo(name = "payment_method_name") val paymentMethodName: String?
+    @ColumnInfo(name = "payment_method_name") val paymentMethodName: String?,
+    @ColumnInfo(name = "bill_created_at") val billCreatedAt: Long? = null,
+    @ColumnInfo(name = "bill_credit_card_id") val billCreditCardId: String? = null
 ) {
     fun toDomain(): BillInstallment {
         val parsedType = try {
@@ -49,7 +51,9 @@ data class InstallmentWithDetails(
             contactName = contactName,
             financialAccountName = financialAccountName,
             paymentMethodName = paymentMethodName,
-            billType = parsedType
+            billType = parsedType,
+            billCreatedAt = billCreatedAt,
+            billCreditCardId = billCreditCardId
         )
     }
 }
@@ -76,7 +80,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -104,7 +110,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -131,7 +139,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -159,7 +169,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -187,7 +199,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -327,7 +341,9 @@ interface BillInstallmentDao {
             ei.name AS item_name,
             cont.name AS contact_name,
             fa.name AS financial_account_name,
-            pm.name AS payment_method_name
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
         FROM bill_installments i
         INNER JOIN bills b ON i.billId = b.id
         LEFT JOIN categories c ON b.categoryId = c.id
@@ -340,6 +356,72 @@ interface BillInstallmentDao {
         """
     )
     suspend fun getInstallmentsWithDetailsByBillId(billId: String): List<InstallmentWithDetails>
+
+    @Query(
+        """
+        SELECT 
+            i.*,
+            b.title AS bill_title,
+            b.type AS bill_type,
+            b.categoryId AS category_id,
+            c.name AS category_name,
+            c.colorHex AS category_color_hex,
+            c.nature AS category_nature,
+            c.iconName AS category_icon_name,
+            ei.name AS item_name,
+            cont.name AS contact_name,
+            fa.name AS financial_account_name,
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        LEFT JOIN categories c ON b.categoryId = c.id
+        LEFT JOIN expense_items ei ON (i.itemId = ei.id OR b.itemId = ei.id)
+        LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
+        LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
+        LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
+        WHERE i.invoiceId IS NULL
+          AND i.paidAt IS NULL
+          AND i.status != 'PAUSED'
+          AND i.dueDate BETWEEN :startDate AND :endDate
+        ORDER BY i.dueDate ASC
+        """
+    )
+    suspend fun getPendingInstallmentsInRange(startDate: Long, endDate: Long): List<InstallmentWithDetails>
+
+    @Query(
+        """
+        SELECT 
+            i.*,
+            b.title AS bill_title,
+            b.type AS bill_type,
+            b.categoryId AS category_id,
+            c.name AS category_name,
+            c.colorHex AS category_color_hex,
+            c.nature AS category_nature,
+            c.iconName AS category_icon_name,
+            ei.name AS item_name,
+            cont.name AS contact_name,
+            fa.name AS financial_account_name,
+            pm.name AS payment_method_name,
+            b.createdAt AS bill_created_at,
+            b.creditCardId AS bill_credit_card_id
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        LEFT JOIN categories c ON b.categoryId = c.id
+        LEFT JOIN expense_items ei ON (i.itemId = ei.id OR b.itemId = ei.id)
+        LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
+        LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
+        LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
+        WHERE i.invoiceId IS NULL
+          AND i.paidAt IS NULL
+          AND i.status != 'PAUSED'
+          AND i.dueDate < :beforeDate
+        ORDER BY i.dueDate ASC
+        """
+    )
+    suspend fun getOverduePendingInstallments(beforeDate: Long): List<InstallmentWithDetails>
 
     @Query("DELETE FROM bill_installments WHERE billId = :billId")
     suspend fun deleteByBillId(billId: String)

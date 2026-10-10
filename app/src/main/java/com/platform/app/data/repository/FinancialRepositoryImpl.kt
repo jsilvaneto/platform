@@ -96,6 +96,12 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun getCardDependencies(cardId: String): CardDependencies =
         creditCardDataSource.getCardDependencies(cardId)
 
+    override suspend fun getPendingInvoicesInRange(startMillis: Long, endMillis: Long): List<CreditCardInvoice> =
+        creditCardDataSource.getPendingInvoicesInRange(startMillis, endMillis)
+
+    override suspend fun getOverdueInvoices(beforeMillis: Long): List<CreditCardInvoice> =
+        creditCardDataSource.getOverdueInvoices(beforeMillis)
+
     // --- Contacts ---
     override fun getContacts(): Flow<List<Contact>> =
         catalogDataSource.getContacts()
@@ -153,6 +159,15 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun getInstallmentsByBillId(billId: String): List<BillInstallment> =
         billDataSource.getInstallmentsByBillId(billId)
+
+    override suspend fun getPendingInstallmentsInRange(startMillis: Long, endMillis: Long): List<BillInstallment> =
+        billDataSource.getPendingInstallmentsInRange(startMillis, endMillis)
+
+    override suspend fun getOverduePendingInstallments(beforeMillis: Long): List<BillInstallment> =
+        billDataSource.getOverduePendingInstallments(beforeMillis)
+
+    override suspend fun postponeInstallmentDueDate(installmentId: String, days: Int) =
+        billDataSource.postponeInstallmentDueDate(installmentId, days)
 
     override suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) =
         billDataSource.saveBillWithInstallments(bill, installments)

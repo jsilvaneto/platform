@@ -3,6 +3,32 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.28.0] - 2026-10-11
+
+### 🔄 Ciclo de Vida de Recorrências, Status SKIPPED e Gestão Resiliente (Prompt 63)
+
+- **Correção Estrutural de Recorrências (Prompt 63)**:
+  - **Novo Status Canônico `SKIPPED`**:
+    - Adição de `BillStatus.SKIPPED` no domínio e `isSkipped` no Room (`BillInstallmentEntity`), permitindo marcar ocorrências em períodos pausados como puladas (não devidas).
+    - Desconsideração estrita de parcelas `SKIPPED` em resumos mensais, metas, orçamento 50-30-20, dashboards e valores em aberto de contatos.
+  - **Migração Room v18 -> v19**:
+    - Inclusão das colunas `pausedUntil: Long?` e `endedAt: Long?` na tabela `bills` (`MIGRATION_18_19`).
+    - Validação com teste instrumentado `PlatformDatabaseMigrationAndroidTest` e geração do esquema oficial `19.json`.
+  - **Resiliência do Ciclo de Vida**:
+    - **Pausar**: Opções de 1, 2 ou 3 meses, data customizada ou pausa indeterminada. Parcelas do período viram `SKIPPED`, sem criar dívidas fantasmas na retomada e mantendo atrasadas anteriores como `PENDING`.
+    - **Retomar**: Retomada automática ao expirar a pausa no `ExtendRecurringBillsUseCase` ou manual pelo usuário, gerando parcelas apenas a partir do retorno da atividade.
+    - **Encerrar**: Encerramento a partir de data de corte (próximo vencimento ou data selecionada). Remove apenas futuras após o corte, preserva histórico realizado e grava término definitivo (`endedAt` e `UNTIL_DATE`), bloqueando ressurreição no startup.
+    - **Reativar**: Permite reativar uma recorrência encerrada e restabelecer o agendamento de parcelas.
+    - **Excluir**: Diálogo de exclusão com suporte a soft-delete mantendo o histórico de parcelas já quitadas.
+  - **UI Minimalista na Aba Contas -> Recorrentes**:
+    - Migração definitiva do `RecurringDetailBottomSheet` para dentro da aba *Recorrentes* de `BillsScreen`.
+    - Componente `RecurringBillsList` com segmentação em abas: **Ativas**, **Pausadas** e **Encerradas**.
+    - Diálogos padronizados: `PauseRecurringDialog`, `StopRecurringDialog`, `DeleteRecurringDialog` e `EditRecurringAmountDialog`.
+  - **Testes Abrangentes**:
+    - `RecurringLifecycleTest`: Verificação unitária dos fluxos de pausa, retomada sem dívidas fantasmas, encerramento por corte de data, extensão e exclusão com histórico.
+  - **Formalização**:
+    - Documentado no **ADR 043**.
+
 ## [1.27.0] - 2026-10-11
 
 ### 🎨 Design System Minimalista, Tokens Neutros, Regra de Cor e Menu Lateral (Prompts 55, 56 & 57)

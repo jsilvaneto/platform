@@ -272,4 +272,15 @@ object AppStrings {
         const val INITIAL_SCREEN_OVERVIEW = "Visão Geral (padrão)"
         const val INITIAL_SCREEN_TODAY = "Hoje"
     }
+
+    object RecurringActions {
+        const val PAUSE = "Pausar"
+        const val RESUME = "Retomar"
+        const val END = "Encerrar"
+        const val END_RECURRING = "Encerrar recorrência"
+        const val REACTIVATE_RECURRING = "Reativar recorrência"
+        const val EDIT_AMOUNT_FROM = "Alterar valor a partir de..."
+        const val NEW_MONTHLY_AMOUNT = "Novo Valor Mensal"
+        const val CURRENCY_PREFIX = "R$ "
+    }
 }

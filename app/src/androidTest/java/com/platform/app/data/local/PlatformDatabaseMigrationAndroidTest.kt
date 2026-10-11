@@ -341,6 +341,35 @@ class PlatformDatabaseMigrationAndroidTest {
         migratedDb.close()
     }
 
+    @Test
+    fun migrationFrom18To19_addsPausedUntilAndEndedAtColumnsToBills() {
+        var db = helper.createDatabase(TEST_DB, 18)
+
+        db.execSQL("""
+            INSERT INTO bills (id, title, description, type, totalAmountCents, totalInstallments, isPaused, createdAt)
+            VALUES ('bill_rec', 'Netflix', 'Mensal', 'RECURRING', 5590, 1, 0, 1727740800000)
+        """.trimIndent())
+
+        db.close()
+
+        val migratedDb = helper.runMigrationsAndValidate(
+            TEST_DB,
+            19,
+            true,
+            PlatformDatabase.MIGRATION_18_19
+        )
+
+        val cursor = migratedDb.query("SELECT id, isPaused, pausedUntil, endedAt FROM bills WHERE id = 'bill_rec'")
+        assertTrue(cursor.moveToFirst())
+        assertEquals("bill_rec", cursor.getString(0))
+        assertEquals(0, cursor.getInt(1))
+        assertTrue(cursor.isNull(2))
+        assertTrue(cursor.isNull(3))
+        cursor.close()
+
+        migratedDb.close()
+    }
+
     private fun getRowCount(db: SupportSQLiteDatabase, table: String): Int {
         val cursor = db.query("SELECT COUNT(*) FROM $table")
         val count = if (cursor.moveToFirst()) cursor.getInt(0) else 0

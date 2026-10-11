@@ -53,7 +53,7 @@ import com.platform.app.data.local.entity.SyncStateEntity
         SyncOutboxEntity::class,
         SyncStateEntity::class
     ],
-    version = 18,
+    version = 19,
     exportSchema = true
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
@@ -465,6 +465,13 @@ abstract class PlatformDatabase : RoomDatabase() {
                     FROM `bill_installments`
                     WHERE (status = 'PAID' OR paidAt IS NOT NULL)
                 """.trimIndent())
+            }
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `bills` ADD COLUMN `pausedUntil` INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE `bills` ADD COLUMN `endedAt` INTEGER DEFAULT NULL")
             }
         }
     }

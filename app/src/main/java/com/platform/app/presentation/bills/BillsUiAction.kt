@@ -39,4 +39,14 @@ sealed interface BillsUiAction : UiAction {
     ) : BillsUiAction
     object Refresh : BillsUiAction
     object ResetFilters : BillsUiAction
+    data class RecurringFilterChanged(val filter: RecurringFilter) : BillsUiAction
+    data class OpenRecurringDetail(val bill: com.platform.app.domain.model.Bill) : BillsUiAction
+    object DismissRecurringDetail : BillsUiAction
+    data class PauseRecurring(val billId: String, val pausedUntil: Long?) : BillsUiAction
+    data class ResumeRecurring(val billId: String) : BillsUiAction
+    data class StopRecurring(val billId: String, val cutoffDueDate: Long?) : BillsUiAction
+    data class ReactivateRecurring(val billId: String) : BillsUiAction
+    data class UpdateRecurringMonthlyAmount(val billId: String, val fromDueDate: Long, val newAmountCents: Long) : BillsUiAction
+    data class DeleteRecurring(val billId: String, val keepPaidHistory: Boolean) : BillsUiAction
+    data class PayNextRecurringInstallment(val installment: BillInstallment) : BillsUiAction
 }

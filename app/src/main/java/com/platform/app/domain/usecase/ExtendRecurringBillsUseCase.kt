@@ -34,12 +34,22 @@ class ExtendRecurringBillsUseCase @Inject constructor(
         val allBills = repository.getBills().first()
         val foreverBills = allBills.filter { bill ->
             bill.type == BillType.RECURRING &&
-                (bill.recurrenceEndType == null || bill.recurrenceEndType == RecurrenceEndType.FOREVER)
+                (bill.recurrenceEndType == null || bill.recurrenceEndType == RecurrenceEndType.FOREVER) &&
+                bill.endedAt == null &&
+                bill.deletedAt == null
         }
 
         var totalGenerated = 0
 
         for (bill in foreverBills) {
+            if (bill.isPaused) {
+                if (bill.pausedUntil != null && referenceTimeMillis > bill.pausedUntil) {
+                    repository.resumeRecurringBill(bill.id)
+                } else {
+                    continue
+                }
+            }
+
             val existing = repository.getInstallmentsByBillId(bill.id)
             if (existing.isEmpty()) continue
 

@@ -11,6 +11,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.MonthSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -235,27 +236,79 @@ class BillDataSource @Inject constructor(
         }
     }
 
-    suspend fun pauseRecurringBill(billId: String, isPaused: Boolean) {
+    suspend fun pauseRecurringBill(billId: String, pausedUntil: Long?) {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startOfToday = cal.timeInMillis
+
         database.withTransaction {
-            billDao.updatePausedStatus(billId, isPaused)
-            val targetStatus = if (isPaused) "PAUSED" else "PENDING"
-            installmentDao.updateStatusForPending(billId, targetStatus)
+            billDao.updatePauseState(billId, isPaused = true, pausedUntil = pausedUntil)
+            // Apenas ocorrências a partir de hoje viram SKIPPED no período.
+            // Atrasadas anteriores (dueDate < startOfToday) continuam PENDING e visíveis.
+            installmentDao.markPendingAsSkippedInRange(
+                billId = billId,
+                startDate = startOfToday,
+                endDate = pausedUntil
+            )
         }
     }
 
-    suspend fun stopRecurringBill(billId: String) {
+    suspend fun resumeRecurringBill(billId: String) {
         database.withTransaction {
-            installmentDao.deletePendingFromDueDate(billId, 0L)
+            billDao.updatePauseState(billId, isPaused = false, pausedUntil = null)
+        }
+    }
+
+    suspend fun pauseRecurringBill(billId: String, isPaused: Boolean) {
+        if (isPaused) {
+            pauseRecurringBill(billId, pausedUntil = null)
+        } else {
+            resumeRecurringBill(billId)
+        }
+    }
+
+    suspend fun stopRecurringBill(billId: String, fromDueDate: Long? = null) {
+        database.withTransaction {
             val remaining = installmentDao.getInstallmentsByBillId(billId)
-            if (remaining.isEmpty()) {
-                billDao.deleteById(billId)
+            val now = System.currentTimeMillis()
+            val cutoff = fromDueDate ?: remaining
+                .filter { it.dueDate >= now && it.paidAt == null }
+                .minOfOrNull { it.dueDate }
+                ?: now
+
+            // Remove APENAS futuras pendentes depois da data de corte
+            installmentDao.deletePendingAfterDueDate(billId, cutoff)
+
+            val updatedRemaining = installmentDao.getInstallmentsByBillId(billId)
+            val maxDueDate = updatedRemaining.maxOfOrNull { it.dueDate } ?: cutoff
+
+            billDao.stopRecurringBillWithDate(
+                id = billId,
+                recurrenceEndDate = maxDueDate,
+                endedAt = now,
+                totalInstallments = updatedRemaining.size
+            )
+        }
+    }
+
+    suspend fun reactivateRecurringBill(billId: String) {
+        database.withTransaction {
+            billDao.reactivateRecurringBill(billId)
+        }
+    }
+
+    suspend fun deleteRecurringBill(billId: String, keepPaidHistory: Boolean) {
+        database.withTransaction {
+            if (keepPaidHistory) {
+                installmentDao.deleteAllPending(billId)
+                billDao.markBillEndedAndDeleted(billId, System.currentTimeMillis())
             } else {
-                val maxDueDate = remaining.maxOfOrNull { it.dueDate }
-                billDao.updateBillEndDateAndTotalInstallments(
-                    id = billId,
-                    recurrenceEndDate = maxDueDate,
-                    totalInstallments = remaining.size
-                )
+                installmentDao.deleteByBillId(billId)
+                billDao.deleteById(billId)
             }
         }
     }

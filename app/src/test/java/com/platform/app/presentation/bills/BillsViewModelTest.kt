@@ -5,6 +5,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.GetMonthSummaryUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import io.mockk.coEvery
@@ -31,6 +32,7 @@ class BillsViewModelTest {
     private lateinit var repository: FinancialRepository
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
     private lateinit var getMonthSummaryUseCase: GetMonthSummaryUseCase
+    private lateinit var extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
     private lateinit var viewModel: BillsViewModel
 
     @Before
@@ -39,6 +41,7 @@ class BillsViewModelTest {
         repository = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
         getMonthSummaryUseCase = GetMonthSummaryUseCase(repository)
+        extendRecurringBillsUseCase = mockk(relaxed = true)
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
         every { repository.getAllInstallments() } returns flowOf(emptyList())
@@ -47,6 +50,7 @@ class BillsViewModelTest {
         every { repository.getContacts() } returns flowOf(emptyList())
         every { repository.getFinancialAccounts() } returns flowOf(emptyList())
         every { repository.getPaymentMethods() } returns flowOf(emptyList())
+        every { repository.getBills() } returns flowOf(emptyList())
     }
 
     @After
@@ -56,7 +60,7 @@ class BillsViewModelTest {
 
     @Test
     fun `SaveInstallmentEdit should invoke updateBillAndInstallment and emit ShowSnackbar`() = runTest {
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -114,7 +118,7 @@ class BillsViewModelTest {
             type = BillType.SINGLE
         )
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -144,7 +148,7 @@ class BillsViewModelTest {
         )
         val customPaymentDate = 1759000000000L
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -172,7 +176,7 @@ class BillsViewModelTest {
         )
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(BillsUiAction.SearchQueryChanged("Internet"))
@@ -184,7 +188,7 @@ class BillsViewModelTest {
 
     @Test
     fun `BatchSetActualPaymentDate action should invoke repository updateInstallmentsActualPaymentDateBatch and emit snackbar`() = runTest {
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val ids = listOf("inst-1", "inst-2")

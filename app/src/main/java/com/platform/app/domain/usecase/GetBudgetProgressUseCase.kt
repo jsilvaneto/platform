@@ -42,7 +42,7 @@ class GetBudgetProgressUseCase @Inject constructor(
             // - Para compras com cartão (creditCardId ou invoiceId): alocadas na data da compra (createdAt)
             // - Para despesas avulsas/bancárias: alocadas na data de vencimento (dueDate)
             val monthInstallments = allInstallments.filter { inst ->
-                if (inst.isPaused) return@filter false
+                if (inst.isPaused || inst.isSkipped) return@filter false
                 val effectiveDate = if (inst.creditCardId != null || inst.invoiceId != null) {
                     inst.createdAt
                 } else {

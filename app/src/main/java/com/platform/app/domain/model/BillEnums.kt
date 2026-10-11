@@ -10,7 +10,8 @@ enum class BillStatus(val label: String) {
     PENDING("A Pagar"),
     PAID("Paga"),
     OVERDUE("Vencida"),
-    PAUSED("Pausada")
+    PAUSED("Pausada"),
+    SKIPPED("Pulada")
 }
 
 enum class RecurrenceFrequency(val label: String) {

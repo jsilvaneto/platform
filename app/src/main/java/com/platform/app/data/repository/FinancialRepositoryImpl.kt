@@ -223,11 +223,23 @@ class FinancialRepositoryImpl @Inject constructor(
     override suspend fun deleteFutureInstallments(billId: String, fromDueDate: Long) =
         billDataSource.deleteFutureInstallments(billId, fromDueDate)
 
+    override suspend fun pauseRecurringBill(billId: String, pausedUntil: Long?) =
+        billDataSource.pauseRecurringBill(billId, pausedUntil)
+
+    override suspend fun resumeRecurringBill(billId: String) =
+        billDataSource.resumeRecurringBill(billId)
+
     override suspend fun pauseRecurringBill(billId: String, isPaused: Boolean) =
         billDataSource.pauseRecurringBill(billId, isPaused)
 
-    override suspend fun stopRecurringBill(billId: String) =
-        billDataSource.stopRecurringBill(billId)
+    override suspend fun stopRecurringBill(billId: String, fromDueDate: Long?) =
+        billDataSource.stopRecurringBill(billId, fromDueDate)
+
+    override suspend fun reactivateRecurringBill(billId: String) =
+        billDataSource.reactivateRecurringBill(billId)
+
+    override suspend fun deleteRecurringBill(billId: String, keepPaidHistory: Boolean) =
+        billDataSource.deleteRecurringBill(billId, keepPaidHistory)
 
     override suspend fun deleteBill(billId: String) =
         billDataSource.deleteBill(billId)

@@ -42,7 +42,7 @@ data class MonthSummary(
             var overdueCount = 0
 
             for (inst in installments) {
-                if (inst.isPaused) continue
+                if (inst.isPaused || inst.isSkipped) continue
                 total += inst.amountCents
                 if (inst.isPaid) {
                     paid += inst.amountCents
@@ -71,12 +71,12 @@ data class MonthSummary(
 
 /**
  * Funções de extensão no domínio para somas seguras de parcelas,
- * garantindo tratamento correto de status PAUSED e imutabilidade.
+ * garantindo tratamento correto de status PAUSED e SKIPPED e imutabilidade.
  */
 fun Iterable<BillInstallment>.calculateTotalCents(): Long {
     var sum = 0L
     for (item in this) {
-        if (!item.isPaused) sum += item.amountCents
+        if (!item.isPaused && !item.isSkipped) sum += item.amountCents
     }
     return sum
 }
@@ -84,7 +84,7 @@ fun Iterable<BillInstallment>.calculateTotalCents(): Long {
 fun Iterable<BillInstallment>.calculatePaidCents(): Long {
     var sum = 0L
     for (item in this) {
-        if (!item.isPaused && item.isPaid) sum += item.amountCents
+        if (!item.isPaused && !item.isSkipped && item.isPaid) sum += item.amountCents
     }
     return sum
 }
@@ -92,7 +92,7 @@ fun Iterable<BillInstallment>.calculatePaidCents(): Long {
 fun Iterable<BillInstallment>.calculateOpenCents(): Long {
     var sum = 0L
     for (item in this) {
-        if (!item.isPaused && !item.isPaid) sum += item.amountCents
+        if (!item.isPaused && !item.isSkipped && !item.isPaid) sum += item.amountCents
     }
     return sum
 }

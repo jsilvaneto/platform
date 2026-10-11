@@ -51,6 +51,39 @@ interface BillDao {
     @Query("UPDATE bills SET isPaused = :isPaused WHERE id = :id")
     suspend fun updatePausedStatus(id: String, isPaused: Boolean)
 
+    @Query("UPDATE bills SET isPaused = :isPaused, pausedUntil = :pausedUntil WHERE id = :id")
+    suspend fun updatePauseState(id: String, isPaused: Boolean, pausedUntil: Long?)
+
+    @Query("""
+        UPDATE bills 
+        SET recurrenceEndType = 'UNTIL_DATE',
+            recurrenceEndDate = :recurrenceEndDate,
+            endedAt = :endedAt,
+            totalInstallments = :totalInstallments
+        WHERE id = :id
+    """)
+    suspend fun stopRecurringBillWithDate(id: String, recurrenceEndDate: Long?, endedAt: Long?, totalInstallments: Int)
+
+    @Query("""
+        UPDATE bills 
+        SET recurrenceEndType = 'FOREVER',
+            recurrenceEndDate = NULL,
+            endedAt = NULL,
+            isPaused = 0,
+            pausedUntil = NULL
+        WHERE id = :id
+    """)
+    suspend fun reactivateRecurringBill(id: String)
+
+    @Query("""
+        UPDATE bills 
+        SET deletedAt = :deletedAt,
+            recurrenceEndType = 'UNTIL_DATE',
+            endedAt = :deletedAt
+        WHERE id = :id
+    """)
+    suspend fun markBillEndedAndDeleted(id: String, deletedAt: Long)
+
     @Query("UPDATE bills SET totalAmountCents = :totalAmountCents WHERE id = :id")
     suspend fun updateBillTotalAmount(id: String, totalAmountCents: Long)
 

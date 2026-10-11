@@ -32,4 +32,5 @@ data class BillInstallment(
 ) {
     val isPaid: Boolean get() = paidAt != null || status == BillStatus.PAID
     val isPaused: Boolean get() = status == BillStatus.PAUSED
+    val isSkipped: Boolean get() = status == BillStatus.SKIPPED
 }

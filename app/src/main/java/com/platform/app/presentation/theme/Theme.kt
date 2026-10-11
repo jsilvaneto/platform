@@ -144,3 +144,13 @@ fun WalletTheme(
 ) {
     PlatformTheme(darkTheme = darkTheme, isAmoled = isAmoled, content = content)
 }
+
+/**
+ * Extensões de conveniência semântica mapeando os tokens minimalistas (Prompt 55)
+ * diretamente no ColorScheme do MaterialTheme.
+ */
+val androidx.compose.material3.ColorScheme.surface1: Color get() = surface
+val androidx.compose.material3.ColorScheme.surface2: Color get() = surfaceVariant
+val androidx.compose.material3.ColorScheme.line: Color get() = outline
+val androidx.compose.material3.ColorScheme.text2: Color get() = onSurfaceVariant
+

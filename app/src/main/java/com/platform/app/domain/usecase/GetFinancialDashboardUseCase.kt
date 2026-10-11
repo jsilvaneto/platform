@@ -40,7 +40,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val categoryMap = mutableMapOf<String, Pair<String, Long>>()
 
             for (inst in installments) {
-                if (inst.isPaused) continue
+                if (inst.isPaused || inst.isSkipped) continue
                 totalDue += inst.amountCents
 
                 if (inst.isPaid) {
@@ -71,7 +71,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val savingsCents = monthlySavingsCents.coerceAtLeast(0L)
             val totalBudget = totalDue + savingsCents
 
-            val activeInstallmentsForMonth = installments.filter { !it.isPaused }
+            val activeInstallmentsForMonth = installments.filter { !it.isPaused && !it.isSkipped }
             val natureMap = activeInstallmentsForMonth.groupBy { it.nature }
             val natureDistribution = natureMap.map { (nature, instList) ->
                 val amount = instList.sumOf { it.amountCents }
@@ -95,14 +95,14 @@ class GetFinancialDashboardUseCase @Inject constructor(
             )
 
             val upcoming = installments
-                .filter { !it.isPaid }
+                .filter { !it.isPaid && !it.isPaused && !it.isSkipped }
                 .sortedBy { it.dueDate }
                 .take(5)
 
             // Vencimentos dos próximos 7 dias (ação rápida de liquidação)
             val sevenDaysAhead = now + (7L * 24 * 3600 * 1000)
             val upcomingWeek = allInstallments
-                .filter { !it.isPaid && it.dueDate in (now - 24 * 3600 * 1000)..sevenDaysAhead }
+                .filter { !it.isPaid && !it.isPaused && !it.isSkipped && it.dueDate in (now - 24 * 3600 * 1000)..sevenDaysAhead }
                 .sortedBy { it.dueDate }
 
             // Projeções dos próximos 6 a 12 meses para planejamento futuro (Curva de Desoneração)
@@ -110,7 +110,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 val futureMonthEpoch = DateUtils.addMonths(monthMillis, i)
                 val futureStart = DateUtils.getStartOfMonth(futureMonthEpoch)
                 val futureEnd = DateUtils.getEndOfMonth(futureMonthEpoch)
-                val monthInsts = allInstallments.filter { it.dueDate in futureStart..futureEnd }
+                val monthInsts = allInstallments.filter { !it.isPaused && !it.isSkipped && it.dueDate in futureStart..futureEnd }
                 val recurringCents = monthInsts.filter { it.type == BillType.RECURRING }.sumOf { it.amountCents }
                 val instCents = monthInsts.filter { it.type == BillType.INSTALLMENT }.sumOf { it.amountCents }
 

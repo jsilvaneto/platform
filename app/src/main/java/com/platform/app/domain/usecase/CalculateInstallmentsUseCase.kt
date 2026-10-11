@@ -151,7 +151,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                     totalInstallments = newTotal,
                     amountCents = bill.totalAmountCents,
                     dueDate = dueDate,
-                    status = if (bill.isPaused) BillStatus.PAUSED else BillStatus.PENDING,
+                    status = BillStatus.PENDING,
                     type = BillType.RECURRING
                 )
             )

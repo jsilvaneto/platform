@@ -27,6 +27,8 @@ import com.platform.app.presentation.bills.components.BillsMonthSectionHeader
 import com.platform.app.presentation.bills.components.EmptyBillsState
 import com.platform.app.presentation.bills.components.BatchDeleteDialog
 import com.platform.app.presentation.bills.components.BatchSetActualPaymentDateDialog
+import com.platform.app.presentation.bills.components.RecurringBillsList
+import com.platform.app.presentation.bills.components.RecurringDetailBottomSheet
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -360,6 +362,16 @@ fun BillsScreen(
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
+                    selectedTabIndex == 1 -> {
+                        RecurringBillsList(
+                            bills = uiState.bills,
+                            installments = uiState.installments,
+                            selectedFilter = uiState.recurringFilter,
+                            onFilterSelected = { onAction(BillsUiAction.RecurringFilterChanged(it)) },
+                            onSelectBill = { onAction(BillsUiAction.OpenRecurringDetail(it)) }
+                        )
+                    }
+
                     uiState.isLoading && uiState.installments.isEmpty() -> {
                         CircularProgressIndicator(
                             modifier = Modifier.align(Alignment.Center),
@@ -547,6 +559,29 @@ fun BillsScreen(
             },
             onDismiss = {
                 installmentToConfirmPayment = null
+            }
+        )
+    }
+
+    if (uiState.selectedRecurringBill != null) {
+        val selectedBill = uiState.selectedRecurringBill
+        val billInsts = remember(uiState.installments, selectedBill.id) {
+            uiState.installments.filter { it.billId == selectedBill.id }
+        }
+        RecurringDetailBottomSheet(
+            bill = selectedBill,
+            installments = billInsts,
+            onDismiss = { onAction(BillsUiAction.DismissRecurringDetail) },
+            onPayNextInstallment = { onAction(BillsUiAction.PayNextRecurringInstallment(it)) },
+            onPauseRecurring = { onAction(BillsUiAction.PauseRecurring(selectedBill.id, it)) },
+            onResumeRecurring = { onAction(BillsUiAction.ResumeRecurring(selectedBill.id)) },
+            onStopRecurring = { onAction(BillsUiAction.StopRecurring(selectedBill.id, it)) },
+            onReactivateRecurring = { onAction(BillsUiAction.ReactivateRecurring(selectedBill.id)) },
+            onUpdateMonthlyAmount = { fromDate, amount ->
+                onAction(BillsUiAction.UpdateRecurringMonthlyAmount(selectedBill.id, fromDate, amount))
+            },
+            onDeleteRecurring = { keepPaid ->
+                onAction(BillsUiAction.DeleteRecurring(selectedBill.id, keepPaid))
             }
         )
     }

@@ -18,12 +18,19 @@ enum class BillPeriodFilter(val label: String) {
     OVERDUE("Atrasadas")
 }
 
+enum class RecurringFilter(val label: String) {
+    ACTIVE("Ativas"),
+    PAUSED("Pausadas"),
+    ENDED("Encerradas")
+}
+
 data class BillsUiState(
     val selectedYear: Int? = Calendar.getInstance().get(Calendar.YEAR),
     val availableYears: List<Int> = emptyList(),
     val periodFilter: BillPeriodFilter = BillPeriodFilter.ALL,
     val installments: List<BillInstallment> = emptyList(),
     val filteredInstallments: List<BillInstallment> = emptyList(),
+    val bills: List<com.platform.app.domain.model.Bill> = emptyList(),
     val categories: List<Category> = emptyList(),
     val expenseItems: List<ExpenseItem> = emptyList(),
     val contacts: List<Contact> = emptyList(),
@@ -33,6 +40,8 @@ data class BillsUiState(
     val statusFilter: BillStatus? = null,
     val searchQuery: String = "",
     val editingInstallment: BillInstallment? = null,
+    val selectedRecurringBill: com.platform.app.domain.model.Bill? = null,
+    val recurringFilter: RecurringFilter = RecurringFilter.ACTIVE,
     val totalPeriodCents: Long = 0L,
     val paidPeriodCents: Long = 0L,
     val pendingPeriodCents: Long = 0L,

@@ -410,6 +410,7 @@ interface BillInstallmentDao {
         WHERE i.invoiceId IS NULL
           AND i.paidAt IS NULL
           AND i.status != 'PAUSED'
+          AND i.status != 'SKIPPED'
           AND i.dueDate BETWEEN :startDate AND :endDate
         ORDER BY i.dueDate ASC
         """
@@ -443,11 +444,28 @@ interface BillInstallmentDao {
         WHERE i.invoiceId IS NULL
           AND i.paidAt IS NULL
           AND i.status != 'PAUSED'
+          AND i.status != 'SKIPPED'
           AND i.dueDate < :beforeDate
         ORDER BY i.dueDate ASC
         """
     )
     suspend fun getOverduePendingInstallments(beforeDate: Long): List<InstallmentWithDetails>
+
+    @Query("""
+        UPDATE bill_installments 
+        SET status = 'SKIPPED' 
+        WHERE billId = :billId 
+          AND paidAt IS NULL 
+          AND dueDate >= :startDate 
+          AND (:endDate IS NULL OR dueDate <= :endDate)
+    """)
+    suspend fun markPendingAsSkippedInRange(billId: String, startDate: Long, endDate: Long?)
+
+    @Query("DELETE FROM bill_installments WHERE billId = :billId AND paidAt IS NULL AND dueDate > :cutoffDueDate")
+    suspend fun deletePendingAfterDueDate(billId: String, cutoffDueDate: Long)
+
+    @Query("DELETE FROM bill_installments WHERE billId = :billId AND paidAt IS NULL")
+    suspend fun deleteAllPending(billId: String)
 
     @Query("DELETE FROM bill_installments WHERE billId = :billId")
     suspend fun deleteByBillId(billId: String)
@@ -471,6 +489,7 @@ interface BillInstallmentDao {
         FROM bill_installments
         WHERE dueDate BETWEEN :startMillis AND :endMillis
           AND status != 'PAUSED'
+          AND status != 'SKIPPED'
         """
     )
     fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummaryRaw>
@@ -484,6 +503,7 @@ interface BillInstallmentDao {
         INNER JOIN bills b ON i.billId = b.id
         WHERE i.paidAt IS NULL 
           AND i.status != 'PAUSED'
+          AND i.status != 'SKIPPED'
           AND COALESCE(i.contactId, b.contactId) IS NOT NULL
         GROUP BY COALESCE(i.contactId, b.contactId)
         """

@@ -8,6 +8,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.ExtendRecurringBillsUseCase
 import com.platform.app.domain.usecase.GetMonthSummaryUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,7 +32,8 @@ import javax.inject.Inject
 class BillsViewModel @Inject constructor(
     private val repository: FinancialRepository,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
-    private val getMonthSummaryUseCase: GetMonthSummaryUseCase
+    private val getMonthSummaryUseCase: GetMonthSummaryUseCase,
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BillsUiState())
@@ -67,6 +69,16 @@ class BillsViewModel @Inject constructor(
                 loadInstallments()
             }
             is BillsUiAction.ResetFilters -> handleResetFilters()
+            is BillsUiAction.RecurringFilterChanged -> handleRecurringFilterChanged(action.filter)
+            is BillsUiAction.OpenRecurringDetail -> handleOpenRecurringDetail(action.bill)
+            is BillsUiAction.DismissRecurringDetail -> handleDismissRecurringDetail()
+            is BillsUiAction.PauseRecurring -> handlePauseRecurring(action.billId, action.pausedUntil)
+            is BillsUiAction.ResumeRecurring -> handleResumeRecurring(action.billId)
+            is BillsUiAction.StopRecurring -> handleStopRecurring(action.billId, action.cutoffDueDate)
+            is BillsUiAction.ReactivateRecurring -> handleReactivateRecurring(action.billId)
+            is BillsUiAction.UpdateRecurringMonthlyAmount -> handleUpdateRecurringAmount(action.billId, action.fromDueDate, action.newAmountCents)
+            is BillsUiAction.DeleteRecurring -> handleDeleteRecurring(action.billId, action.keepPaidHistory)
+            is BillsUiAction.PayNextRecurringInstallment -> handlePayNextRecurringInstallment(action.installment)
         }
     }
 
@@ -183,6 +195,14 @@ class BillsViewModel @Inject constructor(
                 )
             }
         }.launchIn(viewModelScope)
+
+        repository.getBills()
+            .onEach { bills ->
+                _uiState.update {
+                    it.copy(bills = bills.filter { b -> b.type == BillType.RECURRING })
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun loadInstallments() {
@@ -356,9 +376,9 @@ class BillsViewModel @Inject constructor(
             // Filtro de período relativo
             val matchesPeriod = when (periodFilter) {
                 BillPeriodFilter.ALL -> true
-                BillPeriodFilter.THIS_MONTH -> inst.dueDate in startOfMonth..endOfMonth
-                BillPeriodFilter.NEXT_30_DAYS -> inst.dueDate in now..thirtyDaysAhead
-                BillPeriodFilter.OVERDUE -> !inst.isPaid && inst.dueDate < now
+                BillPeriodFilter.THIS_MONTH -> !inst.isSkipped && inst.dueDate in startOfMonth..endOfMonth
+                BillPeriodFilter.NEXT_30_DAYS -> !inst.isSkipped && inst.dueDate in now..thirtyDaysAhead
+                BillPeriodFilter.OVERDUE -> !inst.isPaid && !inst.isSkipped && inst.dueDate < now
             }
 
             // Busca por texto
@@ -373,11 +393,12 @@ class BillsViewModel @Inject constructor(
 
             // Status de liquidação
             val matchesStatus = when (statusFilter) {
-                null -> true
+                null -> !inst.isSkipped
                 BillStatus.PAID -> inst.isPaid
-                BillStatus.PENDING -> !inst.isPaid && inst.dueDate >= now && !inst.isPaused
-                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now && !inst.isPaused
+                BillStatus.PENDING -> !inst.isPaid && inst.dueDate >= now && !inst.isPaused && !inst.isSkipped
+                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now && !inst.isPaused && !inst.isSkipped
                 BillStatus.PAUSED -> inst.isPaused
+                BillStatus.SKIPPED -> inst.isSkipped
             }
 
             matchesYear && matchesPeriod && matchesQuery && matchesType && matchesStatus
@@ -385,6 +406,107 @@ class BillsViewModel @Inject constructor(
 
         // 1- os primeiros registros sempre ser os mais recentes (ordenar por data decrescente)
         return filtered.sortedByDescending { it.dueDate }
+    }
+
+    private fun handleRecurringFilterChanged(filter: RecurringFilter) {
+        _uiState.update { it.copy(recurringFilter = filter) }
+    }
+
+    private fun handleOpenRecurringDetail(bill: Bill) {
+        _uiState.update { it.copy(selectedRecurringBill = bill) }
+    }
+
+    private fun handleDismissRecurringDetail() {
+        _uiState.update { it.copy(selectedRecurringBill = null) }
+    }
+
+    private fun handlePauseRecurring(billId: String, pausedUntil: Long?) {
+        viewModelScope.launch {
+            try {
+                repository.pauseRecurringBill(billId, pausedUntil)
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Recorrência pausada com sucesso."))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao pausar recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleResumeRecurring(billId: String) {
+        viewModelScope.launch {
+            try {
+                repository.resumeRecurringBill(billId)
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Recorrência retomada com sucesso."))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao retomar recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleStopRecurring(billId: String, cutoffDueDate: Long?) {
+        viewModelScope.launch {
+            try {
+                repository.stopRecurringBill(billId, cutoffDueDate)
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Recorrência encerrada com sucesso."))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao encerrar recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleReactivateRecurring(billId: String) {
+        viewModelScope.launch {
+            try {
+                repository.reactivateRecurringBill(billId)
+                extendRecurringBillsUseCase(System.currentTimeMillis())
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Recorrência reativada com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao reativar recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleUpdateRecurringAmount(billId: String, fromDueDate: Long, newAmountCents: Long) {
+        viewModelScope.launch {
+            try {
+                repository.updateFutureInstallmentsAmount(billId, fromDueDate, newAmountCents)
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Valor da recorrência atualizado!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao atualizar valor: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handleDeleteRecurring(billId: String, keepPaidHistory: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.deleteRecurringBill(billId, keepPaidHistory)
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Recorrência excluída com sucesso."))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao excluir recorrência: ${e.message}"))
+            }
+        }
+    }
+
+    private fun handlePayNextRecurringInstallment(installment: BillInstallment) {
+        viewModelScope.launch {
+            try {
+                togglePaymentUseCase(
+                    installmentId = installment.id,
+                    currentPaidStatus = installment.isPaid,
+                    actualPaymentDate = System.currentTimeMillis()
+                )
+                _uiState.update { it.copy(selectedRecurringBill = null) }
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Cobrança quitada com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao quitar cobrança: ${e.message}"))
+            }
+        }
     }
 
     private fun getYearFromTimestamp(timestamp: Long): Int {

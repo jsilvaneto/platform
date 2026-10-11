@@ -23,7 +23,7 @@ class GetOpenAmountByContactUseCase @Inject constructor(
      */
     fun calculate(installments: List<BillInstallment>): Map<String, Long> {
         return installments
-            .filter { !it.isPaid && !it.isPaused && it.contactId != null }
+            .filter { !it.isPaid && !it.isPaused && !it.isSkipped && it.contactId != null }
             .groupBy { it.contactId!! }
             .mapValues { entry ->
                 var sum = 0L

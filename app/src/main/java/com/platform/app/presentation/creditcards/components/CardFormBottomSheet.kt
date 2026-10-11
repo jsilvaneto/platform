@@ -27,6 +27,7 @@ import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardCalculator
 import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.components.PlatformPrimaryButton
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformShapes
 
@@ -43,12 +44,7 @@ fun CardFormBottomSheet(
     var limitText by remember { mutableStateOf(if (cardToEdit != null) cardToEdit.totalLimitCents.toString() else "") }
     var closingDayText by remember { mutableStateOf(if (cardToEdit != null) cardToEdit.closingDay.toString() else "25") }
     var dueDayText by remember { mutableStateOf(if (cardToEdit != null) cardToEdit.dueDay.toString() else "5") }
-    var selectedColor by remember { mutableStateOf(cardToEdit?.colorHex ?: "#3B82F6") }
-
-    val presetColors = listOf(
-        "#3B82F6", "#8B5CF6", "#EC4899", "#EF4444", "#F59E0B",
-        "#10B981", "#14B8A6", "#06B6D4", "#6366F1", "#1E293B"
-    )
+    val selectedColor = cardToEdit?.colorHex ?: "#23262F"
 
     val limitCents = limitText.filter { it.isDigit() }.toLongOrNull() ?: 0L
     val closing = closingDayText.toIntOrNull() ?: 0
@@ -126,49 +122,19 @@ fun CardFormBottomSheet(
                 )
             }
 
-            // Seletor de Cores
-            Text(
-                text = "Cor do Cartão:",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(presetColors) { hex ->
-                    val color = try { Color(hex.toColorInt()) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(color, CircleShape)
-                            .clickable { selectedColor = hex }
-                            .then(
-                                if (selectedColor == hex) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
-                                else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (selectedColor == hex) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
             Spacer(modifier = Modifier.height(Dimens.spacingSmall))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDismiss) {
                     Text(AppStrings.Actions.CANCEL)
                 }
                 Spacer(modifier = Modifier.width(Dimens.spacingSmall))
-                Button(
+                PlatformPrimaryButton(
+                    text = if (isEdit) "Salvar Alterações" else "Cadastrar Cartão",
                     onClick = {
                         if (validation.isValid) {
                             onSave(
@@ -184,9 +150,7 @@ fun CardFormBottomSheet(
                         }
                     },
                     enabled = validation.isValid
-                ) {
-                    Text(if (isEdit) "Salvar Alterações" else "Cadastrar Cartão")
-                }
+                )
             }
         }
     }

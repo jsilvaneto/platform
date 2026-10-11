@@ -266,6 +266,19 @@ object AppStrings {
         const val FITS_LIMIT = "Cabe no seu limite!"
         const val EXCEEDS_LIMIT = "Não cabe no seu limite!"
         const val REMAINING_LIMIT = "Restará de limite:"
+        const val MY_CARDS = "Meus Cartões"
+        const val NO_CARDS_REGISTERED = "Nenhum cartão cadastrado"
+        const val NO_CARDS_DESC = "Cadastre seu cartão de crédito para gerenciar limites e faturas."
+        const val REGISTER_FIRST_CARD = "Cadastrar primeiro cartão"
+        const val PAY_INVOICE = "Pagar fatura"
+        const val INVOICE_PAID = "Fatura paga"
+        const val INVOICE_INSTALLMENTS = "Lançamentos na fatura"
+        const val NO_INSTALLMENTS_ON_INVOICE = "Nenhum lançamento nesta fatura."
+        const val BEST_DAY_PREFIX = "Melhor dia: dia "
+        const val BEST_DAY_DESC = "Compras a partir deste dia caem na próxima fatura."
+        const val DELETE_CARD_TITLE = "Excluir Cartão de Crédito"
+        const val DELETE_CARD_CONFIRM = "Tem certeza de que deseja excluir este cartão de crédito?"
+        const val CARD_IN_USE_WARNING = "Atenção: Cartão em uso!"
     }
 
     object Theme {

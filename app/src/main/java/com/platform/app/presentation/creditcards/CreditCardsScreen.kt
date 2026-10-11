@@ -1,21 +1,7 @@
 package com.platform.app.presentation.creditcards
 
-import com.platform.app.presentation.theme.PlatformShapes
-
-import com.platform.app.presentation.creditcards.components.CreditCardItemCard
-import com.platform.app.presentation.creditcards.components.InvoiceItemCard
-
-import com.platform.app.presentation.creditcards.components.CardFormBottomSheet
-import com.platform.app.presentation.creditcards.components.InvoiceDetailsBottomSheet
-import com.platform.app.presentation.creditcards.components.CanIBuyDialog
-import com.platform.app.presentation.components.PlatformSurface
-import com.platform.app.presentation.components.PlatformSurfaceVariant
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.CheckCircle
-
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,40 +17,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Payment
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,34 +41,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
-import com.platform.app.core.util.CurrencyUtils
-import com.platform.app.core.util.DateUtils
-import com.platform.app.domain.model.BillInstallment
-import com.platform.app.domain.model.CreditCard
-import com.platform.app.domain.model.CreditCardCalculator
-import com.platform.app.domain.model.CreditCardInvoice
-import com.platform.app.domain.model.CreditCardWithInvoiceSummary
+import androidx.compose.ui.unit.sp
 import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformCreditCardView
-import com.platform.app.presentation.components.PlatformSegmentedTabs
-import com.platform.app.presentation.components.SegmentedTabItem
-import com.platform.app.presentation.components.PlatformStatusChip
-import com.platform.app.presentation.components.StatusChipType
+import com.platform.app.presentation.components.PlatformListRow
+import com.platform.app.presentation.components.PlatformNeutralChip
+import com.platform.app.presentation.components.PlatformPrimaryButton
+import com.platform.app.presentation.components.PlatformSectionTitle
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.creditcards.components.CanIBuyDialog
+import com.platform.app.presentation.creditcards.components.CardFormBottomSheet
+import com.platform.app.presentation.creditcards.components.CreditCardInvoiceCard
 import com.platform.app.presentation.theme.Dimens
-import com.platform.app.presentation.theme.SuccessGreen
-import com.platform.app.presentation.theme.UrgentRed
-import com.platform.app.presentation.theme.WarningAmber
+import com.platform.app.presentation.theme.PlatformShapes
+import com.platform.app.presentation.theme.PlatformStatusStyle
+import com.platform.app.presentation.theme.PlatformStatusType
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditCardsScreen(
     uiState: CreditCardsUiState,
@@ -111,36 +73,59 @@ fun CreditCardsScreen(
     var showAddCardSheet by remember { mutableStateOf(false) }
     var showCanIBuyDialog by remember { mutableStateOf(false) }
 
+    val selectedCardSummary = uiState.selectedCardSummary
+    val activeInvoice = uiState.activeInvoice
+    val canPay = activeInvoice != null && activeInvoice.status != InvoiceStatus.PAGA
+
     Scaffold(
         topBar = {
             PlatformAppBar(
                 title = AppStrings.Navigation.CREDIT_CARDS,
                 subtitle = "Limites e Faturas",
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                actions = {
+                    IconButton(onClick = onNavigateToNewExpense) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingCart,
+                            contentDescription = "Nova Despesa",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { showAddCardSheet = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Adicionar Cartão",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
-            val selectedCardSummary = uiState.selectedCardSummary
-            val currentInvoice = uiState.currentInvoice
             if (selectedCardSummary != null) {
                 PlatformSurface(
-                    variant = PlatformSurfaceVariant.Flat,
-                    modifier = Modifier.fillMaxWidth(),
-                    tonalElevation = 3.dp
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = Dimens.spacingNormal, vertical = 10.dp),
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Botão secundário "Posso comprar?"
                         OutlinedButton(
                             onClick = { showCanIBuyDialog = true },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(44.dp),
-                            shape = PlatformShapes.medium
+                                .height(48.dp),
+                            shape = PlatformShapes.medium,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ShoppingCart,
@@ -149,51 +134,40 @@ fun CreditCardsScreen(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Posso comprar?",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                text = AppStrings.CreditCards.CAN_I_BUY_TITLE,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
                             )
                         }
 
-                        Button(
+                        // Botão principal neutro "Pagar fatura"
+                        PlatformPrimaryButton(
+                            text = if (activeInvoice?.status == InvoiceStatus.PAGA) {
+                                AppStrings.CreditCards.INVOICE_PAID
+                            } else {
+                                AppStrings.CreditCards.PAY_INVOICE
+                            },
                             onClick = {
-                                if (currentInvoice != null && currentInvoice.status != InvoiceStatus.PAGA) {
-                                    onAction(CreditCardsUiAction.PayInvoice(currentInvoice.id))
+                                if (activeInvoice != null && canPay) {
+                                    onAction(CreditCardsUiAction.PayInvoice(activeInvoice.id))
                                 }
                             },
-                            enabled = currentInvoice != null && currentInvoice.status != InvoiceStatus.PAGA,
+                            enabled = canPay,
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
                             modifier = Modifier
                                 .weight(1f)
-                                .height(44.dp),
-                            shape = PlatformShapes.medium,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Pagar fatura",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                                .height(48.dp)
+                        )
                     }
                 }
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddCardSheet = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Adicionar Cartão")
             }
         },
         modifier = modifier
@@ -211,29 +185,20 @@ fun CreditCardsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = Dimens.spacingNormal, end = Dimens.spacingNormal, top = Dimens.spacingMedium, bottom = 88.dp),
-                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        end = 16.dp,
+                        top = 12.dp,
+                        bottom = 16.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // 1. CARROSSEL DE CARTÕES
                     item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Meus Cartões",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${uiState.cardsWithSummary.size} cadastrado(s)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(Dimens.spacingSmall))
+                        PlatformSectionTitle(
+                            text = "${AppStrings.CreditCards.MY_CARDS} (${uiState.cardsWithSummary.size})"
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         if (uiState.cardsWithSummary.isEmpty()) {
                             PlatformCard(
@@ -248,25 +213,30 @@ fun CreditCardsScreen(
                                     Icon(
                                         imageVector = Icons.Default.CreditCard,
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(40.dp)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Nenhum cartão cadastrado",
+                                        text = AppStrings.CreditCards.NO_CARDS_REGISTERED,
                                         style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Cadastre seu cartão de crédito para gerenciar limites e faturas.",
+                                        text = AppStrings.CreditCards.NO_CARDS_DESC,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Button(
                                         onClick = { showAddCardSheet = true },
-                                        shape = PlatformShapes.medium
+                                        shape = PlatformShapes.medium,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Add,
@@ -274,18 +244,19 @@ fun CreditCardsScreen(
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Cadastrar primeiro cartão")
+                                        Text(AppStrings.CreditCards.REGISTER_FIRST_CARD)
                                     }
                                 }
                             }
                         } else {
                             LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 items(uiState.cardsWithSummary, key = { it.card.id }) { summary ->
+                                    val isSelected = summary.card.id == (uiState.selectedCardId ?: uiState.cardsWithSummary.firstOrNull()?.card?.id)
                                     PlatformCreditCardView(
                                         summary = summary,
-                                        isSelected = summary.card.id == (uiState.selectedCardId ?: uiState.cardsWithSummary.firstOrNull()?.card?.id),
+                                        isSelected = isSelected,
                                         onClick = { onAction(CreditCardsUiAction.SelectCard(summary.card.id)) },
                                         onEdit = { onAction(CreditCardsUiAction.OpenEditCard(summary.card)) },
                                         onDelete = { onAction(CreditCardsUiAction.RequestDeleteCard(summary.card.id)) }
@@ -295,145 +266,94 @@ fun CreditCardsScreen(
                         }
                     }
 
-                    // 2. EXTRATO DE FATURAS DO CARTÃO SELECIONADO
-                    val selectedCardSummary = uiState.selectedCardSummary
+                    // 2. SEÇÃO DE FATURAS E LANÇAMENTOS DO CARTÃO SELECIONADO
                     if (selectedCardSummary != null) {
                         item {
-                            Spacer(modifier = Modifier.height(Dimens.spacingSmall))
-
-                            // Card Executivo do Ciclo: Melhor Dia de Compra & Atalho de Lançamento
-                            PlatformCard(
-                                shape = PlatformShapes.large
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(14.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(36.dp)
-                                                    .background(WarningAmber.copy(alpha = 0.15f), CircleShape),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.CalendarToday,
-                                                    contentDescription = null,
-                                                    tint = WarningAmber,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Column {
-                                                Text(
-                                                    text = "Melhor Dia: dia ${selectedCardSummary.card.closingDay}",
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                                Text(
-                                                    text = "Compras a partir deste dia caem na próxima fatura",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    Button(
-                                        onClick = onNavigateToNewExpense,
-                                        shape = PlatformShapes.medium,
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(38.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Lançar Despesa com ${selectedCardSummary.card.name}",
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(Dimens.spacingMedium))
-
-                            // Seletor de Faturas em Segmented Tabs
+                            // Seletor de Faturas em Chips Neutros
                             val allInvoices = uiState.invoicesForSelectedCard
                             val openCount = allInvoices.count { it.status == InvoiceStatus.ABERTA }
                             val closedCount = allInvoices.count { it.status == InvoiceStatus.FECHADA }
                             val paidCount = allInvoices.count { it.status == InvoiceStatus.PAGA }
 
-                            val invoiceTabItems = listOf(
-                                SegmentedTabItem("Aberta", openCount),
-                                SegmentedTabItem("Fechadas", closedCount),
-                                SegmentedTabItem("Pagas", paidCount),
-                                SegmentedTabItem("Todas", allInvoices.size)
-                            )
-
-                            val selectedInvoiceTabIndex = when (uiState.invoiceFilter) {
-                                InvoiceFilter.OPEN -> 0
-                                InvoiceFilter.CLOSED -> 1
-                                InvoiceFilter.PAID -> 2
-                                InvoiceFilter.ALL -> 3
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                PlatformNeutralChip(
+                                    text = "Aberta ($openCount)",
+                                    selected = uiState.invoiceFilter == InvoiceFilter.OPEN,
+                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.OPEN)) }
+                                )
+                                PlatformNeutralChip(
+                                    text = "Fechadas ($closedCount)",
+                                    selected = uiState.invoiceFilter == InvoiceFilter.CLOSED,
+                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.CLOSED)) }
+                                )
+                                PlatformNeutralChip(
+                                    text = "Pagas ($paidCount)",
+                                    selected = uiState.invoiceFilter == InvoiceFilter.PAID,
+                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.PAID)) }
+                                )
+                                PlatformNeutralChip(
+                                    text = "Todas (${allInvoices.size})",
+                                    selected = uiState.invoiceFilter == InvoiceFilter.ALL,
+                                    onClick = { onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.ALL)) }
+                                )
                             }
+                        }
 
-                            PlatformSegmentedTabs(
-                                items = invoiceTabItems,
-                                selectedIndex = selectedInvoiceTabIndex,
-                                onTabSelected = { index ->
-                                    when (index) {
-                                        0 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.OPEN))
-                                        1 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.CLOSED))
-                                        2 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.PAID))
-                                        3 -> onAction(CreditCardsUiAction.SetInvoiceFilter(InvoiceFilter.ALL))
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
+                        // Card da fatura ativa com total em 30sp
+                        if (activeInvoice != null) {
+                            item {
+                                CreditCardInvoiceCard(invoice = activeInvoice)
+                            }
+                        }
+
+                        // 3. LISTA DE LANÇAMENTOS NA FATURA
+                        item {
+                            PlatformSectionTitle(
+                                text = "${AppStrings.CreditCards.INVOICE_INSTALLMENTS} (${uiState.installmentsForSelectedInvoice.size})"
                             )
                         }
 
-                        val invoices = uiState.filteredInvoices
-                        if (invoices.isEmpty()) {
+                        val installments = uiState.installmentsForSelectedInvoice
+                        if (installments.isEmpty()) {
                             item {
                                 PlatformCard(
                                     shape = PlatformShapes.large
                                 ) {
-                                    Column(
+                                    Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(Dimens.spacingLarge),
-                                        horizontalAlignment = Alignment.CenterHorizontally
+                                            .padding(20.dp),
+                                        contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = "Nenhuma fatura encontrada neste filtro.",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            text = AppStrings.CreditCards.NO_INSTALLMENTS_ON_INVOICE,
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
                             }
                         } else {
-                            items(invoices, key = { it.id }) { invoice ->
-                                InvoiceItemCard(
-                                    invoice = invoice,
-                                    onViewDetails = { onAction(CreditCardsUiAction.SelectInvoiceForDetails(invoice)) },
-                                    onPay = { onAction(CreditCardsUiAction.PayInvoice(invoice.id)) }
+                            items(installments, key = { it.id }) { item ->
+                                val subtitle = buildString {
+                                    append(item.categoryName)
+                                    if (!item.itemName.isNullOrBlank()) {
+                                        append(" • ")
+                                        append(item.itemName)
+                                    }
+                                    append(" • Parcela ")
+                                    append(item.installmentNumber)
+                                    append("/")
+                                    append(item.totalInstallments)
+                                }
+                                PlatformListRow(
+                                    title = item.billTitle,
+                                    subtitle = subtitle,
+                                    amountCents = item.amountCents,
+                                    icon = Icons.Default.CreditCard
                                 )
                             }
                         }
@@ -468,9 +388,12 @@ fun CreditCardsScreen(
         // DIÁLOGO: CONFIRMAÇÃO DE EXCLUSÃO COM DEPENDÊNCIAS
         if (uiState.pendingDeleteDependencies != null) {
             val deps = uiState.pendingDeleteDependencies
+            val overdueColors = PlatformStatusStyle.getColors(PlatformStatusType.OVERDUE)
+            val attentionColors = PlatformStatusStyle.getColors(PlatformStatusType.ATTENTION)
+
             AlertDialog(
                 onDismissRequest = { onAction(CreditCardsUiAction.CancelDeleteCard) },
-                title = { Text("Excluir Cartão de Crédito") },
+                title = { Text(AppStrings.CreditCards.DELETE_CARD_TITLE) },
                 text = {
                     if (deps.hasActiveDependencies) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -478,13 +401,13 @@ fun CreditCardsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Warning,
                                     contentDescription = null,
-                                    tint = WarningAmber
+                                    tint = attentionColors.contentColor
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Atenção: Cartão em uso!",
+                                    text = AppStrings.CreditCards.CARD_IN_USE_WARNING,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.error
+                                    color = overdueColors.contentColor
                                 )
                             }
                             Text(
@@ -497,13 +420,13 @@ fun CreditCardsScreen(
                             )
                         }
                     } else {
-                        Text("Tem certeza de que deseja excluir este cartão de crédito?")
+                        Text(AppStrings.CreditCards.DELETE_CARD_CONFIRM)
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = { onAction(CreditCardsUiAction.ConfirmDeleteCard) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.buttonColors(containerColor = overdueColors.contentColor)
                     ) {
                         Text("Sim, Excluir")
                     }
@@ -516,24 +439,11 @@ fun CreditCardsScreen(
             )
         }
 
-        // BOTTOM SHEET: DETALHES E EXTRATO DA FATURA
-        if (uiState.selectedInvoiceForDetails != null) {
-            InvoiceDetailsBottomSheet(
-                invoice = uiState.selectedInvoiceForDetails,
-                installments = uiState.installmentsForSelectedInvoice,
-                onDismiss = { onAction(CreditCardsUiAction.SelectInvoiceForDetails(null)) },
-                onPay = {
-                    onAction(CreditCardsUiAction.PayInvoice(uiState.selectedInvoiceForDetails.id))
-                }
-            )
-        }
-
         // DIÁLOGO SIMULADOR: POSSO COMPRAR?
-        if (showCanIBuyDialog && uiState.selectedCardSummary != null) {
-            val summary = uiState.selectedCardSummary!!
+        if (showCanIBuyDialog && selectedCardSummary != null) {
             CanIBuyDialog(
-                card = summary.card,
-                availableLimitCents = summary.availableLimitCents,
+                card = selectedCardSummary.card,
+                availableLimitCents = selectedCardSummary.availableLimitCents,
                 onDismiss = { showCanIBuyDialog = false }
             )
         }

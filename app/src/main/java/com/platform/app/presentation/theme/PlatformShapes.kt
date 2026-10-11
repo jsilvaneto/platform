@@ -20,6 +20,7 @@ object PlatformShapes {
     val small = RoundedCornerShape(8.dp)
     val medium = RoundedCornerShape(12.dp)
     val large = RoundedCornerShape(16.dp)
+    val card = RoundedCornerShape(20.dp)
     val extraLarge = RoundedCornerShape(28.dp)
     val pill = CircleShape
     val bottomSheet = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)

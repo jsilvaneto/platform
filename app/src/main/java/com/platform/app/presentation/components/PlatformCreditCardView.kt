@@ -1,56 +1,50 @@
 package com.platform.app.presentation.components
 
-import com.platform.app.presentation.theme.PlatformShapes
-
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.CreditCardWithInvoiceSummary
-import com.platform.app.presentation.theme.CardSkinColors
-import com.platform.app.presentation.theme.SuccessGreen
-import com.platform.app.presentation.theme.UrgentRed
-import com.platform.app.presentation.theme.WarningAmber
+import com.platform.app.presentation.theme.PlatformShapes
+import com.platform.app.presentation.theme.PlatformStatusStyle
+import com.platform.app.presentation.theme.PlatformStatusType
 
 /**
- * Componente visual executivo do Cartão de Crédito virtual (Apple Card / Revolut Style).
- * Respeita a proporção bancária oficial (aspectRatio 1.586f) com acabamento acetinado,
- * chip EMV metálico, termômetro de limite inteligente e informações de ciclo de corte.
+ * Cartão de crédito virtual plano e minimalista (Prompt 61):
+ * - Container: superfície plana (sup2), borda 1dp na cor de linha, raio 20dp, altura 170dp.
+ * - Informações: Nome do cartão, "Fecha dia X" e "Vence dia Y".
+ * - Barra de limite de 8dp com "Usado R$ X de R$ Y":
+ *   - verde até 70% (PAID)
+ *   - âmbar de 70% a 90% (ATTENTION)
+ *   - vermelho acima de 90% (OVERDUE)
+ *   - sempre com percentual em texto.
  */
 @Composable
 fun PlatformCreditCardView(
@@ -62,186 +56,156 @@ fun PlatformCreditCardView(
     modifier: Modifier = Modifier
 ) {
     val card = summary.card
-    val cardBgColor = MaterialTheme.colorScheme.surfaceVariant
+    val isDark = isSystemInDarkTheme()
 
     val usageRatio = if (card.totalLimitCents > 0) {
         (summary.usedLimitCents.toFloat() / card.totalLimitCents.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
-    val limitGaugeColor = when {
-        usageRatio > 0.75f -> UrgentRed
-        usageRatio > 0.40f -> WarningAmber
-        else -> SuccessGreen
-    }
+    val usagePercent = (usageRatio * 100).toInt()
 
-    val selectionBorder = if (isSelected) {
-        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+    val limitStatusType = when {
+        usageRatio <= 0.70f -> PlatformStatusType.PAID
+        usageRatio <= 0.90f -> PlatformStatusType.ATTENTION
+        else -> PlatformStatusType.OVERDUE
+    }
+    val limitGaugeColor = PlatformStatusStyle.getColors(limitStatusType, isDark).contentColor
+
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.onSurface
     } else {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
     }
 
     PlatformSurface(
-        shape = PlatformShapes.large,
-        border = selectionBorder,
+        shape = PlatformShapes.card,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, borderColor),
         modifier = modifier
-            .width(240.dp)
-            .aspectRatio(1.586f)
-            .clip(PlatformShapes.large)
+            .width(280.dp)
+            .height(170.dp)
+            .clip(PlatformShapes.card)
             .clickable(onClick = onClick)
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(cardBgColor)
-                .padding(12.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
+            // Linha Superior: Nome do Cartão + Ações de Editar/Excluir
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Linha Superior: Nome do Cartão, Chip EMV, Contactless e Ações
+                Text(
+                    text = card.name,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = "Excluir",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            // Meio: Ciclo de faturamento "Fecha dia X · Vence dia Y"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = "Fecha dia ${card.closingDay} · Vence dia ${card.dueDay}",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Limite: Barra de 8dp + "Usado R$ X de R$ Y (Z%)"
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Chip EMV Metálico Estilizado
-                        EmvChipGraphic()
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Icon(
-                            imageVector = Icons.Default.Sensors,
-                            contentDescription = "Contactless",
-                            tint = CardSkinColors.ContactlessIcon,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        PlatformSurface(
-                            shape = CircleShape,
-                            color = CardSkinColors.ActionOverlay,
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            IconButton(onClick = onEdit) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Editar",
-                                    tint = CardSkinColors.ActionIcon,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(6.dp))
-
-                        PlatformSurface(
-                            shape = CircleShape,
-                            color = CardSkinColors.ActionOverlay,
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            IconButton(onClick = onDelete) {
-                                Icon(
-                                    imageVector = Icons.Default.DeleteOutline,
-                                    contentDescription = "Excluir",
-                                    tint = CardSkinColors.ActionIcon,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Centro: Nome do Cartão e Limite Disponível
-                Column {
                     Text(
-                        text = card.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = CardSkinColors.TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        text = "Usado ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} de ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
                     Text(
-                        text = "Disponível: ${CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = CardSkinColors.TextPrimary,
-                        letterSpacing = 0.5.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    // Termômetro de Limite Inteligente com PlatformProgressBar
-                    PlatformProgressBar(
-                        progress = usageRatio,
-                        height = 8.dp,
-                        trackColor = CardSkinColors.TrackBackground,
-                        progressColor = limitGaugeColor
+                        text = "$usagePercent%",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                // Rodapé do Cartão: Limite Total, Data de Fechamento e Vencimento
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
+                // Barra de limite de 8dp plana
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(PlatformShapes.small)
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
-                    Column {
-                        Text(
-                            text = "Usado ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} de ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = CardSkinColors.TextPrimary
-                        )
-                        Text(
-                            text = "Disponível: ${CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = limitGaugeColor
-                        )
-                    }
-
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "Fecha dia ${card.closingDay}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CardSkinColors.TextSubtle
-                        )
-                        Text(
-                            text = "Vence dia ${card.dueDay}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = CardSkinColors.TextPrimary
+                    if (usageRatio > 0f) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(usageRatio)
+                                .height(8.dp)
+                                .clip(PlatformShapes.small)
+                                .background(limitGaugeColor)
                         )
                     }
                 }
+
+                // Disponível
+                Text(
+                    text = "Disponível: ${CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents)}",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-    }
-}
-
-/**
- * Desenho vetorial de um Chip EMV bancário com linhas de contato.
- */
-@Composable
-private fun EmvChipGraphic(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(width = 30.dp, height = 22.dp)
-            .clip(PlatformShapes.extraSmall)
-            .background(CardSkinColors.EmvChipBase)
-            .border(1.dp, CardSkinColors.EmvChipBorder, PlatformShapes.extraSmall)
-            .padding(2.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .border(0.5.dp, CardSkinColors.EmvChipContactLine, PlatformShapes.extraSmall)
-        )
     }
 }

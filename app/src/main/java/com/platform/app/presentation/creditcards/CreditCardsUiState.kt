@@ -29,6 +29,9 @@ data class CreditCardsUiState(
     val selectedCardSummary: CreditCardWithInvoiceSummary?
         get() = cardsWithSummary.find { it.card.id == selectedCardId } ?: cardsWithSummary.firstOrNull()
 
+    val activeInvoice: CreditCardInvoice?
+        get() = selectedInvoiceForDetails ?: currentInvoice
+
     val filteredInvoices: List<CreditCardInvoice>
         get() = when (invoiceFilter) {
             InvoiceFilter.ALL -> invoicesForSelectedCard

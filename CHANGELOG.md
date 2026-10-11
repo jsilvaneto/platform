@@ -3,6 +3,40 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.32.0] - 2026-10-11
+
+### 💳 Reconstrução Minimalista de Cartões e Faturas (Prompt 61)
+
+- **Cartão de Crédito Plano (`PlatformCreditCardView`)**:
+  - Container minimalista com superfície plana (`surface2`), borda de 1dp na cor de linha e raio de 20dp (`PlatformShapes.card`), altura exata de 170dp.
+  - Exibição de metadados de ciclo de corte e vencimento ("Fecha dia X · Vence dia Y").
+  - Barra de limite contínua de 8dp com regras semafóricas de uso e percentual sempre em texto:
+    - Verde até 70% (`PlatformStatusType.PAID`).
+    - Âmbar de 70% a 90% (`PlatformStatusType.ATTENTION`).
+    - Vermelho acima de 90% (`PlatformStatusType.OVERDUE`).
+    - Exibição tabular e textual do limite usado, total e percentual consumido ("Usado R$ X de R$ Y (Z%)").
+  - Ações sutis e integradas de edição e exclusão de cartão.
+
+- **Fatura e Lista de Lançamentos (`CreditCardsScreen` & `CreditCardInvoiceCard`)**:
+  - Exibição da fatura ativa com valor total em destaque em 30sp tabular (`PlatformMoneyText`).
+  - Chips de status semafóricos estritos via `PlatformStatusStyle`:
+    - Aberta e Fechada em âmbar (`PlatformStatusType.ATTENTION`).
+    - Vencida em vermelho (`PlatformStatusType.OVERDUE`).
+    - Paga em verde (`PlatformStatusType.PAID`).
+  - Navegação entre faturas do cartão por meio de chips neutros (`PlatformNeutralChip`).
+  - Lista de lançamentos e compras da fatura migrada para `PlatformListRow` minimalista com ícones 36dp (raio 12), título 14sp bold e valor 14sp tabular.
+  - Eliminação de componentes legados de cartões (`CreditCardItemCards`, `InvoiceDetailsBottomSheet`).
+
+- **Barra Inferior Fixa com Botões de Ação**:
+  - Botão secundário "Posso comprar?" (com borda neutra de 1dp, altura 48dp), abrindo o simulador de limite disponível `CanIBuyDialog`.
+  - Botão principal neutro `PlatformPrimaryButton` "Pagar fatura" (altura 48dp, 0 elevação).
+  - Remoção de cores arbitrárias fora da paleta (remoção de seletor de roxo, índigo e turquesa no formulário do cartão).
+
+- **Testes e Acessibilidade**:
+  - Contraste estrito WCAG 2.1 AA (mínimo 4,5:1) validado nos três temas (AMOLED, Escuro e Claro).
+  - Suíte de testes instrumentados `CreditCardsAndroidTest` validando renderização nos temas e em escala de fonte 1,3x.
+  - Suíte de testes unitários `CreditCardsViewModelTest` cobrindo seleção de cartão, filtros de fatura, detalhamento e quitação.
+
 ## [1.31.0] - 2026-10-11
 
 ### 📋 Remodelagem de Contas e Lançamento Rápido (Prompt 60)

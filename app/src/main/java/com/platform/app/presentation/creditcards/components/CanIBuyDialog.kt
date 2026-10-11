@@ -40,7 +40,8 @@ import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.PlatformSurfaceVariant
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformShapes
-import com.platform.app.presentation.theme.SuccessGreen
+import com.platform.app.presentation.theme.PlatformStatusStyle
+import com.platform.app.presentation.theme.PlatformStatusType
 
 /**
  * Diálogo do simulador "Posso comprar?" para cartões de crédito.
@@ -121,6 +122,10 @@ fun CanIBuyDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
+                            val successColors = PlatformStatusStyle.getColors(PlatformStatusType.PAID)
+                            val errorColors = PlatformStatusStyle.getColors(PlatformStatusType.OVERDUE)
+                            val statusContentColor = if (canAfford) successColors.contentColor else errorColors.contentColor
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -128,14 +133,14 @@ fun CanIBuyDialog(
                                 Icon(
                                     imageVector = if (canAfford) Icons.Default.CheckCircle else Icons.Default.Error,
                                     contentDescription = null,
-                                    tint = if (canAfford) SuccessGreen else MaterialTheme.colorScheme.error,
+                                    tint = statusContentColor,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Text(
                                     text = if (canAfford) "Cabe no seu limite!" else "Não cabe no seu limite!",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (canAfford) SuccessGreen else MaterialTheme.colorScheme.error
+                                    color = statusContentColor
                                 )
                             }
 

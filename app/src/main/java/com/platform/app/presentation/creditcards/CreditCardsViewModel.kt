@@ -56,21 +56,8 @@ class CreditCardsViewModel @Inject constructor(
             }
             is CreditCardsUiAction.SelectInvoiceForDetails -> {
                 _uiState.update { it.copy(selectedInvoiceForDetails = action.invoice) }
-                invoiceDetailsJob?.cancel()
-                if (action.invoice != null) {
-                    invoiceDetailsJob = repository.getInstallmentsForInvoice(action.invoice.id)
-                        .combine(repository.getAllInstallments()) { invoiceInsts, _ ->
-                            invoiceInsts
-                        }
-                        .launchIn(viewModelScope)
-                    viewModelScope.launch {
-                        repository.getInstallmentsForInvoice(action.invoice.id).collect { insts ->
-                            _uiState.update { it.copy(installmentsForSelectedInvoice = insts) }
-                        }
-                    }
-                } else {
-                    _uiState.update { it.copy(installmentsForSelectedInvoice = emptyList()) }
-                }
+                val targetId = action.invoice?.id ?: _uiState.value.currentInvoice?.id
+                observeInvoiceInstallments(targetId)
             }
             is CreditCardsUiAction.SetInvoiceFilter -> {
                 _uiState.update { it.copy(invoiceFilter = action.filter) }
@@ -162,6 +149,21 @@ class CreditCardsViewModel @Inject constructor(
                     isLoading = false
                 )
             }
+            val active = _uiState.value.activeInvoice
+            observeInvoiceInstallments(active?.id)
         }.launchIn(viewModelScope)
+    }
+
+    private fun observeInvoiceInstallments(invoiceId: String?) {
+        invoiceDetailsJob?.cancel()
+        if (invoiceId == null) {
+            _uiState.update { it.copy(installmentsForSelectedInvoice = emptyList()) }
+            return
+        }
+        invoiceDetailsJob = viewModelScope.launch {
+            repository.getInstallmentsForInvoice(invoiceId).collect { insts ->
+                _uiState.update { it.copy(installmentsForSelectedInvoice = insts) }
+            }
+        }
     }
 }

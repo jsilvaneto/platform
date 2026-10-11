@@ -58,12 +58,12 @@ class ExtendRecurringBillsUseCase @Inject constructor(
             val windowBatchCount = CalculateInstallmentsUseCase.getDefaultWindowOccurrences(frequency)
 
             // Quantas parcelas pendentes ou com vencimento futuro ainda existem no banco a partir da referência
-            val futureOrPendingCount = existing.count { it.dueDate >= referenceTimeMillis || !it.isPaid }
-            val latestDueDate = existing.maxOf { it.dueDate }
+            val futureOrPendingCount = existing.count { it.dueDateMillis >= referenceTimeMillis || !it.isPaid }
+            val latestDueDateMillis = existing.maxOf { it.dueDateMillis }
             val thresholdHorizonMillis = getThresholdHorizonMillis(referenceTimeMillis, frequency)
 
             // Se restam poucas parcelas OU se o horizonte máximo projetado está próximo do presente
-            val shouldExtend = futureOrPendingCount <= thresholdOccurrences || latestDueDate <= thresholdHorizonMillis
+            val shouldExtend = futureOrPendingCount <= thresholdOccurrences || latestDueDateMillis <= thresholdHorizonMillis
 
             if (shouldExtend) {
                 var currentInstallments = existing
@@ -83,10 +83,10 @@ class ExtendRecurringBillsUseCase @Inject constructor(
                     batchesAdded++
                     currentInstallments = currentInstallments + nextBatch
 
-                    val newLatestDueDate = currentInstallments.maxOf { it.dueDate }
-                    val newFutureCount = currentInstallments.count { it.dueDate >= referenceTimeMillis || !it.isPaid }
+                    val newLatestDueDateMillis = currentInstallments.maxOf { it.dueDateMillis }
+                    val newFutureCount = currentInstallments.count { it.dueDateMillis >= referenceTimeMillis || !it.isPaid }
 
-                    if (newFutureCount > thresholdOccurrences && newLatestDueDate > thresholdHorizonMillis) {
+                    if (newFutureCount > thresholdOccurrences && newLatestDueDateMillis > thresholdHorizonMillis) {
                         break
                     }
                 }

@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ExpenseItemDao {
-    @Query("SELECT * FROM expense_items ORDER BY name ASC")
+    @Query("SELECT * FROM expense_items WHERE deletedAt IS NULL ORDER BY name ASC")
     fun getAll(): Flow<List<ExpenseItemEntity>>
 
-    @Query("SELECT * FROM expense_items WHERE categoryId = :categoryId ORDER BY name ASC")
+    @Query("SELECT * FROM expense_items WHERE categoryId = :categoryId AND deletedAt IS NULL ORDER BY name ASC")
     fun getByCategoryId(categoryId: String): Flow<List<ExpenseItemEntity>>
 
-    @Query("SELECT * FROM expense_items WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM expense_items WHERE id = :id AND deletedAt IS NULL LIMIT 1")
     suspend fun getById(id: String): ExpenseItemEntity?
 
     @Upsert
@@ -32,14 +32,17 @@ interface ExpenseItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<ExpenseItemEntity>)
 
-    @Query("DELETE FROM expense_items WHERE id = :id")
-    suspend fun deleteById(id: String)
+    @Query("UPDATE expense_items SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun deleteById(id: String, deletedAt: Long = System.currentTimeMillis(), updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT COUNT(*) FROM expense_items")
+    @Query("SELECT COUNT(*) FROM expense_items WHERE deletedAt IS NULL")
     suspend fun count(): Int
 
-    @Query("SELECT * FROM expense_items")
+    @Query("SELECT * FROM expense_items WHERE deletedAt IS NULL")
     suspend fun getAllList(): List<ExpenseItemEntity>
+
+    @Query("DELETE FROM expense_items WHERE deletedAt IS NOT NULL AND deletedAt < :olderThanMillis")
+    suspend fun purgeDeleted(olderThanMillis: Long)
 
     @Query("DELETE FROM expense_items")
     suspend fun deleteAll()

@@ -68,14 +68,15 @@ class RecurringLifecycleTest {
         billDataSource.pauseRecurringBill(billId, pausedUntil)
 
         // Verifica que o estado de pausa foi salvo no banco com pausedUntil
-        coVerify { billDao.updatePauseState(billId, isPaused = true, pausedUntil = pausedUntil) }
+        coVerify { billDao.updatePauseState(billId, isPaused = true, pausedUntil = pausedUntil, updatedAt = any()) }
 
         // Verifica que apenas ocorrências a partir de hoje viram SKIPPED
         coVerify {
             installmentDao.markPendingAsSkippedInRange(
                 billId = billId,
                 startDate = any(),
-                endDate = pausedUntil
+                endDate = any(),
+                updatedAt = any()
             )
         }
     }
@@ -122,7 +123,7 @@ class RecurringLifecycleTest {
         billDataSource.resumeRecurringBill(billId)
 
         // Reseta isPaused e pausedUntil
-        coVerify { billDao.updatePauseState(billId, isPaused = false, pausedUntil = null) }
+        coVerify { billDao.updatePauseState(billId, isPaused = false, pausedUntil = null, updatedAt = any()) }
 
         // Garante que NENHUM método chamado reverte status de parcelas já SKIPPED para PENDING
         coVerify(exactly = 0) { installmentDao.updateStatusForPending(billId, any()) }
@@ -140,7 +141,7 @@ class RecurringLifecycleTest {
                 installmentNumber = 1,
                 totalInstallments = 2,
                 amountCents = 10000L,
-                dueDate = referenceNow - 30L * 24 * 3600 * 1000,
+                dueDate = com.platform.app.core.util.DateUtils.millisToLocalDate(referenceNow - 30L * 24 * 3600 * 1000),
                 paidAt = referenceNow - 30L * 24 * 3600 * 1000,
                 status = "PAID"
             ),
@@ -150,7 +151,7 @@ class RecurringLifecycleTest {
                 installmentNumber = 2,
                 totalInstallments = 2,
                 amountCents = 10000L,
-                dueDate = nextDue,
+                dueDate = com.platform.app.core.util.DateUtils.millisToLocalDate(nextDue),
                 paidAt = null,
                 status = "PENDING"
             )
@@ -161,15 +162,16 @@ class RecurringLifecycleTest {
         billDataSource.stopRecurringBill(billId, fromDueDate = nextDue)
 
         // Verifica que deletou apenas futuras estritamente após a data de corte
-        coVerify { installmentDao.deletePendingAfterDueDate(billId, nextDue) }
+        coVerify { installmentDao.deletePendingAfterDueDate(billId, com.platform.app.core.util.DateUtils.millisToLocalDate(nextDue), any(), any()) }
 
         // Verifica que gravou término definitivo
         coVerify {
             billDao.stopRecurringBillWithDate(
                 id = billId,
-                recurrenceEndDate = nextDue,
+                recurrenceEndDate = any(),
                 endedAt = any(),
-                totalInstallments = 2
+                totalInstallments = 2,
+                updatedAt = any()
             )
         }
     }
@@ -259,7 +261,7 @@ class RecurringLifecycleTest {
 
         billDataSource.reactivateRecurringBill(billId)
 
-        coVerify { billDao.reactivateRecurringBill(billId) }
+        coVerify { billDao.reactivateRecurringBill(billId, any()) }
     }
 
     @Test
@@ -268,7 +270,7 @@ class RecurringLifecycleTest {
 
         billDataSource.deleteRecurringBill(billId, keepPaidHistory = true)
 
-        coVerify { installmentDao.deleteAllPending(billId) }
+        coVerify { installmentDao.deleteAllPending(billId, any(), any()) }
         coVerify { billDao.markBillEndedAndDeleted(billId, any()) }
         coVerify(exactly = 0) { billDao.deleteById(billId) }
     }

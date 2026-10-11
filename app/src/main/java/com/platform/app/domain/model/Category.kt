@@ -5,6 +5,9 @@ data class Category(
     val name: String,
     val colorHex: String,
     val iconName: String = "folder",
-    val nature: ExpenseNature = ExpenseNature.NECESSARIO
+    val nature: ExpenseNature = ExpenseNature.NECESSARIO,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 )
 

@@ -296,7 +296,7 @@ fun ContactDetailScreen(
             ConfirmPaymentDialog(
                 installmentTitle = "${inst.billTitle} (${inst.installmentNumber}/${inst.totalInstallments})",
                 amountCents = inst.amountCents,
-                dueDate = inst.dueDate,
+                dueDate = inst.dueDateMillis,
                 onConfirm = { actualPaymentDate ->
                     viewModel.onAction(
                         ContactsUiAction.ToggleInstallmentPayment(

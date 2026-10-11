@@ -12,7 +12,10 @@ data class CreditCardEntity(
     val totalLimitCents: Long,
     val closingDay: Int,
     val dueDay: Int,
-    val colorHex: String = "#3B82F6"
+    val colorHex: String = "#3B82F6",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): CreditCard {
         return CreditCard(
@@ -21,7 +24,10 @@ data class CreditCardEntity(
             totalLimitCents = totalLimitCents,
             closingDay = closingDay,
             dueDay = dueDay,
-            colorHex = colorHex
+            colorHex = colorHex,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -33,7 +39,10 @@ data class CreditCardEntity(
                 totalLimitCents = card.totalLimitCents,
                 closingDay = card.closingDay,
                 dueDay = card.dueDay,
-                colorHex = card.colorHex
+                colorHex = card.colorHex,
+                createdAt = card.createdAt,
+                updatedAt = card.updatedAt,
+                deletedAt = card.deletedAt
             )
         }
     }

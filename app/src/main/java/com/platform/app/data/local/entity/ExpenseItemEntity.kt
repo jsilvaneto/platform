@@ -23,7 +23,10 @@ import java.util.UUID
 data class ExpenseItemEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val categoryId: String
+    val categoryId: String,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 ) {
     fun toDomain(
         categoryName: String = "",
@@ -38,7 +41,10 @@ data class ExpenseItemEntity(
             categoryName = categoryName,
             categoryColorHex = categoryColorHex,
             categoryIconName = categoryIconName,
-            nature = nature
+            nature = nature,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -47,7 +53,10 @@ data class ExpenseItemEntity(
             return ExpenseItemEntity(
                 id = item.id,
                 name = item.name,
-                categoryId = item.categoryId
+                categoryId = item.categoryId,
+                createdAt = item.createdAt,
+                updatedAt = item.updatedAt,
+                deletedAt = item.deletedAt
             )
         }
     }

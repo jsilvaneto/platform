@@ -46,7 +46,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 if (inst.isPaid) {
                     totalPaid += inst.amountCents
                 } else {
-                    if (inst.dueDate < now) {
+                    if (inst.dueDateMillis < now) {
                         totalOverdue += inst.amountCents
                     } else {
                         totalPending += inst.amountCents
@@ -102,7 +102,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             // Vencimentos dos próximos 7 dias (ação rápida de liquidação)
             val sevenDaysAhead = now + (7L * 24 * 3600 * 1000)
             val upcomingWeek = allInstallments
-                .filter { !it.isPaid && !it.isPaused && !it.isSkipped && it.dueDate in (now - 24 * 3600 * 1000)..sevenDaysAhead }
+                .filter { !it.isPaid && !it.isPaused && !it.isSkipped && it.dueDateMillis in (now - 24 * 3600 * 1000)..sevenDaysAhead }
                 .sortedBy { it.dueDate }
 
             // Projeções dos próximos 6 a 12 meses para planejamento futuro (Curva de Desoneração)
@@ -110,7 +110,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 val futureMonthEpoch = DateUtils.addMonths(monthMillis, i)
                 val futureStart = DateUtils.getStartOfMonth(futureMonthEpoch)
                 val futureEnd = DateUtils.getEndOfMonth(futureMonthEpoch)
-                val monthInsts = allInstallments.filter { !it.isPaused && !it.isSkipped && it.dueDate in futureStart..futureEnd }
+                val monthInsts = allInstallments.filter { !it.isPaused && !it.isSkipped && it.dueDateMillis in futureStart..futureEnd }
                 val recurringCents = monthInsts.filter { it.type == BillType.RECURRING }.sumOf { it.amountCents }
                 val instCents = monthInsts.filter { it.type == BillType.INSTALLMENT }.sumOf { it.amountCents }
 
@@ -125,17 +125,17 @@ class GetFinancialDashboardUseCase @Inject constructor(
             }
 
             val totalCommittedFuture = allInstallments
-                .filter { !it.isPaid && it.dueDate >= startOfMonth }
+                .filter { !it.isPaid && it.dueDateMillis >= startOfMonth }
                 .sumOf { it.amountCents }
 
             val futureInstallmentsCount = allInstallments
-                .count { !it.isPaid && it.dueDate > endOfMonth }
+                .count { !it.isPaid && it.dueDateMillis > endOfMonth }
 
             // Métricas do Mês Anterior (Passado Imediato)
             val prevMonthEpoch = DateUtils.addMonths(monthMillis, -1)
             val prevStart = DateUtils.getStartOfMonth(prevMonthEpoch)
             val prevEnd = DateUtils.getEndOfMonth(prevMonthEpoch)
-            val prevMonthInsts = allInstallments.filter { it.dueDate in prevStart..prevEnd }
+            val prevMonthInsts = allInstallments.filter { it.dueDateMillis in prevStart..prevEnd }
             val prevDue = prevMonthInsts.sumOf { it.amountCents }
             val prevPaid = prevMonthInsts.filter { it.isPaid }.sumOf { it.amountCents }
 
@@ -144,7 +144,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
                 val pastEpoch = DateUtils.addMonths(monthMillis, offset)
                 val pStart = DateUtils.getStartOfMonth(pastEpoch)
                 val pEnd = DateUtils.getEndOfMonth(pastEpoch)
-                val pInsts = allInstallments.filter { it.dueDate in pStart..pEnd }
+                val pInsts = allInstallments.filter { it.dueDateMillis in pStart..pEnd }
                 val pDue = pInsts.sumOf { it.amountCents }
                 val pPaid = pInsts.filter { it.isPaid }.sumOf { it.amountCents }
                 val pRate = if (pDue > 0) ((pPaid.toFloat() / pDue.toFloat()) * 100).toInt() else 0
@@ -174,7 +174,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             val onTimeRate: Int? = if (eligibleForOnTime.isNotEmpty()) {
                 val onTimeCount = eligibleForOnTime.count {
                     val effectivePaymentDate = it.actualPaymentDate!!
-                    effectivePaymentDate <= it.dueDate || DateUtils.getStartOfDay(effectivePaymentDate) <= DateUtils.getStartOfDay(it.dueDate)
+                    DateUtils.millisToLocalDate(effectivePaymentDate) <= it.dueDate
                 }
                 ((onTimeCount.toFloat() / eligibleForOnTime.size.toFloat()) * 100).toInt()
             } else {
@@ -230,7 +230,7 @@ class GetFinancialDashboardUseCase @Inject constructor(
             installmentBills.forEach { (_, instList) ->
                 val maxInst = instList.maxByOrNull { it.installmentNumber }
                 if (maxInst != null && maxInst.installmentNumber == maxInst.totalInstallments) {
-                    if (maxInst.dueDate in startOfMonth..sixMonthsAheadEnd) {
+                    if (maxInst.dueDateMillis in startOfMonth..sixMonthsAheadEnd) {
                         completingList.add(
                             com.platform.app.domain.model.CompletingInstallmentSummary(
                                 title = maxInst.billTitle,

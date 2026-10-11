@@ -37,7 +37,7 @@ class CreateBillUseCase @Inject constructor(
             }
             val refMonths = relevantInstallments.map { inst ->
                 CreditCardCalculator.determineInvoiceReferenceMonth(
-                    purchaseTimestamp = inst.dueDate,
+                    date = inst.dueDate,
                     closingDay = creditCard.closingDay
                 )
             }.distinct()
@@ -64,7 +64,7 @@ class CreateBillUseCase @Inject constructor(
                     )
                 } else {
                     val refMonth = CreditCardCalculator.determineInvoiceReferenceMonth(
-                        purchaseTimestamp = installment.dueDate,
+                        date = installment.dueDate,
                         closingDay = creditCard.closingDay
                     )
                     val invoice = invoiceCache[refMonth] ?: repository.getOrCreateInvoiceForMonth(creditCard.id, refMonth)

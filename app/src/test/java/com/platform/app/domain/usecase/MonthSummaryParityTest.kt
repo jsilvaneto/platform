@@ -61,12 +61,12 @@ class MonthSummaryParityTest {
 
     @Test
     fun `MonthSummary calculation excludes paused installments and correctly categorizes statuses`() {
-        val now = 2000L
+        val now = 1700000000000L
         val installments = listOf(
-            createInstallment("1", 10000L, isPaid = true, dueDate = 500L), // Pago: 100
-            createInstallment("2", 5000L, isPaid = false, dueDate = 1000L), // Vencido: 50
-            createInstallment("3", 7500L, isPaid = false, dueDate = 3000L), // Pendente: 75
-            createInstallment("4", 20000L, isPaid = false, dueDate = 3000L, isPaused = true) // Pausado: Ignorado
+            createInstallment("1", 10000L, isPaid = true, dueDate = now - 200000000L), // Pago: 100
+            createInstallment("2", 5000L, isPaid = false, dueDate = now - 100000000L), // Vencido: 50
+            createInstallment("3", 7500L, isPaid = false, dueDate = now + 100000000L), // Pendente: 75
+            createInstallment("4", 20000L, isPaid = false, dueDate = now + 100000000L, isPaused = true) // Pausado: Ignorado
         )
 
         val summary = getMonthSummaryUseCase.calculate(installments, nowMillis = now)

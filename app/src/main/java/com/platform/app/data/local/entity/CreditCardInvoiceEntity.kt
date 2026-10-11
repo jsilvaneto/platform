@@ -8,6 +8,8 @@ import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.InvoiceStatus
 import java.util.UUID
 
+import java.time.LocalDate
+
 @Entity(
     tableName = "credit_card_invoices",
     foreignKeys = [
@@ -24,9 +26,12 @@ data class CreditCardInvoiceEntity(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val creditCardId: String,
     val referenceMonth: String, // "YYYY-MM"
-    val closingDate: Long,
-    val dueDate: Long,
-    val status: String = "ABERTA" // "ABERTA", "FECHADA", "PAGA"
+    val closingDate: LocalDate,
+    val dueDate: LocalDate,
+    val status: String = "ABERTA", // "ABERTA", "FECHADA", "PAGA"
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 ) {
     fun toDomain(totalAmountCents: Long = 0L): CreditCardInvoice {
         return CreditCardInvoice(
@@ -36,7 +41,10 @@ data class CreditCardInvoiceEntity(
             closingDate = closingDate,
             dueDate = dueDate,
             status = try { InvoiceStatus.valueOf(status) } catch (e: Exception) { InvoiceStatus.ABERTA },
-            totalAmountCents = totalAmountCents
+            totalAmountCents = totalAmountCents,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -48,7 +56,10 @@ data class CreditCardInvoiceEntity(
                 referenceMonth = invoice.referenceMonth,
                 closingDate = invoice.closingDate,
                 dueDate = invoice.dueDate,
-                status = invoice.status.name
+                status = invoice.status.name,
+                createdAt = invoice.createdAt,
+                updatedAt = invoice.updatedAt,
+                deletedAt = invoice.deletedAt
             )
         }
     }

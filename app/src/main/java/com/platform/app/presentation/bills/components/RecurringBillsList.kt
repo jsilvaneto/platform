@@ -132,12 +132,12 @@ fun RecurringBillsList(
                         billInsts.filter { !it.isPaid && !it.isSkipped }.minByOrNull { it.dueDate }
                     }
                     val overdueCount = remember(billInsts, now) {
-                        billInsts.count { !it.isPaid && !it.isSkipped && it.dueDate < now }
+                        billInsts.count { !it.isPaid && !it.isSkipped && it.dueDateMillis < now }
                     }
 
                     RecurringBillRow(
                         bill = bill,
-                        nextDueDate = nextPending?.dueDate,
+                        nextDueDate = nextPending?.dueDateMillis,
                         overdueCount = overdueCount,
                         onClick = { onSelectBill(bill) }
                     )

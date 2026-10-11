@@ -6,5 +6,7 @@ data class Budget(
     val categoryName: String = "Geral",
     val limitAmountCents: Long,
     val colorHex: String = "#3B82F6",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 )

@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.platform.app.data.local.converter.FinancialAccountTypeConverter
+import com.platform.app.data.local.converter.LocalDateEpochDayConverter
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.BudgetDao
@@ -53,10 +54,13 @@ import com.platform.app.data.local.entity.SyncStateEntity
         SyncOutboxEntity::class,
         SyncStateEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = true
 )
-@TypeConverters(FinancialAccountTypeConverter::class)
+@TypeConverters(
+    FinancialAccountTypeConverter::class,
+    LocalDateEpochDayConverter::class
+)
 abstract class PlatformDatabase : RoomDatabase() {
     abstract val categoryDao: CategoryDao
     abstract val expenseItemDao: ExpenseItemDao
@@ -472,6 +476,74 @@ abstract class PlatformDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `bills` ADD COLUMN `pausedUntil` INTEGER DEFAULT NULL")
                 db.execSQL("ALTER TABLE `bills` ADD COLUMN `endedAt` INTEGER DEFAULT NULL")
+            }
+        }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. categories
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 2. expense_items
+                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 3. contacts
+                db.execSQL("ALTER TABLE `contacts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `contacts` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `contacts` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+
+                // 4. financial_accounts
+                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 5. payment_methods
+                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 6. credit_cards
+                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 7. credit_card_invoices
+                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 8. bills
+                db.execSQL("ALTER TABLE `bills` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("UPDATE `bills` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+
+                // 9. bill_installments
+                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+
+                // 10. goals
+                db.execSQL("ALTER TABLE `goals` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `goals` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `goals` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+
+                // 11. goal_contributions
+                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `goal_contributions` SET `createdAt` = `date`, `updatedAt` = `date` WHERE `date` > 0")
+
+                // 12. budgets
+                db.execSQL("ALTER TABLE `budgets` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `budgets` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `budgets` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+
+                // 13. Migrate date-only fields to epoch days (Int)
+                db.execSQL("UPDATE `bill_installments` SET `dueDate` = CAST(`dueDate` / 86400000 AS INTEGER) WHERE `dueDate` > 1000000")
+                db.execSQL("UPDATE `credit_card_invoices` SET `closingDate` = CAST(`closingDate` / 86400000 AS INTEGER) WHERE `closingDate` > 1000000")
+                db.execSQL("UPDATE `credit_card_invoices` SET `dueDate` = CAST(`dueDate` / 86400000 AS INTEGER) WHERE `dueDate` > 1000000")
             }
         }
     }

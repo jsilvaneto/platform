@@ -78,7 +78,7 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `recurring bill with DAILY frequency and BY_OCCURRENCES should generate exact daily installments`() {
-        val startDate = 1727395200000L
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         val bill = Bill(
             id = "4",
             title = "Almoço Diário",
@@ -93,7 +93,7 @@ class CalculateInstallmentsUseCaseTest {
         assertEquals(7, installments.size)
         for (i in 0 until 7) {
             val expectedDate = DateUtils.addDays(startDate, i)
-            assertEquals(expectedDate, installments[i].dueDate)
+            assertEquals(expectedDate, installments[i].dueDateMillis)
             assertEquals(i + 1, installments[i].installmentNumber)
             assertEquals(7, installments[i].totalInstallments)
             assertEquals(2500L, installments[i].amountCents)
@@ -102,7 +102,7 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `recurring bill with WEEKLY frequency and UNTIL_DATE should generate installments up to end date`() {
-        val startDate = 1727395200000L
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         // 3 semanas depois
         val endDate = DateUtils.addWeeks(startDate, 3)
 
@@ -119,19 +119,19 @@ class CalculateInstallmentsUseCaseTest {
 
         // Semana 0, Semana 1, Semana 2, Semana 3 = 4 ocorrências
         assertEquals(4, installments.size)
-        assertEquals(startDate, installments[0].dueDate)
-        assertEquals(DateUtils.addWeeks(startDate, 1), installments[1].dueDate)
-        assertEquals(DateUtils.addWeeks(startDate, 2), installments[2].dueDate)
-        assertEquals(DateUtils.addWeeks(startDate, 3), installments[3].dueDate)
+        assertEquals(startDate, installments[0].dueDateMillis)
+        assertEquals(DateUtils.addWeeks(startDate, 1), installments[1].dueDateMillis)
+        assertEquals(DateUtils.addWeeks(startDate, 2), installments[2].dueDateMillis)
+        assertEquals(DateUtils.addWeeks(startDate, 3), installments[3].dueDateMillis)
         installments.forEach {
-            assertTrue(it.dueDate <= DateUtils.getEndOfDay(endDate))
+            assertTrue(it.dueDateMillis <= DateUtils.getEndOfDay(endDate))
             assertEquals(4, it.totalInstallments)
         }
     }
 
     @Test
     fun `recurring bill with YEARLY frequency and FOREVER should project 5 yearly installments`() {
-        val startDate = 1727395200000L
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         val bill = Bill(
             id = "6",
             title = "IPVA Anual",
@@ -144,7 +144,7 @@ class CalculateInstallmentsUseCaseTest {
 
         assertEquals(5, installments.size)
         for (i in 0 until 5) {
-            assertEquals(DateUtils.addYears(startDate, i), installments[i].dueDate)
+            assertEquals(DateUtils.addYears(startDate, i), installments[i].dueDateMillis)
             assertEquals(i + 1, installments[i].installmentNumber)
             assertEquals(5, installments[i].totalInstallments)
         }
@@ -152,7 +152,7 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `generateNextRecurringInstallments should extend monthly FOREVER bill with installments 13 to 24`() {
-        val startDate = 1727395200000L // 27/09/2024
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         val bill = Bill(
             id = "bill-forever-1",
             title = "Academia Smart Fit",
@@ -177,7 +177,7 @@ class CalculateInstallmentsUseCaseTest {
         // Datas devem ser passos 12..23 em relação à startDate
         for (i in 0 until 12) {
             val expectedDueDate = DateUtils.addMonths(startDate, 12 + i)
-            assertEquals(expectedDueDate, nextInstallments[i].dueDate)
+            assertEquals(expectedDueDate, nextInstallments[i].dueDateMillis)
             assertEquals(11990L, nextInstallments[i].amountCents)
             assertEquals(BillType.RECURRING, nextInstallments[i].type)
         }
@@ -185,7 +185,7 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `generateNextRecurringInstallments should preserve step calculation even if earlier installments were deleted`() {
-        val startDate = 1727395200000L
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         val bill = Bill(
             id = "bill-forever-2",
             title = "Streaming",
@@ -207,13 +207,13 @@ class CalculateInstallmentsUseCaseTest {
 
         // A data da parcela 13 deve ser exatamente 12 meses após startDate (ou 6 meses após a parcela 7)
         val expectedFirstNewDueDate = DateUtils.addMonths(startDate, 12)
-        assertEquals(expectedFirstNewDueDate, nextInstallments.first().dueDate)
+        assertEquals(expectedFirstNewDueDate, nextInstallments.first().dueDateMillis)
     }
 
     @Test
     fun `generateNextRecurringInstallments should return empty list if bill is not RECURRING or existing is empty`() {
         val singleBill = Bill(id = "s1", title = "Luz", type = BillType.SINGLE, totalAmountCents = 1000L)
-        val initial = useCase(singleBill, 1727395200000L)
+        val initial = useCase(singleBill, DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27)))
 
         val nextForSingle = useCase.generateNextRecurringInstallments(singleBill, initial)
         assertTrue(nextForSingle.isEmpty())
@@ -225,7 +225,7 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `generateNextRecurringInstallments should not copy bill invoiceId and set invoiceId to null`() {
-        val startDate = 1727395200000L
+        val startDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2024, 9, 27))
         val bill = Bill(
             id = "bill-forever-inv",
             title = "Assinatura Streaming",
@@ -251,8 +251,8 @@ class CalculateInstallmentsUseCaseTest {
 
     @Test
     fun `generateNextRecurringInstallments should anchor to recurrenceAnchorDate when firstInstallment dueDate was modified by invoice`() {
-        val anchorDate = 1728518400000L // 10/10/2026 (dia 10)
-        val invoiceDueDate = 1729987200000L // 27/10/2026 (dia 27, vencimento da fatura do cartão)
+        val anchorDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2026, 10, 10))
+        val invoiceDueDate = DateUtils.localDateToMillis(java.time.LocalDate.of(2026, 10, 27))
 
         val bill = Bill(
             id = "bill-card-rec",
@@ -267,7 +267,7 @@ class CalculateInstallmentsUseCaseTest {
 
         // Simula 12 parcelas onde a 1ª teve dueDate alterada para o vencimento da fatura (dia 27)
         val initialInstallments = useCase(bill, anchorDate).mapIndexed { index, inst ->
-            if (index == 0) inst.copy(dueDate = invoiceDueDate, invoiceId = "inv-1")
+            if (index == 0) inst.copy(dueDate = DateUtils.millisToLocalDate(invoiceDueDate), invoiceId = "inv-1")
             else inst.copy(invoiceId = null)
         }
 
@@ -282,8 +282,8 @@ class CalculateInstallmentsUseCaseTest {
         val expectedDate13 = DateUtils.addMonths(anchorDate, 12)
         val expectedDate14 = DateUtils.addMonths(anchorDate, 13)
 
-        assertEquals(expectedDate13, nextInstallments[0].dueDate)
-        assertEquals(expectedDate14, nextInstallments[1].dueDate)
+        assertEquals(expectedDate13, nextInstallments[0].dueDateMillis)
+        assertEquals(expectedDate14, nextInstallments[1].dueDateMillis)
         assertNull(nextInstallments[0].invoiceId)
         assertNull(nextInstallments[1].invoiceId)
     }

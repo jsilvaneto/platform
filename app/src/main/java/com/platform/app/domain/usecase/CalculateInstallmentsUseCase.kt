@@ -31,7 +31,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                         installmentNumber = 1,
                         totalInstallments = 1,
                         amountCents = bill.totalAmountCents,
-                        dueDate = firstDueDate,
+                        dueDateMillis = firstDueDate,
                         status = BillStatus.PENDING,
                         type = BillType.SINGLE
                     )
@@ -61,7 +61,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                             installmentNumber = i,
                             totalInstallments = totalInstallments,
                             amountCents = installmentAmount,
-                            dueDate = dueDate,
+                            dueDateMillis = dueDate,
                             status = BillStatus.PENDING,
                             type = BillType.INSTALLMENT
                         )
@@ -96,7 +96,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                             installmentNumber = index + 1,
                             totalInstallments = total,
                             amountCents = bill.totalAmountCents,
-                            dueDate = dueDate,
+                            dueDateMillis = dueDate,
                             status = BillStatus.PENDING,
                             type = BillType.RECURRING
                         )
@@ -133,7 +133,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                 DateUtils.addRecurrenceStep(bill.recurrenceAnchorDate, frequency, installmentNumber - 1)
             } else {
                 val stepFromFirst = installmentNumber - firstInstallment.installmentNumber
-                DateUtils.addRecurrenceStep(firstInstallment.dueDate, frequency, stepFromFirst)
+                DateUtils.addRecurrenceStep(firstInstallment.dueDateMillis, frequency, stepFromFirst)
             }
 
             installments.add(
@@ -150,7 +150,7 @@ class CalculateInstallmentsUseCase @Inject constructor() {
                     installmentNumber = installmentNumber,
                     totalInstallments = newTotal,
                     amountCents = bill.totalAmountCents,
-                    dueDate = dueDate,
+                    dueDateMillis = dueDate,
                     status = BillStatus.PENDING,
                     type = BillType.RECURRING
                 )

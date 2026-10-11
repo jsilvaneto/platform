@@ -18,7 +18,7 @@ class InstallmentIconMappingTest {
             installmentNumber = 1,
             totalInstallments = 1,
             amountCents = 25000L,
-            dueDate = 1700000000000L,
+            dueDate = java.time.LocalDate.of(2023, 11, 14),
             paidAt = null,
             status = "PENDING"
         )

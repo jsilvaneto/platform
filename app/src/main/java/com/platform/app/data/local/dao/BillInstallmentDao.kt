@@ -1,111 +1,12 @@
 package com.platform.app.data.local.dao
 
-import androidx.room.ColumnInfo
 import androidx.room.Dao
-import androidx.room.Embedded
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.platform.app.data.local.entity.BillInstallmentEntity
-import com.platform.app.domain.model.BillInstallment
-import com.platform.app.domain.model.BillType
-import com.platform.app.domain.model.ExpenseNature
-import com.platform.app.domain.model.MonthSummary
 import kotlinx.coroutines.flow.Flow
-
-data class InstallmentWithDetails(
-    @Embedded val installment: BillInstallmentEntity,
-    @ColumnInfo(name = "bill_title") val billTitle: String,
-    @ColumnInfo(name = "bill_type") val billType: String,
-    @ColumnInfo(name = "category_id") val categoryId: String?,
-    @ColumnInfo(name = "category_name") val categoryName: String?,
-    @ColumnInfo(name = "category_color_hex") val categoryColorHex: String?,
-    @ColumnInfo(name = "category_nature") val categoryNature: String?,
-    @ColumnInfo(name = "category_icon_name") val categoryIconName: String? = null,
-    @ColumnInfo(name = "item_name") val itemName: String?,
-    @ColumnInfo(name = "contact_name") val contactName: String?,
-    @ColumnInfo(name = "financial_account_name") val financialAccountName: String?,
-    @ColumnInfo(name = "payment_method_name") val paymentMethodName: String?,
-    @ColumnInfo(name = "bill_created_at") val billCreatedAt: Long? = null,
-    @ColumnInfo(name = "bill_credit_card_id") val billCreditCardId: String? = null
-) {
-    fun toDomain(): BillInstallment {
-        val parsedType = try {
-            BillType.valueOf(billType)
-        } catch (e: Exception) {
-            BillType.SINGLE
-        }
-        val parsedNature = try {
-            ExpenseNature.valueOf(categoryNature ?: "NECESSARIO")
-        } catch (e: Exception) {
-            ExpenseNature.NECESSARIO
-        }
-
-        return installment.toDomain(
-            billTitle = billTitle,
-            categoryId = categoryId,
-            categoryName = categoryName ?: "Geral",
-            categoryColorHex = categoryColorHex ?: "#64748B",
-            categoryIconName = categoryIconName ?: "category",
-            nature = parsedNature,
-            itemName = itemName,
-            contactName = contactName,
-            financialAccountName = financialAccountName,
-            paymentMethodName = paymentMethodName,
-            billType = parsedType,
-            billCreatedAt = billCreatedAt,
-            billCreditCardId = billCreditCardId
-        )
-    }
-}
-
-data class InvoiceTotal(
-    @ColumnInfo(name = "invoiceId") val invoiceId: String,
-    @ColumnInfo(name = "totalAmountCents") val totalAmountCents: Long
-)
-
-data class MonthSummaryRaw(
-    @ColumnInfo(name = "totalCents") val totalCents: Long,
-    @ColumnInfo(name = "paidCents") val paidCents: Long,
-    @ColumnInfo(name = "pendingCents") val pendingCents: Long,
-    @ColumnInfo(name = "overdueCents") val overdueCents: Long,
-    @ColumnInfo(name = "paidCount") val paidCount: Int,
-    @ColumnInfo(name = "pendingCount") val pendingCount: Int,
-    @ColumnInfo(name = "overdueCount") val overdueCount: Int
-) {
-    fun toDomain(): MonthSummary = MonthSummary(
-        totalCents = totalCents,
-        paidCents = paidCents,
-        pendingCents = pendingCents,
-        overdueCents = overdueCents,
-        paidCount = paidCount,
-        pendingCount = pendingCount,
-        overdueCount = overdueCount
-    )
-}
-
-data class ContactOpenBalanceRaw(
-    @ColumnInfo(name = "contactId") val contactId: String,
-    @ColumnInfo(name = "totalOpenCents") val totalOpenCents: Long
-)
-
-data class AttentionCountsRaw(
-    @ColumnInfo(name = "overdueCount") val overdueCount: Int,
-    @ColumnInfo(name = "dueTodayCount") val dueTodayCount: Int
-)
-
-data class OpenInstallmentsRaw(
-    @ColumnInfo(name = "totalAmountCents") val totalAmountCents: Long,
-    @ColumnInfo(name = "installmentCount") val installmentCount: Int,
-    @ColumnInfo(name = "lastDueDate") val lastDueDate: Long?
-)
-
-data class FreeingUpCommitmentRaw(
-    @ColumnInfo(name = "billId") val billId: String,
-    @ColumnInfo(name = "title") val title: String,
-    @ColumnInfo(name = "endDate") val endDate: Long,
-    @ColumnInfo(name = "monthlyAmountCents") val monthlyAmountCents: Long
-)
+import java.time.LocalDate
 
 @Dao
 interface BillInstallmentDao {
@@ -134,11 +35,12 @@ interface BillInstallmentDao {
         LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
-        WHERE i.dueDate BETWEEN :startMillis AND :endMillis
+        WHERE i.deletedAt IS NULL AND (b.deletedAt IS NULL OR i.paidAt IS NOT NULL)
+          AND i.dueDate BETWEEN :startDate AND :endDate
         ORDER BY i.dueDate ASC
         """
     )
-    fun getInstallmentsForPeriod(startMillis: Long, endMillis: Long): Flow<List<InstallmentWithDetails>>
+    fun getInstallmentsForPeriod(startDate: LocalDate, endDate: LocalDate): Flow<List<InstallmentWithDetails>>
 
     @Query(
         """
@@ -164,6 +66,7 @@ interface BillInstallmentDao {
         LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
+        WHERE i.deletedAt IS NULL AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
@@ -194,6 +97,7 @@ interface BillInstallmentDao {
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
         WHERE (i.contactId = :contactId OR b.contactId = :contactId)
+          AND i.deletedAt IS NULL AND (b.deletedAt IS NULL OR i.paidAt IS NOT NULL)
         ORDER BY i.dueDate ASC
         """
     )
@@ -223,7 +127,9 @@ interface BillInstallmentDao {
         LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
-        WHERE (i.contactId = :contactId OR b.contactId = :contactId) AND i.paidAt IS NULL
+        WHERE (i.contactId = :contactId OR b.contactId = :contactId) 
+          AND i.paidAt IS NULL
+          AND i.deletedAt IS NULL AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
@@ -254,12 +160,13 @@ interface BillInstallmentDao {
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
         WHERE i.invoiceId = :invoiceId
+          AND i.deletedAt IS NULL AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
     fun getInstallmentsForInvoice(invoiceId: String): Flow<List<InstallmentWithDetails>>
 
-    @Query("SELECT * FROM bill_installments WHERE invoiceId = :invoiceId")
+    @Query("SELECT * FROM bill_installments WHERE invoiceId = :invoiceId AND deletedAt IS NULL")
     suspend fun getInstallmentsListForInvoice(invoiceId: String): List<BillInstallmentEntity>
 
     @Query(
@@ -268,6 +175,7 @@ interface BillInstallmentDao {
         FROM bill_installments
         WHERE invoiceId IS NOT NULL
           AND status != 'PAUSED'
+          AND deletedAt IS NULL
         GROUP BY invoiceId
         """
     )
@@ -279,12 +187,13 @@ interface BillInstallmentDao {
         FROM bill_installments
         WHERE invoiceId IS NOT NULL
           AND status != 'PAUSED'
+          AND deletedAt IS NULL
         GROUP BY invoiceId
         """
     )
     suspend fun getInvoiceTotalsList(): List<InvoiceTotal>
 
-    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM bill_installments WHERE invoiceId = :invoiceId AND status != 'PAUSED'")
+    @Query("SELECT COALESCE(SUM(amountCents), 0) FROM bill_installments WHERE invoiceId = :invoiceId AND status != 'PAUSED' AND deletedAt IS NULL")
     suspend fun getInvoiceTotal(invoiceId: String): Long
 
     @Query(
@@ -292,6 +201,7 @@ interface BillInstallmentDao {
         SELECT COUNT(i.id) FROM bill_installments i
         INNER JOIN credit_card_invoices inv ON i.invoiceId = inv.id
         WHERE inv.creditCardId = :cardId
+          AND i.deletedAt IS NULL AND inv.deletedAt IS NULL
         """
     )
     suspend fun countInstallmentsForCard(cardId: String): Int
@@ -305,12 +215,18 @@ interface BillInstallmentDao {
           AND i.invoiceId IS NULL
           AND i.status != 'PAUSED'
           AND (b.creditCardId = :cardId OR inv.creditCardId = :cardId)
+          AND i.deletedAt IS NULL AND b.deletedAt IS NULL
         """
     )
     suspend fun getUnattachedRecurringInstallmentsForCard(cardId: String): List<BillInstallmentEntity>
 
-    @Query("UPDATE bill_installments SET invoiceId = :invoiceId, dueDate = :invoiceDueDate WHERE id IN (:installmentIds)")
-    suspend fun attachInstallmentsToInvoice(installmentIds: List<String>, invoiceId: String, invoiceDueDate: Long)
+    @Query("UPDATE bill_installments SET invoiceId = :invoiceId, dueDate = :invoiceDueDate, updatedAt = :updatedAt WHERE id IN (:installmentIds) AND deletedAt IS NULL")
+    suspend fun attachInstallmentsToInvoice(
+        installmentIds: List<String>,
+        invoiceId: String,
+        invoiceDueDate: LocalDate,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(installments: List<BillInstallmentEntity>)
@@ -318,20 +234,37 @@ interface BillInstallmentDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAllIgnore(installments: List<BillInstallmentEntity>)
 
-    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE id = :id")
-    suspend fun updatePayment(id: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
+    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun updatePayment(
+        id: String,
+        paidAt: Long?,
+        actualPaymentDate: Long?,
+        status: String,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate WHERE id = :id")
-    suspend fun updateActualPaymentDate(id: String, actualPaymentDate: Long?)
+    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun updateActualPaymentDate(id: String, actualPaymentDate: Long?, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate WHERE id IN (:ids)")
-    suspend fun updateActualPaymentDateBatch(ids: List<String>, actualPaymentDate: Long?)
+    @Query("UPDATE bill_installments SET actualPaymentDate = :actualPaymentDate, updatedAt = :updatedAt WHERE id IN (:ids) AND deletedAt IS NULL")
+    suspend fun updateActualPaymentDateBatch(ids: List<String>, actualPaymentDate: Long?, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status WHERE invoiceId = :invoiceId")
-    suspend fun updatePaymentByInvoiceId(invoiceId: String, paidAt: Long?, actualPaymentDate: Long?, status: String)
+    @Query("UPDATE bill_installments SET paidAt = :paidAt, actualPaymentDate = :actualPaymentDate, status = :status, updatedAt = :updatedAt WHERE invoiceId = :invoiceId AND deletedAt IS NULL")
+    suspend fun updatePaymentByInvoiceId(
+        invoiceId: String,
+        paidAt: Long?,
+        actualPaymentDate: Long?,
+        status: String,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("UPDATE bill_installments SET amountCents = :newAmountCents, dueDate = :newDueDate WHERE id = :id")
-    suspend fun updateInstallmentAmountAndDate(id: String, newAmountCents: Long, newDueDate: Long)
+    @Query("UPDATE bill_installments SET amountCents = :newAmountCents, dueDate = :newDueDate, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun updateInstallmentAmountAndDate(
+        id: String,
+        newAmountCents: Long,
+        newDueDate: LocalDate,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
     @Query("""
         UPDATE bill_installments 
@@ -340,35 +273,47 @@ interface BillInstallmentDao {
             itemId = :itemId, 
             contactId = :contactId, 
             financialAccountId = :financialAccountId, 
-            paymentMethodId = :paymentMethodId 
-        WHERE id = :id
+            paymentMethodId = :paymentMethodId,
+            updatedAt = :updatedAt
+        WHERE id = :id AND deletedAt IS NULL
     """)
     suspend fun updateInstallmentDetails(
         id: String,
         amountCents: Long,
-        dueDate: Long,
+        dueDate: LocalDate,
         itemId: String?,
         contactId: String?,
         financialAccountId: String?,
-        paymentMethodId: String?
+        paymentMethodId: String?,
+        updatedAt: Long = System.currentTimeMillis()
     )
 
-    @Query("SELECT * FROM bill_installments WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM bill_installments WHERE id = :id AND deletedAt IS NULL LIMIT 1")
     suspend fun getEntityById(id: String): BillInstallmentEntity?
 
-    @Query("DELETE FROM bill_installments WHERE id = :id")
-    suspend fun deleteById(id: String)
+    @Query("UPDATE bill_installments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun deleteById(id: String, deletedAt: Long = System.currentTimeMillis(), updatedAt: Long = System.currentTimeMillis())
 
-    @Query("DELETE FROM bill_installments WHERE billId = :billId AND paidAt IS NULL AND dueDate >= :fromDueDate")
-    suspend fun deletePendingFromDueDate(billId: String, fromDueDate: Long)
+    @Query("UPDATE bill_installments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billId = :billId AND paidAt IS NULL AND dueDate >= :fromDueDate AND deletedAt IS NULL")
+    suspend fun deletePendingFromDueDate(
+        billId: String,
+        fromDueDate: LocalDate,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("UPDATE bill_installments SET amountCents = :newAmountCents WHERE billId = :billId AND paidAt IS NULL AND dueDate >= :fromDueDate")
-    suspend fun updateAmountForPendingFromDueDate(billId: String, fromDueDate: Long, newAmountCents: Long)
+    @Query("UPDATE bill_installments SET amountCents = :newAmountCents, updatedAt = :updatedAt WHERE billId = :billId AND paidAt IS NULL AND dueDate >= :fromDueDate AND deletedAt IS NULL")
+    suspend fun updateAmountForPendingFromDueDate(
+        billId: String,
+        fromDueDate: LocalDate,
+        newAmountCents: Long,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("UPDATE bill_installments SET status = :status WHERE billId = :billId AND paidAt IS NULL")
-    suspend fun updateStatusForPending(billId: String, status: String)
+    @Query("UPDATE bill_installments SET status = :status, updatedAt = :updatedAt WHERE billId = :billId AND paidAt IS NULL AND deletedAt IS NULL")
+    suspend fun updateStatusForPending(billId: String, status: String, updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM bill_installments WHERE billId = :billId ORDER BY dueDate ASC")
+    @Query("SELECT * FROM bill_installments WHERE billId = :billId AND deletedAt IS NULL ORDER BY dueDate ASC")
     suspend fun getInstallmentsByBillId(billId: String): List<BillInstallmentEntity>
 
     @Query(
@@ -395,7 +340,7 @@ interface BillInstallmentDao {
         LEFT JOIN contacts cont ON (i.contactId = cont.id OR b.contactId = cont.id)
         LEFT JOIN financial_accounts fa ON (i.financialAccountId = fa.id OR b.financialAccountId = fa.id)
         LEFT JOIN payment_methods pm ON (i.paymentMethodId = pm.id OR b.paymentMethodId = pm.id)
-        WHERE i.billId = :billId
+        WHERE i.billId = :billId AND i.deletedAt IS NULL AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
@@ -430,10 +375,12 @@ interface BillInstallmentDao {
           AND i.status != 'PAUSED'
           AND i.status != 'SKIPPED'
           AND i.dueDate BETWEEN :startDate AND :endDate
+          AND i.deletedAt IS NULL
+          AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
-    suspend fun getPendingInstallmentsInRange(startDate: Long, endDate: Long): List<InstallmentWithDetails>
+    suspend fun getPendingInstallmentsInRange(startDate: LocalDate, endDate: LocalDate): List<InstallmentWithDetails>
 
     @Query(
         """
@@ -464,53 +411,78 @@ interface BillInstallmentDao {
           AND i.status != 'PAUSED'
           AND i.status != 'SKIPPED'
           AND i.dueDate < :beforeDate
+          AND i.deletedAt IS NULL
+          AND b.deletedAt IS NULL
         ORDER BY i.dueDate ASC
         """
     )
-    suspend fun getOverduePendingInstallments(beforeDate: Long): List<InstallmentWithDetails>
+    suspend fun getOverduePendingInstallments(beforeDate: LocalDate): List<InstallmentWithDetails>
 
     @Query("""
         UPDATE bill_installments 
-        SET status = 'SKIPPED' 
+        SET status = 'SKIPPED', updatedAt = :updatedAt
         WHERE billId = :billId 
           AND paidAt IS NULL 
           AND dueDate >= :startDate 
           AND (:endDate IS NULL OR dueDate <= :endDate)
+          AND deletedAt IS NULL
     """)
-    suspend fun markPendingAsSkippedInRange(billId: String, startDate: Long, endDate: Long?)
+    suspend fun markPendingAsSkippedInRange(
+        billId: String,
+        startDate: LocalDate,
+        endDate: LocalDate?,
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("DELETE FROM bill_installments WHERE billId = :billId AND paidAt IS NULL AND dueDate > :cutoffDueDate")
-    suspend fun deletePendingAfterDueDate(billId: String, cutoffDueDate: Long)
+    @Query("UPDATE bill_installments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billId = :billId AND paidAt IS NULL AND dueDate > :cutoffDueDate AND deletedAt IS NULL")
+    suspend fun deletePendingAfterDueDate(
+        billId: String,
+        cutoffDueDate: LocalDate,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("DELETE FROM bill_installments WHERE billId = :billId AND paidAt IS NULL")
-    suspend fun deleteAllPending(billId: String)
+    @Query("UPDATE bill_installments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billId = :billId AND paidAt IS NULL AND deletedAt IS NULL")
+    suspend fun deleteAllPending(
+        billId: String,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("DELETE FROM bill_installments WHERE billId = :billId")
-    suspend fun deleteByBillId(billId: String)
+    @Query("UPDATE bill_installments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billId = :billId AND deletedAt IS NULL")
+    suspend fun deleteByBillId(
+        billId: String,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Query("SELECT * FROM bill_installments")
+    @Query("SELECT * FROM bill_installments WHERE deletedAt IS NULL")
     suspend fun getAllInstallmentsList(): List<BillInstallmentEntity>
 
     @Query("DELETE FROM bill_installments")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM bill_installments WHERE deletedAt IS NOT NULL AND deletedAt < :olderThanMillis")
+    suspend fun purgeDeleted(olderThanMillis: Long)
 
     @Query(
         """
         SELECT 
             COALESCE(SUM(amountCents), 0) AS totalCents,
             COALESCE(SUM(CASE WHEN paidAt IS NOT NULL THEN amountCents ELSE 0 END), 0) AS paidCents,
-            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate >= :nowMillis THEN amountCents ELSE 0 END), 0) AS pendingCents,
-            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate < :nowMillis THEN amountCents ELSE 0 END), 0) AS overdueCents,
+            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate >= :todayDate THEN amountCents ELSE 0 END), 0) AS pendingCents,
+            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate < :todayDate THEN amountCents ELSE 0 END), 0) AS overdueCents,
             COUNT(CASE WHEN paidAt IS NOT NULL THEN 1 END) AS paidCount,
-            COUNT(CASE WHEN paidAt IS NULL AND dueDate >= :nowMillis THEN 1 END) AS pendingCount,
-            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :nowMillis THEN 1 END) AS overdueCount
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate >= :todayDate THEN 1 END) AS pendingCount,
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :todayDate THEN 1 END) AS overdueCount
         FROM bill_installments
-        WHERE dueDate BETWEEN :startMillis AND :endMillis
+        WHERE dueDate BETWEEN :startDate AND :endDate
           AND status != 'PAUSED'
           AND status != 'SKIPPED'
+          AND deletedAt IS NULL
         """
     )
-    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummaryRaw>
+    fun getMonthSummary(startDate: LocalDate, endDate: LocalDate, todayDate: LocalDate): Flow<MonthSummaryRaw>
 
     @Query(
         """
@@ -522,6 +494,8 @@ interface BillInstallmentDao {
         WHERE i.paidAt IS NULL 
           AND i.status != 'PAUSED'
           AND i.status != 'SKIPPED'
+          AND i.deletedAt IS NULL
+          AND b.deletedAt IS NULL
           AND COALESCE(i.contactId, b.contactId) IS NOT NULL
         GROUP BY COALESCE(i.contactId, b.contactId)
         """
@@ -530,12 +504,12 @@ interface BillInstallmentDao {
 
     @Query("""
         SELECT 
-            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :startOfDayMillis THEN 1 END) AS overdueCount,
-            COUNT(CASE WHEN paidAt IS NULL AND dueDate >= :startOfDayMillis AND dueDate <= :endOfDayMillis THEN 1 END) AS dueTodayCount
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :todayDate THEN 1 END) AS overdueCount,
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate = :todayDate THEN 1 END) AS dueTodayCount
         FROM bill_installments
         WHERE status != 'PAUSED' AND status != 'SKIPPED' AND deletedAt IS NULL
     """)
-    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCountsRaw>
+    fun getAttentionCounts(todayDate: LocalDate): Flow<AttentionCountsRaw>
 
     @Query("""
         SELECT 

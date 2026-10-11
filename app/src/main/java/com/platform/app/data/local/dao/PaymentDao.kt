@@ -20,7 +20,7 @@ interface PaymentDao {
     @Query("SELECT * FROM payments WHERE billInstallmentId = :installmentId AND deletedAt IS NULL ORDER BY paymentDate ASC")
     suspend fun getPaymentsForInstallmentSync(installmentId: String): List<PaymentEntity>
 
-    @Query("SELECT * FROM payments WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM payments WHERE id = :id AND deletedAt IS NULL LIMIT 1")
     suspend fun getPaymentById(id: String): PaymentEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -32,11 +32,18 @@ interface PaymentDao {
     @Update
     suspend fun updatePayment(payment: PaymentEntity)
 
-    @Query("UPDATE payments SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id")
-    suspend fun softDeletePayment(id: String, deletedAt: Long = System.currentTimeMillis())
+    @Query("UPDATE payments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun softDeletePayment(
+        id: String,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
 
-    @Delete
-    suspend fun deletePayment(payment: PaymentEntity)
+    @Query("DELETE FROM payments WHERE deletedAt IS NOT NULL AND deletedAt < :olderThanMillis")
+    suspend fun purgeDeleted(olderThanMillis: Long)
+
+    @Query("DELETE FROM payments")
+    suspend fun deleteAll()
 
     @Query("SELECT SUM(amountCents + interestCents + fineCents - discountCents) FROM payments WHERE billInstallmentId = :installmentId AND deletedAt IS NULL")
     suspend fun getTotalPaidForInstallmentCents(installmentId: String): Long?

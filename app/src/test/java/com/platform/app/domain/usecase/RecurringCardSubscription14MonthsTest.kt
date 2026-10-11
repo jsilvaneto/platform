@@ -144,10 +144,10 @@ class RecurringCardSubscription14MonthsTest {
             savedInstallments.filter { it.invoiceId == null }
         }
 
-        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } answers {
+        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any(), any()) } answers {
             val ids = firstArg<List<String>>()
             val invoiceId = secondArg<String>()
-            val dueDate = thirdArg<Long>()
+            val dueDate = thirdArg<java.time.LocalDate>()
             for (i in savedInstallments.indices) {
                 if (savedInstallments[i].id in ids) {
                     savedInstallments[i] = savedInstallments[i].copy(
@@ -229,15 +229,13 @@ class RecurringCardSubscription14MonthsTest {
         // Ocorrência 1 está vinculada à 1ª fatura com vencimento trocado para o vencimento da fatura (dia 27)
         val firstInst = savedInstallments[0]
         assertEquals(firstInvoiceId, firstInst.invoiceId)
-        val calFirstDue = Calendar.getInstance().apply { timeInMillis = firstInst.dueDate }
-        assertEquals(27, calFirstDue.get(Calendar.DAY_OF_MONTH))
+        assertEquals(27, firstInst.dueDate.dayOfMonth)
 
         // Ocorrências 2 a 12 (meses 2 a 12) têm invoiceId nulo e dia de vencimento original estável no dia 10
         for (i in 1 until 12) {
             val inst = savedInstallments[i]
             assertNull("Ocorrência ${i + 1} deve ter invoiceId nulo inicialmente", inst.invoiceId)
-            val instCal = Calendar.getInstance().apply { timeInMillis = inst.dueDate }
-            assertEquals("Ocorrência ${i + 1} deve manter dia de vencimento estável no dia 10", 10, instCal.get(Calendar.DAY_OF_MONTH))
+            assertEquals("Ocorrência ${i + 1} deve manter dia de vencimento estável no dia 10", 10, inst.dueDate.dayOfMonth)
         }
 
         // 3. EXTENSÃO DA JANELA: gerar meses 13 e 14
@@ -264,14 +262,12 @@ class RecurringCardSubscription14MonthsTest {
         assertNotEquals(firstInvoiceId, inst14.invoiceId)
 
         // O dia de vencimento das ocorrências estendidas é rigorosamente estável (dia 10)
-        val cal13 = Calendar.getInstance().apply { timeInMillis = inst13.dueDate }
-        val cal14 = Calendar.getInstance().apply { timeInMillis = inst14.dueDate }
-        assertEquals("Ocorrência 13 deve manter dia 10", 10, cal13.get(Calendar.DAY_OF_MONTH))
-        assertEquals("Ocorrência 14 deve manter dia 10", 10, cal14.get(Calendar.DAY_OF_MONTH))
-        assertEquals(2027, cal13.get(Calendar.YEAR))
-        assertEquals(Calendar.OCTOBER, cal13.get(Calendar.MONTH))
-        assertEquals(2027, cal14.get(Calendar.YEAR))
-        assertEquals(Calendar.NOVEMBER, cal14.get(Calendar.MONTH))
+        assertEquals("Ocorrência 13 deve manter dia 10", 10, inst13.dueDate.dayOfMonth)
+        assertEquals("Ocorrência 14 deve manter dia 10", 10, inst14.dueDate.dayOfMonth)
+        assertEquals(2027, inst13.dueDate.year)
+        assertEquals(java.time.Month.OCTOBER, inst13.dueDate.month)
+        assertEquals(2027, inst14.dueDate.year)
+        assertEquals(java.time.Month.NOVEMBER, inst14.dueDate.month)
 
         // Adiciona ocorrências 13 e 14 ao repositório
         savedInstallments.addAll(extendedBatch.map { BillInstallmentEntity.fromDomain(it) })
@@ -326,8 +322,7 @@ class RecurringCardSubscription14MonthsTest {
 
         // E) Na fatura, o vencimento de todas as 14 parcelas está padronizado no vencimento da fatura (dia 27)
         for (inst in savedInstallments) {
-            val instCal = Calendar.getInstance().apply { timeInMillis = inst.dueDate }
-            assertEquals("Vencimento na fatura deve ser dia 27", 27, instCal.get(Calendar.DAY_OF_MONTH))
+            assertEquals("Vencimento na fatura deve ser dia 27", 27, inst.dueDate.dayOfMonth)
         }
     }
 }

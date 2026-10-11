@@ -215,7 +215,7 @@ class BillsViewModel @Inject constructor(
             .onEach { installments ->
                 _uiState.update { current ->
                     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-                    val yearsFromData = installments.map { getYearFromTimestamp(it.dueDate) }.toSet()
+                    val yearsFromData = installments.map { it.dueDate.year }.toSet()
                     val allYears = (yearsFromData + currentYear).sortedDescending()
 
                     val filtered = applyFilters(
@@ -372,15 +372,15 @@ class BillsViewModel @Inject constructor(
         val filtered = installments.filter { inst ->
             // Filtro de ano
             val matchesYear = if (selectedYear != null) {
-                getYearFromTimestamp(inst.dueDate) == selectedYear
+                inst.dueDate.year == selectedYear
             } else true
 
             // Filtro de período relativo
             val matchesPeriod = when (periodFilter) {
                 BillPeriodFilter.ALL -> true
-                BillPeriodFilter.THIS_MONTH -> !inst.isSkipped && inst.dueDate in startOfMonth..endOfMonth
-                BillPeriodFilter.NEXT_30_DAYS -> !inst.isSkipped && inst.dueDate in now..thirtyDaysAhead
-                BillPeriodFilter.OVERDUE -> !inst.isPaid && !inst.isSkipped && inst.dueDate < now
+                BillPeriodFilter.THIS_MONTH -> !inst.isSkipped && inst.dueDateMillis in startOfMonth..endOfMonth
+                BillPeriodFilter.NEXT_30_DAYS -> !inst.isSkipped && inst.dueDateMillis in now..thirtyDaysAhead
+                BillPeriodFilter.OVERDUE -> !inst.isPaid && !inst.isSkipped && inst.dueDateMillis < now
             }
 
             // Busca por texto
@@ -397,8 +397,8 @@ class BillsViewModel @Inject constructor(
             val matchesStatus = when (statusFilter) {
                 null -> !inst.isSkipped
                 BillStatus.PAID -> inst.isPaid
-                BillStatus.PENDING -> !inst.isPaid && inst.dueDate >= now && !inst.isPaused && !inst.isSkipped
-                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDate < now && !inst.isPaused && !inst.isSkipped
+                BillStatus.PENDING -> !inst.isPaid && inst.dueDateMillis >= now && !inst.isPaused && !inst.isSkipped
+                BillStatus.OVERDUE -> !inst.isPaid && inst.dueDateMillis < now && !inst.isPaused && !inst.isSkipped
                 BillStatus.PAUSED -> inst.isPaused
                 BillStatus.SKIPPED -> inst.isSkipped
             }

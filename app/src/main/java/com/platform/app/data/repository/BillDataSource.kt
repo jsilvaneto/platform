@@ -1,11 +1,14 @@
 package com.platform.app.data.repository
 
 import androidx.room.withTransaction
+import com.platform.app.core.util.DateUtils
 import com.platform.app.data.local.PlatformDatabase
 import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
+import com.platform.app.data.local.dao.SyncDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
+import com.platform.app.data.local.entity.SyncOutboxEntity
 import com.platform.app.domain.model.AttentionCounts
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
@@ -14,6 +17,7 @@ import com.platform.app.domain.model.MonthSummary
 import com.platform.app.domain.model.OpenInstallmentsSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,7 +29,8 @@ import javax.inject.Singleton
 class BillDataSource @Inject constructor(
     private val database: PlatformDatabase,
     private val billDao: BillDao,
-    private val installmentDao: BillInstallmentDao
+    private val installmentDao: BillInstallmentDao,
+    private val syncDao: SyncDao? = null
 ) {
 
     fun getBills(): Flow<List<Bill>> {
@@ -57,7 +62,9 @@ class BillDataSource @Inject constructor(
     }
 
     fun getInstallmentsForPeriod(startMillis: Long, endMillis: Long): Flow<List<BillInstallment>> {
-        return installmentDao.getInstallmentsForPeriod(startMillis, endMillis).map { list ->
+        val startDate = DateUtils.millisToLocalDate(startMillis)
+        val endDate = DateUtils.millisToLocalDate(endMillis)
+        return installmentDao.getInstallmentsForPeriod(startDate, endDate).map { list ->
             list.map { it.toDomain() }
         }
     }
@@ -73,23 +80,53 @@ class BillDataSource @Inject constructor(
     }
 
     suspend fun getPendingInstallmentsInRange(startMillis: Long, endMillis: Long): List<BillInstallment> {
-        return installmentDao.getPendingInstallmentsInRange(startMillis, endMillis).map { it.toDomain() }
+        val startDate = DateUtils.millisToLocalDate(startMillis)
+        val endDate = DateUtils.millisToLocalDate(endMillis)
+        return installmentDao.getPendingInstallmentsInRange(startDate, endDate).map { it.toDomain() }
     }
 
     suspend fun getOverduePendingInstallments(beforeMillis: Long): List<BillInstallment> {
-        return installmentDao.getOverduePendingInstallments(beforeMillis).map { it.toDomain() }
+        val beforeDate = DateUtils.millisToLocalDate(beforeMillis)
+        return installmentDao.getOverduePendingInstallments(beforeDate).map { it.toDomain() }
     }
 
     suspend fun postponeInstallmentDueDate(installmentId: String, days: Int = 1) {
         val entity = installmentDao.getEntityById(installmentId) ?: return
-        val newDueDate = entity.dueDate + (days.toLong() * 24L * 60L * 60L * 1000L)
+        val newDueDate = entity.dueDate.plusDays(days.toLong())
         installmentDao.updateInstallmentAmountAndDate(installmentId, entity.amountCents, newDueDate)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "BILL_INSTALLMENT",
+                entityId = installmentId,
+                operation = "UPDATE",
+                payload = """{"id":"$installmentId","dueDate":"$newDueDate"}"""
+            )
+        )
     }
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) {
         database.withTransaction {
             billDao.insert(BillEntity.fromDomain(bill))
             installmentDao.insertAll(installments.map { BillInstallmentEntity.fromDomain(it) })
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = bill.id,
+                    operation = "INSERT",
+                    payload = """{"id":"${bill.id}","title":"${bill.title}"}"""
+                )
+            )
+            syncDao?.enqueueAll(
+                installments.map { inst ->
+                    SyncOutboxEntity(
+                        entityType = "BILL_INSTALLMENT",
+                        entityId = inst.id,
+                        operation = "INSERT",
+                        payload = """{"id":"${inst.id}","billId":"${inst.billId}","amountCents":${inst.amountCents}}"""
+                    )
+                }
+            )
         }
     }
 
@@ -98,11 +135,30 @@ class BillDataSource @Inject constructor(
         database.withTransaction {
             installmentDao.insertAllIgnore(installments.map { BillInstallmentEntity.fromDomain(it) })
             val allForBill = installmentDao.getInstallmentsByBillId(bill.id)
-            val maxDueDate = allForBill.maxOfOrNull { it.dueDate }
+            val maxDueDate = allForBill.maxOfOrNull { DateUtils.localDateToMillis(it.dueDate) }
             billDao.updateBillEndDateAndTotalInstallments(
                 id = bill.id,
                 recurrenceEndDate = maxDueDate,
                 totalInstallments = allForBill.size
+            )
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = bill.id,
+                    operation = "UPDATE",
+                    payload = """{"id":"${bill.id}","totalInstallments":${allForBill.size}}"""
+                )
+            )
+            syncDao?.enqueueAll(
+                installments.map { inst ->
+                    SyncOutboxEntity(
+                        entityType = "BILL_INSTALLMENT",
+                        entityId = inst.id,
+                        operation = "INSERT",
+                        payload = """{"id":"${inst.id}","billId":"${inst.billId}"}"""
+                    )
+                }
             )
         }
     }
@@ -117,6 +173,15 @@ class BillDataSource @Inject constructor(
         val effectivePaidAt = if (isPaid) (paidTimestamp ?: System.currentTimeMillis()) else null
         val effectiveActualDate = if (isPaid) (actualPaymentDate ?: effectivePaidAt) else null
         installmentDao.updatePayment(installmentId, effectivePaidAt, effectiveActualDate, status)
+
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "BILL_INSTALLMENT",
+                entityId = installmentId,
+                operation = "UPDATE",
+                payload = """{"id":"$installmentId","status":"$status","paidAt":$effectivePaidAt,"actualPaymentDate":$effectiveActualDate}"""
+            )
+        )
     }
 
     suspend fun updateInstallmentsActualPaymentDateBatch(
@@ -125,6 +190,17 @@ class BillDataSource @Inject constructor(
     ) {
         if (installmentIds.isEmpty()) return
         installmentDao.updateActualPaymentDateBatch(installmentIds, actualPaymentDate)
+
+        syncDao?.enqueueAll(
+            installmentIds.map { id ->
+                SyncOutboxEntity(
+                    entityType = "BILL_INSTALLMENT",
+                    entityId = id,
+                    operation = "UPDATE",
+                    payload = """{"id":"$id","actualPaymentDate":$actualPaymentDate}"""
+                )
+            }
+        )
     }
 
     suspend fun updateInstallment(
@@ -132,8 +208,9 @@ class BillDataSource @Inject constructor(
         newAmountCents: Long,
         newDueDate: Long
     ) {
+        val newDate = DateUtils.millisToLocalDate(newDueDate)
         database.withTransaction {
-            installmentDao.updateInstallmentAmountAndDate(installmentId, newAmountCents, newDueDate)
+            installmentDao.updateInstallmentAmountAndDate(installmentId, newAmountCents, newDate)
             val entity = installmentDao.getEntityById(installmentId)
             if (entity != null) {
                 val bill = billDao.getById(entity.billId)
@@ -149,8 +226,24 @@ class BillDataSource @Inject constructor(
                         financialAccountId = bill.financialAccountId,
                         paymentMethodId = bill.paymentMethodId
                     )
+                    syncDao?.enqueue(
+                        SyncOutboxEntity(
+                            entityType = "BILL",
+                            entityId = bill.id,
+                            operation = "UPDATE",
+                            payload = """{"id":"${bill.id}","totalAmountCents":$newAmountCents}"""
+                        )
+                    )
                 }
             }
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL_INSTALLMENT",
+                    entityId = installmentId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$installmentId","amountCents":$newAmountCents,"dueDate":"$newDate"}"""
+                )
+            )
         }
     }
 
@@ -167,6 +260,7 @@ class BillDataSource @Inject constructor(
         financialAccountId: String?,
         paymentMethodId: String?
     ) {
+        val dueDateLocal = DateUtils.millisToLocalDate(dueDate)
         database.withTransaction {
             billDao.updateBillDetails(
                 id = billId,
@@ -182,11 +276,28 @@ class BillDataSource @Inject constructor(
             installmentDao.updateInstallmentDetails(
                 id = installmentId,
                 amountCents = amountCents,
-                dueDate = dueDate,
+                dueDate = dueDateLocal,
                 itemId = itemId,
                 contactId = contactId,
                 financialAccountId = financialAccountId,
                 paymentMethodId = paymentMethodId
+            )
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","title":"$title","totalAmountCents":$amountCents}"""
+                )
+            )
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL_INSTALLMENT",
+                    entityId = installmentId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$installmentId","amountCents":$amountCents,"dueDate":"$dueDateLocal"}"""
+                )
             )
         }
     }
@@ -196,9 +307,19 @@ class BillDataSource @Inject constructor(
         fromDueDate: Long,
         newAmountCents: Long
     ) {
+        val fromDueDateLocal = DateUtils.millisToLocalDate(fromDueDate)
         database.withTransaction {
-            installmentDao.updateAmountForPendingFromDueDate(billId, fromDueDate, newAmountCents)
+            installmentDao.updateAmountForPendingFromDueDate(billId, fromDueDateLocal, newAmountCents)
             billDao.updateBillTotalAmount(billId, newAmountCents)
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","totalAmountCents":$newAmountCents}"""
+                )
+            )
         }
     }
 
@@ -210,30 +331,64 @@ class BillDataSource @Inject constructor(
                 val remaining = installmentDao.getInstallmentsByBillId(entity.billId)
                 if (remaining.isEmpty()) {
                     billDao.deleteById(entity.billId)
+                    syncDao?.enqueue(
+                        SyncOutboxEntity(
+                            entityType = "BILL",
+                            entityId = entity.billId,
+                            operation = "DELETE",
+                            payload = """{"id":"${entity.billId}"}"""
+                        )
+                    )
                 } else {
-                    val maxDueDate = remaining.maxOfOrNull { it.dueDate }
+                    val maxDueDate = remaining.maxOfOrNull { DateUtils.localDateToMillis(it.dueDate) }
                     billDao.updateBillEndDateAndTotalInstallments(
                         id = entity.billId,
                         recurrenceEndDate = maxDueDate,
                         totalInstallments = remaining.size
                     )
                 }
+
+                syncDao?.enqueue(
+                    SyncOutboxEntity(
+                        entityType = "BILL_INSTALLMENT",
+                        entityId = installmentId,
+                        operation = "DELETE",
+                        payload = """{"id":"$installmentId"}"""
+                    )
+                )
             }
         }
     }
 
     suspend fun deleteFutureInstallments(billId: String, fromDueDate: Long) {
+        val fromDueDateLocal = DateUtils.millisToLocalDate(fromDueDate)
         database.withTransaction {
-            installmentDao.deletePendingFromDueDate(billId, fromDueDate)
+            installmentDao.deletePendingFromDueDate(billId, fromDueDateLocal)
             val remaining = installmentDao.getInstallmentsByBillId(billId)
             if (remaining.isEmpty()) {
                 billDao.deleteById(billId)
+                syncDao?.enqueue(
+                    SyncOutboxEntity(
+                        entityType = "BILL",
+                        entityId = billId,
+                        operation = "DELETE",
+                        payload = """{"id":"$billId"}"""
+                    )
+                )
             } else {
-                val maxDueDate = remaining.maxOfOrNull { it.dueDate }
+                val maxDueDate = remaining.maxOfOrNull { DateUtils.localDateToMillis(it.dueDate) }
                 billDao.updateBillEndDateAndTotalInstallments(
                     id = billId,
                     recurrenceEndDate = maxDueDate,
                     totalInstallments = remaining.size
+                )
+                syncDao?.enqueue(
+                    SyncOutboxEntity(
+                        entityType = "BILL",
+                        entityId = billId,
+                        operation = "UPDATE",
+                        payload = """{"id":"$billId","totalInstallments":${remaining.size}}"""
+                    )
                 )
             }
         }
@@ -247,15 +402,23 @@ class BillDataSource @Inject constructor(
             set(Calendar.MILLISECOND, 0)
         }
         val startOfToday = cal.timeInMillis
+        val startOfTodayDate = DateUtils.millisToLocalDate(startOfToday)
+        val pausedUntilDate = pausedUntil?.let { DateUtils.millisToLocalDate(it) }
 
         database.withTransaction {
             billDao.updatePauseState(billId, isPaused = true, pausedUntil = pausedUntil)
-            // Apenas ocorrências a partir de hoje viram SKIPPED no período.
-            // Atrasadas anteriores (dueDate < startOfToday) continuam PENDING e visíveis.
             installmentDao.markPendingAsSkippedInRange(
                 billId = billId,
-                startDate = startOfToday,
-                endDate = pausedUntil
+                startDate = startOfTodayDate,
+                endDate = pausedUntilDate
+            )
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","isPaused":true,"pausedUntil":$pausedUntil}"""
+                )
             )
         }
     }
@@ -263,6 +426,14 @@ class BillDataSource @Inject constructor(
     suspend fun resumeRecurringBill(billId: String) {
         database.withTransaction {
             billDao.updatePauseState(billId, isPaused = false, pausedUntil = null)
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","isPaused":false,"pausedUntil":null}"""
+                )
+            )
         }
     }
 
@@ -277,17 +448,19 @@ class BillDataSource @Inject constructor(
     suspend fun stopRecurringBill(billId: String, fromDueDate: Long? = null) {
         database.withTransaction {
             val remaining = installmentDao.getInstallmentsByBillId(billId)
-            val now = System.currentTimeMillis()
-            val cutoff = fromDueDate ?: remaining
-                .filter { it.dueDate >= now && it.paidAt == null }
+            val today = LocalDate.now()
+            val cutoff = fromDueDate?.let { DateUtils.millisToLocalDate(it) } ?: remaining
+                .filter { !it.dueDate.isBefore(today) && it.paidAt == null }
                 .minOfOrNull { it.dueDate }
-                ?: now
+                ?: today
 
-            // Remove APENAS futuras pendentes depois da data de corte
-            installmentDao.deletePendingAfterDueDate(billId, cutoff)
+            val now = System.currentTimeMillis()
+            // Remove APENAS futuras pendentes depois da data de corte via soft delete
+            installmentDao.deletePendingAfterDueDate(billId, cutoff, deletedAt = now, updatedAt = now)
 
             val updatedRemaining = installmentDao.getInstallmentsByBillId(billId)
-            val maxDueDate = updatedRemaining.maxOfOrNull { it.dueDate } ?: cutoff
+            val maxDueDate = updatedRemaining.maxOfOrNull { DateUtils.localDateToMillis(it.dueDate) } 
+                ?: DateUtils.localDateToMillis(cutoff)
 
             billDao.stopRecurringBillWithDate(
                 id = billId,
@@ -295,33 +468,77 @@ class BillDataSource @Inject constructor(
                 endedAt = now,
                 totalInstallments = updatedRemaining.size
             )
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","endedAt":$now,"totalInstallments":${updatedRemaining.size}}"""
+                )
+            )
         }
     }
 
     suspend fun reactivateRecurringBill(billId: String) {
         database.withTransaction {
             billDao.reactivateRecurringBill(billId)
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$billId","endedAt":null,"isPaused":false}"""
+                )
+            )
         }
     }
 
     suspend fun deleteRecurringBill(billId: String, keepPaidHistory: Boolean) {
         database.withTransaction {
+            val now = System.currentTimeMillis()
             if (keepPaidHistory) {
-                installmentDao.deleteAllPending(billId)
-                billDao.markBillEndedAndDeleted(billId, System.currentTimeMillis())
+                // Soft-delete de todas as parcelas pendentes; histórico pago permanece visível nos relatórios
+                installmentDao.deleteAllPending(billId, deletedAt = now, updatedAt = now)
+                billDao.markBillEndedAndDeleted(billId, now)
             } else {
-                installmentDao.deleteByBillId(billId)
-                billDao.deleteById(billId)
+                // Soft-delete total da conta e de todas as suas parcelas
+                installmentDao.deleteByBillId(billId, deletedAt = now, updatedAt = now)
+                billDao.deleteById(billId, deletedAt = now, updatedAt = now)
             }
+
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "DELETE",
+                    payload = """{"id":"$billId","deletedAt":$now}"""
+                )
+            )
         }
     }
 
     suspend fun deleteBill(billId: String) {
-        billDao.deleteById(billId)
+        val now = System.currentTimeMillis()
+        database.withTransaction {
+            installmentDao.deleteByBillId(billId, deletedAt = now, updatedAt = now)
+            billDao.deleteById(billId, deletedAt = now, updatedAt = now)
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL",
+                    entityId = billId,
+                    operation = "DELETE",
+                    payload = """{"id":"$billId","deletedAt":$now}"""
+                )
+            )
+        }
     }
 
     fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary> {
-        return installmentDao.getMonthSummary(startMillis, endMillis, nowMillis).map { it.toDomain() }
+        val startDate = DateUtils.millisToLocalDate(startMillis)
+        val endDate = DateUtils.millisToLocalDate(endMillis)
+        val todayDate = DateUtils.millisToLocalDate(nowMillis)
+        return installmentDao.getMonthSummary(startDate, endDate, todayDate).map { it.toDomain() }
     }
 
     fun getOpenAmountByContact(): Flow<Map<String, Long>> {
@@ -331,7 +548,8 @@ class BillDataSource @Inject constructor(
     }
 
     fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts> {
-        return installmentDao.getAttentionCounts(startOfDayMillis, endOfDayMillis).map {
+        val todayDate = DateUtils.millisToLocalDate(startOfDayMillis)
+        return installmentDao.getAttentionCounts(todayDate).map {
             AttentionCounts(overdueCount = it.overdueCount, dueTodayCount = it.dueTodayCount)
         }
     }
@@ -341,7 +559,7 @@ class BillDataSource @Inject constructor(
             OpenInstallmentsSummary(
                 totalAmountCents = it.totalAmountCents,
                 count = it.installmentCount,
-                lastDueDate = it.lastDueDate
+                lastDueDate = it.lastDueDate?.let { d -> DateUtils.localDateToMillis(d) }
             )
         }
     }
@@ -356,7 +574,7 @@ class BillDataSource @Inject constructor(
                 FreeingUpCommitment(
                     billId = it.billId,
                     title = it.title,
-                    endDate = it.endDate,
+                    endDate = it.endDate?.let { d -> DateUtils.localDateToMillis(d) } ?: 0L,
                     monthlyAmountCents = it.monthlyAmountCents
                 )
             }

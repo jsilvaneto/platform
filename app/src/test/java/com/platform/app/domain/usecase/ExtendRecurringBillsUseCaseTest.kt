@@ -51,7 +51,7 @@ class ExtendRecurringBillsUseCaseTest {
         // Simula que a conta começou há 10 meses e só restam 2 parcelas no futuro (11 e 12)
         val startDate = DateUtils.addMonths(referenceNow, -10)
         val initialInstallments = calculateInstallmentsUseCase(bill, startDate).mapIndexed { index, inst ->
-            if (index < 10) inst.copy(status = BillStatus.PAID, paidAt = inst.dueDate)
+            if (index < 10) inst.copy(status = BillStatus.PAID, paidAt = inst.dueDateMillis)
             else inst
         }
 
@@ -70,7 +70,7 @@ class ExtendRecurringBillsUseCaseTest {
         assertEquals(12, addedList.size)
         assertEquals(13, addedList.first().installmentNumber)
         assertEquals(24, addedList.last().installmentNumber)
-        assertTrue(addedList.last().dueDate > referenceNow)
+        assertTrue(addedList.last().dueDateMillis > referenceNow)
     }
 
     @Test
@@ -158,7 +158,7 @@ class ExtendRecurringBillsUseCaseTest {
 
         val startDate = DateUtils.addMonths(referenceNow, -10)
         val initialInstallments = calculateInstallmentsUseCase(bill, startDate).mapIndexed { index, inst ->
-            if (index < 10) inst.copy(status = BillStatus.PAID, paidAt = inst.dueDate)
+            if (index < 10) inst.copy(status = BillStatus.PAID, paidAt = inst.dueDateMillis)
             else inst
         }
 

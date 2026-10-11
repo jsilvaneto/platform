@@ -16,9 +16,17 @@ object DateUtils {
         return dateFormat.format(Date(epochMillis))
     }
 
+    fun formatDate(date: java.time.LocalDate): String {
+        return date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy", ptBrLocale))
+    }
+
     fun formatDayMonth(epochMillis: Long): String {
         val fmt = SimpleDateFormat("dd/MM", ptBrLocale)
         return fmt.format(Date(epochMillis))
+    }
+
+    fun formatDayMonth(date: java.time.LocalDate): String {
+        return date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM", ptBrLocale))
     }
 
     fun formatMonthYear(epochMillis: Long): String {
@@ -26,10 +34,32 @@ object DateUtils {
         return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
     }
 
+    fun formatMonthYear(date: java.time.LocalDate): String {
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy", ptBrLocale)
+        val formatted = date.format(formatter)
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
+    }
+
     fun formatShortMonthYear(epochMillis: Long): String {
         val shortFmt = SimpleDateFormat("MMM/yy", ptBrLocale)
         val formatted = shortFmt.format(Date(epochMillis))
         return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
+    }
+
+    fun formatShortMonthYear(date: java.time.LocalDate): String {
+        val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM/yy", ptBrLocale)
+        val formatted = date.format(formatter)
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }
+    }
+
+    fun millisToLocalDate(epochMillis: Long): java.time.LocalDate {
+        return java.time.Instant.ofEpochMilli(epochMillis)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate()
+    }
+
+    fun localDateToMillis(date: java.time.LocalDate): Long {
+        return date.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
     }
 
     fun getStartOfMonth(epochMillis: Long): Long {
@@ -62,6 +92,10 @@ object DateUtils {
             add(Calendar.MONTH, months)
         }
         return cal.timeInMillis
+    }
+
+    fun addMonths(date: java.time.LocalDate, months: Int): java.time.LocalDate {
+        return date.plusMonths(months.toLong())
     }
 
     fun getYear(epochMillis: Long): Int {
@@ -130,6 +164,16 @@ object DateUtils {
         return cal.timeInMillis
     }
 
+    fun addRecurrenceStep(date: java.time.LocalDate, frequency: RecurrenceFrequency, steps: Int): java.time.LocalDate {
+        if (steps == 0) return date
+        return when (frequency) {
+            RecurrenceFrequency.DAILY -> date.plusDays(steps.toLong())
+            RecurrenceFrequency.WEEKLY -> date.plusWeeks(steps.toLong())
+            RecurrenceFrequency.MONTHLY -> date.plusMonths(steps.toLong())
+            RecurrenceFrequency.YEARLY -> date.plusYears(steps.toLong())
+        }
+    }
+
     fun getEndOfDay(epochMillis: Long): Long {
         val cal = Calendar.getInstance().apply {
             timeInMillis = epochMillis
@@ -157,5 +201,9 @@ object DateUtils {
         val target = Calendar.getInstance().apply { timeInMillis = epochMillis }
         return today.get(Calendar.YEAR) == target.get(Calendar.YEAR) &&
                 today.get(Calendar.DAY_OF_YEAR) == target.get(Calendar.DAY_OF_YEAR)
+    }
+
+    fun isToday(date: java.time.LocalDate): Boolean {
+        return date == java.time.LocalDate.now()
     }
 }

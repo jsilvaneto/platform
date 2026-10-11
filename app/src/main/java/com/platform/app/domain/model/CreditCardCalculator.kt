@@ -96,6 +96,17 @@ object CreditCardCalculator {
     }
 
     /**
+     * Sobrecarga aceitando LocalDate diretamente (epoch day Int / modelo pós-migração).
+     */
+    fun determineInvoiceReferenceMonth(date: java.time.LocalDate, closingDay: Int): String {
+        var targetDate = date
+        if (targetDate.dayOfMonth > closingDay) {
+            targetDate = targetDate.plusMonths(1)
+        }
+        return String.format(java.util.Locale.US, "%04d-%02d", targetDate.year, targetDate.monthValue)
+    }
+
+    /**
      * Avança ou recua [monthsToAdd] meses a partir de uma competência "YYYY-MM".
      */
     fun addMonthsToReferenceMonth(referenceMonth: String, monthsToAdd: Int): String {

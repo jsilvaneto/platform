@@ -1,9 +1,12 @@
 package com.platform.app.data.repository
 
+import com.platform.app.core.util.DateUtils
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.dao.CreditCardDao
+import com.platform.app.data.local.dao.SyncDao
 import com.platform.app.data.local.entity.CreditCardEntity
 import com.platform.app.data.local.entity.CreditCardInvoiceEntity
+import com.platform.app.data.local.entity.SyncOutboxEntity
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CardDependencies
 import com.platform.app.domain.model.CreditCard
@@ -23,7 +26,8 @@ import javax.inject.Singleton
 @Singleton
 class CreditCardDataSource @Inject constructor(
     private val creditCardDao: CreditCardDao,
-    private val installmentDao: BillInstallmentDao
+    private val installmentDao: BillInstallmentDao,
+    private val syncDao: SyncDao? = null
 ) {
 
     fun getCreditCards(): Flow<List<CreditCard>> {
@@ -34,10 +38,26 @@ class CreditCardDataSource @Inject constructor(
 
     suspend fun saveCreditCard(card: CreditCard) {
         creditCardDao.upsertCard(CreditCardEntity.fromDomain(card))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CREDIT_CARD",
+                entityId = card.id,
+                operation = "UPSERT",
+                payload = """{"id":"${card.id}","name":"${card.name}"}"""
+            )
+        )
     }
 
     suspend fun deleteCreditCard(cardId: String) {
         creditCardDao.deleteCardById(cardId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CREDIT_CARD",
+                entityId = cardId,
+                operation = "DELETE",
+                payload = """{"id":"$cardId"}"""
+            )
+        )
     }
 
     fun getCreditCardInvoices(cardId: String): Flow<List<CreditCardInvoice>> {
@@ -59,7 +79,9 @@ class CreditCardDataSource @Inject constructor(
     }
 
     fun getInvoicesForPeriod(startMillis: Long, endMillis: Long): Flow<List<CreditCardInvoice>> {
-        return combine(creditCardDao.getInvoicesForDueDateRange(startMillis, endMillis), installmentDao.getInvoiceTotals()) { invoices, totals ->
+        val startDate = DateUtils.millisToLocalDate(startMillis)
+        val endDate = DateUtils.millisToLocalDate(endMillis)
+        return combine(creditCardDao.getInvoicesForDueDateRange(startDate, endDate), installmentDao.getInvoiceTotals()) { invoices, totals ->
             val totalsMap = totals.associate { it.invoiceId to it.totalAmountCents }
             invoices.map { invEntity ->
                 invEntity.toDomain(totalAmountCents = totalsMap[invEntity.id] ?: 0L)
@@ -68,13 +90,16 @@ class CreditCardDataSource @Inject constructor(
     }
 
     suspend fun getPendingInvoicesInRange(startMillis: Long, endMillis: Long): List<CreditCardInvoice> {
-        val invoices = creditCardDao.getPendingInvoicesInRange(startMillis, endMillis)
+        val startDate = DateUtils.millisToLocalDate(startMillis)
+        val endDate = DateUtils.millisToLocalDate(endMillis)
+        val invoices = creditCardDao.getPendingInvoicesInRange(startDate, endDate)
         val totals = installmentDao.getInvoiceTotalsList().associate { it.invoiceId to it.totalAmountCents }
         return invoices.map { it.toDomain(totalAmountCents = totals[it.id] ?: 0L) }
     }
 
     suspend fun getOverdueInvoices(beforeMillis: Long): List<CreditCardInvoice> {
-        val invoices = creditCardDao.getOverdueInvoices(beforeMillis)
+        val beforeDate = DateUtils.millisToLocalDate(beforeMillis)
+        val invoices = creditCardDao.getOverdueInvoices(beforeDate)
         val totals = installmentDao.getInvoiceTotalsList().associate { it.invoiceId to it.totalAmountCents }
         return invoices.map { it.toDomain(totalAmountCents = totals[it.id] ?: 0L) }
     }
@@ -91,26 +116,30 @@ class CreditCardDataSource @Inject constructor(
             return existing.toDomain()
         }
 
+        val today = java.time.LocalDate.now()
         val card = creditCardDao.getCardById(cardId) ?: return CreditCardInvoice(
             creditCardId = cardId,
             referenceMonth = referenceMonth,
-            closingDate = System.currentTimeMillis(),
-            dueDate = System.currentTimeMillis()
+            closingDate = today,
+            dueDate = today
         )
 
-        val cal = Calendar.getInstance()
         val parts = referenceMonth.split("-")
-        val year = parts.getOrNull(0)?.toIntOrNull() ?: cal.get(Calendar.YEAR)
-        val month = (parts.getOrNull(1)?.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
+        val year = parts.getOrNull(0)?.toIntOrNull() ?: today.year
+        val month = (parts.getOrNull(1)?.toIntOrNull() ?: today.monthValue).coerceIn(1, 12)
 
-        cal.set(year, month, card.closingDay, 23, 59, 59)
-        val closingDate = cal.timeInMillis
+        val maxClosingDay = java.time.YearMonth.of(year, month).lengthOfMonth()
+        val closingDate = java.time.LocalDate.of(year, month, card.closingDay.coerceIn(1, maxClosingDay))
 
-        cal.set(year, month, card.dueDay, 23, 59, 59)
+        var dueYear = year
+        var dueMonth = month
         if (card.dueDay <= card.closingDay) {
-            cal.add(Calendar.MONTH, 1)
+            val nextMonth = java.time.YearMonth.of(year, month).plusMonths(1)
+            dueYear = nextMonth.year
+            dueMonth = nextMonth.monthValue
         }
-        val dueDate = cal.timeInMillis
+        val maxDueDay = java.time.YearMonth.of(dueYear, dueMonth).lengthOfMonth()
+        val dueDate = java.time.LocalDate.of(dueYear, dueMonth, card.dueDay.coerceIn(1, maxDueDay))
 
         val newInvoice = CreditCardInvoice(
             creditCardId = cardId,
@@ -120,6 +149,14 @@ class CreditCardDataSource @Inject constructor(
             status = InvoiceStatus.ABERTA
         )
         creditCardDao.insertInvoice(CreditCardInvoiceEntity.fromDomain(newInvoice))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CREDIT_CARD_INVOICE",
+                entityId = newInvoice.id,
+                operation = "INSERT",
+                payload = """{"id":"${newInvoice.id}","referenceMonth":"$referenceMonth"}"""
+            )
+        )
         return newInvoice
     }
 
@@ -184,6 +221,14 @@ class CreditCardDataSource @Inject constructor(
             actualPaymentDate = effectiveActualDate,
             status = "PAID"
         )
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CREDIT_CARD_INVOICE",
+                entityId = invoiceId,
+                operation = "UPDATE",
+                payload = """{"id":"$invoiceId","status":"PAGA","paidAt":$now}"""
+            )
+        )
     }
 
     suspend fun reopenInvoice(invoiceId: String) {
@@ -193,6 +238,14 @@ class CreditCardDataSource @Inject constructor(
             paidAt = null,
             actualPaymentDate = null,
             status = "PENDING"
+        )
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CREDIT_CARD_INVOICE",
+                entityId = invoiceId,
+                operation = "UPDATE",
+                payload = """{"id":"$invoiceId","status":"ABERTA"}"""
+            )
         )
     }
 

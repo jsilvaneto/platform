@@ -31,9 +31,9 @@ class GetDrawerOverviewUseCase @Inject constructor(
             preferencesManager.lastOfflineBackupTimestamp,
             preferencesManager.initialScreen
         ) { forecast, installments, invoices, lastBackup, initialScreen ->
-            val overdueBillsCount = installments.count { !it.isPaid && it.dueDate < startOfToday && it.invoiceId == null }
+            val overdueBillsCount = installments.count { !it.isPaid && it.dueDateMillis < startOfToday && it.invoiceId == null }
             val overdueInvoicesCount = invoices.count {
-                it.status != InvoiceStatus.PAGA && it.dueDate < startOfToday
+                it.status != InvoiceStatus.PAGA && it.dueDateMillis < startOfToday
             }
             val totalOverdueCount = overdueBillsCount + overdueInvoicesCount
 

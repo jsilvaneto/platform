@@ -36,7 +36,7 @@ fun CreditCardInvoiceCard(
     modifier: Modifier = Modifier
 ) {
     val currentTime = System.currentTimeMillis()
-    val isOverdue = invoice.status != InvoiceStatus.PAGA && invoice.dueDate < currentTime
+    val isOverdue = invoice.status != InvoiceStatus.PAGA && invoice.dueDateMillis < currentTime
 
     val (statusLabel, chipType) = when {
         invoice.status == InvoiceStatus.PAGA -> "Paga" to StatusChipType.SUCCESS

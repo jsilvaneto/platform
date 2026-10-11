@@ -139,7 +139,7 @@ fun PlannedInstallmentsTab(
         ) {
             items(installments, key = { it.id }) { inst ->
                 val isToday = !inst.isPaid && DateUtils.isToday(inst.dueDate)
-                val isOverdue = !inst.isPaid && inst.dueDate < now && !isToday
+                val isOverdue = !inst.isPaid && inst.dueDateMillis < now && !isToday
 
                 PlatformSurface(
                     variant = PlatformSurfaceVariant.Tonal,

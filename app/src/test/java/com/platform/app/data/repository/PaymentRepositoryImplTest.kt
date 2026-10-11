@@ -70,7 +70,7 @@ class PaymentRepositoryImplTest {
         repository.softDeletePayment("pay_1")
 
         coVerify(exactly = 1) {
-            paymentDao.softDeletePayment("pay_1", any())
+            paymentDao.softDeletePayment("pay_1", any(), any())
         }
         coVerify(exactly = 1) {
             syncDao.enqueue(match {

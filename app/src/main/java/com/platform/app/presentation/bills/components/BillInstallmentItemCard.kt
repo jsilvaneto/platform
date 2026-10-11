@@ -59,7 +59,7 @@ fun BillInstallmentItemCard(
     onSelectInstallment: () -> Unit
 ) {
     val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
-    val isOverdue = !installment.isPaid && installment.dueDate < System.currentTimeMillis() && !isToday
+    val isOverdue = !installment.isPaid && installment.dueDateMillis < System.currentTimeMillis() && !isToday
 
     val fallbackColor = MaterialTheme.colorScheme.onSurfaceVariant
     val catColor = remember(installment.categoryColorHex, fallbackColor) {

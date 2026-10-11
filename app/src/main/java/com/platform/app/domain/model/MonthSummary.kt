@@ -47,7 +47,7 @@ data class MonthSummary(
                 if (inst.isPaid) {
                     paid += inst.amountCents
                     paidCount++
-                } else if (inst.dueDate < nowMillis) {
+                } else if (inst.dueDateMillis < nowMillis) {
                     overdue += inst.amountCents
                     overdueCount++
                 } else {

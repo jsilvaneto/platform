@@ -111,7 +111,7 @@ class FinancialRepositoryInvoiceTest {
 
         // Verifica que a fatura foi marcada como PAGA
         coVerify(exactly = 1) {
-            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.PAGA.name)
+            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.PAGA.name, any())
         }
 
         // Verifica que a query SQL direta atualizou apenas as parcelas desta fatura com a data real fornecida
@@ -120,7 +120,8 @@ class FinancialRepositoryInvoiceTest {
                 invoiceId = targetInvoiceId,
                 paidAt = any(),
                 actualPaymentDate = customActualPaymentDate,
-                status = "PAID"
+                status = "PAID",
+                updatedAt = any()
             )
         }
 
@@ -130,7 +131,8 @@ class FinancialRepositoryInvoiceTest {
                 invoiceId = "inv-other-2",
                 paidAt = any(),
                 actualPaymentDate = any(),
-                status = any()
+                status = any(),
+                updatedAt = any()
             )
         }
 
@@ -149,12 +151,13 @@ class FinancialRepositoryInvoiceTest {
         repository.payInvoice(invoiceId = targetInvoiceId)
 
         coVerify(exactly = 1) {
-            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.PAGA.name)
+            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.PAGA.name, any())
             installmentDao.updatePaymentByInvoiceId(
                 invoiceId = targetInvoiceId,
                 paidAt = capture(paidAtSlot),
                 actualPaymentDate = capture(actualDateSlot),
-                status = "PAID"
+                status = "PAID",
+                updatedAt = any()
             )
         }
 
@@ -172,7 +175,7 @@ class FinancialRepositoryInvoiceTest {
 
         // Verifica status da fatura aberto
         coVerify(exactly = 1) {
-            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.ABERTA.name)
+            creditCardDao.updateInvoiceStatus(targetInvoiceId, InvoiceStatus.ABERTA.name, any())
         }
 
         // Verifica que apenas a fatura alvo teve as parcelas resetadas
@@ -181,7 +184,8 @@ class FinancialRepositoryInvoiceTest {
                 invoiceId = targetInvoiceId,
                 paidAt = null,
                 actualPaymentDate = null,
-                status = "PENDING"
+                status = "PENDING",
+                updatedAt = any()
             )
         }
 
@@ -191,7 +195,8 @@ class FinancialRepositoryInvoiceTest {
                 invoiceId = "inv-other-9",
                 paidAt = any(),
                 actualPaymentDate = any(),
-                status = any()
+                status = any(),
+                updatedAt = any()
             )
         }
 
@@ -208,16 +213,16 @@ class FinancialRepositoryInvoiceTest {
             id = "inv-1",
             creditCardId = cardId,
             referenceMonth = "2026-10",
-            closingDate = 1000L,
-            dueDate = 2000L,
+            closingDate = java.time.LocalDate.of(2026, 10, 1),
+            dueDate = java.time.LocalDate.of(2026, 10, 10),
             status = InvoiceStatus.ABERTA.name
         )
         val invoice2 = CreditCardInvoiceEntity(
             id = "inv-2",
             creditCardId = cardId,
             referenceMonth = "2026-11",
-            closingDate = 3000L,
-            dueDate = 4000L,
+            closingDate = java.time.LocalDate.of(2026, 11, 1),
+            dueDate = java.time.LocalDate.of(2026, 11, 10),
             status = InvoiceStatus.ABERTA.name
         )
 
@@ -293,8 +298,8 @@ class FinancialRepositoryInvoiceTest {
             id = "inv-nov",
             creditCardId = cardId,
             referenceMonth = "2026-11",
-            closingDate = 1732147199000L,
-            dueDate = 1732751999000L,
+            closingDate = java.time.LocalDate.of(2026, 11, 20),
+            dueDate = java.time.LocalDate.of(2026, 11, 27),
             status = "ABERTA"
         )
         coEvery { creditCardDao.getCardById(cardId) } returns card
@@ -315,7 +320,7 @@ class FinancialRepositoryInvoiceTest {
             installmentNumber = 2,
             totalInstallments = 12,
             amountCents = 3990L,
-            dueDate = calNov.timeInMillis,
+            dueDate = java.time.LocalDate.of(2026, 11, 10),
             paidAt = null,
             status = "PENDING",
             invoiceId = null
@@ -326,14 +331,14 @@ class FinancialRepositoryInvoiceTest {
             installmentNumber = 3,
             totalInstallments = 12,
             amountCents = 3990L,
-            dueDate = calDec.timeInMillis,
+            dueDate = java.time.LocalDate.of(2026, 12, 10),
             paidAt = null,
             status = "PENDING",
             invoiceId = null
         )
 
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(unattachedNov, unattachedDec)
-        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
+        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any(), any()) } returns Unit
 
         val attachedCount = repository.materializeRecurringForInvoice(cardId, "inv-nov", "2026-11")
 
@@ -343,7 +348,8 @@ class FinancialRepositoryInvoiceTest {
             installmentDao.attachInstallmentsToInvoice(
                 installmentIds = listOf("inst-nov"),
                 invoiceId = "inv-nov",
-                invoiceDueDate = invoiceEntity.dueDate
+                invoiceDueDate = invoiceEntity.dueDate,
+                updatedAt = any()
             )
         }
     }
@@ -356,8 +362,8 @@ class FinancialRepositoryInvoiceTest {
             id = invoiceId,
             creditCardId = cardId,
             referenceMonth = "2026-11",
-            closingDate = 1732147199000L,
-            dueDate = 1732751999000L,
+            closingDate = java.time.LocalDate.of(2026, 11, 20),
+            dueDate = java.time.LocalDate.of(2026, 11, 27),
             status = "ABERTA"
         )
         val card = CreditCardEntity(
@@ -377,21 +383,21 @@ class FinancialRepositoryInvoiceTest {
             installmentNumber = 2,
             totalInstallments = 12,
             amountCents = 3990L,
-            dueDate = calNov.timeInMillis,
+            dueDate = java.time.LocalDate.of(2026, 11, 10),
             paidAt = null,
             status = "PENDING",
             invoiceId = null
         )
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(unattachedNov)
-        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
+        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any(), any()) } returns Unit
 
         repository.payInvoice(invoiceId = invoiceId, actualPaymentDate = 1732751999000L)
 
         // 1. Garante que materializou as recorrências do mês antes de quitar
         coVerifyOrder {
-            installmentDao.attachInstallmentsToInvoice(listOf("inst-nov"), invoiceId, invoiceEntity.dueDate)
-            creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.PAGA.name)
-            installmentDao.updatePaymentByInvoiceId(invoiceId, any(), 1732751999000L, "PAID")
+            installmentDao.attachInstallmentsToInvoice(listOf("inst-nov"), invoiceId, invoiceEntity.dueDate, any())
+            creditCardDao.updateInvoiceStatus(invoiceId, InvoiceStatus.PAGA.name, any())
+            installmentDao.updatePaymentByInvoiceId(invoiceId, any(), 1732751999000L, "PAID", any())
         }
     }
 
@@ -420,15 +426,15 @@ class FinancialRepositoryInvoiceTest {
 
         val instOct = BillInstallmentEntity(
             id = "inst-oct", billId = "b1", installmentNumber = 1, totalInstallments = 12,
-            amountCents = 5000L, dueDate = calOct.timeInMillis, paidAt = null, status = "PENDING", invoiceId = null
+            amountCents = 5000L, dueDate = java.time.LocalDate.of(2026, 10, 10), paidAt = null, status = "PENDING", invoiceId = null
         )
         val instNov = BillInstallmentEntity(
             id = "inst-nov", billId = "b1", installmentNumber = 2, totalInstallments = 12,
-            amountCents = 5000L, dueDate = calNov.timeInMillis, paidAt = null, status = "PENDING", invoiceId = null
+            amountCents = 5000L, dueDate = java.time.LocalDate.of(2026, 11, 10), paidAt = null, status = "PENDING", invoiceId = null
         )
         val instDec = BillInstallmentEntity(
             id = "inst-dec", billId = "b1", installmentNumber = 3, totalInstallments = 12,
-            amountCents = 5000L, dueDate = calDec.timeInMillis, paidAt = null, status = "PENDING", invoiceId = null
+            amountCents = 5000L, dueDate = java.time.LocalDate.of(2026, 12, 10), paidAt = null, status = "PENDING", invoiceId = null
         )
 
         coEvery { installmentDao.getUnattachedRecurringInstallmentsForCard(cardId) } returns listOf(instOct, instNov, instDec)
@@ -439,12 +445,12 @@ class FinancialRepositoryInvoiceTest {
                 id = firstArg(),
                 creditCardId = cardId,
                 referenceMonth = "2026-11",
-                closingDate = 1000L,
-                dueDate = 2000L,
+                closingDate = java.time.LocalDate.of(2026, 11, 20),
+                dueDate = java.time.LocalDate.of(2026, 11, 27),
                 status = "ABERTA"
             )
         }
-        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any()) } returns Unit
+        coEvery { installmentDao.attachInstallmentsToInvoice(any(), any(), any(), any()) } returns Unit
 
         val count = repository.materializeRecurringCardInvoices(refTime)
 
@@ -463,6 +469,6 @@ class FinancialRepositoryInvoiceTest {
 
         repository.updateInstallmentsActualPaymentDateBatch(ids, customDate)
 
-        coVerify(exactly = 1) { installmentDao.updateActualPaymentDateBatch(ids, customDate) }
+        coVerify(exactly = 1) { installmentDao.updateActualPaymentDateBatch(ids, customDate, any()) }
     }
 }

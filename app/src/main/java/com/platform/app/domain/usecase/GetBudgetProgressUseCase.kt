@@ -46,7 +46,7 @@ class GetBudgetProgressUseCase @Inject constructor(
                 val effectiveDate = if (inst.creditCardId != null || inst.invoiceId != null) {
                     inst.createdAt
                 } else {
-                    inst.dueDate
+                    inst.dueDateMillis
                 }
                 effectiveDate in startOfMonth..endOfMonth
             }

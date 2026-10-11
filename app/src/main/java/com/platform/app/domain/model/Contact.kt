@@ -14,7 +14,9 @@ data class Contact(
     val state: String = "",
     val country: String = "Brasil",
     val zipCode: String = "",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 ) {
     val fullAddress: String
         get() {

@@ -13,7 +13,9 @@ data class GoalEntity(
     val currentAmountCents: Long,
     val deadlineDate: Long?,
     val colorHex: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): Goal = Goal(
         id = id,
@@ -22,7 +24,9 @@ data class GoalEntity(
         currentAmountCents = currentAmountCents,
         deadlineDate = deadlineDate,
         colorHex = colorHex,
-        createdAt = createdAt
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt
     )
 
     companion object {
@@ -33,7 +37,9 @@ data class GoalEntity(
             currentAmountCents = goal.currentAmountCents,
             deadlineDate = goal.deadlineDate,
             colorHex = goal.colorHex,
-            createdAt = goal.createdAt
+            createdAt = goal.createdAt,
+            updatedAt = goal.updatedAt,
+            deletedAt = goal.deletedAt
         )
     }
 }

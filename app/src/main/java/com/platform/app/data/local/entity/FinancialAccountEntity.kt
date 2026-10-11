@@ -14,14 +14,20 @@ data class FinancialAccountEntity(
     val id: String,
     val name: String,
     val accountType: FinancialAccountType = FinancialAccountType.CORRENTE,
-    val colorHex: String
+    val colorHex: String,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): FinancialAccount {
         return FinancialAccount(
             id = id,
             name = name,
             accountType = accountType,
-            colorHex = colorHex
+            colorHex = colorHex,
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -31,7 +37,10 @@ data class FinancialAccountEntity(
                 id = account.id,
                 name = account.name,
                 accountType = account.accountType,
-                colorHex = account.colorHex
+                colorHex = account.colorHex,
+                createdAt = account.createdAt,
+                updatedAt = account.updatedAt,
+                deletedAt = account.deletedAt
             )
         }
     }

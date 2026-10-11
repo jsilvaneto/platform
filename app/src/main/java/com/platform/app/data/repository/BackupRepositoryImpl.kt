@@ -2,6 +2,12 @@ package com.platform.app.data.repository
 
 import androidx.room.withTransaction
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializer
+import java.lang.reflect.Type
+import java.time.LocalDate
+import com.platform.app.core.util.DateUtils
 import com.platform.app.core.dispatcher.DispatcherProvider
 import com.platform.app.data.local.PlatformDatabase
 import com.platform.app.data.local.backup.BackupCryptoHelper
@@ -38,7 +44,20 @@ class BackupRepositoryImpl @Inject constructor(
     private val dispatcherProvider: DispatcherProvider
 ) : BackupRepository {
 
-    private val gson = GsonBuilder().setPrettyPrinting().create()
+    private val gson = GsonBuilder()
+        .registerTypeAdapter(LocalDate::class.java, JsonSerializer<LocalDate> { src, _, _ ->
+            JsonPrimitive(src.toString())
+        })
+        .registerTypeAdapter(LocalDate::class.java, JsonDeserializer<LocalDate> { json, _, _ ->
+            if (json.isJsonPrimitive && json.asJsonPrimitive.isNumber) {
+                val num = json.asLong
+                if (num > 1000000) DateUtils.millisToLocalDate(num) else LocalDate.ofEpochDay(num)
+            } else {
+                LocalDate.parse(json.asString)
+            }
+        })
+        .setPrettyPrinting()
+        .create()
 
     override suspend fun exportBackupJson(password: String): Result<String> = withContext(dispatcherProvider.io) {
         runCatching {

@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FinancialAccountDao {
-    @Query("SELECT * FROM financial_accounts ORDER BY name ASC")
+    @Query("SELECT * FROM financial_accounts WHERE deletedAt IS NULL ORDER BY name ASC")
     fun getAll(): Flow<List<FinancialAccountEntity>>
 
-    @Query("SELECT * FROM financial_accounts WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM financial_accounts WHERE id = :id AND deletedAt IS NULL LIMIT 1")
     suspend fun getById(id: String): FinancialAccountEntity?
 
-    @Query("SELECT COUNT(*) FROM financial_accounts")
+    @Query("SELECT COUNT(*) FROM financial_accounts WHERE deletedAt IS NULL")
     suspend fun count(): Int
 
     @Upsert
@@ -32,11 +32,14 @@ interface FinancialAccountDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(accounts: List<FinancialAccountEntity>)
 
-    @Query("DELETE FROM financial_accounts WHERE id = :id")
-    suspend fun deleteById(id: String)
+    @Query("UPDATE financial_accounts SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun deleteById(id: String, deletedAt: Long = System.currentTimeMillis(), updatedAt: Long = System.currentTimeMillis())
 
-    @Query("SELECT * FROM financial_accounts")
+    @Query("SELECT * FROM financial_accounts WHERE deletedAt IS NULL")
     suspend fun getAllList(): List<FinancialAccountEntity>
+
+    @Query("DELETE FROM financial_accounts WHERE deletedAt IS NOT NULL AND deletedAt < :olderThanMillis")
+    suspend fun purgeDeleted(olderThanMillis: Long)
 
     @Query("DELETE FROM financial_accounts")
     suspend fun deleteAll()

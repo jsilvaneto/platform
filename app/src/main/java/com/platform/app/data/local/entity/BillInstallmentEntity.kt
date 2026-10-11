@@ -9,6 +9,8 @@ import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.ExpenseNature
 
+import java.time.LocalDate
+
 @Entity(
     tableName = "bill_installments",
     foreignKeys = [
@@ -36,7 +38,7 @@ data class BillInstallmentEntity(
     val installmentNumber: Int,
     val totalInstallments: Int,
     val amountCents: Long,
-    val dueDate: Long,
+    val dueDate: LocalDate,
     val paidAt: Long?,
     val status: String,
     val itemId: String? = null,
@@ -45,6 +47,8 @@ data class BillInstallmentEntity(
     val financialAccountId: String? = null,
     val paymentMethodId: String? = null,
     val actualPaymentDate: Long? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
     val deletedAt: Long? = null
 ) {
     fun toDomain(
@@ -92,9 +96,10 @@ data class BillInstallmentEntity(
                 BillStatus.PENDING
             },
             type = billType,
-            createdAt = billCreatedAt ?: dueDate,
+            createdAt = billCreatedAt ?: createdAt,
             creditCardId = billCreditCardId,
-            deletedAt = deletedAt
+            deletedAt = deletedAt,
+            updatedAt = updatedAt
         )
     }
 
@@ -115,6 +120,8 @@ data class BillInstallmentEntity(
                 financialAccountId = installment.financialAccountId,
                 paymentMethodId = installment.paymentMethodId,
                 actualPaymentDate = installment.actualPaymentDate,
+                createdAt = installment.createdAt,
+                updatedAt = installment.updatedAt,
                 deletedAt = installment.deletedAt
             )
         }

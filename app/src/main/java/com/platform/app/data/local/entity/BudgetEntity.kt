@@ -12,7 +12,9 @@ data class BudgetEntity(
     val categoryName: String,
     val limitAmountCents: Long,
     val colorHex: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): Budget = Budget(
         id = id,
@@ -20,7 +22,9 @@ data class BudgetEntity(
         categoryName = categoryName,
         limitAmountCents = limitAmountCents,
         colorHex = colorHex,
-        createdAt = createdAt
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt
     )
 
     companion object {
@@ -30,7 +34,9 @@ data class BudgetEntity(
             categoryName = budget.categoryName,
             limitAmountCents = budget.limitAmountCents,
             colorHex = budget.colorHex,
-            createdAt = budget.createdAt
+            createdAt = budget.createdAt,
+            updatedAt = budget.updatedAt,
+            deletedAt = budget.deletedAt
         )
     }
 }

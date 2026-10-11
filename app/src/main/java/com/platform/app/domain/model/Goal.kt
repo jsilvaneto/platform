@@ -7,7 +7,9 @@ data class Goal(
     val currentAmountCents: Long = 0L,
     val deadlineDate: Long? = null,
     val colorHex: String = "#3B82F6",
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 ) {
     val progressPercentage: Float
         get() = if (targetAmountCents > 0L) {

@@ -37,7 +37,19 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class BackupRepositoryImplTest {
 
-    private val gson = Gson()
+    private val gson = com.google.gson.GsonBuilder()
+        .registerTypeAdapter(java.time.LocalDate::class.java, com.google.gson.JsonSerializer<java.time.LocalDate> { src, _, _ ->
+            com.google.gson.JsonPrimitive(src.toString())
+        })
+        .registerTypeAdapter(java.time.LocalDate::class.java, com.google.gson.JsonDeserializer<java.time.LocalDate> { json, _, _ ->
+            if (json.isJsonPrimitive && json.asJsonPrimitive.isNumber) {
+                val num = json.asLong
+                if (num > 1000000) com.platform.app.core.util.DateUtils.millisToLocalDate(num) else java.time.LocalDate.ofEpochDay(num)
+            } else {
+                java.time.LocalDate.parse(json.asString)
+            }
+        })
+        .create()
     private val testDispatcher = StandardTestDispatcher()
     private val dispatcherProvider = object : DispatcherProvider {
         override val main: CoroutineDispatcher = testDispatcher

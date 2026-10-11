@@ -121,17 +121,17 @@ fun BillsInstallmentList(
                     val isSelected = installment.id in selectedInstallmentIds
                     val now = System.currentTimeMillis()
                     val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
-                    val isOverdue = !installment.isPaid && installment.dueDate < now && !isToday
+                    val isOverdue = !installment.isPaid && installment.dueDateMillis < now && !isToday
 
                     val (statusText, statusType) = when {
                         installment.isPaid -> AppStrings.Status.PAID to PlatformStatusType.PAID
                         isOverdue -> {
-                            val daysLate = ((now - installment.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                            val daysLate = ((now - installment.dueDateMillis) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
                             (if (daysLate == 1) "Atrasada 1 dia" else "Atrasada $daysLate dias") to PlatformStatusType.OVERDUE
                         }
                         isToday -> "Vence hoje" to PlatformStatusType.ATTENTION
                         else -> {
-                            val daysUntil = ((installment.dueDate - now) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                            val daysUntil = ((installment.dueDateMillis - now) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
                             if (daysUntil <= 7) {
                                 (if (daysUntil == 1) "Vence amanhã" else "Em $daysUntil dias") to PlatformStatusType.ATTENTION
                             } else {
@@ -141,7 +141,7 @@ fun BillsInstallmentList(
                     }
 
                     val subtitle = when {
-                        installment.isPaid -> "Pago em ${DateUtils.formatDayMonth(installment.paidAt ?: installment.dueDate)}"
+                        installment.isPaid -> "Pago em ${DateUtils.formatDayMonth(installment.paidAt ?: installment.dueDateMillis)}"
                         installment.totalInstallments > 1 -> "Parcela ${installment.installmentNumber}/${installment.totalInstallments} · Vence ${DateUtils.formatDayMonth(installment.dueDate)}"
                         else -> "Vence dia ${DateUtils.formatDayMonth(installment.dueDate)}"
                     }

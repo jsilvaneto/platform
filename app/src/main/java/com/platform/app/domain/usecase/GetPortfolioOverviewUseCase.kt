@@ -152,7 +152,7 @@ class GetPortfolioOverviewUseCase @Inject constructor(
 
             val monthLabel = monthFormat.format(startMillis).uppercase().replace(".", "")
             val monthTotal = installments.filter {
-                it.dueDate in startMillis..endMillis && !it.isSkipped && !it.isPaused
+                it.dueDateMillis in startMillis..endMillis && !it.isSkipped && !it.isPaused
             }.sumOf { it.amountCents }
 
             result.add(

@@ -8,11 +8,13 @@ import com.platform.app.data.local.dao.ContactDao
 import com.platform.app.data.local.dao.ExpenseItemDao
 import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.PaymentMethodDao
+import com.platform.app.data.local.dao.SyncDao
 import com.platform.app.data.local.entity.CategoryEntity
 import com.platform.app.data.local.entity.ContactEntity
 import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
+import com.platform.app.data.local.entity.SyncOutboxEntity
 import com.platform.app.domain.model.Category
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.model.ExpenseItem
@@ -39,7 +41,8 @@ class CatalogDataSource @Inject constructor(
     private val contactDao: ContactDao,
     private val financialAccountDao: FinancialAccountDao,
     private val paymentMethodDao: PaymentMethodDao,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val syncDao: SyncDao? = null
 ) {
 
     suspend fun seedInitialData() {
@@ -124,11 +127,27 @@ class CatalogDataSource @Inject constructor(
         database.withTransaction {
             categoryDao.upsert(CategoryEntity.fromDomain(category))
             database.budgetDao.updateCategoryInfo(category.id, category.name, category.colorHex)
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "CATEGORY",
+                    entityId = category.id,
+                    operation = "UPSERT",
+                    payload = """{"id":"${category.id}","name":"${category.name}"}"""
+                )
+            )
         }
     }
 
     suspend fun deleteCategory(categoryId: String) {
         categoryDao.deleteById(categoryId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CATEGORY",
+                entityId = categoryId,
+                operation = "DELETE",
+                payload = """{"id":"$categoryId"}"""
+            )
+        )
     }
 
     // --- Expense Items ---
@@ -163,10 +182,26 @@ class CatalogDataSource @Inject constructor(
 
     suspend fun saveExpenseItem(item: ExpenseItem) {
         expenseItemDao.upsert(ExpenseItemEntity.fromDomain(item))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "EXPENSE_ITEM",
+                entityId = item.id,
+                operation = "UPSERT",
+                payload = """{"id":"${item.id}","name":"${item.name}"}"""
+            )
+        )
     }
 
     suspend fun deleteExpenseItem(itemId: String) {
         expenseItemDao.deleteById(itemId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "EXPENSE_ITEM",
+                entityId = itemId,
+                operation = "DELETE",
+                payload = """{"id":"$itemId"}"""
+            )
+        )
     }
 
     // --- Contacts ---
@@ -182,10 +217,26 @@ class CatalogDataSource @Inject constructor(
 
     suspend fun saveContact(contact: Contact) {
         contactDao.upsert(ContactEntity.fromDomain(contact))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CONTACT",
+                entityId = contact.id,
+                operation = "UPSERT",
+                payload = """{"id":"${contact.id}","name":"${contact.name}"}"""
+            )
+        )
     }
 
     suspend fun deleteContact(contactId: String) {
         contactDao.deleteById(contactId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "CONTACT",
+                entityId = contactId,
+                operation = "DELETE",
+                payload = """{"id":"$contactId"}"""
+            )
+        )
     }
 
     // --- Financial Accounts ---
@@ -197,10 +248,26 @@ class CatalogDataSource @Inject constructor(
 
     suspend fun saveFinancialAccount(account: FinancialAccount) {
         financialAccountDao.upsert(FinancialAccountEntity.fromDomain(account))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "FINANCIAL_ACCOUNT",
+                entityId = account.id,
+                operation = "UPSERT",
+                payload = """{"id":"${account.id}","name":"${account.name}"}"""
+            )
+        )
     }
 
     suspend fun deleteFinancialAccount(accountId: String) {
         financialAccountDao.deleteById(accountId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "FINANCIAL_ACCOUNT",
+                entityId = accountId,
+                operation = "DELETE",
+                payload = """{"id":"$accountId"}"""
+            )
+        )
     }
 
     // --- Payment Methods ---
@@ -212,9 +279,25 @@ class CatalogDataSource @Inject constructor(
 
     suspend fun savePaymentMethod(method: PaymentMethod) {
         paymentMethodDao.upsert(PaymentMethodEntity.fromDomain(method))
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "PAYMENT_METHOD",
+                entityId = method.id,
+                operation = "UPSERT",
+                payload = """{"id":"${method.id}","name":"${method.name}"}"""
+            )
+        )
     }
 
     suspend fun deletePaymentMethod(methodId: String) {
         paymentMethodDao.deleteById(methodId)
+        syncDao?.enqueue(
+            SyncOutboxEntity(
+                entityType = "PAYMENT_METHOD",
+                entityId = methodId,
+                operation = "DELETE",
+                payload = """{"id":"$methodId"}"""
+            )
+        )
     }
 }

@@ -370,6 +370,68 @@ class PlatformDatabaseMigrationAndroidTest {
         migratedDb.close()
     }
 
+    @Test
+    fun migrationFrom19To20_addsSyncColumnsAndConvertsDateOnlyFieldsToEpochDay() {
+        var db = helper.createDatabase(TEST_DB, 19)
+
+        val dueDateMillis = 1728518400000L // 2024-10-10 -> 20006 epoch days
+        val closingDateMillis = 1727740800000L // 2024-10-01 -> 19997 epoch days
+
+        db.execSQL("""
+            INSERT INTO credit_cards (id, name, totalLimitCents, closingDay, dueDay, colorHex)
+            VALUES ('card_v19', 'Nubank', 500000, 1, 10, '#820AD9')
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO credit_card_invoices (id, creditCardId, referenceMonth, closingDate, dueDate, status)
+            VALUES ('inv_v19', 'card_v19', '2024-10', $closingDateMillis, $dueDateMillis, 'ABERTA')
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO bills (id, title, description, type, totalAmountCents, totalInstallments, isPaused, createdAt)
+            VALUES ('bill_v19', 'Internet', 'Fibra', 'SINGLE', 9990, 1, 0, 1727740800000)
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO bill_installments (id, billId, installmentNumber, totalInstallments, amountCents, dueDate, status)
+            VALUES ('inst_v19', 'bill_v19', 1, 1, 9990, $dueDateMillis, 'PENDING')
+        """.trimIndent())
+
+        db.close()
+
+        val migratedDb = helper.runMigrationsAndValidate(
+            TEST_DB,
+            20,
+            true,
+            PlatformDatabase.MIGRATION_19_20
+        )
+
+        // 1. Verificar conversão de dueDate para epoch day em bill_installments
+        val instCursor = migratedDb.query("SELECT id, dueDate, createdAt, updatedAt, deletedAt FROM bill_installments WHERE id = 'inst_v19'")
+        assertTrue(instCursor.moveToFirst())
+        assertEquals("inst_v19", instCursor.getString(0))
+        val expectedEpochDay = (dueDateMillis / 86400000L).toInt()
+        assertEquals(expectedEpochDay, instCursor.getInt(1))
+        assertTrue(instCursor.getLong(2) > 0)
+        assertTrue(instCursor.getLong(3) > 0)
+        assertTrue(instCursor.isNull(4))
+        instCursor.close()
+
+        // 2. Verificar conversão de closingDate e dueDate para epoch day em credit_card_invoices
+        val invCursor = migratedDb.query("SELECT id, closingDate, dueDate, createdAt, updatedAt, deletedAt FROM credit_card_invoices WHERE id = 'inv_v19'")
+        assertTrue(invCursor.moveToFirst())
+        assertEquals("inv_v19", invCursor.getString(0))
+        val expectedClosingEpochDay = (closingDateMillis / 86400000L).toInt()
+        assertEquals(expectedClosingEpochDay, invCursor.getInt(1))
+        assertEquals(expectedEpochDay, invCursor.getInt(2))
+        assertTrue(invCursor.getLong(3) > 0)
+        assertTrue(invCursor.getLong(4) > 0)
+        assertTrue(invCursor.isNull(5))
+        invCursor.close()
+
+        migratedDb.close()
+    }
+
     private fun getRowCount(db: SupportSQLiteDatabase, table: String): Int {
         val cursor = db.query("SELECT COUNT(*) FROM $table")
         val count = if (cursor.moveToFirst()) cursor.getInt(0) else 0

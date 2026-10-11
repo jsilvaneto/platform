@@ -12,7 +12,10 @@ data class CategoryEntity(
     val name: String,
     val colorHex: String,
     val iconName: String,
-    val nature: String = "NECESSARIO"
+    val nature: String = "NECESSARIO",
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): Category {
         return Category(
@@ -24,7 +27,10 @@ data class CategoryEntity(
                 ExpenseNature.valueOf(nature)
             } catch (e: Exception) {
                 ExpenseNature.NECESSARIO
-            }
+            },
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -35,7 +41,10 @@ data class CategoryEntity(
                 name = domain.name,
                 colorHex = domain.colorHex,
                 iconName = domain.iconName,
-                nature = domain.nature.name
+                nature = domain.nature.name,
+                createdAt = domain.createdAt,
+                updatedAt = domain.updatedAt,
+                deletedAt = domain.deletedAt
             )
         }
     }

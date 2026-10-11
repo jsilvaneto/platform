@@ -322,7 +322,7 @@ fun RecurringDetailBottomSheet(
                     }
                     val now = remember { System.currentTimeMillis() }
                     sortedInstallments.take(12).forEach { inst ->
-                        val isOverdue = !inst.isPaid && !inst.isSkipped && inst.dueDate < now
+                        val isOverdue = !inst.isPaid && !inst.isSkipped && inst.dueDateMillis < now
                         val statusText = when {
                             inst.isPaid -> "Paga"
                             inst.isSkipped -> "Pulada"
@@ -365,7 +365,7 @@ fun RecurringDetailBottomSheet(
     if (showStopDialog) {
         StopRecurringDialog(
             billTitle = bill.title,
-            nextDueDate = nextPendingInstallment?.dueDate,
+            nextDueDate = nextPendingInstallment?.dueDateMillis,
             onDismiss = { showStopDialog = false },
             onConfirm = { cutoff ->
                 showStopDialog = false
@@ -390,7 +390,7 @@ fun RecurringDetailBottomSheet(
         EditRecurringAmountDialog(
             currentAmountCents = bill.totalAmountCents,
             billTitle = bill.title,
-            fromDueDate = nextPendingInstallment?.dueDate,
+            fromDueDate = nextPendingInstallment?.dueDateMillis,
             onDismiss = { showEditAmountDialog = false },
             onConfirm = { fromDueDate, newAmount ->
                 showEditAmountDialog = false

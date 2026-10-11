@@ -3,6 +3,31 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.34.0] - 2026-10-11
+
+### 🔄 Soft Delete Consistente, Fila Outbox e Migração LocalDate (Prompt 65)
+
+- **Auditoria e Rastreabilidade Completa (`createdAt`, `updatedAt`, `deletedAt`)**:
+  - Implementação padronizada dos campos `createdAt`, `updatedAt` (UTC ms) e `deletedAt` (nullable Long UTC ms) em todas as 12 entidades sincronizáveis: `Bill`, `BillInstallment`, `Budget`, `Category`, `Contact`, `CreditCard`, `CreditCardInvoice`, `ExpenseItem`, `FinancialAccount`, `Goal`, `GoalContribution` e `PaymentMethod`.
+  - Migração de banco Room `MIGRATION_19_20` (versão 20) atualizando as tabelas e índices relacionais no SQLite.
+
+- **Filtragem Rígida de Registros Ativos (`deletedAt IS NULL`)**:
+  - 100% das queries de listagem ativa, dashboards, totais e agregados foram atualizadas para filtrar estritamente `deletedAt IS NULL`.
+  - Consultas analíticas e relatórios históricos preservam parcelas pagas de contas excluídas via condição composta `(b.deletedAt IS NULL OR i.paidAt IS NOT NULL)`.
+  - Novo guard rail de reflexão `SynchronizableQueriesGuardTest` varrendo todos os 12 DAOs para garantir que nenhuma consulta operacional ignore a checagem de `deletedAt IS NULL`.
+
+- **Fila Outbox Transacional (`sync_outbox`) e Resíduo Zero**:
+  - Todas as mutações locais (criação, edição e soft delete) em `BillDataSource`, `CreditCardDataSource`, `CatalogDataSource`, `GoalRepositoryImpl` e `BudgetRepositoryImpl` enfileiram eventos de sincronização (`INSERT`, `UPDATE`, `DELETE`) na tabela `sync_outbox` dentro da mesma transação Room (`database.withTransaction`).
+  - Criação do caso de uso `PurgeSynchronizedDataUseCase` com rotina de purga periódica `purgeDeleted(olderThanMillis)` para limpeza física após sincronização e retenção configurada.
+  - Exclusão de contas recorrentes agora oculta a conta imediatamente do catálogo via soft delete, sem deixar registros órfãos ou inconsistências visuais.
+
+- **Migração de Datas para `LocalDate` (Epoch Day `Int`)**:
+  - Migração completa de todos os campos só-data (`dueDate`, `closingDate`) de timestamp epoch ms local para `java.time.LocalDate` (armazenado como epoch day `Int` no SQLite).
+  - Conversores e serializadores robustos `LocalDateEpochDayConverter` no Room e `LocalDate` adapter no Gson para importação e restauração de backups em JSON legados e modernos.
+
+- **Governança Arquitetural**:
+  - Registro da Decisão Arquitetural **ADR 044** (`044-politica-de-conflito-modelo-outbox-e-soft-delete-consistente.md`) detalhando a política de resolução de conflitos LWW (Last-Write-Wins), tombstoning e ciclo de vida da outbox.
+
 ## [1.33.0] - 2026-10-11
 
 ### 📈 Reconstrução Minimalista de Análises e Inteligência Financeira (Prompt 62)

@@ -263,11 +263,11 @@ class HomeViewModel @Inject constructor(
 
             // 1. Global Overdue Items (All unpaid across entire database with dueDate < startOfToday)
             val overdueBills = allInstallments
-                .filter { !it.isPaid && it.invoiceId == null && it.dueDate < startOfToday }
+                .filter { !it.isPaid && it.invoiceId == null && it.dueDateMillis < startOfToday }
                 .map { PayableItem.BillPayable(it, PayableUrgency.OVERDUE) }
 
             val overdueInvoices = allInvoices
-                .filter { it.status != InvoiceStatus.PAGA && it.dueDate < startOfToday }
+                .filter { it.status != InvoiceStatus.PAGA && it.dueDateMillis < startOfToday }
                 .map { inv ->
                     val card = cardsMap[inv.creditCardId]
                     PayableItem.InvoicePayable(
@@ -283,23 +283,23 @@ class HomeViewModel @Inject constructor(
 
             // 2. Next 30 Days Items (All pending in startOfToday..thirtyDaysAhead)
             val next30Bills = allInstallments
-                .filter { !it.isPaid && it.invoiceId == null && it.dueDate in startOfToday..thirtyDaysAhead }
+                .filter { !it.isPaid && it.invoiceId == null && it.dueDateMillis in startOfToday..thirtyDaysAhead }
                 .map { inst ->
                     val urgency = when {
-                        inst.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                        inst.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                        inst.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                        inst.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                         else -> PayableUrgency.LATER
                     }
                     PayableItem.BillPayable(inst, urgency)
                 }
 
             val next30Invoices = allInvoices
-                .filter { it.status != InvoiceStatus.PAGA && it.dueDate in startOfToday..thirtyDaysAhead }
+                .filter { it.status != InvoiceStatus.PAGA && it.dueDateMillis in startOfToday..thirtyDaysAhead }
                 .map { inv ->
                     val card = cardsMap[inv.creditCardId]
                     val urgency = when {
-                        inv.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                        inv.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                        inv.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                        inv.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                         else -> PayableUrgency.LATER
                     }
                     PayableItem.InvoicePayable(
@@ -393,8 +393,8 @@ class HomeViewModel @Inject constructor(
             cal.set(Calendar.SECOND, 0)
             cal.set(Calendar.MILLISECOND, 0)
 
-            val dayInsts = standaloneInstallments.filter { it.dueDate in dayStart..dayEnd }
-            val dayInvs = allInvoices.filter { it.dueDate in dayStart..dayEnd }
+            val dayInsts = standaloneInstallments.filter { it.dueDateMillis in dayStart..dayEnd }
+            val dayInvs = allInvoices.filter { it.dueDateMillis in dayStart..dayEnd }
             val allDayItemsCount = dayInsts.size + dayInvs.size
 
             val dayOfWeek = dayFormat.format(Date(dayStart)).replace(".", "").uppercase(Locale("pt", "BR"))
@@ -416,14 +416,14 @@ class HomeViewModel @Inject constructor(
                 continue
             }
 
-            val hasOverdue = dayInsts.any { !it.isPaid && it.dueDate < startOfToday } ||
-                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDate < startOfToday }
+            val hasOverdue = dayInsts.any { !it.isPaid && it.dueDateMillis < startOfToday } ||
+                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDateMillis < startOfToday }
 
-            val hasDueToday = dayInsts.any { !it.isPaid && it.dueDate in startOfToday..endOfToday } ||
-                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDate in startOfToday..endOfToday }
+            val hasDueToday = dayInsts.any { !it.isPaid && it.dueDateMillis in startOfToday..endOfToday } ||
+                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDateMillis in startOfToday..endOfToday }
 
-            val hasPending = dayInsts.any { !it.isPaid && it.dueDate > endOfToday } ||
-                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDate > endOfToday }
+            val hasPending = dayInsts.any { !it.isPaid && it.dueDateMillis > endOfToday } ||
+                    dayInvs.any { it.status != InvoiceStatus.PAGA && it.dueDateMillis > endOfToday }
 
             val isFullyPaid = allDayItemsCount > 0 &&
                     dayInsts.all { it.isPaid } &&
@@ -478,29 +478,29 @@ class HomeViewModel @Inject constructor(
         val dayEnd = cal.timeInMillis
 
         val insts = allInstallments
-            .filter { it.invoiceId == null && it.dueDate in dayStartMillis..dayEnd }
+            .filter { it.invoiceId == null && it.dueDateMillis in dayStartMillis..dayEnd }
             .map { inst ->
                 val urgency = when {
                     inst.isPaid -> PayableUrgency.PAID
-                    inst.dueDate < startOfToday -> PayableUrgency.OVERDUE
-                    inst.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                    inst.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                    inst.dueDateMillis < startOfToday -> PayableUrgency.OVERDUE
+                    inst.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                    inst.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                     else -> PayableUrgency.LATER
                 }
                 PayableItem.BillPayable(inst, urgency)
             }
 
         val invs = allInvoices
-            .filter { it.dueDate in dayStartMillis..dayEnd }
+            .filter { it.dueDateMillis in dayStartMillis..dayEnd }
             .map { inv ->
                 val card = cardsMap[inv.creditCardId]
                 val cardName = card?.name ?: "Cartão"
                 val cardColor = card?.colorHex ?: "#3B82F6"
                 val urgency = when {
                     inv.status == InvoiceStatus.PAGA -> PayableUrgency.PAID
-                    inv.dueDate < startOfToday -> PayableUrgency.OVERDUE
-                    inv.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                    inv.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                    inv.dueDateMillis < startOfToday -> PayableUrgency.OVERDUE
+                    inv.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                    inv.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                     else -> PayableUrgency.LATER
                 }
                 PayableItem.InvoicePayable(inv, cardName, cardColor, urgency)

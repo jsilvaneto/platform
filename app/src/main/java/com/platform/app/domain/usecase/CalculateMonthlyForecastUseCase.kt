@@ -80,9 +80,9 @@ class CalculateMonthlyForecastUseCase @Inject constructor(
                 } else {
                     pendingBillsSum += inst.amountCents
                     val urgency = when {
-                        inst.dueDate < startOfToday -> PayableUrgency.OVERDUE
-                        inst.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                        inst.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                        inst.dueDateMillis < startOfToday -> PayableUrgency.OVERDUE
+                        inst.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                        inst.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                         else -> PayableUrgency.LATER
                     }
 
@@ -112,9 +112,9 @@ class CalculateMonthlyForecastUseCase @Inject constructor(
                 } else {
                     pendingInvoicesSum += inv.totalAmountCents
                     val urgency = when {
-                        inv.dueDate < startOfToday -> PayableUrgency.OVERDUE
-                        inv.dueDate in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
-                        inv.dueDate in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
+                        inv.dueDateMillis < startOfToday -> PayableUrgency.OVERDUE
+                        inv.dueDateMillis in startOfToday..endOfToday -> PayableUrgency.DUE_TODAY
+                        inv.dueDateMillis in (endOfToday + 1)..sevenDaysAhead -> PayableUrgency.NEXT_7_DAYS
                         else -> PayableUrgency.LATER
                     }
 

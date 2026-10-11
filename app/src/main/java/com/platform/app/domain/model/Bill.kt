@@ -22,5 +22,6 @@ data class Bill(
     val createdAt: Long = System.currentTimeMillis(),
     val recurrenceAnchorDate: Long? = null,
     val creditCardId: String? = null,
-    val deletedAt: Long? = null
+    val deletedAt: Long? = null,
+    val updatedAt: Long = createdAt
 )

@@ -76,7 +76,7 @@ class GoalRepositoryImplTest {
         assertEquals(timestamp, insertedSlot.captured.date)
 
         coVerify(exactly = 1) {
-            goalDao.updateCurrentAmount(goalId, totalRecalculated)
+            goalDao.updateCurrentAmount(goalId, totalRecalculated, any())
         }
     }
 
@@ -156,7 +156,7 @@ class GoalRepositoryImplTest {
             })
         }
         coVerify(exactly = 1) {
-            goalDao.updateCurrentAmount(newGoal.id, 20000L)
+            goalDao.updateCurrentAmount(newGoal.id, 20000L, any())
         }
     }
 
@@ -166,7 +166,7 @@ class GoalRepositoryImplTest {
 
         repository.deleteGoal(goalId)
 
-        coVerify(exactly = 1) { goalContributionDao.deleteByGoalId(goalId) }
-        coVerify(exactly = 1) { goalDao.deleteById(goalId) }
+        coVerify(exactly = 1) { goalContributionDao.deleteByGoalId(goalId, any(), any()) }
+        coVerify(exactly = 1) { goalDao.deleteById(goalId, any(), any()) }
     }
 }

@@ -103,7 +103,7 @@ fun EditInstallmentBottomSheet(
     var title by remember { mutableStateOf(installment.billTitle) }
     var description by remember { mutableStateOf("") }
     var amountCents by remember { mutableLongStateOf(installment.amountCents) }
-    var dueDate by remember { mutableLongStateOf(installment.dueDate) }
+    var dueDate by remember { mutableLongStateOf(installment.dueDateMillis) }
 
     var selectedCategoryId by remember { mutableStateOf(installment.categoryId) }
     var selectedContactId by remember { mutableStateOf(installment.contactId) }

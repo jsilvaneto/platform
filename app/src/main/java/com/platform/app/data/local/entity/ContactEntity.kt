@@ -21,7 +21,9 @@ data class ContactEntity(
     val state: String,
     val country: String,
     val zipCode: String,
-    val createdAt: Long
+    val createdAt: Long,
+    val updatedAt: Long = createdAt,
+    val deletedAt: Long? = null
 ) {
     fun toDomain(): Contact {
         return Contact(
@@ -38,7 +40,9 @@ data class ContactEntity(
             state = state,
             country = country,
             zipCode = zipCode,
-            createdAt = createdAt
+            createdAt = createdAt,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt
         )
     }
 
@@ -58,7 +62,9 @@ data class ContactEntity(
                 state = contact.state,
                 country = contact.country,
                 zipCode = contact.zipCode,
-                createdAt = contact.createdAt
+                createdAt = contact.createdAt,
+                updatedAt = contact.updatedAt,
+                deletedAt = contact.deletedAt
             )
         }
     }

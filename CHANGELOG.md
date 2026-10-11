@@ -3,6 +3,29 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.29.0] - 2026-10-11
+
+### 📊 Visão Geral: Nova Tela Principal, Agregados SQL e Projeção Temporal (Prompt 58)
+
+- **Nova Tela Principal 'Visão Geral' (Prompt 58)**:
+  - **GetPortfolioOverviewUseCase e Agregações em SQL no Room**:
+    - Query agregada `getAttentionCounts` em `BillInstallmentDao` para contagem atômica de contas atrasadas e com vencimento na data corrente (`dueTodayCount`).
+    - Query agregada `getOpenInstallmentsOverview` no Room somando o saldo devedor em aberto de compromissos `INSTALLMENT`, contagem de parcelas e captura do timestamp do último vencimento (`lastDueDate`).
+    - Query agregada `getActiveMonthlyRecurringCost` em `BillDao` totalizando os custos fixos mensais de despesas recorrentes ativas.
+    - Query `getFreeingUpInstallments` identificando os próximos compromissos a encerrar e a margem de alívio mensal gerada (`freeingUpCommitments`).
+    - Agrupamento temporal e prospectivo da série de 12 meses (2 passados, mês atual e 9 futuros), identificando pico (âmbar) e folga/menor valor futuro (verde).
+  - **Interface Minimalista e Hero Plano**:
+    - Chip fixo "Todos os períodos" no topo da tela (sem seletor de mês).
+    - Hero plano "Parcelado em aberto": container `surface1` com borda de 1dp na cor de linha e valor em 36sp tabular com centavos discretos (`PlatformMoneyText`).
+    - Estados positivo "Nada em aberto" e vazio quando não há dívidas parceladas.
+    - Banner de atenção condicional que direciona imediatamente para a tela `Hoje`.
+    - Tiles operacionais: Custo fixo/mês, Cartões em uso (% do limite) e Reserva (% de metas acumuladas).
+    - Gráfico minimalista de 12 meses com legenda horizontal semafórica (Pico em âmbar, Folga em verde) e mês atual em negrito.
+    - Seção "Quando fica livre" com previsão cronológica de liberação orçamentária.
+  - **Testes e Qualidade**:
+    - Testes unitários do caso de uso em `GetPortfolioOverviewUseCaseTest`.
+    - Testes instrumentados de renderização em múltiplos temas (AMOLED, Claro) e suporte a acessibilidade (escala de fonte 1.3x) em `OverviewAndroidTest`.
+
 ## [1.28.0] - 2026-10-11
 
 ### 🔄 Ciclo de Vida de Recorrências, Status SKIPPED e Gestão Resiliente (Prompt 63)

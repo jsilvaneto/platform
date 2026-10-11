@@ -1,5 +1,6 @@
 package com.platform.app.data.repository
 
+import com.platform.app.domain.model.AttentionCounts
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CardDependencies
@@ -9,7 +10,9 @@ import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.FreeingUpCommitment
 import com.platform.app.domain.model.MonthSummary
+import com.platform.app.domain.model.OpenInstallmentsSummary
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.repository.FinancialRepository
 import kotlinx.coroutines.flow.Flow
@@ -243,4 +246,16 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun deleteBill(billId: String) =
         billDataSource.deleteBill(billId)
+
+    override fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts> =
+        billDataSource.getAttentionCounts(startOfDayMillis, endOfDayMillis)
+
+    override fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsSummary> =
+        billDataSource.getOpenInstallmentsOverview()
+
+    override fun getActiveMonthlyRecurringCost(): Flow<Long> =
+        billDataSource.getActiveMonthlyRecurringCost()
+
+    override fun getFreeingUpCommitments(): Flow<List<FreeingUpCommitment>> =
+        billDataSource.getFreeingUpCommitments()
 }

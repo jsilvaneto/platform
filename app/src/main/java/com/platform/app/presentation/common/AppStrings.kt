@@ -283,4 +283,24 @@ object AppStrings {
         const val NEW_MONTHLY_AMOUNT = "Novo Valor Mensal"
         const val CURRENCY_PREFIX = "R$ "
     }
+
+    object Overview {
+        const val ALL_PERIODS = "Todos os períodos"
+        const val OPEN_INSTALLMENTS = "Parcelado em aberto"
+        const val NOTHING_OPEN = "Nada em aberto"
+        const val NO_OPEN_INSTALLMENTS_DESC = "Nenhuma compra parcelada em aberto no momento."
+        const val FIXED_COST_MONTH = "Custo fixo/mês"
+        const val CARDS_IN_USE = "Cartões em uso"
+        const val RESERVE = "Reserva"
+        const val NO_DATA_DASH = "—"
+        const val MONTHLY_SERIES_TITLE = "Projeção em 12 Meses"
+        const val PEAK = "Pico"
+        const val RELIEF = "Folga"
+        const val WHEN_FREE_TITLE = "Quando fica livre"
+        const val LIBERATES_PREFIX = "+ R$ "
+        const val LIBERATES_SUFFIX = "/mês liberados"
+        const val ATTENTION_PREFIX = "Atenção: "
+        const val ATTENTION_SUFFIX = " pendência(s) hoje ou em atraso"
+        const val ATTENTION_ACTION = "Ver em Hoje"
+    }
 }

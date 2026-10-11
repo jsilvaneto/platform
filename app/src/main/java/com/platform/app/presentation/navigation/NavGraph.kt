@@ -82,7 +82,8 @@ fun NavGraph(
     ) {
         composable(route = Screen.Overview.route) {
             OverviewScreen(
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToToday = { navController.navigate(Screen.Dashboard.route) }
             )
         }
 

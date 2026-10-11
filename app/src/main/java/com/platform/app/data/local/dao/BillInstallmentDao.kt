@@ -89,6 +89,24 @@ data class ContactOpenBalanceRaw(
     @ColumnInfo(name = "totalOpenCents") val totalOpenCents: Long
 )
 
+data class AttentionCountsRaw(
+    @ColumnInfo(name = "overdueCount") val overdueCount: Int,
+    @ColumnInfo(name = "dueTodayCount") val dueTodayCount: Int
+)
+
+data class OpenInstallmentsRaw(
+    @ColumnInfo(name = "totalAmountCents") val totalAmountCents: Long,
+    @ColumnInfo(name = "installmentCount") val installmentCount: Int,
+    @ColumnInfo(name = "lastDueDate") val lastDueDate: Long?
+)
+
+data class FreeingUpCommitmentRaw(
+    @ColumnInfo(name = "billId") val billId: String,
+    @ColumnInfo(name = "title") val title: String,
+    @ColumnInfo(name = "endDate") val endDate: Long,
+    @ColumnInfo(name = "monthlyAmountCents") val monthlyAmountCents: Long
+)
+
 @Dao
 interface BillInstallmentDao {
 
@@ -509,4 +527,40 @@ interface BillInstallmentDao {
         """
     )
     fun getOpenAmountByContact(): Flow<List<ContactOpenBalanceRaw>>
+
+    @Query("""
+        SELECT 
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :startOfDayMillis THEN 1 END) AS overdueCount,
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate >= :startOfDayMillis AND dueDate <= :endOfDayMillis THEN 1 END) AS dueTodayCount
+        FROM bill_installments
+        WHERE status != 'PAUSED' AND status != 'SKIPPED' AND deletedAt IS NULL
+    """)
+    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCountsRaw>
+
+    @Query("""
+        SELECT 
+            COALESCE(SUM(i.amountCents), 0) AS totalAmountCents,
+            COUNT(i.id) AS installmentCount,
+            MAX(i.dueDate) AS lastDueDate
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        WHERE b.type = 'INSTALLMENT' AND i.paidAt IS NULL AND i.status != 'PAUSED' AND i.status != 'SKIPPED' AND b.deletedAt IS NULL AND i.deletedAt IS NULL
+    """)
+    fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsRaw>
+
+    @Query("""
+        SELECT 
+            b.id AS billId,
+            b.title AS title,
+            MAX(i.dueDate) AS endDate,
+            CAST(ROUND(AVG(i.amountCents)) AS INTEGER) AS monthlyAmountCents
+        FROM bills b
+        INNER JOIN bill_installments i ON b.id = i.billId
+        WHERE b.type = 'INSTALLMENT' AND b.deletedAt IS NULL AND i.deletedAt IS NULL AND i.status != 'PAUSED' AND i.status != 'SKIPPED'
+        GROUP BY b.id, b.title
+        HAVING COUNT(CASE WHEN i.paidAt IS NULL THEN 1 END) > 0
+        ORDER BY endDate ASC
+        LIMIT 5
+    """)
+    fun getFreeingUpInstallments(): Flow<List<FreeingUpCommitmentRaw>>
 }

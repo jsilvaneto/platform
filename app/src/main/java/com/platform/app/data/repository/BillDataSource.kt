@@ -6,9 +6,12 @@ import com.platform.app.data.local.dao.BillDao
 import com.platform.app.data.local.dao.BillInstallmentDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
+import com.platform.app.domain.model.AttentionCounts
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.FreeingUpCommitment
 import com.platform.app.domain.model.MonthSummary
+import com.platform.app.domain.model.OpenInstallmentsSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
@@ -324,6 +327,39 @@ class BillDataSource @Inject constructor(
     fun getOpenAmountByContact(): Flow<Map<String, Long>> {
         return installmentDao.getOpenAmountByContact().map { list ->
             list.associate { it.contactId to it.totalOpenCents }
+        }
+    }
+
+    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts> {
+        return installmentDao.getAttentionCounts(startOfDayMillis, endOfDayMillis).map {
+            AttentionCounts(overdueCount = it.overdueCount, dueTodayCount = it.dueTodayCount)
+        }
+    }
+
+    fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsSummary> {
+        return installmentDao.getOpenInstallmentsOverview().map {
+            OpenInstallmentsSummary(
+                totalAmountCents = it.totalAmountCents,
+                count = it.installmentCount,
+                lastDueDate = it.lastDueDate
+            )
+        }
+    }
+
+    fun getActiveMonthlyRecurringCost(): Flow<Long> {
+        return billDao.getActiveMonthlyRecurringCost()
+    }
+
+    fun getFreeingUpCommitments(): Flow<List<FreeingUpCommitment>> {
+        return installmentDao.getFreeingUpInstallments().map { list ->
+            list.map {
+                FreeingUpCommitment(
+                    billId = it.billId,
+                    title = it.title,
+                    endDate = it.endDate,
+                    monthlyAmountCents = it.monthlyAmountCents
+                )
+            }
         }
     }
 }

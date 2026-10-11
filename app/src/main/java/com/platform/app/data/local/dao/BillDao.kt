@@ -101,4 +101,14 @@ interface BillDao {
 
     @Query("DELETE FROM bills")
     suspend fun deleteAll()
+
+    @Query("""
+        SELECT COALESCE(SUM(totalAmountCents), 0)
+        FROM bills
+        WHERE type = 'RECURRING'
+          AND isPaused = 0
+          AND endedAt IS NULL
+          AND deletedAt IS NULL
+    """)
+    fun getActiveMonthlyRecurringCost(): Flow<Long>
 }

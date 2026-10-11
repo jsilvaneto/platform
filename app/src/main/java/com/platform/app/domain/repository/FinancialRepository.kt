@@ -1,5 +1,6 @@
 package com.platform.app.domain.repository
 
+import com.platform.app.domain.model.AttentionCounts
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.CardDependencies
@@ -9,7 +10,9 @@ import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.FreeingUpCommitment
 import com.platform.app.domain.model.MonthSummary
+import com.platform.app.domain.model.OpenInstallmentsSummary
 import com.platform.app.domain.model.PaymentMethod
 import kotlinx.coroutines.flow.Flow
 
@@ -76,6 +79,10 @@ interface FinancialRepository {
     suspend fun postponeInstallmentDueDate(installmentId: String, days: Int = 1)
     fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary>
     fun getOpenAmountByContact(): Flow<Map<String, Long>>
+    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts>
+    fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsSummary>
+    fun getActiveMonthlyRecurringCost(): Flow<Long>
+    fun getFreeingUpCommitments(): Flow<List<FreeingUpCommitment>>
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
     suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>)

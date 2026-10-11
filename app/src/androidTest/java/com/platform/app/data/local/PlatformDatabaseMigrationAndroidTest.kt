@@ -260,7 +260,7 @@ class PlatformDatabaseMigrationAndroidTest {
 
         val migratedDb = helper.runMigrationsAndValidate(
             TEST_DB,
-            17,
+            18,
             true,
             PlatformDatabase.MIGRATION_9_10,
             PlatformDatabase.MIGRATION_10_11,
@@ -269,13 +269,16 @@ class PlatformDatabaseMigrationAndroidTest {
             PlatformDatabase.MIGRATION_13_14,
             PlatformDatabase.MIGRATION_14_15,
             PlatformDatabase.MIGRATION_15_16,
-            PlatformDatabase.MIGRATION_16_17
+            PlatformDatabase.MIGRATION_16_17,
+            PlatformDatabase.MIGRATION_17_18
         )
 
         assertEquals(1, getRowCount(migratedDb, "credit_cards"))
         assertEquals(1, getRowCount(migratedDb, "credit_card_invoices"))
         assertEquals(1, getRowCount(migratedDb, "bills"))
         assertEquals(1, getRowCount(migratedDb, "bill_installments"))
+        assertEquals(0, getRowCount(migratedDb, "payments")) // inst_rec_1 é PENDING, portanto não deve gerar registro em payments
+        assertEquals(0, getRowCount(migratedDb, "sync_outbox"))
 
         val billCursor = migratedDb.query("SELECT recurrenceAnchorDate, creditCardId FROM bills WHERE id = 'bill_rec'")
         assertTrue(billCursor.moveToFirst())
@@ -295,9 +298,45 @@ class PlatformDatabaseMigrationAndroidTest {
         fkCursor.close()
 
         assertTrue(
-            "Cadeia completa 9->17 deve passar em PRAGMA foreign_key_check com 0 violações",
+            "Cadeia completa 9->18 deve passar em PRAGMA foreign_key_check com 0 violações",
             fkViolations.isEmpty()
         )
+
+        migratedDb.close()
+    }
+
+    @Test
+    fun migrationFrom17To18_createsPaymentsAndSyncOutboxTablesWithBackfill() {
+        var db = helper.createDatabase(TEST_DB, 17)
+
+        db.execSQL("""
+            INSERT INTO bills (id, title, description, type, totalAmountCents, totalInstallments, isPaused, createdAt)
+            VALUES ('bill_test', 'Aluguel', 'Mensal', 'SINGLE', 150000, 1, 0, 1727740800000)
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO bill_installments (id, billId, installmentNumber, totalInstallments, amountCents, dueDate, paidAt, status)
+            VALUES ('inst_paid', 'bill_test', 1, 1, 150000, 1728518400000, 1728518400000, 'PAID')
+        """.trimIndent())
+
+        db.close()
+
+        val migratedDb = helper.runMigrationsAndValidate(
+            TEST_DB,
+            18,
+            true,
+            PlatformDatabase.MIGRATION_17_18
+        )
+
+        assertEquals(1, getRowCount(migratedDb, "payments"))
+        assertEquals(0, getRowCount(migratedDb, "sync_outbox"))
+
+        val payCursor = migratedDb.query("SELECT id, billInstallmentId, amountCents FROM payments WHERE billInstallmentId = 'inst_paid'")
+        assertTrue(payCursor.moveToFirst())
+        assertEquals("pay_inst_paid", payCursor.getString(0))
+        assertEquals("inst_paid", payCursor.getString(1))
+        assertEquals(150000L, payCursor.getLong(2))
+        payCursor.close()
 
         migratedDb.close()
     }

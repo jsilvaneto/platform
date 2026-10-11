@@ -65,7 +65,7 @@ class ComposeUiFlowsTest {
             dueDate = System.currentTimeMillis() + 86400000L,
             status = BillStatus.PENDING,
             type = BillType.SINGLE,
-            nature = ExpenseNature.MANDATORIO
+            nature = ExpenseNature.OBRIGATORIO
         )
 
         composeTestRule.setContent {

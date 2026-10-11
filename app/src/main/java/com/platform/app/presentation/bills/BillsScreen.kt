@@ -156,6 +156,7 @@ fun BillsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var isSearchExpanded by remember { mutableStateOf(false) }
     var showFilterBottomSheet by remember { mutableStateOf(false) }
+    var showQuickExpenseSheet by remember { mutableStateOf(false) }
 
     // Estado do modo de seleção múltipla em lote
     var isSelectionMode by remember { mutableStateOf(false) }
@@ -246,14 +247,11 @@ fun BillsScreen(
         },
         floatingActionButton = {
             if (!isSelectionMode) {
-                FloatingActionButton(
-                    onClick = onNavigateToNewExpense,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape
-                ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Nova Despesa")
-                }
+                com.platform.app.presentation.components.PlatformFab(
+                    onClick = { showQuickExpenseSheet = true },
+                    icon = Icons.Default.Add,
+                    contentDescription = "Nova Despesa"
+                )
             }
         },
         modifier = modifier
@@ -297,44 +295,15 @@ fun BillsScreen(
                 modifier = Modifier.padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
             )
 
-            // Resumo de filtros ativos (quando houver)
-            if (hasActiveFilters) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val filterDesc = buildList {
-                        uiState.statusFilter?.let { add(if (it == BillStatus.PAID) "Pagas" else "A Pagar") }
-                        if (uiState.periodFilter != BillPeriodFilter.ALL) add(uiState.periodFilter.label)
-                        if (uiState.selectedYear != null && uiState.selectedYear != currentYear) add("${uiState.selectedYear}")
-                    }.joinToString(" • ")
-
-                    Text(
-                        text = "Filtros: $filterDesc",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(
-                        onClick = { onAction(BillsUiAction.ResetFilters) },
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
-                        modifier = Modifier.height(24.dp)
-                    ) {
-                        Text(
-                            text = "Limpar",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+            // 2. Chips de Filtro Neutros (mês e tipo; os demais em bottom sheet)
+            com.platform.app.presentation.bills.components.BillsFilterBar(
+                periodFilter = uiState.periodFilter,
+                typeFilter = uiState.typeFilter,
+                statusFilter = uiState.statusFilter,
+                hasActiveFilters = hasActiveFilters,
+                onOpenFilterBottomSheet = { showFilterBottomSheet = true },
+                onResetFilters = { onAction(BillsUiAction.ResetFilters) }
+            )
 
             if (showFilterBottomSheet) {
                 BillsFilterBottomSheet(
@@ -582,6 +551,21 @@ fun BillsScreen(
             },
             onDeleteRecurring = { keepPaid ->
                 onAction(BillsUiAction.DeleteRecurring(selectedBill.id, keepPaid))
+            }
+        )
+    }
+
+    if (showQuickExpenseSheet) {
+        com.platform.app.presentation.bills.components.QuickExpenseBottomSheet(
+            expenseItems = uiState.expenseItems,
+            onDismiss = { showQuickExpenseSheet = false },
+            onConfirm = { amountCents, itemId, isPaid, dueDate ->
+                onAction(BillsUiAction.SaveQuickExpense(amountCents, itemId, isPaid, dueDate))
+                showQuickExpenseSheet = false
+            },
+            onMoreDetails = {
+                showQuickExpenseSheet = false
+                onNavigateToNewExpense()
             }
         )
     }

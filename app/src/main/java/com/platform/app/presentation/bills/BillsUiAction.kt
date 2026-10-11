@@ -49,4 +49,10 @@ sealed interface BillsUiAction : UiAction {
     data class UpdateRecurringMonthlyAmount(val billId: String, val fromDueDate: Long, val newAmountCents: Long) : BillsUiAction
     data class DeleteRecurring(val billId: String, val keepPaidHistory: Boolean) : BillsUiAction
     data class PayNextRecurringInstallment(val installment: BillInstallment) : BillsUiAction
+    data class SaveQuickExpense(
+        val amountCents: Long,
+        val itemId: String,
+        val isPaid: Boolean,
+        val dueDate: Long = System.currentTimeMillis()
+    ) : BillsUiAction
 }

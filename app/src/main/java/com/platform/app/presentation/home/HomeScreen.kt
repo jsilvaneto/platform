@@ -184,8 +184,8 @@ fun HomeScreen(
         QuickExpenseBottomSheet(
             expenseItems = uiState.allExpenseItems,
             onDismiss = { showQuickExpenseSheet = false },
-            onConfirm = { amountCents, expenseItemId, isPaid ->
-                onAction(HomeUiAction.SaveQuickExpense(amountCents, expenseItemId, isPaid))
+            onConfirm = { amountCents, expenseItemId, isPaid, dueDate ->
+                onAction(HomeUiAction.SaveQuickExpense(amountCents, expenseItemId, isPaid, dueDate))
                 showQuickExpenseSheet = false
             },
             onMoreDetails = {

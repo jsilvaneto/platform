@@ -25,10 +25,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.calculateTotalCents
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformListRow
+import com.platform.app.presentation.theme.PlatformIconCatalog
+import com.platform.app.presentation.theme.PlatformStatusType
 
+/**
+ * Lista de parcelas e lançamentos de contas padronizada com [PlatformListRow] (Prompt 56 e 60):
+ * - Agrupamento por mês expansível.
+ * - Linhas com ícone 36dp (fundo sup2), título, subtítulo, valor tabular e chip de status.
+ * - Swipe para pagar em lote ou individual.
+ * - Long-press para seleção múltipla.
+ */
 @Composable
 fun BillsInstallmentList(
     groupedByMonth: Map<String, List<BillInstallment>>,
@@ -108,21 +119,51 @@ fun BillsInstallmentList(
             if (isExpanded) {
                 items(monthItems, key = { it.id }) { installment ->
                     val isSelected = installment.id in selectedInstallmentIds
+                    val now = System.currentTimeMillis()
+                    val isToday = !installment.isPaid && DateUtils.isToday(installment.dueDate)
+                    val isOverdue = !installment.isPaid && installment.dueDate < now && !isToday
+
+                    val (statusText, statusType) = when {
+                        installment.isPaid -> AppStrings.Status.PAID to PlatformStatusType.PAID
+                        isOverdue -> {
+                            val daysLate = ((now - installment.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                            (if (daysLate == 1) "Atrasada 1 dia" else "Atrasada $daysLate dias") to PlatformStatusType.OVERDUE
+                        }
+                        isToday -> "Vence hoje" to PlatformStatusType.ATTENTION
+                        else -> {
+                            val daysUntil = ((installment.dueDate - now) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                            if (daysUntil <= 7) {
+                                (if (daysUntil == 1) "Vence amanhã" else "Em $daysUntil dias") to PlatformStatusType.ATTENTION
+                            } else {
+                                null to null
+                            }
+                        }
+                    }
+
+                    val subtitle = when {
+                        installment.isPaid -> "Pago em ${DateUtils.formatDayMonth(installment.paidAt ?: installment.dueDate)}"
+                        installment.totalInstallments > 1 -> "Parcela ${installment.installmentNumber}/${installment.totalInstallments} · Vence ${DateUtils.formatDayMonth(installment.dueDate)}"
+                        else -> "Vence dia ${DateUtils.formatDayMonth(installment.dueDate)}"
+                    }
 
                     PlatformListRow(
-                        onSwipeToPay = if (!isSelectionMode) { { onTogglePayment(installment) } } else null,
-                        enabled = !isSelectionMode
-                    ) {
-                        BillInstallmentItemCard(
-                            installment = installment,
-                            isSelectionMode = isSelectionMode,
-                            isSelected = isSelected,
-                            onToggleSelect = { onToggleSelect(installment.id) },
-                            onLongClick = { onLongClickSelect(installment.id) },
-                            onTogglePayment = { onTogglePayment(installment) },
-                            onSelectInstallment = { onSelectInstallment(installment) }
-                        )
-                    }
+                        title = installment.billTitle,
+                        subtitle = subtitle,
+                        amountCents = installment.amountCents,
+                        icon = PlatformIconCatalog.getIcon(installment.categoryIconName),
+                        statusText = statusText,
+                        statusType = statusType,
+                        isSelected = isSelected,
+                        onClick = {
+                            if (isSelectionMode) {
+                                onToggleSelect(installment.id)
+                            } else {
+                                onSelectInstallment(installment)
+                            }
+                        },
+                        onLongClick = { onLongClickSelect(installment.id) },
+                        onSwipeToPay = if (!isSelectionMode && !installment.isPaid) { { onTogglePayment(installment) } } else null
+                    )
                 }
             }
         }

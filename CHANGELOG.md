@@ -3,6 +3,30 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.31.0] - 2026-10-11
+
+### 📋 Remodelagem de Contas e Lançamento Rápido (Prompt 60)
+
+- **Aba 'Contas' Atualizada**:
+  - Abas segmentadas no topo: Todas | Recorrentes | Parceladas (`PlatformSegmentedTabs`).
+  - Chips de filtro neutros (`PlatformNeutralChip`): Mês, Tipo, Status, "+ Filtros" (abre bottom sheet completo) e ação de limpeza quando filtros ativos estão aplicados.
+  - Lista de parcelas e compromissos migrada para `PlatformListRow` minimalista (ícone 36dp com raio 12 e fundo `surface2`, título 14sp bold, subtítulo 12sp, valor 14sp bold tabular à direita, chip de status e swipe para pagar com Snackbar de desfazer).
+  - Suporte a seleção em lote por long-press com barra de ações de lote neutra.
+  - Floating Action Button neutro (`PlatformFab`) abrindo o Lançamento Rápido.
+  - Arquitetura de tela enxuta com modularização de subcomponentes (`BillsFilterBar`, `BillsInstallmentList`, `BillsFilterBottomSheet`) abaixo do limite de 600 linhas.
+
+- **Lançamento Rápido ('QuickExpenseBottomSheet')**:
+  - Bottom sheet minimalista com raio 28dp (`PlatformShapes.bottomSheet`).
+  - Entrada de valor em 52sp tabular com cursor visível e formatação monetária em tempo real.
+  - Chips neutros para itens de despesa frequentes.
+  - Chips de vencimento inteligentes: "Hoje", "Amanhã", "Dia 5" e "Outro" (com DatePicker nativo).
+  - Alternador "Já paga" (`Switch`).
+  - Barra de ações fixa: link secundário "Mais detalhes" direcionando para o cadastro completo e botão principal neutro (`PlatformPrimaryButton`) informando o motivo de bloqueio quando incompleto ("Informe o valor para salvar" / "Selecione o item para salvar").
+
+- **Testes e Validação**:
+  - `BillsAndroidTest`: testes de renderização nos temas AMOLED, Claro e com escala de fonte 1,3x.
+  - `BillsViewModelTest`: testes unitários para a ação `SaveQuickExpense` integrada ao `CreateBillUseCase`.
+
 ## [1.30.0] - 2026-10-11
 
 ### ☀️ Reconstrução Minimalista da Tela 'Hoje' e Linha de Atalhos (Prompt 59)

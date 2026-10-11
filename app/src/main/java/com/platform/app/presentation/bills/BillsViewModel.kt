@@ -33,7 +33,8 @@ class BillsViewModel @Inject constructor(
     private val repository: FinancialRepository,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
     private val getMonthSummaryUseCase: GetMonthSummaryUseCase,
-    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
+    private val extendRecurringBillsUseCase: ExtendRecurringBillsUseCase,
+    private val createBillUseCase: com.platform.app.domain.usecase.CreateBillUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BillsUiState())
@@ -79,6 +80,7 @@ class BillsViewModel @Inject constructor(
             is BillsUiAction.UpdateRecurringMonthlyAmount -> handleUpdateRecurringAmount(action.billId, action.fromDueDate, action.newAmountCents)
             is BillsUiAction.DeleteRecurring -> handleDeleteRecurring(action.billId, action.keepPaidHistory)
             is BillsUiAction.PayNextRecurringInstallment -> handlePayNextRecurringInstallment(action.installment)
+            is BillsUiAction.SaveQuickExpense -> handleSaveQuickExpense(action)
         }
     }
 
@@ -513,5 +515,35 @@ class BillsViewModel @Inject constructor(
         val cal = Calendar.getInstance()
         cal.timeInMillis = timestamp
         return cal.get(Calendar.YEAR)
+    }
+
+    private fun handleSaveQuickExpense(action: BillsUiAction.SaveQuickExpense) {
+        viewModelScope.launch {
+            try {
+                val item = _uiState.value.expenseItems.find { it.id == action.itemId }
+                val billId = java.util.UUID.randomUUID().toString()
+                val title = item?.name ?: "Despesa"
+                val now = System.currentTimeMillis()
+                val bill = Bill(
+                    id = billId,
+                    title = title,
+                    description = title,
+                    type = BillType.SINGLE,
+                    totalAmountCents = action.amountCents,
+                    categoryId = item?.categoryId,
+                    itemId = action.itemId,
+                    totalInstallments = 1,
+                    createdAt = now
+                )
+                createBillUseCase(
+                    bill = bill,
+                    firstDueDate = action.dueDate,
+                    isFirstInstallmentPaid = action.isPaid
+                )
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Despesa salva com sucesso!"))
+            } catch (e: Exception) {
+                _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao salvar despesa: ${e.message}"))
+            }
+        }
     }
 }

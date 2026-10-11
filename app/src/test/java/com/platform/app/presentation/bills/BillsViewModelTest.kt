@@ -33,6 +33,7 @@ class BillsViewModelTest {
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
     private lateinit var getMonthSummaryUseCase: GetMonthSummaryUseCase
     private lateinit var extendRecurringBillsUseCase: ExtendRecurringBillsUseCase
+    private lateinit var createBillUseCase: com.platform.app.domain.usecase.CreateBillUseCase
     private lateinit var viewModel: BillsViewModel
 
     @Before
@@ -42,6 +43,7 @@ class BillsViewModelTest {
         togglePaymentUseCase = mockk(relaxed = true)
         getMonthSummaryUseCase = GetMonthSummaryUseCase(repository)
         extendRecurringBillsUseCase = mockk(relaxed = true)
+        createBillUseCase = mockk(relaxed = true)
 
         every { repository.getInstallmentsForPeriod(any(), any()) } returns flowOf(emptyList())
         every { repository.getAllInstallments() } returns flowOf(emptyList())
@@ -60,7 +62,7 @@ class BillsViewModelTest {
 
     @Test
     fun `SaveInstallmentEdit should invoke updateBillAndInstallment and emit ShowSnackbar`() = runTest {
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -118,7 +120,7 @@ class BillsViewModelTest {
             type = BillType.SINGLE
         )
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -148,7 +150,7 @@ class BillsViewModelTest {
         )
         val customPaymentDate = 1759000000000L
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -176,7 +178,7 @@ class BillsViewModelTest {
         )
         every { repository.getAllInstallments() } returns flowOf(listOf(inst1, inst2))
 
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(BillsUiAction.SearchQueryChanged("Internet"))
@@ -188,7 +190,7 @@ class BillsViewModelTest {
 
     @Test
     fun `BatchSetActualPaymentDate action should invoke repository updateInstallmentsActualPaymentDateBatch and emit snackbar`() = runTest {
-        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase)
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val ids = listOf("inst-1", "inst-2")
@@ -203,6 +205,23 @@ class BillsViewModelTest {
             val effect = awaitItem()
             assertTrue(effect is BillsUiEffect.ShowSnackbar)
             assertTrue((effect as BillsUiEffect.ShowSnackbar).message.contains("2 parcela(s)"))
+        }
+    }
+
+    @Test
+    fun `SaveQuickExpense action should call createBillUseCase and emit ShowSnackbar effect`() = runTest {
+        coEvery { createBillUseCase.invoke(any(), any(), any(), any(), any()) } returns emptyList()
+        viewModel = BillsViewModel(repository, togglePaymentUseCase, getMonthSummaryUseCase, extendRecurringBillsUseCase, createBillUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.uiEffect.test {
+            viewModel.onAction(BillsUiAction.SaveQuickExpense(amountCents = 3500L, itemId = "item-1", isPaid = false))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { createBillUseCase.invoke(any(), any(), any(), any(), any()) }
+
+            val effect = awaitItem()
+            assertTrue(effect is BillsUiEffect.ShowSnackbar)
         }
     }
 }

@@ -13,7 +13,12 @@ sealed interface HomeUiAction {
     data class PayInvoice(val invoiceId: String, val actualPaymentDate: Long? = null) : HomeUiAction
     data class UndoPayInvoice(val invoiceId: String) : HomeUiAction
     data class TogglePaidSection(val expanded: Boolean) : HomeUiAction
-    data class SaveQuickExpense(val amountCents: Long, val itemId: String, val isPaid: Boolean) : HomeUiAction
+    data class SaveQuickExpense(
+        val amountCents: Long,
+        val itemId: String,
+        val isPaid: Boolean,
+        val dueDate: Long = System.currentTimeMillis()
+    ) : HomeUiAction
     data class UndoSaveBill(val billId: String) : HomeUiAction
     data object Refresh : HomeUiAction
 }

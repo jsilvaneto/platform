@@ -207,7 +207,7 @@ class HomeViewModel @Inject constructor(
                     )
                     createBillUseCase(
                         bill = bill,
-                        firstDueDate = now,
+                        firstDueDate = action.dueDate,
                         isFirstInstallmentPaid = action.isPaid
                     )
                     _uiEffect.emit(

@@ -481,64 +481,73 @@ abstract class PlatformDatabase : RoomDatabase() {
 
         val MIGRATION_19_20 = object : Migration(19, 20) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                val nowMs = System.currentTimeMillis()
+
                 // 1. categories
-                db.execSQL("ALTER TABLE `categories` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `categories` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `categories` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `categories` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 2. expense_items
-                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `expense_items` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `expense_items` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 3. contacts
-                db.execSQL("ALTER TABLE `contacts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `contacts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `contacts` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
-                db.execSQL("UPDATE `contacts` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+                db.execSQL("UPDATE `contacts` SET `updatedAt` = CASE WHEN `createdAt` > 0 THEN `createdAt` ELSE $nowMs END WHERE `updatedAt` = 0")
 
                 // 4. financial_accounts
-                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `financial_accounts` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `financial_accounts` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 5. payment_methods
-                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `payment_methods` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `payment_methods` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 6. credit_cards
-                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `credit_cards` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `credit_cards` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 7. credit_card_invoices
-                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `credit_card_invoices` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("UPDATE `credit_card_invoices` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 8. bills
-                db.execSQL("ALTER TABLE `bills` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("UPDATE `bills` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+                db.execSQL("ALTER TABLE `bills` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE `bills` SET `updatedAt` = CASE WHEN `createdAt` > 0 THEN `createdAt` ELSE $nowMs END WHERE `updatedAt` = 0")
 
                 // 9. bill_installments
-                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE `bill_installments` SET `createdAt` = $nowMs, `updatedAt` = $nowMs WHERE `createdAt` = 0")
 
                 // 10. goals
-                db.execSQL("ALTER TABLE `goals` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `goals` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `goals` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
-                db.execSQL("UPDATE `goals` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+                db.execSQL("UPDATE `goals` SET `updatedAt` = CASE WHEN `createdAt` > 0 THEN `createdAt` ELSE $nowMs END WHERE `updatedAt` = 0")
 
                 // 11. goal_contributions
-                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
-                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `createdAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `goal_contributions` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
-                db.execSQL("UPDATE `goal_contributions` SET `createdAt` = `date`, `updatedAt` = `date` WHERE `date` > 0")
+                db.execSQL("UPDATE `goal_contributions` SET `createdAt` = CASE WHEN `date` > 0 THEN `date` ELSE $nowMs END, `updatedAt` = CASE WHEN `date` > 0 THEN `date` ELSE $nowMs END WHERE `createdAt` = 0")
 
                 // 12. budgets
-                db.execSQL("ALTER TABLE `budgets` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000)")
+                db.execSQL("ALTER TABLE `budgets` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `budgets` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
-                db.execSQL("UPDATE `budgets` SET `updatedAt` = `createdAt` WHERE `createdAt` > 0")
+                db.execSQL("UPDATE `budgets` SET `updatedAt` = CASE WHEN `createdAt` > 0 THEN `createdAt` ELSE $nowMs END WHERE `updatedAt` = 0")
 
                 // 13. Migrate date-only fields to epoch days (Int)
                 db.execSQL("UPDATE `bill_installments` SET `dueDate` = CAST(`dueDate` / 86400000 AS INTEGER) WHERE `dueDate` > 1000000")

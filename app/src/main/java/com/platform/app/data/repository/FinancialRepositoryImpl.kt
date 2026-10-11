@@ -192,6 +192,28 @@ class FinancialRepositoryImpl @Inject constructor(
         actualPaymentDate: Long?
     ) = billDataSource.toggleInstallmentPayment(installmentId, isPaid, paidTimestamp, actualPaymentDate)
 
+    override suspend fun recordInstallmentPayment(
+        installmentId: String,
+        amountCents: Long,
+        paymentDate: Long,
+        paymentMethodId: String?,
+        financialAccountId: String?,
+        interestCents: Long,
+        fineCents: Long,
+        discountCents: Long,
+        notes: String?
+    ) = billDataSource.recordInstallmentPayment(
+        installmentId = installmentId,
+        amountCents = amountCents,
+        paymentDate = paymentDate,
+        paymentMethodId = paymentMethodId,
+        financialAccountId = financialAccountId,
+        interestCents = interestCents,
+        fineCents = fineCents,
+        discountCents = discountCents,
+        notes = notes
+    )
+
     override suspend fun updateInstallmentsActualPaymentDateBatch(
         installmentIds: List<String>,
         actualPaymentDate: Long

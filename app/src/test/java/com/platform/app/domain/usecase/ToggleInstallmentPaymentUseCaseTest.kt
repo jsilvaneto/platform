@@ -100,4 +100,36 @@ class ToggleInstallmentPaymentUseCaseTest {
             )
         }
     }
+
+    @Test
+    fun `recordPayment delegates to repository recordInstallmentPayment with details`() = runTest {
+        val installmentId = "inst-custom"
+        val paymentDate = 1759000000000L
+
+        useCase.recordPayment(
+            installmentId = installmentId,
+            amountCents = 7500L,
+            paymentDate = paymentDate,
+            paymentMethodId = "pm-pix",
+            financialAccountId = "acc-main",
+            interestCents = 150L,
+            fineCents = 0L,
+            discountCents = 50L,
+            notes = "Pagamento com desconto"
+        )
+
+        coVerify(exactly = 1) {
+            repository.recordInstallmentPayment(
+                installmentId = installmentId,
+                amountCents = 7500L,
+                paymentDate = paymentDate,
+                paymentMethodId = "pm-pix",
+                financialAccountId = "acc-main",
+                interestCents = 150L,
+                fineCents = 0L,
+                discountCents = 50L,
+                notes = "Pagamento com desconto"
+            )
+        }
+    }
 }

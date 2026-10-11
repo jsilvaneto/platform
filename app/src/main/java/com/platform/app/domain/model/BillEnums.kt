@@ -8,6 +8,7 @@ enum class BillType(val label: String) {
 
 enum class BillStatus(val label: String) {
     PENDING("A Pagar"),
+    PARTIALLY_PAID("Pago em parte"),
     PAID("Paga"),
     OVERDUE("Vencida"),
     PAUSED("Pausada"),

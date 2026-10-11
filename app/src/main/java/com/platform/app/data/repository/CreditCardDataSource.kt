@@ -27,7 +27,8 @@ import javax.inject.Singleton
 class CreditCardDataSource @Inject constructor(
     private val creditCardDao: CreditCardDao,
     private val installmentDao: BillInstallmentDao,
-    private val syncDao: SyncDao? = null
+    private val syncDao: SyncDao? = null,
+    private val paymentDataSource: InstallmentPaymentDataSource? = null
 ) {
 
     fun getCreditCards(): Flow<List<CreditCard>> {
@@ -221,6 +222,8 @@ class CreditCardDataSource @Inject constructor(
             actualPaymentDate = effectiveActualDate,
             status = "PAID"
         )
+        val invoiceInsts = installmentDao.getInstallmentsListForInvoice(invoiceId)
+        paymentDataSource?.payInvoiceInstallments(invoiceId, invoiceInsts, effectiveActualDate)
         syncDao?.enqueue(
             SyncOutboxEntity(
                 entityType = "CREDIT_CARD_INVOICE",
@@ -239,6 +242,7 @@ class CreditCardDataSource @Inject constructor(
             actualPaymentDate = null,
             status = "PENDING"
         )
+        paymentDataSource?.revertInvoicePayments(invoiceId)
         syncDao?.enqueue(
             SyncOutboxEntity(
                 entityType = "CREDIT_CARD_INVOICE",

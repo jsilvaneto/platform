@@ -21,4 +21,28 @@ class ToggleInstallmentPaymentUseCase @Inject constructor(
             actualPaymentDate = effectiveActualDate
         )
     }
+
+    suspend fun recordPayment(
+        installmentId: String,
+        amountCents: Long,
+        paymentDate: Long,
+        paymentMethodId: String? = null,
+        financialAccountId: String? = null,
+        interestCents: Long = 0L,
+        fineCents: Long = 0L,
+        discountCents: Long = 0L,
+        notes: String? = null
+    ) {
+        repository.recordInstallmentPayment(
+            installmentId = installmentId,
+            amountCents = amountCents,
+            paymentDate = paymentDate,
+            paymentMethodId = paymentMethodId,
+            financialAccountId = financialAccountId,
+            interestCents = interestCents,
+            fineCents = fineCents,
+            discountCents = discountCents,
+            notes = notes
+        )
+    }
 }

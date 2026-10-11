@@ -96,4 +96,18 @@ class PlatformDatabaseMigrationTest {
             db.execSQL(match { it.contains("INSERT INTO `payments`") && it.contains("bill_installments") })
         }
     }
+
+    @Test
+    fun `migration 20 to 21 should reconcile payments for paid installments`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(20, PlatformDatabase.MIGRATION_20_21.startVersion)
+        assertEquals(21, PlatformDatabase.MIGRATION_20_21.endVersion)
+
+        PlatformDatabase.MIGRATION_20_21.migrate(db)
+
+        verify(atLeast = 1) {
+            db.execSQL(match { it.contains("INSERT INTO payments") && it.contains("bill_installments") && it.contains("rec_") })
+        }
+    }
 }

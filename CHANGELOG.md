@@ -3,6 +3,35 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.35.0] - 2026-10-11
+
+### 💳 Integração do Agregado Payment, Baixas Parciais e Reconciliação (Prompt 64)
+
+- **Integração Total do Agregado `Payment` no Fluxo de Baixas**:
+  - Toda baixa de parcela agora cria atomicamente um registro em `payments` contendo o valor pago, data real da operação, conta financeira e meio de pagamento.
+  - Estornos de liquidação aplicam exclusão lógica (`soft delete`) nos pagamentos correspondentes e registram evento `DELETE_ALL_FOR_INSTALLMENT` na `sync_outbox`.
+  - Quitação de fatura de cartão de crédito (`payInvoice`) gera pagamentos individualizados por parcela anexada; a reabertura de fatura (`reopenInvoice`) executa estorno completo dos pagamentos gerados.
+
+- **Status Derivado e Suporte a Pagamento Parcial**:
+  - O status da parcela é computado a partir do total amortizado na tabela `payments`:
+    - `PAID`: saldo totalmente quitado ($\ge \text{amountCents}$), populando `paidAt` e `actualPaymentDate`.
+    - `PARTIALLY_PAID` ("Pago em parte"): quitação parcial ($> 0$ e $< \text{amountCents}$), mantendo a exigibilidade do saldo restante sem marcar `paidAt`.
+    - `PENDING`: nenhum pagamento ativo associado.
+  - Os campos `status`, `paidAt` e `actualPaymentDate` na tabela `bill_installments` atuam como cache de alta performance sincronizado na mesma transação Room (`database.withTransaction`).
+
+- **Interface de Baixa Enriquecida (`ConfirmPaymentDialog`)**:
+  - Inclusão de campo editável de valor a pagar, permitindo quitações parciais ou com alteração diretamente na interface.
+  - Seção opcional para informe de juros, multas e descontos com integração em `BillsUiAction.TogglePayment` e `ToggleInstallmentPaymentUseCase.recordPayment`.
+
+- **Migração de Reconciliação Automática (`MIGRATION_20_21`, DB v21)**:
+  - Criação da migração Room `MIGRATION_20_21` elevando a versão do banco de dados para 21.
+  - Execução de script SQLite de reconciliação que detecta todas as parcelas pagas legadas sem registros correspondentes em `payments` e gera as linhas de pagamento retroativas.
+  - Testes automatizados de migração unitários e instrumentados com `MigrationTestHelper`.
+
+- **Governança e Arquitetura**:
+  - Publicação do **ADR 045** (`045-integracao-de-pagamentos-baixas-parciais-e-reconciliacao.md`).
+  - Suite de testes unitários `InstallmentPaymentDataSourceTest` validando baixas totais, parciais, estornos e integração de faturas.
+
 ## [1.34.0] - 2026-10-11
 
 ### 🔄 Soft Delete Consistente, Fila Outbox e Migração LocalDate (Prompt 65)

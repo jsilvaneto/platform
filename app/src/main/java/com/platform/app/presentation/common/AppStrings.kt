@@ -216,6 +216,12 @@ object AppStrings {
         const val TODAY = "Hoje"
         const val ON_DUE_DATE = "No Vencimento"
         const val ACTUAL_DATE_METRICS_INFO = "A data real informada será usada no cálculo de pontualidade no painel."
+        const val PAID_AMOUNT_LABEL = "Valor Pago (R$)"
+        const val INTEREST_FINE_LABEL = "Juros/Multa"
+        const val DISCOUNT_LABEL = "Desconto"
+        const val CENTS_ZERO_PLACEHOLDER = "0,00"
+        const val SHOW_ADJUSTMENTS_LABEL = "+ Juros, multa ou desconto (opcional)"
+        const val HIDE_ADJUSTMENTS_LABEL = "Ocultar acréscimos/desconto"
         const val DELETE_SELECTED_TITLE = "Excluir Selecionadas"
 
         // Recorrência

@@ -17,8 +17,11 @@ import com.platform.app.domain.model.MonthSummary
 import com.platform.app.domain.model.OpenInstallmentsSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.platform.app.data.local.dao.PaymentDao
+import com.platform.app.data.local.entity.PaymentEntity
 import java.time.LocalDate
 import java.util.Calendar
+import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,8 +33,19 @@ class BillDataSource @Inject constructor(
     private val database: PlatformDatabase,
     private val billDao: BillDao,
     private val installmentDao: BillInstallmentDao,
-    private val syncDao: SyncDao? = null
+    private val syncDao: SyncDao? = null,
+    private val paymentDao: PaymentDao? = null,
+    private val paymentDataSource: InstallmentPaymentDataSource? = null,
+    private val reportingDataSource: BillReportingDataSource? = null
 ) {
+    private val effectivePaymentDataSource by lazy {
+        paymentDataSource ?: paymentDao?.let {
+            InstallmentPaymentDataSource(database, installmentDao, it, syncDao)
+        }
+    }
+    private val effectiveReportingDataSource by lazy {
+        reportingDataSource ?: BillReportingDataSource(billDao, installmentDao)
+    }
 
     fun getBills(): Flow<List<Bill>> {
         return billDao.getAll().map { list ->
@@ -127,6 +141,8 @@ class BillDataSource @Inject constructor(
                     )
                 }
             )
+
+            effectivePaymentDataSource?.recordPrePaidInstallments(installments)
         }
     }
 
@@ -169,18 +185,46 @@ class BillDataSource @Inject constructor(
         paidTimestamp: Long?,
         actualPaymentDate: Long?
     ) {
-        val status = if (isPaid) "PAID" else "PENDING"
-        val effectivePaidAt = if (isPaid) (paidTimestamp ?: System.currentTimeMillis()) else null
-        val effectiveActualDate = if (isPaid) (actualPaymentDate ?: effectivePaidAt) else null
-        installmentDao.updatePayment(installmentId, effectivePaidAt, effectiveActualDate, status)
-
-        syncDao?.enqueue(
-            SyncOutboxEntity(
-                entityType = "BILL_INSTALLMENT",
-                entityId = installmentId,
-                operation = "UPDATE",
-                payload = """{"id":"$installmentId","status":"$status","paidAt":$effectivePaidAt,"actualPaymentDate":$effectiveActualDate}"""
+        val pds = effectivePaymentDataSource
+        if (pds != null) {
+            pds.toggleInstallmentPayment(installmentId, isPaid, paidTimestamp, actualPaymentDate)
+        } else {
+            val status = if (isPaid) "PAID" else "PENDING"
+            val effectivePaidAt = if (isPaid) (paidTimestamp ?: System.currentTimeMillis()) else null
+            val effectiveActualDate = if (isPaid) (actualPaymentDate ?: effectivePaidAt) else null
+            installmentDao.updatePayment(installmentId, effectivePaidAt, effectiveActualDate, status)
+            syncDao?.enqueue(
+                SyncOutboxEntity(
+                    entityType = "BILL_INSTALLMENT",
+                    entityId = installmentId,
+                    operation = "UPDATE",
+                    payload = """{"id":"$installmentId","status":"$status","paidAt":$effectivePaidAt,"actualPaymentDate":$effectiveActualDate}"""
+                )
             )
+        }
+    }
+
+    suspend fun recordInstallmentPayment(
+        installmentId: String,
+        amountCents: Long,
+        paymentDate: Long,
+        paymentMethodId: String? = null,
+        financialAccountId: String? = null,
+        interestCents: Long = 0L,
+        fineCents: Long = 0L,
+        discountCents: Long = 0L,
+        notes: String? = null
+    ) {
+        effectivePaymentDataSource?.recordInstallmentPayment(
+            installmentId = installmentId,
+            amountCents = amountCents,
+            paymentDate = paymentDate,
+            paymentMethodId = paymentMethodId,
+            financialAccountId = financialAccountId,
+            interestCents = interestCents,
+            fineCents = fineCents,
+            discountCents = discountCents,
+            notes = notes
         )
     }
 
@@ -534,50 +578,21 @@ class BillDataSource @Inject constructor(
         }
     }
 
-    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary> {
-        val startDate = DateUtils.millisToLocalDate(startMillis)
-        val endDate = DateUtils.millisToLocalDate(endMillis)
-        val todayDate = DateUtils.millisToLocalDate(nowMillis)
-        return installmentDao.getMonthSummary(startDate, endDate, todayDate).map { it.toDomain() }
-    }
+    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary> =
+        effectiveReportingDataSource.getMonthSummary(startMillis, endMillis, nowMillis)
 
-    fun getOpenAmountByContact(): Flow<Map<String, Long>> {
-        return installmentDao.getOpenAmountByContact().map { list ->
-            list.associate { it.contactId to it.totalOpenCents }
-        }
-    }
+    fun getOpenAmountByContact(): Flow<Map<String, Long>> =
+        effectiveReportingDataSource.getOpenAmountByContact()
 
-    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts> {
-        val todayDate = DateUtils.millisToLocalDate(startOfDayMillis)
-        return installmentDao.getAttentionCounts(todayDate).map {
-            AttentionCounts(overdueCount = it.overdueCount, dueTodayCount = it.dueTodayCount)
-        }
-    }
+    fun getAttentionCounts(startOfDayMillis: Long, endOfDayMillis: Long): Flow<AttentionCounts> =
+        effectiveReportingDataSource.getAttentionCounts(startOfDayMillis, endOfDayMillis)
 
-    fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsSummary> {
-        return installmentDao.getOpenInstallmentsOverview().map {
-            OpenInstallmentsSummary(
-                totalAmountCents = it.totalAmountCents,
-                count = it.installmentCount,
-                lastDueDate = it.lastDueDate?.let { d -> DateUtils.localDateToMillis(d) }
-            )
-        }
-    }
+    fun getOpenInstallmentsOverview(): Flow<OpenInstallmentsSummary> =
+        effectiveReportingDataSource.getOpenInstallmentsOverview()
 
-    fun getActiveMonthlyRecurringCost(): Flow<Long> {
-        return billDao.getActiveMonthlyRecurringCost()
-    }
+    fun getActiveMonthlyRecurringCost(): Flow<Long> =
+        effectiveReportingDataSource.getActiveMonthlyRecurringCost()
 
-    fun getFreeingUpCommitments(): Flow<List<FreeingUpCommitment>> {
-        return installmentDao.getFreeingUpInstallments().map { list ->
-            list.map {
-                FreeingUpCommitment(
-                    billId = it.billId,
-                    title = it.title,
-                    endDate = it.endDate?.let { d -> DateUtils.localDateToMillis(d) } ?: 0L,
-                    monthlyAmountCents = it.monthlyAmountCents
-                )
-            }
-        }
-    }
+    fun getFreeingUpCommitments(): Flow<List<FreeingUpCommitment>> =
+        effectiveReportingDataSource.getFreeingUpCommitments()
 }

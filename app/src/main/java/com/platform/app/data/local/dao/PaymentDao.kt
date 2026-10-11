@@ -39,6 +39,20 @@ interface PaymentDao {
         updatedAt: Long = System.currentTimeMillis()
     )
 
+    @Query("UPDATE payments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billInstallmentId = :installmentId AND deletedAt IS NULL")
+    suspend fun softDeletePaymentsForInstallment(
+        installmentId: String,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
+
+    @Query("UPDATE payments SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE billInstallmentId IN (SELECT id FROM bill_installments WHERE invoiceId = :invoiceId AND deletedAt IS NULL) AND deletedAt IS NULL")
+    suspend fun softDeletePaymentsForInvoice(
+        invoiceId: String,
+        deletedAt: Long = System.currentTimeMillis(),
+        updatedAt: Long = System.currentTimeMillis()
+    )
+
     @Query("DELETE FROM payments WHERE deletedAt IS NOT NULL AND deletedAt < :olderThanMillis")
     suspend fun purgeDeleted(olderThanMillis: Long)
 
@@ -47,4 +61,7 @@ interface PaymentDao {
 
     @Query("SELECT SUM(amountCents + interestCents + fineCents - discountCents) FROM payments WHERE billInstallmentId = :installmentId AND deletedAt IS NULL")
     suspend fun getTotalPaidForInstallmentCents(installmentId: String): Long?
+
+    @Query("SELECT SUM(amountCents + discountCents) FROM payments WHERE billInstallmentId = :installmentId AND deletedAt IS NULL")
+    suspend fun getTotalAmortizedForInstallmentCents(installmentId: String): Long?
 }

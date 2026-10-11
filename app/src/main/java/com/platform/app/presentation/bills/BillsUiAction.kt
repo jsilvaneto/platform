@@ -8,7 +8,12 @@ import com.platform.app.domain.model.BillType
 sealed interface BillsUiAction : UiAction {
     data class TogglePayment(
         val installment: BillInstallment,
-        val actualPaymentDate: Long? = null
+        val actualPaymentDate: Long? = null,
+        val amountCents: Long? = null,
+        val interestCents: Long = 0L,
+        val fineCents: Long = 0L,
+        val discountCents: Long = 0L,
+        val notes: String? = null
     ) : BillsUiAction
     data class DeleteBill(val billId: String) : BillsUiAction
     data class SearchQueryChanged(val query: String) : BillsUiAction

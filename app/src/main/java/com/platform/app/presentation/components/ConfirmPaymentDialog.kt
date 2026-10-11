@@ -30,9 +30,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,11 +44,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.core.util.DateUtils
 import com.platform.app.presentation.common.AppStrings
 import java.util.Calendar
+
+data class PaymentConfirmationDetails(
+    val paymentDate: Long,
+    val amountCents: Long,
+    val interestCents: Long = 0L,
+    val fineCents: Long = 0L,
+    val discountCents: Long = 0L
+)
 
 @Composable
 fun ConfirmPaymentDialog(
@@ -53,10 +66,17 @@ fun ConfirmPaymentDialog(
     dueDate: Long,
     initialDate: Long = System.currentTimeMillis(),
     onConfirm: (actualPaymentDate: Long) -> Unit,
+    onConfirmWithDetails: ((PaymentConfirmationDetails) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     var selectedPaymentDate by remember { mutableLongStateOf(initialDate) }
+    var amountInput by remember {
+        mutableStateOf(CurrencyUtils.formatCentsToCurrency(amountCents).replace("R$", "").trim())
+    }
+    var showAdjustments by remember { mutableStateOf(false) }
+    var interestInput by remember { mutableStateOf("") }
+    var discountInput by remember { mutableStateOf("") }
 
     val cal = Calendar.getInstance().apply { timeInMillis = selectedPaymentDate }
     val isDueToday = remember(dueDate) { DateUtils.isToday(dueDate) }
@@ -144,6 +164,17 @@ fun ConfirmPaymentDialog(
                         )
                     }
                 }
+
+                // Valor pago
+                OutlinedTextField(
+                    value = amountInput,
+                    onValueChange = { amountInput = it },
+                    label = { Text(AppStrings.Dialogs.PAID_AMOUNT_LABEL) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = PlatformShapes.medium
+                )
 
                 // Atalhos Rápidos de Data
                 Row(
@@ -237,6 +268,44 @@ fun ConfirmPaymentDialog(
                     )
                 }
 
+                // Acréscimos e Descontos Opcionais
+                TextButton(
+                    onClick = { showAdjustments = !showAdjustments }
+                ) {
+                    Text(
+                        text = if (showAdjustments) AppStrings.Dialogs.HIDE_ADJUSTMENTS_LABEL else AppStrings.Dialogs.SHOW_ADJUSTMENTS_LABEL,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+
+                if (showAdjustments) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = interestInput,
+                            onValueChange = { interestInput = it },
+                            label = { Text(AppStrings.Dialogs.INTEREST_FINE_LABEL) },
+                            placeholder = { Text(AppStrings.Dialogs.CENTS_ZERO_PLACEHOLDER) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            shape = PlatformShapes.medium
+                        )
+                        OutlinedTextField(
+                            value = discountInput,
+                            onValueChange = { discountInput = it },
+                            label = { Text(AppStrings.Dialogs.DISCOUNT_LABEL) },
+                            placeholder = { Text(AppStrings.Dialogs.CENTS_ZERO_PLACEHOLDER) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(1f),
+                            shape = PlatformShapes.medium
+                        )
+                    }
+                }
+
                 Text(
                     text = AppStrings.Dialogs.ACTUAL_DATE_METRICS_INFO,
                     style = MaterialTheme.typography.labelSmall,
@@ -246,7 +315,24 @@ fun ConfirmPaymentDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(selectedPaymentDate) },
+                onClick = {
+                    if (onConfirmWithDetails != null) {
+                        val parsedAmount = CurrencyUtils.parseInputToCents(amountInput).takeIf { it > 0L } ?: amountCents
+                        val parsedInterest = CurrencyUtils.parseInputToCents(interestInput)
+                        val parsedDiscount = CurrencyUtils.parseInputToCents(discountInput)
+                        onConfirmWithDetails(
+                            PaymentConfirmationDetails(
+                                paymentDate = selectedPaymentDate,
+                                amountCents = parsedAmount,
+                                interestCents = parsedInterest,
+                                fineCents = 0L,
+                                discountCents = parsedDiscount
+                            )
+                        )
+                    } else {
+                        onConfirm(selectedPaymentDate)
+                    }
+                },
                 shape = PlatformShapes.medium
             ) {
                 Text(AppStrings.Actions.CONFIRM)

@@ -54,7 +54,7 @@ import com.platform.app.data.local.entity.SyncStateEntity
         SyncOutboxEntity::class,
         SyncStateEntity::class
     ],
-    version = 20,
+    version = 21,
     exportSchema = true
 )
 @TypeConverters(
@@ -544,6 +544,47 @@ abstract class PlatformDatabase : RoomDatabase() {
                 db.execSQL("UPDATE `bill_installments` SET `dueDate` = CAST(`dueDate` / 86400000 AS INTEGER) WHERE `dueDate` > 1000000")
                 db.execSQL("UPDATE `credit_card_invoices` SET `closingDate` = CAST(`closingDate` / 86400000 AS INTEGER) WHERE `closingDate` > 1000000")
                 db.execSQL("UPDATE `credit_card_invoices` SET `dueDate` = CAST(`dueDate` / 86400000 AS INTEGER) WHERE `dueDate` > 1000000")
+            }
+        }
+
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Reconciliação: criar PaymentEntity para toda parcela paga que ainda não possui pagamento registrado na tabela payments
+                db.execSQL("""
+                    INSERT INTO payments (
+                        id,
+                        billInstallmentId,
+                        amountCents,
+                        paymentDate,
+                        paymentMethodId,
+                        financialAccountId,
+                        interestCents,
+                        fineCents,
+                        discountCents,
+                        notes,
+                        createdAt,
+                        updatedAt,
+                        deletedAt
+                    )
+                    SELECT 
+                        'rec_' || id,
+                        id,
+                        amountCents,
+                        COALESCE(actualPaymentDate, paidAt, strftime('%s', 'now') * 1000),
+                        paymentMethodId,
+                        financialAccountId,
+                        0,
+                        0,
+                        0,
+                        'Reconciliação automática MIGRATION_20_21',
+                        COALESCE(paidAt, strftime('%s', 'now') * 1000),
+                        strftime('%s', 'now') * 1000,
+                        NULL
+                    FROM bill_installments
+                    WHERE (status = 'PAID' OR paidAt IS NOT NULL)
+                      AND deletedAt IS NULL
+                      AND id NOT IN (SELECT billInstallmentId FROM payments WHERE deletedAt IS NULL)
+                """.trimIndent())
             }
         }
     }

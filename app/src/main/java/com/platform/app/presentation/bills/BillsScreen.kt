@@ -526,6 +526,19 @@ fun BillsScreen(
                 onAction(BillsUiAction.TogglePayment(inst, actualPaymentDate))
                 installmentToConfirmPayment = null
             },
+            onConfirmWithDetails = { details ->
+                onAction(
+                    BillsUiAction.TogglePayment(
+                        installment = inst,
+                        actualPaymentDate = details.paymentDate,
+                        amountCents = details.amountCents,
+                        interestCents = details.interestCents,
+                        fineCents = details.fineCents,
+                        discountCents = details.discountCents
+                    )
+                )
+                installmentToConfirmPayment = null
+            },
             onDismiss = {
                 installmentToConfirmPayment = null
             }

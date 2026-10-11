@@ -52,7 +52,15 @@ class BillsViewModel @Inject constructor(
 
     fun onAction(action: BillsUiAction) {
         when (action) {
-            is BillsUiAction.TogglePayment -> handleTogglePayment(action.installment, action.actualPaymentDate)
+            is BillsUiAction.TogglePayment -> handleTogglePayment(
+                installment = action.installment,
+                actualPaymentDate = action.actualPaymentDate,
+                amountCents = action.amountCents,
+                interestCents = action.interestCents,
+                fineCents = action.fineCents,
+                discountCents = action.discountCents,
+                notes = action.notes
+            )
             is BillsUiAction.DeleteBill -> handleDeleteBill(action.billId)
             is BillsUiAction.SearchQueryChanged -> handleSearchQuery(action.query)
             is BillsUiAction.TypeFilterChanged -> handleTypeFilter(action.type)
@@ -252,12 +260,33 @@ class BillsViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
-    private fun handleTogglePayment(installment: BillInstallment, actualPaymentDate: Long? = null) {
+    private fun handleTogglePayment(
+        installment: BillInstallment,
+        actualPaymentDate: Long? = null,
+        amountCents: Long? = null,
+        interestCents: Long = 0L,
+        fineCents: Long = 0L,
+        discountCents: Long = 0L,
+        notes: String? = null
+    ) {
         viewModelScope.launch {
             try {
-                togglePaymentUseCase(installment.id, installment.isPaid, actualPaymentDate)
-                val msg = if (!installment.isPaid) "Parcela marcada como paga!" else "Pagamento desfeito."
-                _effectChannel.send(BillsUiEffect.ShowSnackbar(msg))
+                if (amountCents != null) {
+                    togglePaymentUseCase.recordPayment(
+                        installmentId = installment.id,
+                        amountCents = amountCents,
+                        paymentDate = actualPaymentDate ?: System.currentTimeMillis(),
+                        interestCents = interestCents,
+                        fineCents = fineCents,
+                        discountCents = discountCents,
+                        notes = notes
+                    )
+                    _effectChannel.send(BillsUiEffect.ShowSnackbar("Pagamento registrado com sucesso!"))
+                } else {
+                    togglePaymentUseCase(installment.id, installment.isPaid, actualPaymentDate)
+                    val msg = if (!installment.isPaid) "Parcela marcada como paga!" else "Pagamento desfeito."
+                    _effectChannel.send(BillsUiEffect.ShowSnackbar(msg))
+                }
             } catch (e: Exception) {
                 _effectChannel.send(BillsUiEffect.ShowSnackbar("Erro ao alterar pagamento: ${e.message}"))
             }
@@ -397,7 +426,8 @@ class BillsViewModel @Inject constructor(
             val matchesStatus = when (statusFilter) {
                 null -> !inst.isSkipped
                 BillStatus.PAID -> inst.isPaid
-                BillStatus.PENDING -> !inst.isPaid && inst.dueDateMillis >= now && !inst.isPaused && !inst.isSkipped
+                BillStatus.PARTIALLY_PAID -> inst.isPartiallyPaid
+                BillStatus.PENDING -> !inst.isPaid && !inst.isPartiallyPaid && inst.dueDateMillis >= now && !inst.isPaused && !inst.isSkipped
                 BillStatus.OVERDUE -> !inst.isPaid && inst.dueDateMillis < now && !inst.isPaused && !inst.isSkipped
                 BillStatus.PAUSED -> inst.isPaused
                 BillStatus.SKIPPED -> inst.isSkipped

@@ -36,6 +36,7 @@ data class BillInstallment(
 ) {
     val dueDateMillis: Long get() = dueDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val isPaid: Boolean get() = paidAt != null || status == BillStatus.PAID
+    val isPartiallyPaid: Boolean get() = status == BillStatus.PARTIALLY_PAID
     val isPaused: Boolean get() = status == BillStatus.PAUSED
     val isSkipped: Boolean get() = status == BillStatus.SKIPPED
 

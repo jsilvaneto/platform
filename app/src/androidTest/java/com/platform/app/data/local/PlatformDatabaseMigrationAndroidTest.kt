@@ -432,6 +432,43 @@ class PlatformDatabaseMigrationAndroidTest {
         migratedDb.close()
     }
 
+    @Test
+    fun migrationFrom20To21_reconcilesPaymentsForPaidInstallmentsMissingPayments() {
+        var db = helper.createDatabase(TEST_DB, 20)
+
+        db.execSQL("""
+            INSERT INTO bills (id, title, description, type, totalAmountCents, totalInstallments, isPaused, createdAt, updatedAt)
+            VALUES ('bill_v20', 'Energia', 'Conta de Luz', 'SINGLE', 25000, 1, 0, 1727740800000, 1727740800000)
+        """.trimIndent())
+
+        db.execSQL("""
+            INSERT INTO bill_installments (id, billId, installmentNumber, totalInstallments, amountCents, dueDate, paidAt, actualPaymentDate, status, createdAt, updatedAt)
+            VALUES ('inst_paid_no_pmt', 'bill_v20', 1, 1, 25000, 20000, 1728518400000, 1728518400000, 'PAID', 1727740800000, 1727740800000)
+        """.trimIndent())
+
+        db.close()
+
+        val migratedDb = helper.runMigrationsAndValidate(
+            TEST_DB,
+            21,
+            true,
+            PlatformDatabase.MIGRATION_20_21
+        )
+
+        assertEquals(1, getRowCount(migratedDb, "payments"))
+
+        val payCursor = migratedDb.query("SELECT id, billInstallmentId, amountCents, paymentDate, notes FROM payments WHERE billInstallmentId = 'inst_paid_no_pmt'")
+        assertTrue(payCursor.moveToFirst())
+        assertEquals("rec_inst_paid_no_pmt", payCursor.getString(0))
+        assertEquals("inst_paid_no_pmt", payCursor.getString(1))
+        assertEquals(25000L, payCursor.getLong(2))
+        assertEquals(1728518400000L, payCursor.getLong(3))
+        assertEquals("Reconciliação automática MIGRATION_20_21", payCursor.getString(4))
+        payCursor.close()
+
+        migratedDb.close()
+    }
+
     private fun getRowCount(db: SupportSQLiteDatabase, table: String): Int {
         val cursor = db.query("SELECT COUNT(*) FROM $table")
         val count = if (cursor.moveToFirst()) cursor.getInt(0) else 0

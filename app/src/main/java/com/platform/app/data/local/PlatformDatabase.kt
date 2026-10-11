@@ -17,6 +17,8 @@ import com.platform.app.data.local.dao.FinancialAccountDao
 import com.platform.app.data.local.dao.GoalDao
 import com.platform.app.data.local.dao.GoalContributionDao
 import com.platform.app.data.local.dao.PaymentMethodDao
+import com.platform.app.data.local.dao.PaymentDao
+import com.platform.app.data.local.dao.SyncDao
 import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.data.local.entity.BudgetEntity
@@ -28,7 +30,10 @@ import com.platform.app.data.local.entity.ExpenseItemEntity
 import com.platform.app.data.local.entity.FinancialAccountEntity
 import com.platform.app.data.local.entity.GoalContributionEntity
 import com.platform.app.data.local.entity.GoalEntity
+import com.platform.app.data.local.entity.PaymentEntity
 import com.platform.app.data.local.entity.PaymentMethodEntity
+import com.platform.app.data.local.entity.SyncOutboxEntity
+import com.platform.app.data.local.entity.SyncStateEntity
 
 @Database(
     entities = [
@@ -43,9 +48,12 @@ import com.platform.app.data.local.entity.PaymentMethodEntity
         BillInstallmentEntity::class,
         GoalEntity::class,
         GoalContributionEntity::class,
-        BudgetEntity::class
+        BudgetEntity::class,
+        PaymentEntity::class,
+        SyncOutboxEntity::class,
+        SyncStateEntity::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(FinancialAccountTypeConverter::class)
@@ -61,6 +69,8 @@ abstract class PlatformDatabase : RoomDatabase() {
     abstract val goalDao: GoalDao
     abstract val goalContributionDao: GoalContributionDao
     abstract val budgetDao: BudgetDao
+    abstract val paymentDao: PaymentDao
+    abstract val syncDao: SyncDao
 
     fun checkpointWal() {
         runCatching {
@@ -361,6 +371,100 @@ abstract class PlatformDatabase : RoomDatabase() {
 
                 // 3. Criar UNIQUE INDEX (billId, installmentNumber)
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)")
+            }
+        }
+
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. Criar tabela payments
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `payments` (
+                        `id` TEXT NOT NULL PRIMARY KEY,
+                        `billInstallmentId` TEXT NOT NULL,
+                        `amountCents` INTEGER NOT NULL,
+                        `paymentDate` INTEGER NOT NULL,
+                        `paymentMethodId` TEXT,
+                        `financialAccountId` TEXT,
+                        `interestCents` INTEGER NOT NULL DEFAULT 0,
+                        `fineCents` INTEGER NOT NULL DEFAULT 0,
+                        `discountCents` INTEGER NOT NULL DEFAULT 0,
+                        `notes` TEXT,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        `deletedAt` INTEGER,
+                        FOREIGN KEY(`billInstallmentId`) REFERENCES `bill_installments`(`id`) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_billInstallmentId` ON `payments`(`billInstallmentId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_paymentDate` ON `payments`(`paymentDate`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_paymentMethodId` ON `payments`(`paymentMethodId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_payments_financialAccountId` ON `payments`(`financialAccountId`)")
+
+                // 2. Criar tabela sync_outbox
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `sync_outbox` (
+                        `id` TEXT NOT NULL PRIMARY KEY,
+                        `entityType` TEXT NOT NULL,
+                        `entityId` TEXT NOT NULL,
+                        `operation` TEXT NOT NULL,
+                        `payload` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        `status` TEXT NOT NULL DEFAULT 'PENDING',
+                        `retryCount` INTEGER NOT NULL DEFAULT 0,
+                        `errorMessage` TEXT
+                    )
+                """.trimIndent())
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_outbox_status` ON `sync_outbox`(`status`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_outbox_createdAt` ON `sync_outbox`(`createdAt`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_sync_outbox_entityType_entityId` ON `sync_outbox`(`entityType`, `entityId`)")
+
+                // 3. Criar tabela sync_state
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `sync_state` (
+                        `key` TEXT NOT NULL PRIMARY KEY,
+                        `value` TEXT NOT NULL,
+                        `updatedAt` INTEGER NOT NULL
+                    )
+                """.trimIndent())
+
+                // 4. Adicionar deletedAt para soft delete em bills e bill_installments
+                db.execSQL("ALTER TABLE `bills` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+
+                // 5. Backfill: migrar parcelas quitadas para a tabela payments
+                db.execSQL("""
+                    INSERT INTO `payments` (
+                        id,
+                        billInstallmentId,
+                        amountCents,
+                        paymentDate,
+                        paymentMethodId,
+                        financialAccountId,
+                        interestCents,
+                        fineCents,
+                        discountCents,
+                        notes,
+                        createdAt,
+                        updatedAt,
+                        deletedAt
+                    )
+                    SELECT
+                        'pay_' || id,
+                        id,
+                        amountCents,
+                        COALESCE(actualPaymentDate, paidAt, dueDate),
+                        paymentMethodId,
+                        financialAccountId,
+                        0,
+                        0,
+                        0,
+                        NULL,
+                        COALESCE(paidAt, strftime('%s', 'now') * 1000),
+                        COALESCE(paidAt, strftime('%s', 'now') * 1000),
+                        NULL
+                    FROM `bill_installments`
+                    WHERE (status = 'PAID' OR paidAt IS NOT NULL)
+                """.trimIndent())
             }
         }
     }

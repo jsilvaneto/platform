@@ -35,7 +35,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.withTabularNumbers
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,7 +70,7 @@ fun HomeTopBar(
     onCurrentMonth: () -> Unit,
     onOpenDrawer: (() -> Unit)? = null
 ) {
-    Surface(
+    PlatformSurface(
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -100,7 +101,7 @@ fun HomeTopBar(
                 }
 
                 // Cápsula Clicável do Mês
-                Surface(
+                PlatformSurface(
                     onClick = onOpenMonthPicker,
                     shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -190,7 +191,7 @@ fun GlobalOverdueAlertBanner(
     onToggleExpanded: () -> Unit,
     onPayItem: (PayableItem) -> Unit
 ) {
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.large,
         color = UrgentRed.copy(alpha = 0.08f),
         border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.35f)),
@@ -228,7 +229,7 @@ fun GlobalOverdueAlertBanner(
                         )
                         Text(
                             text = "${AppStrings.Home.TOTAL_OVERDUE} ${formatValueOrPrivate(totalOverdueCents, isPrivate)}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall.withTabularNumbers(),
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -261,7 +262,7 @@ fun GlobalOverdueAlertBanner(
                 ) {
                     overdueItems.forEach { item ->
                         val daysLate = ((System.currentTimeMillis() - item.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface,
                             border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.2f)),
@@ -284,7 +285,7 @@ fun GlobalOverdueAlertBanner(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Surface(
+                                        PlatformSurface(
                                             shape = PlatformShapes.extraSmall,
                                             color = UrgentRed.copy(alpha = 0.15f)
                                         ) {

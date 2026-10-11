@@ -10,6 +10,7 @@ import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.ExpenseNature
+import com.platform.app.domain.model.MonthSummary
 import kotlinx.coroutines.flow.Flow
 
 data class InstallmentWithDetails(
@@ -61,6 +62,31 @@ data class InstallmentWithDetails(
 data class InvoiceTotal(
     @ColumnInfo(name = "invoiceId") val invoiceId: String,
     @ColumnInfo(name = "totalAmountCents") val totalAmountCents: Long
+)
+
+data class MonthSummaryRaw(
+    @ColumnInfo(name = "totalCents") val totalCents: Long,
+    @ColumnInfo(name = "paidCents") val paidCents: Long,
+    @ColumnInfo(name = "pendingCents") val pendingCents: Long,
+    @ColumnInfo(name = "overdueCents") val overdueCents: Long,
+    @ColumnInfo(name = "paidCount") val paidCount: Int,
+    @ColumnInfo(name = "pendingCount") val pendingCount: Int,
+    @ColumnInfo(name = "overdueCount") val overdueCount: Int
+) {
+    fun toDomain(): MonthSummary = MonthSummary(
+        totalCents = totalCents,
+        paidCents = paidCents,
+        pendingCents = pendingCents,
+        overdueCents = overdueCents,
+        paidCount = paidCount,
+        pendingCount = pendingCount,
+        overdueCount = overdueCount
+    )
+}
+
+data class ContactOpenBalanceRaw(
+    @ColumnInfo(name = "contactId") val contactId: String,
+    @ColumnInfo(name = "totalOpenCents") val totalOpenCents: Long
 )
 
 @Dao
@@ -431,4 +457,36 @@ interface BillInstallmentDao {
 
     @Query("DELETE FROM bill_installments")
     suspend fun deleteAll()
+
+    @Query(
+        """
+        SELECT 
+            COALESCE(SUM(amountCents), 0) AS totalCents,
+            COALESCE(SUM(CASE WHEN paidAt IS NOT NULL THEN amountCents ELSE 0 END), 0) AS paidCents,
+            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate >= :nowMillis THEN amountCents ELSE 0 END), 0) AS pendingCents,
+            COALESCE(SUM(CASE WHEN paidAt IS NULL AND dueDate < :nowMillis THEN amountCents ELSE 0 END), 0) AS overdueCents,
+            COUNT(CASE WHEN paidAt IS NOT NULL THEN 1 END) AS paidCount,
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate >= :nowMillis THEN 1 END) AS pendingCount,
+            COUNT(CASE WHEN paidAt IS NULL AND dueDate < :nowMillis THEN 1 END) AS overdueCount
+        FROM bill_installments
+        WHERE dueDate BETWEEN :startMillis AND :endMillis
+          AND status != 'PAUSED'
+        """
+    )
+    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummaryRaw>
+
+    @Query(
+        """
+        SELECT 
+            COALESCE(i.contactId, b.contactId) AS contactId,
+            COALESCE(SUM(i.amountCents), 0) AS totalOpenCents
+        FROM bill_installments i
+        INNER JOIN bills b ON i.billId = b.id
+        WHERE i.paidAt IS NULL 
+          AND i.status != 'PAUSED'
+          AND COALESCE(i.contactId, b.contactId) IS NOT NULL
+        GROUP BY COALESCE(i.contactId, b.contactId)
+        """
+    )
+    fun getOpenAmountByContact(): Flow<List<ContactOpenBalanceRaw>>
 }

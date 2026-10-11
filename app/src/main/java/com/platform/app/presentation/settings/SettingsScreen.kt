@@ -60,11 +60,7 @@ import java.util.Locale
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     biometricAuthManager: BiometricAuthManager,
-    onOpenDrawer: () -> Unit,
-    onNavigateToAccounts: () -> Unit = {},
-    onNavigateToPaymentMethods: () -> Unit = {},
-    onNavigateToCategories: () -> Unit = {},
-    onNavigateToExpenseItems: () -> Unit = {}
+    onOpenDrawer: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -166,43 +162,7 @@ fun SettingsScreen(
         ) {
             com.platform.app.presentation.settings.components.NotificationDisabledBanner()
 
-            // Grupo 1: Cadastros
-            SectionCard(
-                title = "Cadastros",
-                icon = Icons.Default.Category
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SettingActionCard(
-                        title = "Contas",
-                        subtitle = "Bancos, carteiras e contas de referência",
-                        icon = Icons.Default.AccountBalance,
-                        onClick = onNavigateToAccounts
-                    )
-
-                    SettingActionCard(
-                        title = "Formas de Pagamento",
-                        subtitle = "Cartão, PIX, dinheiro e métodos de quitação",
-                        icon = Icons.Default.CreditCard,
-                        onClick = onNavigateToPaymentMethods
-                    )
-
-                    SettingActionCard(
-                        title = "Categorias",
-                        subtitle = "Classificação de despesas e natureza do gasto",
-                        icon = Icons.Default.Category,
-                        onClick = onNavigateToCategories
-                    )
-
-                    SettingActionCard(
-                        title = "Itens de Despesa",
-                        subtitle = "Subitens e produtos organizados por categoria",
-                        icon = Icons.Default.ShoppingBag,
-                        onClick = onNavigateToExpenseItems
-                    )
-                }
-            }
-
-            // Grupo 2: Aparência
+            // Grupo 1: Aparência
             SettingActionCard(
                 title = "Aparência",
                 subtitle = "Tema do sistema, modo escuro e ícones do aplicativo",

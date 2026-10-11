@@ -54,7 +54,8 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,7 +85,7 @@ fun StatisticsScreen(
             PlatformAppBar(
                 title = AppStrings.Navigation.ANALYTICS,
                 subtitle = "Inteligência Financeira",
-                onOpenDrawer = null,
+                onOpenDrawer = onOpenDrawer,
                 actions = {
                     PlatformPrivacyToggle(
                         isPrivate = uiState.isPrivacyMode,
@@ -322,9 +323,9 @@ fun StatisticsScreen(
 
 @Composable
 private fun StatisticsInsightBanner(text: String, modifier: Modifier = Modifier) {
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.medium,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -358,10 +359,10 @@ private fun PlanningQuickAccessCard(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Surface(
+        PlatformSurface(
             onClick = onNavigateToBudgets,
             shape = PlatformShapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            variant = PlatformSurfaceVariant.Tonal,
             modifier = Modifier.weight(1f)
         ) {
             Row(
@@ -384,10 +385,10 @@ private fun PlanningQuickAccessCard(
             }
         }
 
-        Surface(
+        PlatformSurface(
             onClick = onNavigateToGoals,
             shape = PlatformShapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            variant = PlatformSurfaceVariant.Tonal,
             modifier = Modifier.weight(1f)
         ) {
             Row(
@@ -418,10 +419,10 @@ private fun ShowMoreButton(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    PlatformSurface(
         onClick = onToggle,
         shape = PlatformShapes.pill,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        variant = PlatformSurfaceVariant.Tonal,
         modifier = modifier.fillMaxWidth()
     ) {
         Row(

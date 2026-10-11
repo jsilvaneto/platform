@@ -22,6 +22,8 @@ object PlatformShapes {
     val extraLarge = RoundedCornerShape(24.dp)
     val pill = CircleShape
     val bottomSheet = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    val barTop = RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)
+    val barEnd = RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
 
     val Material3Shapes = Shapes(
         extraSmall = extraSmall,

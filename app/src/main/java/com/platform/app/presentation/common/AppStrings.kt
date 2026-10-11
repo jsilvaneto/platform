@@ -49,6 +49,19 @@ object AppStrings {
         const val ITEMS = "Itens"
     }
 
+    object Management {
+        const val ACCOUNTS = "Contas"
+        const val PAYMENT_METHODS = "Formas"
+        const val CATEGORIES = "Categorias"
+        const val EXPENSE_ITEMS = "Itens"
+    }
+
+    object Bills {
+        const val ALL = "Todas"
+        const val RECURRING = "Recorrentes"
+        const val INSTALLMENTS = "Parceladas"
+    }
+
     object Nature {
         const val MANDATORY = "Obrigatório"
         const val NECESSARY = "Necessário"
@@ -212,5 +225,22 @@ object AppStrings {
         const val ENABLE_BUTTON = "Ativar Notificações"
         const val PERMISSION_EXPLANATION = "A Platform avisa você no dia e na véspera do vencimento das contas para você nunca atrasar um pagamento."
         const val ALLOW_NOTIFICATIONS = "Permitir avisos"
+    }
+
+    object CreditCards {
+        const val CAN_I_BUY_TITLE = "Posso comprar?"
+        const val CAN_I_BUY_LABEL = "Valor da compra pretendida"
+        const val ZERO_CURRENCY_PLACEHOLDER = "R$ 0,00"
+        const val AVAILABLE_LIMIT = "Limite disponível:"
+        const val FITS_LIMIT = "Cabe no seu limite!"
+        const val EXCEEDS_LIMIT = "Não cabe no seu limite!"
+        const val REMAINING_LIMIT = "Restará de limite:"
+    }
+
+    object Theme {
+        const val AUTO = "Automático"
+        const val LIGHT = "Claro"
+        const val DARK = "Escuro"
+        const val AMOLED = "AMOLED"
     }
 }

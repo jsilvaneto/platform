@@ -3,6 +3,30 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.26.0] - 2026-10-10
+
+### 💎 Modelo de Sincronização, Entidade Payment, Inteligência Financeira e Excelência Visual (Prompts 43-54)
+
+- **Persistência de Pagamentos e Modelo de Sincronização Offline-First (Prompts 48 & 49)**:
+  - Introdução do modelo de domínio `Payment` e entidade Room `PaymentEntity` (`payments`), desacoplando a liquidação do valor estático da parcela e suportando pagamentos parciais, juros (`interestCents`), multas (`fineCents`) e descontos (`discountCents`).
+  - Criação das tabelas de infraestrutura `sync_outbox` (fila de replicação idempotente com status, contagem de retentativas e payload JSON) e `sync_state` (marcação de timestamps de sincronização local).
+  - Adição de soft-delete via coluna `deletedAt` em `bills` e `bill_installments`, preservando integridade referencial para replicação bidirecional com backend.
+  - Execução da `MIGRATION_17_18` com backfill automático de parcelas quitadas (`PAID` ou com `paidAt`) para a nova tabela `payments`.
+  - Criação de `PaymentRepository` e `PaymentRepositoryImpl`, integrando operações com enfileiramento na outbox e testes unitários dedicados (`PaymentRepositoryImplTest`).
+- **Novas Funcionalidades de Domínio e Inteligência Financeira (Prompt 50)**:
+  - **Validador e Parser de Boletos Brasileiros (`BoletoParser`)**: Validação de linha digitável bancária (47 dígitos com módulo 10 em blocos) e concessionárias/arrecadação (48 dígitos com módulo 10/11), além de códigos de barra (44 dígitos). Extração automática de valor em centavos (`amountCents`), data de vencimento (`dueDate`) com rollover BACEN 2025 e código do banco compensador.
+  - **Simulador Multi-Cartão 'Posso comprar?' (`SimulatePurchaseAffordabilityUseCase`)**: Simulação em tempo real sobre toda a carteira de cartões cadastrados. Avalia limite disponível e float de pagamento (dias até o vencimento), recomendando o melhor cartão para maximizar o prazo de pagamento do usuário.
+  - **Planejador de Quitação de Dívidas (`CalculateDebtPayoffPlanUseCase`)**: Algoritmo matemático para quitação acelerada com estratégias Bola de Neve (Snowball - menor saldo primeiro) e Avalanche (maior parcela/encargo primeiro), simulando alocação de aportes extras e efeito cascata mês a mês.
+- **Design System, Tokens e Eliminação Total de Surface Cru (Prompts 45, 51, 52 & 53)**:
+  - Eliminação de 100% dos usos literais de `Surface(` fora de `components/`, padronizando todas as telas em `PlatformSurface` ou `PlatformCard`.
+  - Criação da task Gradle `:app:checkRawSurfaces` anexada ao `preBuild`, garantindo bloqueio automático contra regressões.
+  - Tokens semânticos unificados de cores, elevações e formatos em `design/tokens.json`.
+  - Introdução de profundidade semântica `PlatformDepth` (`N0`, `N1`, `N2`, `N3`) com modificador `Modifier.platformDepth`.
+  - Introdução de `PlatformMoneyText` e `.withTabularNumbers()` para tipografia tabular (`fontFeatureSettings = "tnum"`), garantindo alinhamento numérico exato em listas e dashboards.
+  - Suporte a tema AMOLED puro e validação matemática de acessibilidade com teste automatizado WCAG 2.1 AA (`ThemeContrastTest`).
+- **Higiene Arquitetural e Limpeza de Rotas Órfãs (Prompts 43 & 44)**:
+  - Remoção de duplicidades de rotas e unificação canônica dos pontos de entrada: Cadastros centralizados em Mais -> Cadastros, e Planejamento/Metas em Análises -> Planejar.
+
 ## [1.25.0] - 2026-10-10
 
 ### 🔒 Segurança Robusta, Notificações Resilientes, Política de Backup E2E e Orçamento Preciso (Prompts 37-42)

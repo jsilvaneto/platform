@@ -2,6 +2,7 @@ package com.platform.app.presentation.contacts
 
 import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.PlatformSurfaceVariant
+import com.platform.app.presentation.components.PlatformListRow
 
 import com.platform.app.presentation.theme.PlatformShapes
 
@@ -26,7 +27,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -61,7 +62,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -190,7 +190,7 @@ fun ContactsScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(top = 4.dp, bottom = 80.dp)
+                        contentPadding = PaddingValues(top = 4.dp, bottom = 88.dp)
                     ) {
                         if (uiState.selectedTypeFilter == null) {
                             // Exibição agrupada por tipo quando filtro estiver em 'Todos'
@@ -203,21 +203,29 @@ fun ContactsScreen(
                                     ContactSectionHeader(type = type, count = contactsInType.size)
                                 }
                                 items(contactsInType, key = { it.id }) { contact ->
+                                    PlatformListRow(
+                                        onSwipeToDelete = { viewModel.onAction(ContactsUiAction.DeleteContact(contact.id)) }
+                                    ) {
+                                        ContactCard(
+                                            contact = contact,
+                                            openBalanceCents = uiState.openBalances[contact.id] ?: 0L,
+                                            onClick = { onNavigateToDetail(contact.id) }
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            // Exibição direta da lista do tipo filtrado
+                            items(uiState.filteredContacts, key = { it.id }) { contact ->
+                                PlatformListRow(
+                                    onSwipeToDelete = { viewModel.onAction(ContactsUiAction.DeleteContact(contact.id)) }
+                                ) {
                                     ContactCard(
                                         contact = contact,
                                         openBalanceCents = uiState.openBalances[contact.id] ?: 0L,
                                         onClick = { onNavigateToDetail(contact.id) }
                                     )
                                 }
-                            }
-                        } else {
-                            // Exibição direta da lista do tipo filtrado
-                            items(uiState.filteredContacts, key = { it.id }) { contact ->
-                                ContactCard(
-                                    contact = contact,
-                                    openBalanceCents = uiState.openBalances[contact.id] ?: 0L,
-                                    onClick = { onNavigateToDetail(contact.id) }
-                                )
                             }
                         }
                     }
@@ -373,9 +381,9 @@ fun ContactTypeBadge(
     val icon = getContactTypeIcon(type)
     val label = getContactTypeLabel(type)
 
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.small,
-        color = containerColor,
+        containerColor = containerColor,
         modifier = modifier
     ) {
         Row(
@@ -458,18 +466,15 @@ fun FilterChipItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.small,
-        color = if (isSelected) {
+        containerColor = if (isSelected) {
             MaterialTheme.colorScheme.primary
         } else {
             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
         },
-        border = if (isSelected) null else BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-        ),
-        modifier = Modifier.clickable(onClick = onClick)
+        borderColor = if (isSelected) null else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+        onClick = onClick
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -531,16 +536,16 @@ fun ContactSectionHeader(
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.width(6.dp))
-        Surface(
-            shape = CircleShape,
-            color = contentColor.copy(alpha = 0.12f)
+        Box(
+            modifier = Modifier
+                .background(contentColor.copy(alpha = 0.12f), CircleShape)
+                .padding(horizontal = 6.dp, vertical = 1.dp)
         ) {
             Text(
                 text = count.toString(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = contentColor,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                color = contentColor
             )
         }
     }

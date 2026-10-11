@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Palette
@@ -32,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.settings.SettingsUiState
 import com.platform.app.presentation.theme.ThemePreviewColors
 
@@ -118,7 +118,7 @@ fun AppearanceBottomSheetContent(
                     onSetThemeMode(null)
                     onSetAmoledMode(false)
                 },
-                label = { Text("Auto", style = MaterialTheme.typography.bodySmall) },
+                label = { Text(AppStrings.Theme.AUTO, style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
@@ -127,7 +127,7 @@ fun AppearanceBottomSheetContent(
                     onSetThemeMode(false)
                     onSetAmoledMode(false)
                 },
-                label = { Text("Claro", style = MaterialTheme.typography.bodySmall) },
+                label = { Text(AppStrings.Theme.LIGHT, style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
@@ -136,7 +136,7 @@ fun AppearanceBottomSheetContent(
                     onSetThemeMode(true)
                     onSetAmoledMode(false)
                 },
-                label = { Text("Navy", style = MaterialTheme.typography.bodySmall) },
+                label = { Text(AppStrings.Theme.DARK, style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1f)
             )
             FilterChip(
@@ -145,7 +145,7 @@ fun AppearanceBottomSheetContent(
                     onSetThemeMode(true)
                     onSetAmoledMode(true)
                 },
-                label = { Text("AMOLED", style = MaterialTheme.typography.bodySmall) },
+                label = { Text(AppStrings.Theme.AMOLED, style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier.weight(1.1f)
             )
         }
@@ -311,7 +311,7 @@ fun ClassicIconPreview() {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(ThemePreviewColors.ClassicAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.ClassicAccent, PlatformShapes.barTop)
             )
             Box(
                 modifier = Modifier
@@ -352,7 +352,7 @@ fun ModernV2IconPreview() {
                 modifier = Modifier
                     .size(14.dp, 14.dp)
                     .align(Alignment.Top)
-                    .background(ThemePreviewColors.ModernV2Bar2, RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp))
+                    .background(ThemePreviewColors.ModernV2Bar2, PlatformShapes.barEnd)
             ) {
                 Box(
                     modifier = Modifier
@@ -386,7 +386,7 @@ fun EmeraldIconPreview() {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(ThemePreviewColors.EmeraldAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.EmeraldAccent, PlatformShapes.barTop)
             )
             Box(
                 modifier = Modifier
@@ -415,7 +415,7 @@ fun ObsidianIconPreview() {
             Box(
                 modifier = Modifier
                     .size(34.dp, 10.dp)
-                    .background(ThemePreviewColors.ObsidianAccent, RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))
+                    .background(ThemePreviewColors.ObsidianAccent, PlatformShapes.barTop)
             )
             Box(
                 modifier = Modifier

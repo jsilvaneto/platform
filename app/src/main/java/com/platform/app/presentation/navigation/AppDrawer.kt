@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.HorizontalDivider
@@ -33,7 +33,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -78,13 +77,8 @@ fun AppDrawer(
                 ),
                 DrawerItem(
                     screen = Screen.Bills,
-                    title = "Registros",
+                    title = "Contas",
                     icon = Icons.AutoMirrored.Filled.ReceiptLong
-                ),
-                DrawerItem(
-                    screen = Screen.RecurringInstallments,
-                    title = "Pagamentos Planejados",
-                    icon = Icons.Default.Repeat
                 ),
                 DrawerItem(
                     screen = Screen.CreditCards,
@@ -120,6 +114,11 @@ fun AppDrawer(
                     screen = Screen.Contacts,
                     title = "Contatos",
                     icon = Icons.Default.People
+                ),
+                DrawerItem(
+                    screen = Screen.Management,
+                    title = "Cadastros",
+                    icon = Icons.Default.Category
                 )
             )
         ),
@@ -160,19 +159,18 @@ fun AppDrawer(
                     .padding(horizontal = 14.dp, vertical = 12.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        modifier = Modifier.size(42.dp),
-                        shape = PlatformShapes.medium,
-                        color = MaterialTheme.colorScheme.primary
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(MaterialTheme.colorScheme.primary, PlatformShapes.medium),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "P",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
+                        Text(
+                            text = "P",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(12.dp))

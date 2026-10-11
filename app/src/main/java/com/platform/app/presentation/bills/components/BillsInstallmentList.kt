@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.calculateTotalCents
+import com.platform.app.presentation.components.PlatformListRow
 
 @Composable
 fun BillsInstallmentList(
@@ -92,7 +94,7 @@ fun BillsInstallmentList(
             val isCurrentMonth = monthLabel.equals(currentMonthLabel, ignoreCase = true)
 
             item(key = "header_$monthLabel") {
-                val monthTotal = remember(monthItems) { monthItems.sumOf { it.amountCents } }
+                val monthTotal = remember(monthItems) { monthItems.calculateTotalCents() }
                 BillsMonthSectionHeader(
                     monthLabel = monthLabel,
                     monthTotal = monthTotal,
@@ -107,15 +109,20 @@ fun BillsInstallmentList(
                 items(monthItems, key = { it.id }) { installment ->
                     val isSelected = installment.id in selectedInstallmentIds
 
-                    BillInstallmentItemCard(
-                        installment = installment,
-                        isSelectionMode = isSelectionMode,
-                        isSelected = isSelected,
-                        onToggleSelect = { onToggleSelect(installment.id) },
-                        onLongClick = { onLongClickSelect(installment.id) },
-                        onTogglePayment = { onTogglePayment(installment) },
-                        onSelectInstallment = { onSelectInstallment(installment) }
-                    )
+                    PlatformListRow(
+                        onSwipeToPay = if (!isSelectionMode) { { onTogglePayment(installment) } } else null,
+                        enabled = !isSelectionMode
+                    ) {
+                        BillInstallmentItemCard(
+                            installment = installment,
+                            isSelectionMode = isSelectionMode,
+                            isSelected = isSelected,
+                            onToggleSelect = { onToggleSelect(installment.id) },
+                            onLongClick = { onLongClickSelect(installment.id) },
+                            onTogglePayment = { onTogglePayment(installment) },
+                            onSelectInstallment = { onSelectInstallment(installment) }
+                        )
+                    }
                 }
             }
         }

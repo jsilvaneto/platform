@@ -87,6 +87,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.model.Category
+import com.platform.app.domain.model.calculateTotalCents
 import com.platform.app.presentation.components.PlatformAppBar
 import com.platform.app.presentation.components.PlatformEmptyState
 import com.platform.app.presentation.components.PlatformSegmentedTabs
@@ -430,7 +431,7 @@ fun BillsScreen(
                 val selectedTotalCents = remember(selectedInstallmentIds, uiState.installments) {
                     uiState.installments
                         .filter { it.id in selectedInstallmentIds }
-                        .sumOf { it.amountCents }
+                        .calculateTotalCents()
                 }
 
                 PlatformBatchActionBar(

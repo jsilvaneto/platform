@@ -43,6 +43,7 @@ import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformCreditCardView
 import com.platform.app.presentation.components.PlatformStatusChip
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.StatusChipType
 import com.platform.app.presentation.theme.BrandPrimaryDark
 import com.platform.app.presentation.theme.Dimens
@@ -65,7 +66,7 @@ fun CreditCardItemCard(
         (summary.usedLimitCents.toFloat() / card.totalLimitCents.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.large,
         color = cardColor,
         modifier = Modifier

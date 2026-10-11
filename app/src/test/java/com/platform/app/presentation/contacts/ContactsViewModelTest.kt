@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.platform.app.domain.model.Contact
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.usecase.GetContactDetailsUseCase
+import com.platform.app.domain.usecase.GetOpenAmountByContactUseCase
 import com.platform.app.domain.usecase.LookupAddressByCepUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import io.mockk.coVerify
@@ -30,6 +31,7 @@ class ContactsViewModelTest {
     private lateinit var getContactDetailsUseCase: GetContactDetailsUseCase
     private lateinit var togglePaymentUseCase: ToggleInstallmentPaymentUseCase
     private lateinit var lookupAddressByCepUseCase: LookupAddressByCepUseCase
+    private lateinit var getOpenAmountByContactUseCase: GetOpenAmountByContactUseCase
     private lateinit var viewModel: ContactsViewModel
 
     @Before
@@ -39,9 +41,11 @@ class ContactsViewModelTest {
         getContactDetailsUseCase = mockk(relaxed = true)
         togglePaymentUseCase = mockk(relaxed = true)
         lookupAddressByCepUseCase = mockk(relaxed = true)
+        getOpenAmountByContactUseCase = GetOpenAmountByContactUseCase(repository)
 
         every { repository.getContacts() } returns flowOf(emptyList())
         every { repository.getAllInstallments() } returns flowOf(emptyList())
+        every { repository.getOpenAmountByContact() } returns flowOf(emptyMap())
     }
 
     @After
@@ -60,7 +64,7 @@ class ContactsViewModelTest {
             state = "PB"
         )
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase, getOpenAmountByContactUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.uiEffect.test {
@@ -80,7 +84,7 @@ class ContactsViewModelTest {
 
     @Test
     fun `DeleteContact should invoke repository deleteContact`() = runTest {
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase, getOpenAmountByContactUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(ContactsUiAction.DeleteContact("c1"))
@@ -95,7 +99,7 @@ class ContactsViewModelTest {
         val c2 = Contact(id = "2", name = "Maria Santos", city = "Fortaleza")
         every { repository.getContacts() } returns flowOf(listOf(c1, c2))
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase, getOpenAmountByContactUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onAction(ContactsUiAction.SearchQueryChanged("Maria"))
@@ -112,7 +116,7 @@ class ContactsViewModelTest {
         val c3 = Contact(id = "3", name = "Prefeitura de Curitiba", type = com.platform.app.domain.model.ContactType.ORGAO_PUBLICO)
         every { repository.getContacts() } returns flowOf(listOf(c1, c2, c3))
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase, getOpenAmountByContactUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Filtro por PESSOA_FISICA
@@ -147,7 +151,7 @@ class ContactsViewModelTest {
         val c3 = Contact(id = "3", name = "Supermercado Central", type = com.platform.app.domain.model.ContactType.FORNECEDOR)
         every { repository.getContacts() } returns flowOf(listOf(c1, c2, c3))
 
-        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase)
+        viewModel = ContactsViewModel(repository, getContactDetailsUseCase, togglePaymentUseCase, lookupAddressByCepUseCase, getOpenAmountByContactUseCase)
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Busca por 'Maria' com filtro FORNECEDOR -> deve retornar apenas 'Dona Maria Restaurante'

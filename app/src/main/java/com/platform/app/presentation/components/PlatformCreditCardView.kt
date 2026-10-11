@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -92,7 +92,7 @@ fun PlatformCreditCardView(
         BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     }
 
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.large,
         border = selectionBorder,
         modifier = modifier
@@ -132,7 +132,7 @@ fun PlatformCreditCardView(
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
+                        PlatformSurface(
                             shape = CircleShape,
                             color = CardSkinColors.ActionOverlay,
                             modifier = Modifier.size(28.dp)
@@ -149,7 +149,7 @@ fun PlatformCreditCardView(
 
                         Spacer(modifier = Modifier.width(6.dp))
 
-                        Surface(
+                        PlatformSurface(
                             shape = CircleShape,
                             color = CardSkinColors.ActionOverlay,
                             modifier = Modifier.size(28.dp)
@@ -192,7 +192,7 @@ fun PlatformCreditCardView(
                     // Termômetro de Limite Inteligente com PlatformProgressBar
                     PlatformProgressBar(
                         progress = usageRatio,
-                        height = 5.dp,
+                        height = 8.dp,
                         trackColor = CardSkinColors.TrackBackground,
                         progressColor = limitGaugeColor
                     )
@@ -206,14 +206,14 @@ fun PlatformCreditCardView(
                 ) {
                     Column {
                         Text(
-                            text = "Limite: ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = CardSkinColors.TextMuted
-                        )
-                        Text(
-                            text = "Usado: ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} (${(usageRatio * 100).toInt()}%)",
+                            text = "Usado ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} de ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
+                            color = CardSkinColors.TextPrimary
+                        )
+                        Text(
+                            text = "Disponível: ${CurrencyUtils.formatCentsToCurrency(summary.availableLimitCents)}",
+                            style = MaterialTheme.typography.labelSmall,
                             color = limitGaugeColor
                         )
                     }

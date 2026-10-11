@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.common.AppStrings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,66 +47,37 @@ import com.platform.app.presentation.management.components.CategoriesTab
 import com.platform.app.presentation.management.components.CategoryDetailBottomSheet
 import com.platform.app.presentation.management.components.PaymentMethodDetailBottomSheet
 import com.platform.app.presentation.management.components.PaymentMethodsTab
+import com.platform.app.presentation.expenseitems.ExpenseItemsScreen
+import com.platform.app.presentation.expenseitems.ExpenseItemsViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 
 enum class ManagementSection {
     ACCOUNTS,
     PAYMENT_METHODS,
-    CATEGORIES
-}
-
-@Composable
-fun AccountsScreen(
-    viewModel: ManagementViewModel,
-    onNavigateBack: () -> Unit
-) {
-    ManagementScreen(
-        viewModel = viewModel,
-        forcedSection = ManagementSection.ACCOUNTS,
-        onNavigateBack = onNavigateBack
-    )
-}
-
-@Composable
-fun PaymentMethodsScreen(
-    viewModel: ManagementViewModel,
-    onNavigateBack: () -> Unit
-) {
-    ManagementScreen(
-        viewModel = viewModel,
-        forcedSection = ManagementSection.PAYMENT_METHODS,
-        onNavigateBack = onNavigateBack
-    )
-}
-
-@Composable
-fun CategoriesScreen(
-    viewModel: ManagementViewModel,
-    onNavigateBack: () -> Unit
-) {
-    ManagementScreen(
-        viewModel = viewModel,
-        forcedSection = ManagementSection.CATEGORIES,
-        onNavigateBack = onNavigateBack
-    )
+    CATEGORIES,
+    EXPENSE_ITEMS
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManagementScreen(
     viewModel: ManagementViewModel,
+    expenseItemsViewModel: ExpenseItemsViewModel = hiltViewModel(),
     initialTab: Int = 0,
     forcedSection: ManagementSection? = null,
     onOpenDrawer: () -> Unit = {},
     onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val itemsUiState by expenseItemsViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val activeSection = forcedSection ?: when (uiState.selectedTab) {
         0 -> ManagementSection.ACCOUNTS
         1 -> ManagementSection.PAYMENT_METHODS
         2 -> ManagementSection.CATEGORIES
+        3 -> ManagementSection.EXPENSE_ITEMS
         else -> ManagementSection.ACCOUNTS
     }
 
@@ -114,7 +86,8 @@ fun ManagementScreen(
             ManagementSection.ACCOUNTS -> 0
             ManagementSection.PAYMENT_METHODS -> 1
             ManagementSection.CATEGORIES -> 2
-            null -> initialTab.coerceIn(0, 2)
+            ManagementSection.EXPENSE_ITEMS -> 3
+            null -> initialTab.coerceIn(0, 3)
         }
         viewModel.onAction(ManagementUiAction.SelectTab(targetTab))
     }
@@ -154,12 +127,14 @@ fun ManagementScreen(
         ManagementSection.ACCOUNTS -> "Contas"
         ManagementSection.PAYMENT_METHODS -> "Formas de Pagamento"
         ManagementSection.CATEGORIES -> "Categorias"
+        ManagementSection.EXPENSE_ITEMS -> "Itens de Despesa"
     }
 
     val fabDescription = when (activeSection) {
         ManagementSection.ACCOUNTS -> "Nova Conta"
         ManagementSection.PAYMENT_METHODS -> "Nova Forma de Pagamento"
         ManagementSection.CATEGORIES -> "Nova Categoria"
+        ManagementSection.EXPENSE_ITEMS -> "Novo Item"
     }
 
     Scaffold(
@@ -172,19 +147,22 @@ fun ManagementScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    when (activeSection) {
-                        ManagementSection.ACCOUNTS -> isNewAccountDialog = true
-                        ManagementSection.PAYMENT_METHODS -> isNewMethodDialog = true
-                        ManagementSection.CATEGORIES -> isNewCategoryDialog = true
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription)
+            if (activeSection != ManagementSection.EXPENSE_ITEMS) {
+                FloatingActionButton(
+                    onClick = {
+                        when (activeSection) {
+                            ManagementSection.ACCOUNTS -> isNewAccountDialog = true
+                            ManagementSection.PAYMENT_METHODS -> isNewMethodDialog = true
+                            ManagementSection.CATEGORIES -> isNewCategoryDialog = true
+                            ManagementSection.EXPENSE_ITEMS -> {}
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    shape = CircleShape
+                ) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = fabDescription)
+                }
             }
         }
     ) { padding ->
@@ -202,22 +180,27 @@ fun ManagementScreen(
                     Tab(
                         selected = uiState.selectedTab == 0,
                         onClick = { viewModel.onAction(ManagementUiAction.SelectTab(0)) },
-                        text = { Text("Contas") }
+                        text = { Text(AppStrings.Management.ACCOUNTS) }
                     )
                     Tab(
                         selected = uiState.selectedTab == 1,
                         onClick = { viewModel.onAction(ManagementUiAction.SelectTab(1)) },
-                        text = { Text("Pagamentos") }
+                        text = { Text(AppStrings.Management.PAYMENT_METHODS) }
                     )
                     Tab(
                         selected = uiState.selectedTab == 2,
                         onClick = { viewModel.onAction(ManagementUiAction.SelectTab(2)) },
-                        text = { Text("Categorias") }
+                        text = { Text(AppStrings.Management.CATEGORIES) }
+                    )
+                    Tab(
+                        selected = uiState.selectedTab == 3,
+                        onClick = { viewModel.onAction(ManagementUiAction.SelectTab(3)) },
+                        text = { Text(AppStrings.Management.EXPENSE_ITEMS) }
                     )
                 }
             }
 
-            if (uiState.isLoading) {
+            if (uiState.isLoading && activeSection != ManagementSection.EXPENSE_ITEMS) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
@@ -234,6 +217,12 @@ fun ManagementScreen(
                     ManagementSection.CATEGORIES -> CategoriesTab(
                         categories = uiState.categories,
                         onSelectCategory = { categoryToViewDetails = it }
+                    )
+                    ManagementSection.EXPENSE_ITEMS -> ExpenseItemsScreen(
+                        uiState = itemsUiState,
+                        onAction = expenseItemsViewModel::onAction,
+                        onNavigateBack = { onNavigateBack?.invoke() },
+                        showTopBar = false
                     )
                 }
             }

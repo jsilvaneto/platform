@@ -35,7 +35,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.withTabularNumbers
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -118,7 +119,7 @@ fun PayableItemCard(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (item.isPaid) {
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.extraSmall,
                                 color = SuccessGreen.copy(alpha = 0.12f),
                                 border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))
@@ -163,7 +164,7 @@ fun PayableItemCard(
 
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.extraSmall,
                             color = item.nature.let {
                                 try { Color(it.colorHex.toColorInt()).copy(alpha = 0.15f) }
@@ -189,7 +190,7 @@ fun PayableItemCard(
             ) {
                 Text(
                     text = formatValueOrPrivate(item.amountCents, isPrivate),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.withTabularNumbers(),
                     fontWeight = FontWeight.Bold,
                     color = if (item.isPaid) SuccessGreen else MaterialTheme.colorScheme.onSurface
                 )
@@ -220,7 +221,7 @@ fun PayableItemCard(
                         )
                     }
                 } else if (item.isPaid) {
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.extraSmall,
                         color = SuccessGreen.copy(alpha = 0.12f)
                     ) {

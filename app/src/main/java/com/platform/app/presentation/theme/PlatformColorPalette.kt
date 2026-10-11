@@ -17,12 +17,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -173,10 +171,11 @@ fun PlatformColorPicker(
                     contentAlignment = Alignment.Center
                 ) {
                     if (isSelected) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f),
-                            modifier = Modifier.size(18.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.4f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Check,

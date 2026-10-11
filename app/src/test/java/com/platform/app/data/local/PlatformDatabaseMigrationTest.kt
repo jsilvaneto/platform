@@ -77,4 +77,23 @@ class PlatformDatabaseMigrationTest {
             db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_bill_installments_billId_installmentNumber ON bill_installments(billId, installmentNumber)")
         }
     }
+
+    @Test
+    fun `migration 17 to 18 should create payments and sync tables and backfill paid installments`() {
+        val db = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(17, PlatformDatabase.MIGRATION_17_18.startVersion)
+        assertEquals(18, PlatformDatabase.MIGRATION_17_18.endVersion)
+
+        PlatformDatabase.MIGRATION_17_18.migrate(db)
+
+        verify(atLeast = 1) {
+            db.execSQL(match { it.contains("CREATE TABLE IF NOT EXISTS `payments`") })
+            db.execSQL(match { it.contains("CREATE TABLE IF NOT EXISTS `sync_outbox`") })
+            db.execSQL(match { it.contains("CREATE TABLE IF NOT EXISTS `sync_state`") })
+            db.execSQL("ALTER TABLE `bills` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+            db.execSQL("ALTER TABLE `bill_installments` ADD COLUMN `deletedAt` INTEGER DEFAULT NULL")
+            db.execSQL(match { it.contains("INSERT INTO `payments`") && it.contains("bill_installments") })
+        }
+    }
 }

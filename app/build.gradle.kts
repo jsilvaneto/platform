@@ -347,7 +347,49 @@ tasks.register("checkRawShapes") {
     }
 }
 
-tasks.named("preBuild") {
-    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes")
+tasks.register("checkRawSurfaces") {
+    group = "verification"
+    description = "Checks that no raw Surface( are used in presentation outside components/ and theme/"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val rawSurfacePattern = Regex("""(?<!Platform)\bSurface\s*\(""")
+
+        val violations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+            if (file.isFile && file.extension == "kt" && 
+                !relativePath.contains("/components/") && 
+                !relativePath.contains("/theme/")) {
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        val trimmed = line.trim()
+                        if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
+                            if (rawSurfacePattern.containsMatchIn(line)) {
+                                violations.add("$relativePath:${index + 1}: $trimmed")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontrado(s) ${violations.size} uso(s) de Surface(...) cru fora de presentation/components/:")
+                violations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra de Design System (coding_standards.md / Prompt 28):")
+                appendLine("Surface(...) cru é proibido fora de components/. Utilize PlatformSurface(...) ou PlatformCard(...).")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkRawSurfaces: Todas as telas utilizam PlatformSurface/PlatformCard padronizados (0 Surface crus fora de components/).")
+        }
+    }
 }
+
+tasks.named("preBuild") {
+    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes", "checkRawSurfaces")
+}
+
 

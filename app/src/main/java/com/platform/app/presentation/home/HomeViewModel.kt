@@ -9,6 +9,8 @@ import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.InvoiceStatus
 import com.platform.app.domain.model.PayableItem
 import com.platform.app.domain.model.PayableUrgency
+import com.platform.app.domain.model.calculateTotalCents
+import com.platform.app.domain.model.calculateTotalPayableCents
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillType
@@ -274,7 +276,7 @@ class HomeViewModel @Inject constructor(
                 }
 
             val globalOverdue = (overdueBills + overdueInvoices).sortedBy { it.dueDate }
-            val globalOverdueTotal = globalOverdue.sumOf { it.amountCents }
+            val globalOverdueTotal = globalOverdue.calculateTotalPayableCents()
 
             // 2. Next 30 Days Items (All pending in startOfToday..thirtyDaysAhead)
             val next30Bills = allInstallments
@@ -306,7 +308,7 @@ class HomeViewModel @Inject constructor(
                 }
 
             val next30Items = (next30Bills + next30Invoices).sortedBy { it.dueDate }
-            val next30Total = next30Items.sumOf { it.amountCents }
+            val next30Total = next30Items.calculateTotalPayableCents()
 
             // 3. Calendar Days for Selected Month
             val calendarDays = buildCalendarDays(
@@ -424,7 +426,7 @@ class HomeViewModel @Inject constructor(
                     dayInsts.all { it.isPaid } &&
                     dayInvs.all { it.status == InvoiceStatus.PAGA }
 
-            val totalAmount = dayInsts.sumOf { it.amountCents } + dayInvs.sumOf { it.totalAmountCents }
+            val totalAmount = dayInsts.calculateTotalCents() + dayInvs.sumOf { it.totalAmountCents }
 
             result.add(
                 CalendarDayItem(

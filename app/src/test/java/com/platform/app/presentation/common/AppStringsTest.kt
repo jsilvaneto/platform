@@ -97,4 +97,28 @@ class AppStringsTest {
         assertEquals("Excluir Contato", AppStrings.Dialogs.DELETE_CONTACT_TITLE)
         assertEquals("Atenção", AppStrings.Dialogs.WARNING)
     }
+
+    @Test
+    fun `management tabs and bills tabs are well defined`() {
+        assertEquals("Contas", AppStrings.Management.ACCOUNTS)
+        assertEquals("Formas", AppStrings.Management.PAYMENT_METHODS)
+        assertEquals("Categorias", AppStrings.Management.CATEGORIES)
+        assertEquals("Itens", AppStrings.Management.EXPENSE_ITEMS)
+
+        assertEquals("Todas", AppStrings.Bills.ALL)
+        assertEquals("Recorrentes", AppStrings.Bills.RECURRING)
+        assertEquals("Parceladas", AppStrings.Bills.INSTALLMENTS)
+    }
+
+    @Test
+    fun `theme and credit card strings match design system tokens`() {
+        assertEquals("Automático", AppStrings.Theme.AUTO)
+        assertEquals("Claro", AppStrings.Theme.LIGHT)
+        assertEquals("Escuro", AppStrings.Theme.DARK)
+        assertEquals("AMOLED", AppStrings.Theme.AMOLED)
+
+        assertEquals("Posso comprar?", AppStrings.CreditCards.CAN_I_BUY_TITLE)
+        assertEquals("Valor da compra pretendida", AppStrings.CreditCards.CAN_I_BUY_LABEL)
+        assertEquals("Cabe no seu limite!", AppStrings.CreditCards.FITS_LIMIT)
+    }
 }

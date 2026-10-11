@@ -7,6 +7,11 @@ import com.platform.app.presentation.creditcards.components.InvoiceItemCard
 
 import com.platform.app.presentation.creditcards.components.CardFormBottomSheet
 import com.platform.app.presentation.creditcards.components.InvoiceDetailsBottomSheet
+import com.platform.app.presentation.creditcards.components.CanIBuyDialog
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.CheckCircle
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -104,14 +109,82 @@ fun CreditCardsScreen(
     onNavigateToNewExpense: () -> Unit = {}
 ) {
     var showAddCardSheet by remember { mutableStateOf(false) }
+    var showCanIBuyDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             PlatformAppBar(
                 title = AppStrings.Navigation.CREDIT_CARDS,
                 subtitle = "Limites e Faturas",
-                onOpenDrawer = null
+                onOpenDrawer = onOpenDrawer
             )
+        },
+        bottomBar = {
+            val selectedCardSummary = uiState.selectedCardSummary
+            val currentInvoice = uiState.currentInvoice
+            if (selectedCardSummary != null) {
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Flat,
+                    modifier = Modifier.fillMaxWidth(),
+                    tonalElevation = 3.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Dimens.spacingNormal, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { showCanIBuyDialog = true },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = PlatformShapes.medium
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Posso comprar?",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Button(
+                            onClick = {
+                                if (currentInvoice != null && currentInvoice.status != InvoiceStatus.PAGA) {
+                                    onAction(CreditCardsUiAction.PayInvoice(currentInvoice.id))
+                                }
+                            },
+                            enabled = currentInvoice != null && currentInvoice.status != InvoiceStatus.PAGA,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(44.dp),
+                            shape = PlatformShapes.medium,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Pagar fatura",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -452,6 +525,16 @@ fun CreditCardsScreen(
                 onPay = {
                     onAction(CreditCardsUiAction.PayInvoice(uiState.selectedInvoiceForDetails.id))
                 }
+            )
+        }
+
+        // DIÁLOGO SIMULADOR: POSSO COMPRAR?
+        if (showCanIBuyDialog && uiState.selectedCardSummary != null) {
+            val summary = uiState.selectedCardSummary!!
+            CanIBuyDialog(
+                card = summary.card,
+                availableLimitCents = summary.availableLimitCents,
+                onDismiss = { showCanIBuyDialog = false }
             )
         }
     }

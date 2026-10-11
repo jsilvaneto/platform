@@ -37,19 +37,21 @@ fun PlatformSurface(
     variant: PlatformSurfaceVariant = PlatformSurfaceVariant.Flat,
     shape: Shape = PlatformShapes.medium,
     containerColor: Color? = null,
+    color: Color? = null,
     borderColor: Color? = null,
+    border: BorderStroke? = null,
     onClick: (() -> Unit)? = null,
     contentColor: Color? = null,
     tonalElevation: Dp = 0.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val resolvedContainerColor = containerColor ?: when (variant) {
+    val resolvedContainerColor = color ?: containerColor ?: when (variant) {
         PlatformSurfaceVariant.Flat -> MaterialTheme.colorScheme.surface
         PlatformSurfaceVariant.Tonal -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
         PlatformSurfaceVariant.Outlined -> MaterialTheme.colorScheme.surface
     }
 
-    val resolvedBorder = when {
+    val resolvedBorder = border ?: when {
         borderColor != null -> BorderStroke(1.dp, borderColor)
         variant == PlatformSurfaceVariant.Outlined -> BorderStroke(
             1.dp,

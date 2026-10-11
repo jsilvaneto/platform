@@ -25,7 +25,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,6 +36,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.PayableItem
+import com.platform.app.domain.model.calculateTotalCents
+import com.platform.app.domain.model.calculateTotalPayableCents
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.formatValueOrPrivate
 import com.platform.app.presentation.home.CalendarDayItem
@@ -90,7 +92,7 @@ fun LazyListScope.renderCalendarView(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.extraSmall,
                                 color = WarningAmber.copy(alpha = 0.15f)
                             ) {
@@ -224,7 +226,7 @@ fun LazyListScope.renderCalendarView(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = formatValueOrPrivate(uiState.daySelectedItems.sumOf { it.amountCents }, isPrivate),
+                    text = formatValueOrPrivate(uiState.daySelectedItems.calculateTotalPayableCents(), isPrivate),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -234,7 +236,7 @@ fun LazyListScope.renderCalendarView(
 
         if (uiState.daySelectedItems.isEmpty()) {
             item {
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.medium,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                     modifier = Modifier.fillMaxWidth()
@@ -310,7 +312,7 @@ fun LazyListScope.renderCalendarView(
                         title = "Mais Adiante no Mês",
                         count = forecast.laterInMonthItems.size,
                         badgeColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        totalCents = forecast.laterInMonthItems.sumOf { it.amountCents },
+                        totalCents = forecast.laterInMonthItems.calculateTotalPayableCents(),
                         isPrivate = isPrivate
                     )
                 }
@@ -365,7 +367,7 @@ fun ActiveDayCard(
             DateUtils.getMonth(dayItem.dateMillis) == cal.get(Calendar.MONTH) &&
             DateUtils.getYear(dayItem.dateMillis) == cal.get(Calendar.YEAR)
 
-    Surface(
+    PlatformSurface(
         onClick = onClick,
         shape = PlatformShapes.medium,
         color = when {
@@ -431,7 +433,7 @@ fun CalendarDayCard(
             DateUtils.getMonth(dayItem.dateMillis) == cal.get(Calendar.MONTH) &&
             DateUtils.getYear(dayItem.dateMillis) == cal.get(Calendar.YEAR)
 
-    Surface(
+    PlatformSurface(
         onClick = onClick,
         shape = PlatformShapes.medium,
         color = when {

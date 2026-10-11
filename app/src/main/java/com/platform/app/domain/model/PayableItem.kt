@@ -52,3 +52,11 @@ sealed class PayableItem {
         override val nature: ExpenseNature get() = ExpenseNature.NECESSARIO
     }
 }
+
+fun Iterable<PayableItem>.calculateTotalPayableCents(): Long {
+    var sum = 0L
+    for (item in this) {
+        sum += item.amountCents
+    }
+    return sum
+}

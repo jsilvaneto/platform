@@ -36,14 +36,9 @@ import com.platform.app.presentation.goals.GoalsScreen
 import com.platform.app.presentation.goals.GoalsViewModel
 import com.platform.app.presentation.home.HomeScreen
 import com.platform.app.presentation.home.HomeViewModel
-import com.platform.app.presentation.management.AccountsScreen
-import com.platform.app.presentation.management.CategoriesScreen
 import com.platform.app.presentation.management.ManagementScreen
 import com.platform.app.presentation.management.ManagementViewModel
-import com.platform.app.presentation.management.PaymentMethodsScreen
-import com.platform.app.presentation.recurring.RecurringInstallmentsScreen
 import com.platform.app.presentation.more.MoreScreen
-import com.platform.app.presentation.recurring.RecurringInstallmentsViewModel
 import com.platform.app.presentation.settings.SettingsScreen
 import com.platform.app.presentation.settings.SettingsViewModel
 import com.platform.app.presentation.statistics.StatisticsScreen
@@ -112,7 +107,7 @@ fun NavGraph(
             NewExpenseScreen(
                 viewModel = viewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToExpenseItems = { navController.navigate(Screen.ExpenseItems.route) }
+                onNavigateToExpenseItems = { navController.navigate(Screen.Management.createRoute(tab = 3)) }
             )
         }
 
@@ -141,16 +136,6 @@ fun NavGraph(
             )
         }
 
-        composable(route = Screen.RecurringInstallments.route) {
-            val viewModel: RecurringInstallmentsViewModel = hiltViewModel()
-
-            RecurringInstallmentsScreen(
-                viewModel = viewModel,
-                onOpenDrawer = onOpenDrawer,
-                onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
-            )
-        }
-
         composable(route = Screen.CreditCards.route) {
             val viewModel: CreditCardsViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsState()
@@ -159,17 +144,6 @@ fun NavGraph(
                 uiState = uiState,
                 onAction = viewModel::onAction,
                 onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.route) }
-            )
-        }
-
-        composable(route = Screen.ExpenseItems.route) {
-            val viewModel: ExpenseItemsViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsState()
-
-            ExpenseItemsScreen(
-                uiState = uiState,
-                onAction = viewModel::onAction,
-                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -219,30 +193,6 @@ fun NavGraph(
             )
         }
 
-        composable(route = Screen.Accounts.route) {
-            val viewModel: ManagementViewModel = hiltViewModel()
-            AccountsScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(route = Screen.PaymentMethods.route) {
-            val viewModel: ManagementViewModel = hiltViewModel()
-            PaymentMethodsScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(route = Screen.Categories.route) {
-            val viewModel: ManagementViewModel = hiltViewModel()
-            CategoriesScreen(
-                viewModel = viewModel,
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
         composable(
             route = Screen.Management.route,
             arguments = listOf(
@@ -269,31 +219,14 @@ fun NavGraph(
             SettingsScreen(
                 viewModel = viewModel,
                 biometricAuthManager = biometricAuthManager,
-                onOpenDrawer = onOpenDrawer,
-                onNavigateToAccounts = {
-                    navController.navigate(Screen.Accounts.route)
-                },
-                onNavigateToPaymentMethods = {
-                    navController.navigate(Screen.PaymentMethods.route)
-                },
-                onNavigateToCategories = {
-                    navController.navigate(Screen.Categories.route)
-                },
-                onNavigateToExpenseItems = {
-                    navController.navigate(Screen.ExpenseItems.route)
-                }
+                onOpenDrawer = onOpenDrawer
             )
         }
 
         composable(route = Screen.More.route) {
             MoreScreen(
                 onNavigateToContacts = { navController.navigate(Screen.Contacts.route) },
-                onNavigateToAccounts = { navController.navigate(Screen.Accounts.route) },
-                onNavigateToPaymentMethods = { navController.navigate(Screen.PaymentMethods.route) },
-                onNavigateToCategories = { navController.navigate(Screen.Categories.route) },
-                onNavigateToExpenseItems = { navController.navigate(Screen.ExpenseItems.route) },
-                onNavigateToBudgets = { navController.navigate(Screen.Budgets.route) },
-                onNavigateToGoals = { navController.navigate(Screen.Goals.route) },
+                onNavigateToManagement = { navController.navigate(Screen.Management.createRoute()) },
                 onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
             )
         }

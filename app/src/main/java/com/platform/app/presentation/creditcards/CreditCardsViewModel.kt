@@ -140,19 +140,12 @@ class CreditCardsViewModel @Inject constructor(
 
         combine(
             getCreditCardSummariesUseCase(),
-            repository.getAllCreditCardInvoices(),
-            repository.getAllInstallments()
-        ) { summaries, allInvoices, installments ->
+            repository.getAllCreditCardInvoices()
+        ) { summaries, allInvoices ->
             val currentSelected = _uiState.value.selectedCardId ?: summaries.firstOrNull()?.card?.id
             val cardInvoices = if (currentSelected != null) {
                 allInvoices.filter { it.creditCardId == currentSelected }
                     .sortedByDescending { it.referenceMonth }
-                    .map { invoice ->
-                        val invTotal = installments
-                            .filter { it.invoiceId == invoice.id }
-                            .sumOf { it.amountCents }
-                        invoice.copy(totalAmountCents = invTotal)
-                    }
             } else emptyList()
 
             val selectedSummary = summaries.find { it.card.id == currentSelected }

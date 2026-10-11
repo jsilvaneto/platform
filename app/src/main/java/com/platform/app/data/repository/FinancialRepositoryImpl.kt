@@ -9,6 +9,7 @@ import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.MonthSummary
 import com.platform.app.domain.model.PaymentMethod
 import com.platform.app.domain.repository.FinancialRepository
 import kotlinx.coroutines.flow.Flow
@@ -168,6 +169,12 @@ class FinancialRepositoryImpl @Inject constructor(
 
     override suspend fun postponeInstallmentDueDate(installmentId: String, days: Int) =
         billDataSource.postponeInstallmentDueDate(installmentId, days)
+
+    override fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary> =
+        billDataSource.getMonthSummary(startMillis, endMillis, nowMillis)
+
+    override fun getOpenAmountByContact(): Flow<Map<String, Long>> =
+        billDataSource.getOpenAmountByContact()
 
     override suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>) =
         billDataSource.saveBillWithInstallments(bill, installments)

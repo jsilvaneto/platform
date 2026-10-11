@@ -8,6 +8,7 @@ import com.platform.app.data.local.entity.BillEntity
 import com.platform.app.data.local.entity.BillInstallmentEntity
 import com.platform.app.domain.model.Bill
 import com.platform.app.domain.model.BillInstallment
+import com.platform.app.domain.model.MonthSummary
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -261,5 +262,15 @@ class BillDataSource @Inject constructor(
 
     suspend fun deleteBill(billId: String) {
         billDao.deleteById(billId)
+    }
+
+    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary> {
+        return installmentDao.getMonthSummary(startMillis, endMillis, nowMillis).map { it.toDomain() }
+    }
+
+    fun getOpenAmountByContact(): Flow<Map<String, Long>> {
+        return installmentDao.getOpenAmountByContact().map { list ->
+            list.associate { it.contactId to it.totalOpenCents }
+        }
     }
 }

@@ -44,7 +44,8 @@ data class BillInstallmentEntity(
     val contactId: String? = null,
     val financialAccountId: String? = null,
     val paymentMethodId: String? = null,
-    val actualPaymentDate: Long? = null
+    val actualPaymentDate: Long? = null,
+    val deletedAt: Long? = null
 ) {
     fun toDomain(
         billTitle: String,
@@ -92,7 +93,8 @@ data class BillInstallmentEntity(
             },
             type = billType,
             createdAt = billCreatedAt ?: dueDate,
-            creditCardId = billCreditCardId
+            creditCardId = billCreditCardId,
+            deletedAt = deletedAt
         )
     }
 
@@ -112,7 +114,8 @@ data class BillInstallmentEntity(
                 contactId = installment.contactId,
                 financialAccountId = installment.financialAccountId,
                 paymentMethodId = installment.paymentMethodId,
-                actualPaymentDate = installment.actualPaymentDate
+                actualPaymentDate = installment.actualPaymentDate,
+                deletedAt = installment.deletedAt
             )
         }
     }

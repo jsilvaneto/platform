@@ -7,6 +7,7 @@ import com.platform.app.domain.model.ContactType
 import com.platform.app.domain.repository.FinancialRepository
 import com.platform.app.domain.repository.AddressInfo
 import com.platform.app.domain.usecase.GetContactDetailsUseCase
+import com.platform.app.domain.usecase.GetOpenAmountByContactUseCase
 import com.platform.app.domain.usecase.LookupAddressByCepUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,8 @@ class ContactsViewModel @Inject constructor(
     private val repository: FinancialRepository,
     private val getContactDetailsUseCase: GetContactDetailsUseCase,
     private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
-    private val lookupAddressByCepUseCase: LookupAddressByCepUseCase
+    private val lookupAddressByCepUseCase: LookupAddressByCepUseCase,
+    private val getOpenAmountByContactUseCase: GetOpenAmountByContactUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactsUiState())
@@ -61,11 +63,8 @@ class ContactsViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true) }
         combine(
             repository.getContacts(),
-            repository.getAllInstallments()
-        ) { contacts, installments ->
-            val balances = installments.filter { !it.isPaid && it.contactId != null }
-                .groupBy { it.contactId!! }
-                .mapValues { entry -> entry.value.sumOf { it.amountCents } }
+            getOpenAmountByContactUseCase()
+        ) { contacts, balances ->
 
             _uiState.update { current ->
                 val filtered = applyFilters(contacts, current.searchQuery, current.selectedTypeFilter)

@@ -1,6 +1,7 @@
 package com.platform.app.presentation.expenseitems
 
 import com.platform.app.presentation.theme.PlatformShapes
+import com.platform.app.presentation.components.PlatformListRow
 
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.expenseitems.components.ExpenseItemDetailBottomSheet
@@ -63,7 +64,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
+import com.platform.app.presentation.components.PlatformSurfaceVariant
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -95,7 +97,8 @@ fun ExpenseItemsScreen(
     uiState: ExpenseItemsUiState,
     onAction: (ExpenseItemsUiAction) -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     var isSearchExpanded by remember { mutableStateOf(false) }
     var showAddOrEditSheet by remember { mutableStateOf(false) }
@@ -106,7 +109,8 @@ fun ExpenseItemsScreen(
 
     Scaffold(
         topBar = {
-            PlatformSearchTopBar(
+            if (showTopBar) {
+                PlatformSearchTopBar(
                 title = AppStrings.Glossary.ITEMS,
                 searchQuery = uiState.searchQuery,
                 isSearchActive = isSearchExpanded,
@@ -115,7 +119,8 @@ fun ExpenseItemsScreen(
                 placeholder = "Buscar item...",
                 onNavigateBack = onNavigateBack
             )
-        },
+        }
+    },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -216,7 +221,7 @@ fun ExpenseItemsScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall),
+                    contentPadding = PaddingValues(start = Dimens.spacingNormal, end = Dimens.spacingNormal, top = Dimens.spacingSmall, bottom = 88.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     groupedItemsByCategory.forEach { (cat, catItems) ->
@@ -227,15 +232,16 @@ fun ExpenseItemsScreen(
                             )
                         }
                         items(catItems, key = { it.id }) { item ->
-                            HierarchicalExpenseItemRow(
-                                item = item,
-                                categoryNature = cat.nature,
-                                onClick = { itemToViewDetails = item }
-                            )
+                            PlatformListRow(
+                                onSwipeToDelete = { onAction(ExpenseItemsUiAction.DeleteItem(item.id)) }
+                            ) {
+                                HierarchicalExpenseItemRow(
+                                    item = item,
+                                    categoryNature = cat.nature,
+                                    onClick = { itemToViewDetails = item }
+                                )
+                            }
                         }
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
@@ -367,9 +373,9 @@ fun CategorySectionHeader(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
-        Surface(
-            shape = PlatformShapes.medium,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        PlatformSurface(
+            variant = PlatformSurfaceVariant.Tonal,
+            shape = PlatformShapes.medium
         ) {
             Text(
                 text = "$itemsCount ${if (itemsCount == 1) "item" else "itens"}",
@@ -421,9 +427,9 @@ fun HierarchicalExpenseItemRow(
             // Oculta chip de natureza quando igual à categoria; quando diferente, exibe indicador tonal neutro (Prompt 29)
             if (categoryNature != null && item.nature != categoryNature) {
                 Spacer(modifier = Modifier.width(Dimens.spacingSmall))
-                Surface(
-                    shape = PlatformShapes.small,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                PlatformSurface(
+                    variant = PlatformSurfaceVariant.Tonal,
+                    shape = PlatformShapes.small
                 ) {
                     Text(
                         text = item.nature.displayName,

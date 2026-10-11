@@ -27,7 +27,8 @@ data class BillInstallment(
     val status: BillStatus = BillStatus.PENDING,
     val type: BillType = BillType.SINGLE,
     val createdAt: Long = dueDate,
-    val creditCardId: String? = null
+    val creditCardId: String? = null,
+    val deletedAt: Long? = null
 ) {
     val isPaid: Boolean get() = paidAt != null || status == BillStatus.PAID
     val isPaused: Boolean get() = status == BillStatus.PAUSED

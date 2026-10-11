@@ -41,4 +41,10 @@ abstract class RepositoryModule {
     abstract fun bindBackupRepository(
         backupRepositoryImpl: com.platform.app.data.repository.BackupRepositoryImpl
     ): com.platform.app.domain.repository.BackupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPaymentRepository(
+        paymentRepositoryImpl: com.platform.app.data.repository.PaymentRepositoryImpl
+    ): com.platform.app.domain.repository.PaymentRepository
 }

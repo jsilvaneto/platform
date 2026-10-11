@@ -30,7 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -168,25 +168,18 @@ fun MonthPickerBottomSheet(
                         else -> MaterialTheme.colorScheme.onSurface
                     }
 
-                    val border = if (isCurrentMonth && !isSelected) {
-                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-                    } else {
-                        null
-                    }
-
-                    Surface(
+                    PlatformSurface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(PlatformShapes.medium)
-                            .clickable {
-                                val targetMillis = DateUtils.createMonthMillis(displayedYear, index)
-                                onMonthSelected(targetMillis)
-                                onDismiss()
-                            },
+                            .height(48.dp),
                         shape = PlatformShapes.medium,
-                        color = containerColor,
-                        border = border
+                        containerColor = containerColor,
+                        borderColor = if (isCurrentMonth && !isSelected) MaterialTheme.colorScheme.primary else null,
+                        onClick = {
+                            val targetMillis = DateUtils.createMonthMillis(displayedYear, index)
+                            onMonthSelected(targetMillis)
+                            onDismiss()
+                        }
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(

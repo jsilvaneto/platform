@@ -21,7 +21,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -394,7 +394,7 @@ private fun KpiGridCard(
 
 @Composable
 private fun TodayAllCaughtUpCard() {
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.medium,
         color = SuccessGreen.copy(alpha = 0.08f),
         modifier = Modifier.fillMaxWidth()

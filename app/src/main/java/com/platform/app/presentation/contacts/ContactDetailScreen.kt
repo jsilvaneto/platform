@@ -44,7 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -414,10 +413,10 @@ fun ContactHeaderCard(details: ContactDetails) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Surface(
+                PlatformSurface(
                     modifier = Modifier.weight(1f),
                     shape = PlatformShapes.medium,
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(
@@ -434,10 +433,10 @@ fun ContactHeaderCard(details: ContactDetails) {
                     }
                 }
 
-                Surface(
+                PlatformSurface(
                     modifier = Modifier.weight(1f),
                     shape = PlatformShapes.medium,
-                    color = SuccessGreen.copy(alpha = 0.15f)
+                    containerColor = SuccessGreen.copy(alpha = 0.15f)
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(

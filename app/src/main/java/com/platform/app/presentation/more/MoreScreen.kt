@@ -27,8 +27,9 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -47,12 +48,7 @@ import com.platform.app.presentation.theme.PlatformShapes
 @Composable
 fun MoreScreen(
     onNavigateToContacts: () -> Unit,
-    onNavigateToAccounts: () -> Unit,
-    onNavigateToPaymentMethods: () -> Unit,
-    onNavigateToCategories: () -> Unit,
-    onNavigateToExpenseItems: () -> Unit,
-    onNavigateToBudgets: () -> Unit,
-    onNavigateToGoals: () -> Unit,
+    onNavigateToManagement: () -> Unit,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -73,31 +69,13 @@ fun MoreScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Seção: Cadastros Financeiros
-            MoreSection(title = "Cadastros Financeiros") {
+            // Seção: Cadastros
+            MoreSection(title = "Cadastros") {
                 MoreMenuRow(
-                    title = "Contas Bancárias",
-                    subtitle = "Bancos, carteiras e contas correntes",
-                    icon = Icons.Default.AccountBalance,
-                    onClick = onNavigateToAccounts
-                )
-                MoreMenuRow(
-                    title = "Formas de Pagamento",
-                    subtitle = "Pix, cartões de crédito/débito e dinheiro",
-                    icon = Icons.Default.Payments,
-                    onClick = onNavigateToPaymentMethods
-                )
-                MoreMenuRow(
-                    title = "Categorias",
-                    subtitle = "Grupos organizacionais de orçamento",
+                    title = "Cadastros",
+                    subtitle = "Contas bancárias, formas de pagamento, categorias e itens",
                     icon = Icons.Default.Category,
-                    onClick = onNavigateToCategories
-                )
-                MoreMenuRow(
-                    title = "Itens",
-                    subtitle = "Itens padronizados e naturezas de gasto",
-                    icon = Icons.Default.Checklist,
-                    onClick = onNavigateToExpenseItems
+                    onClick = onNavigateToManagement
                 )
             }
 
@@ -108,22 +86,6 @@ fun MoreScreen(
                     subtitle = "Fornecedores, prestadores e favorecidos",
                     icon = Icons.Default.People,
                     onClick = onNavigateToContacts
-                )
-            }
-
-            // Seção: Planejamento
-            MoreSection(title = "Planejamento Orçamentário") {
-                MoreMenuRow(
-                    title = "Orçamentos",
-                    subtitle = "Teto mensal por categoria",
-                    icon = Icons.Default.PieChart,
-                    onClick = onNavigateToBudgets
-                )
-                MoreMenuRow(
-                    title = "Metas",
-                    subtitle = "Objetivos e reservas financeiras",
-                    icon = Icons.Default.Flag,
-                    onClick = onNavigateToGoals
                 )
             }
 
@@ -186,9 +148,8 @@ private fun MoreMenuRow(
     icon: ImageVector,
     onClick: () -> Unit
 ) {
-    Surface(
+    PlatformSurface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -197,19 +158,18 @@ private fun MoreMenuRow(
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                shape = PlatformShapes.medium,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                modifier = Modifier.size(38.dp)
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), PlatformShapes.medium),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
             }
 
             Spacer(modifier = Modifier.width(14.dp))

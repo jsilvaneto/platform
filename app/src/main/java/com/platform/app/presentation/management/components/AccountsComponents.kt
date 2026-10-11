@@ -63,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import com.platform.app.core.util.CurrencyUtils
 import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.calculateOpenCents
+import com.platform.app.domain.model.calculatePaidCents
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.theme.BrandPrimaryDark
 
@@ -175,11 +177,11 @@ fun AccountDetailBottomSheet(
     }
 
     val pendingCents = remember(linkedInstallments) {
-        linkedInstallments.filter { !it.isPaid }.sumOf { it.amountCents }
+        linkedInstallments.calculateOpenCents()
     }
 
     val paidCents = remember(linkedInstallments) {
-        linkedInstallments.filter { it.isPaid }.sumOf { it.amountCents }
+        linkedInstallments.calculatePaidCents()
     }
 
     ModalBottomSheet(

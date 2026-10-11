@@ -8,6 +8,7 @@ import com.platform.app.domain.model.BillInstallment
 import com.platform.app.domain.model.BillStatus
 import com.platform.app.domain.model.BillType
 import com.platform.app.domain.repository.FinancialRepository
+import com.platform.app.domain.usecase.GetMonthSummaryUseCase
 import com.platform.app.domain.usecase.ToggleInstallmentPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -29,7 +30,8 @@ import javax.inject.Inject
 @HiltViewModel
 class BillsViewModel @Inject constructor(
     private val repository: FinancialRepository,
-    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase
+    private val togglePaymentUseCase: ToggleInstallmentPaymentUseCase,
+    private val getMonthSummaryUseCase: GetMonthSummaryUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BillsUiState())
@@ -204,19 +206,16 @@ class BillsViewModel @Inject constructor(
                     )
 
                     val now = System.currentTimeMillis()
-                    val total = filtered.sumOf { it.amountCents }
-                    val paid = filtered.filter { it.isPaid }.sumOf { it.amountCents }
-                    val pending = filtered.filter { !it.isPaid && it.dueDate >= now }.sumOf { it.amountCents }
-                    val overdue = filtered.filter { !it.isPaid && it.dueDate < now }.sumOf { it.amountCents }
+                    val summary = getMonthSummaryUseCase.calculate(filtered, now)
 
                     current.copy(
                         installments = installments,
                         filteredInstallments = filtered,
                         availableYears = allYears,
-                        totalPeriodCents = total,
-                        paidPeriodCents = paid,
-                        pendingPeriodCents = pending,
-                        overduePeriodCents = overdue,
+                        totalPeriodCents = summary.totalCents,
+                        paidPeriodCents = summary.paidCents,
+                        pendingPeriodCents = summary.pendingCents,
+                        overduePeriodCents = summary.overdueCents,
                         isLoading = false,
                         errorMessage = null
                     )
@@ -326,15 +325,12 @@ class BillsViewModel @Inject constructor(
 
     private fun recalculateMetrics(state: BillsUiState, filtered: List<BillInstallment>): BillsUiState {
         val now = System.currentTimeMillis()
-        val total = filtered.sumOf { it.amountCents }
-        val paid = filtered.filter { it.isPaid }.sumOf { it.amountCents }
-        val pending = filtered.filter { !it.isPaid && it.dueDate >= now }.sumOf { it.amountCents }
-        val overdue = filtered.filter { !it.isPaid && it.dueDate < now }.sumOf { it.amountCents }
+        val summary = getMonthSummaryUseCase.calculate(filtered, now)
         return state.copy(
-            totalPeriodCents = total,
-            paidPeriodCents = paid,
-            pendingPeriodCents = pending,
-            overduePeriodCents = overdue
+            totalPeriodCents = summary.totalCents,
+            paidPeriodCents = summary.paidCents,
+            pendingPeriodCents = summary.pendingCents,
+            overduePeriodCents = summary.overdueCents
         )
     }
 

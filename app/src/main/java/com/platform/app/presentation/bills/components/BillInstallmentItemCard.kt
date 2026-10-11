@@ -28,7 +28,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -84,7 +84,7 @@ fun BillInstallmentItemCard(
         else -> MaterialTheme.colorScheme.surface
     }
 
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.medium,
         color = cardColor,
         border = cardBorder,
@@ -172,7 +172,7 @@ fun BillInstallmentItemCard(
 
                     // Indicador de parcelamento se for parcelamento real (totalInstallments > 1)
                     if (installment.type == BillType.INSTALLMENT && installment.totalInstallments > 1) {
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.extraSmall,
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                         ) {
@@ -218,8 +218,8 @@ fun BillInstallmentItemCard(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = CurrencyUtils.formatCentsToCurrency(installment.amountCents),
+                com.platform.app.presentation.components.PlatformMoneyText(
+                    amountCents = installment.amountCents,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -229,7 +229,7 @@ fun BillInstallmentItemCard(
 
                 if (installment.isPaid) {
                     // Badge moderna e positiva "Pago" com micro ícone
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.extraSmall,
                         color = SuccessGreen.copy(alpha = 0.12f),
                         border = BorderStroke(1.dp, SuccessGreen.copy(alpha = 0.25f))

@@ -9,6 +9,7 @@ import com.platform.app.domain.model.CreditCard
 import com.platform.app.domain.model.CreditCardInvoice
 import com.platform.app.domain.model.ExpenseItem
 import com.platform.app.domain.model.FinancialAccount
+import com.platform.app.domain.model.MonthSummary
 import com.platform.app.domain.model.PaymentMethod
 import kotlinx.coroutines.flow.Flow
 
@@ -73,6 +74,8 @@ interface FinancialRepository {
     suspend fun getPendingInstallmentsInRange(startMillis: Long, endMillis: Long): List<BillInstallment>
     suspend fun getOverduePendingInstallments(beforeMillis: Long): List<BillInstallment>
     suspend fun postponeInstallmentDueDate(installmentId: String, days: Int = 1)
+    fun getMonthSummary(startMillis: Long, endMillis: Long, nowMillis: Long): Flow<MonthSummary>
+    fun getOpenAmountByContact(): Flow<Map<String, Long>>
 
     suspend fun saveBillWithInstallments(bill: Bill, installments: List<BillInstallment>)
     suspend fun addInstallments(bill: Bill, installments: List<BillInstallment>)

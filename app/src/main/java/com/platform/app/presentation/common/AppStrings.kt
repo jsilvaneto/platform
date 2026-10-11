@@ -174,6 +174,16 @@ object AppStrings {
         const val PAID_SO_FAR = "Já Pago"
         const val DUE_TODAY = "Vence Hoje"
         const val NEXT_7_DAYS = "Próximos 7 Dias"
+        const val REMAINING_BILLS_PREFIX = "Faltam "
+        const val REMAINING_BILLS_SUFFIX = " contas · a próxima vence dia "
+        const val REMAINING_SINGLE_BILL = "Falta 1 conta · a próxima vence dia "
+        const val REMAINING_NO_DATE_PLURAL = " contas a pagar"
+        const val REMAINING_NO_DATE_SINGLE = "Falta 1 conta a pagar"
+        const val REMAINING_NO_BILLS = "Nenhuma conta agendada"
+        const val VIEW_LIST = "Lista"
+        const val VIEW_CALENDAR = "Calendário"
+        const val EMPTY_MONTH = "Nenhuma conta agendada para este mês"
+        const val EMPTY_MONTH_ACTION = "Adicionar despesa"
     }
 
     object Dialogs {

@@ -10,13 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -40,9 +37,8 @@ import com.platform.app.core.util.DateUtils
 import com.platform.app.domain.model.PayableItem
 import com.platform.app.presentation.bills.components.QuickExpenseBottomSheet
 import com.platform.app.presentation.components.ConfirmPaymentDialog
-import com.platform.app.presentation.home.components.GlobalOverdueAlertBanner
+import com.platform.app.presentation.components.PlatformFab
 import com.platform.app.presentation.home.components.HomeTopBar
-import com.platform.app.presentation.home.components.HomeViewModeSelector
 import com.platform.app.presentation.home.components.renderCalendarView
 import com.platform.app.presentation.home.components.renderTodayListView
 import com.platform.app.presentation.theme.Dimens
@@ -56,6 +52,8 @@ fun HomeScreen(
     onNavigateToNewExpense: () -> Unit,
     modifier: Modifier = Modifier,
     onNavigateToBills: () -> Unit = {},
+    onNavigateToCards: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {},
     onOpenDrawer: (() -> Unit)? = null,
     uiEffect: SharedFlow<HomeUiEffect>? = null
 ) {
@@ -104,21 +102,16 @@ fun HomeScreen(
                 onPreviousMonth = { onAction(HomeUiAction.PreviousMonth) },
                 onNextMonth = { onAction(HomeUiAction.NextMonth) },
                 onCurrentMonth = { onAction(HomeUiAction.CurrentMonth) },
+                onToggleViewMode = { mode -> onAction(HomeUiAction.ChangeViewMode(mode)) },
                 onOpenDrawer = onOpenDrawer
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            PlatformFab(
                 onClick = { showQuickExpenseSheet = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Nova Despesa"
-                )
-            }
+                icon = Icons.Default.Add,
+                contentDescription = "Nova Despesa"
+            )
         },
         modifier = modifier
     ) { innerPadding ->
@@ -128,12 +121,6 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Seletor de Modo: [ Panorama Geral | Calendário | Visão Mensal ]
-            HomeViewModeSelector(
-                selectedMode = uiState.viewMode,
-                onModeSelected = { mode -> onAction(HomeUiAction.ChangeViewMode(mode)) }
-            )
-
             if (uiState.isLoading && uiState.forecastResult == null && uiState.dashboardMetrics == null) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -150,22 +137,6 @@ fun HomeScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingMedium)
                 ) {
-                    // Item 5: Banner Global de Contas Atrasadas (visível em todas as telas se houver atrasos)
-                    if (uiState.globalOverdueItems.isNotEmpty()) {
-                        item {
-                            GlobalOverdueAlertBanner(
-                                overdueItems = uiState.globalOverdueItems,
-                                totalOverdueCents = uiState.globalOverdueTotalCents,
-                                isExpanded = uiState.isOverdueBannerExpanded,
-                                isPrivate = isPrivate,
-                                onToggleExpanded = {
-                                    onAction(HomeUiAction.ToggleOverdueBanner(!uiState.isOverdueBannerExpanded))
-                                },
-                                onPayItem = handlePayItem
-                            )
-                        }
-                    }
-
                     // Renderização de acordo com o modo selecionado
                     when (uiState.viewMode) {
                         HomeViewMode.LIST -> {
@@ -175,6 +146,8 @@ fun HomeScreen(
                                 onPayItem = handlePayItem,
                                 onAddExpense = onNavigateToNewExpense,
                                 onNavigateToBills = onNavigateToBills,
+                                onNavigateToCards = onNavigateToCards,
+                                onNavigateToAnalytics = onNavigateToAnalytics,
                                 onAction = onAction
                             )
                         }

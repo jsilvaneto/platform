@@ -16,6 +16,11 @@ object DateUtils {
         return dateFormat.format(Date(epochMillis))
     }
 
+    fun formatDayMonth(epochMillis: Long): String {
+        val fmt = SimpleDateFormat("dd/MM", ptBrLocale)
+        return fmt.format(Date(epochMillis))
+    }
+
     fun formatMonthYear(epochMillis: Long): String {
         val formatted = monthYearFormat.format(Date(epochMillis))
         return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ptBrLocale) else it.toString() }

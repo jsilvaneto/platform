@@ -165,4 +165,15 @@ class HomeViewModelTest {
 
         coVerify(exactly = 1) { repository.deleteBill("bill-quick-123") }
     }
+
+    @Test
+    fun `ChangeViewMode to CALENDAR should auto select next due day and update viewMode`() = runTest {
+        viewModel = HomeViewModel(calculateMonthlyForecastUseCase, getFinancialDashboardUseCase, repository, createBillUseCase)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onAction(HomeUiAction.ChangeViewMode(HomeViewMode.CALENDAR))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(HomeViewMode.CALENDAR, viewModel.uiState.value.viewMode)
+    }
 }

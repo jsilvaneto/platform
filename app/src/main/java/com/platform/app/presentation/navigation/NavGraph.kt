@@ -97,6 +97,8 @@ fun NavGraph(
                 onAction = viewModel::onAction,
                 onNavigateToNewExpense = { navController.navigate(Screen.NewExpense.createRoute()) },
                 onNavigateToBills = { navController.navigate(Screen.Bills.route) },
+                onNavigateToCards = { navController.navigate(Screen.CreditCards.route) },
+                onNavigateToAnalytics = { navController.navigate(Screen.Statistics.route) },
                 onOpenDrawer = onOpenDrawer
             )
         }

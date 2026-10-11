@@ -3,6 +3,28 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.30.0] - 2026-10-11
+
+### ☀️ Reconstrução Minimalista da Tela 'Hoje' e Linha de Atalhos (Prompt 59)
+
+- **Tela 'Hoje' Reconstruída segundo o Design Aprovado (Prompt 59)**:
+  - **TopBar e Alternância na Barra de Ações**:
+    - Cabeçalho minimalista com botão do menu lateral, título "Hoje" (com atalho para retornar ao mês atual) e cápsula de navegação de mês (`< Mês/Ano >`).
+    - Alternância "Lista | Calendário" transferida diretamente para a barra de ações (actions), com seleção automática do próximo dia de vencimento em aberto ao alternar para o calendário.
+  - **Hero Plano do Mês**:
+    - Exibição do valor restante do mês em 40sp tabular (`PlatformMoneyText`) e barra de progresso verde semafórica de 8dp (`PlatformStatusStyle.PAID`).
+    - Linha informativa com contagem de contas e vencimento ("Faltam N contas · a próxima vence dia X").
+  - **Linha de Atalhos Rápidos (`TodayShortcutsRow`)**:
+    - Tiles compactos para navegação imediata para Contas, Cartões e Análises.
+  - **Seções "Precisa de Atenção" e "Próximos Pagamentos"**:
+    - Adoção integral do componente minimalista `PlatformListRow` com ícone 36dp (raio 12, sup2), chips de status coloridos exclusivamente para atrasadas e vencendo em breve, e gesto de swipe para pagamento rápido com Snackbar de desfazer.
+    - Seção "Próximos pagamentos" limitada aos 5 primeiros compromissos com link de expansão para a tela Contas.
+  - **Estados Positivo e Vazio Compactos**:
+    - Substituição de banners grandes por cards compactos de estado positivo ("Tudo em dia") e vazio informativo.
+  - **Testes e Validação**:
+    - Suíte instrumentada `TodayAndroidTest` validando renderização nos temas AMOLED, Escuro e Claro, além de suporte a escalonamento de fonte de 1,3x.
+    - Teste unitário de alternância de visualização em `HomeViewModelTest`.
+
 ## [1.29.0] - 2026-10-11
 
 ### 📊 Visão Geral: Nova Tela Principal, Agregados SQL e Projeção Temporal (Prompt 58)

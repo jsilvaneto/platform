@@ -81,10 +81,13 @@ class HomeViewModel @Inject constructor(
     fun onAction(action: HomeUiAction) {
         when (action) {
             is HomeUiAction.ChangeViewMode -> {
-                val autoSelectDay = if (action.viewMode == HomeViewMode.CALENDAR && _uiState.value.selectedCalendarDayMillis == null) {
+                val autoSelectDay = if (action.viewMode == HomeViewMode.CALENDAR) {
                     val activeDays = _uiState.value.calendarDays.filter { it.itemsCount > 0 && !it.isFullyPaid }
                     val now = System.currentTimeMillis()
-                    activeDays.firstOrNull { it.dateMillis >= now }?.dateMillis ?: activeDays.firstOrNull()?.dateMillis
+                    activeDays.firstOrNull { it.dateMillis >= now }?.dateMillis
+                        ?: activeDays.firstOrNull()?.dateMillis
+                        ?: _uiState.value.calendarDays.firstOrNull { it.itemsCount > 0 }?.dateMillis
+                        ?: _uiState.value.selectedCalendarDayMillis
                 } else {
                     _uiState.value.selectedCalendarDayMillis
                 }

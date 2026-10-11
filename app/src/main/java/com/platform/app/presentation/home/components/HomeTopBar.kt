@@ -1,63 +1,44 @@
 package com.platform.app.presentation.home.components
 
-import com.platform.app.presentation.theme.PlatformShapes
-
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.ReceiptLong
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.platform.app.presentation.components.PlatformSurface
-import com.platform.app.presentation.components.withTabularNumbers
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.platform.app.core.util.DateUtils
-import com.platform.app.domain.model.PayableItem
+import androidx.compose.ui.unit.sp
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformPrivacyToggle
-import com.platform.app.presentation.components.PlatformSegmentedTabs
-import com.platform.app.presentation.components.SegmentedTabItem
-import com.platform.app.presentation.components.formatValueOrPrivate
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.home.HomeViewMode
-import com.platform.app.presentation.theme.Dimens
-import com.platform.app.presentation.theme.SuccessGreen
-import com.platform.app.presentation.theme.UrgentRed
+import com.platform.app.presentation.theme.PlatformShapes
 
+/**
+ * TopBar minimalista da tela Hoje (Prompt 59):
+ * 1. Botão do menu lateral + Título "Hoje" + Mês navegável.
+ * 2. Alternância Lista | Calendário na barra de ações.
+ * 3. Alternância de privacidade.
+ */
 @Composable
 fun HomeTopBar(
     viewMode: HomeViewMode,
@@ -68,6 +49,7 @@ fun HomeTopBar(
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
     onCurrentMonth: () -> Unit,
+    onToggleViewMode: (HomeViewMode) -> Unit,
     onOpenDrawer: (() -> Unit)? = null
 ) {
     PlatformSurface(
@@ -81,262 +63,144 @@ fun HomeTopBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Lado Esquerdo: Menu + Título "Hoje" + Mês Navegável
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 if (onOpenDrawer != null) {
-                    IconButton(onClick = onOpenDrawer) {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Menu Lateral",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                IconButton(onClick = onPreviousMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Mês Anterior",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
+                Text(
+                    text = AppStrings.Navigation.TODAY,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.clickable(onClick = onCurrentMonth)
+                )
 
-                // Cápsula Clicável do Mês
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // Cápsula navegável do mês (< Mês >)
                 PlatformSurface(
-                    onClick = onOpenMonthPicker,
                     shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     modifier = Modifier.padding(horizontal = 2.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp)
                     ) {
+                        IconButton(
+                            onClick = onPreviousMonth,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                                contentDescription = "Mês Anterior",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+
                         Text(
                             text = monthLabel,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .clickable(onClick = onOpenMonthPicker)
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
                         )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Icon(
-                            imageVector = Icons.Default.ArrowDropDown,
-                            contentDescription = "Selecionar mês",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                }
 
-                IconButton(onClick = onNextMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Próximo Mês",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
+                        IconButton(
+                            onClick = onNextMonth,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Próximo Mês",
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Lado Direito (Barra de Ações): Privacidade + Alternância Lista | Calendário
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 PlatformPrivacyToggle(
                     isPrivate = isPrivate,
                     onToggle = onTogglePrivacy
                 )
 
-                TextButton(
-                    onClick = onCurrentMonth,
-                    shape = PlatformShapes.medium
+                // Alternância Lista | Calendário na barra de ações
+                PlatformSurface(
+                    shape = PlatformShapes.pill,
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(end = 4.dp)
                 ) {
-                    Text(
-                        text = "Hoje",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun HomeViewModeSelector(
-    selectedMode: HomeViewMode,
-    onModeSelected: (HomeViewMode) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = Dimens.spacingNormal, vertical = 6.dp)
-    ) {
-        PlatformSegmentedTabs(
-            items = listOf(
-                SegmentedTabItem("Lista"),
-                SegmentedTabItem("Calendário")
-            ),
-            selectedIndex = if (selectedMode == HomeViewMode.LIST) 0 else 1,
-            onTabSelected = { index ->
-                onModeSelected(if (index == 0) HomeViewMode.LIST else HomeViewMode.CALENDAR)
-            }
-        )
-    }
-}
-
-@Composable
-fun GlobalOverdueAlertBanner(
-    overdueItems: List<PayableItem>,
-    totalOverdueCents: Long,
-    isExpanded: Boolean,
-    isPrivate: Boolean,
-    onToggleExpanded: () -> Unit,
-    onPayItem: (PayableItem) -> Unit
-) {
-    PlatformSurface(
-        shape = PlatformShapes.large,
-        color = UrgentRed.copy(alpha = 0.08f),
-        border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.35f)),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(Dimens.spacingNormal)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(UrgentRed.copy(alpha = 0.15f), CircleShape),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(2.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = UrgentRed,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                        val isList = viewMode == HomeViewMode.LIST
+                        val isCalendar = viewMode == HomeViewMode.CALENDAR
 
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Column {
-                        Text(
-                            text = "${overdueItems.size} Contas Atrasadas Acumuladas",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = UrgentRed
-                        )
-                        Text(
-                            text = "${AppStrings.Home.TOTAL_OVERDUE} ${formatValueOrPrivate(totalOverdueCents, isPrivate)}",
-                            style = MaterialTheme.typography.bodySmall.withTabularNumbers(),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-
-                TextButton(
-                    onClick = onToggleExpanded,
-                    shape = PlatformShapes.medium
-                ) {
-                    Text(
-                        text = if (isExpanded) "Ocultar" else "Ver Todas",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = UrgentRed
-                    )
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        tint = UrgentRed,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            AnimatedVisibility(visible = isExpanded) {
-                Column(
-                    modifier = Modifier.padding(top = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    overdueItems.forEach { item ->
-                        val daysLate = ((System.currentTimeMillis() - item.dueDate) / (24 * 3600 * 1000L)).toInt().coerceAtLeast(1)
+                        // Botão Lista
                         PlatformSurface(
-                            shape = PlatformShapes.medium,
-                            color = MaterialTheme.colorScheme.surface,
-                            border = BorderStroke(1.dp, UrgentRed.copy(alpha = 0.2f)),
-                            modifier = Modifier.fillMaxWidth()
+                            shape = PlatformShapes.pill,
+                            color = if (isList) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                            onClick = { onToggleViewMode(HomeViewMode.LIST) },
+                            modifier = Modifier.size(width = 30.dp, height = 26.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier.size(width = 30.dp, height = 26.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = item.title,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        PlatformSurface(
-                                            shape = PlatformShapes.extraSmall,
-                                            color = UrgentRed.copy(alpha = 0.15f)
-                                        ) {
-                                            Text(
-                                                text = "Atrasada há $daysLate dia${if (daysLate > 1) "s" else ""}",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = UrgentRed,
-                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Venceu em ${DateUtils.formatDate(item.dueDate)}",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ViewList,
+                                    contentDescription = AppStrings.Home.VIEW_LIST,
+                                    tint = if (isList) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
 
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = formatValueOrPrivate(item.amountCents, isPrivate),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = UrgentRed
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Button(
-                                        onClick = { onPayItem(item) },
-                                        shape = PlatformShapes.medium,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = SuccessGreen.copy(alpha = 0.15f),
-                                            contentColor = SuccessGreen
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                        modifier = Modifier.height(28.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                        Text(
-                                            text = "Pagar",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
+                        // Botão Calendário
+                        PlatformSurface(
+                            shape = PlatformShapes.pill,
+                            color = if (isCalendar) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                            onClick = { onToggleViewMode(HomeViewMode.CALENDAR) },
+                            modifier = Modifier.size(width = 30.dp, height = 26.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.size(width = 30.dp, height = 26.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = AppStrings.Home.VIEW_CALENDAR,
+                                    tint = if (isCalendar) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
                     }

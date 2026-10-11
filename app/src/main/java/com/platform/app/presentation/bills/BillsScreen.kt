@@ -203,7 +203,7 @@ fun BillsScreen(
                         }
                     }
                 } else null,
-                onOpenDrawer = null,
+                onOpenDrawer = if (isSelectionMode) null else onOpenDrawer,
                 actions = {
                     if (!isSelectionMode) {
                         IconButton(onClick = { showFilterBottomSheet = true }) {

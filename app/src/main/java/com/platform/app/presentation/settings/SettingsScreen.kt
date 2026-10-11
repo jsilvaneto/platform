@@ -48,6 +48,7 @@ import com.platform.app.presentation.settings.components.SectionCard
 import com.platform.app.presentation.settings.components.SettingActionCard
 import com.platform.app.presentation.settings.components.SettingsAboutSection
 import com.platform.app.presentation.settings.components.SettingsBackupSection
+import com.platform.app.presentation.settings.components.SettingsNavigationSection
 import com.platform.app.presentation.settings.components.SettingsSecuritySection
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -179,6 +180,12 @@ fun SettingsScreen(
                 onToggleBiometric = { viewModel.onAction(SettingsUiAction.ToggleBiometric(it)) },
                 onSetLockTimeoutSeconds = { viewModel.onAction(SettingsUiAction.SetLockTimeoutSeconds(it)) },
                 onToggleHideContentInRecents = { viewModel.onAction(SettingsUiAction.SetHideContentInRecents(it)) }
+            )
+
+            // Seção de Navegação & Tela Inicial
+            SettingsNavigationSection(
+                initialScreen = uiState.initialScreen,
+                onSetInitialScreen = { viewModel.onAction(SettingsUiAction.SetInitialScreen(it)) }
             )
 
             // Seção de Armazenamento & Backup

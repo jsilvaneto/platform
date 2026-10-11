@@ -1,7 +1,7 @@
 # ADR 034: Nova Arquitetura de Informação, Bottom Navigation e Overhaul do Design System
 
 ## Status
-Aprovado
+Substituído pelo ADR 041
 
 ## Contexto
 O aplicativo Platform acumulou, ao longo de sucessivas iterações, uma dispersão considerável de padrões visuais e estruturas de navegação:

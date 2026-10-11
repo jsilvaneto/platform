@@ -16,5 +16,6 @@ data class SettingsUiState(
     val accountsCount: Int = 0,
     val paymentMethodsCount: Int = 0,
     val categoriesCount: Int = 0,
+    val initialScreen: String = "overview",
     val isLoading: Boolean = false
 ) : UiState

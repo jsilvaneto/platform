@@ -26,11 +26,32 @@ object AppStrings {
     }
 
     object Navigation {
+        const val OVERVIEW = "Visão geral"
         const val TODAY = "Hoje"
         const val BILLS = "Contas"
         const val CREDIT_CARDS = "Cartões"
         const val ANALYTICS = "Análises"
         const val MORE = "Mais"
+    }
+
+    object Drawer {
+        const val APP_NAME = "Platform"
+        const val SECTION_OPERATIONAL = "Operacional"
+        const val SECTION_PLANNING = "Planejamento"
+        const val SECTION_MANAGEMENT = "Cadastros"
+        const val SECTION_SYSTEM = "Sistema"
+        const val OVERVIEW = "Visão geral"
+        const val TODAY = "Hoje"
+        const val BILLS = "Contas"
+        const val CREDIT_CARDS = "Cartões"
+        const val ANALYTICS = "Análises"
+        const val CONTACTS = "Contatos"
+        const val REGISTRATIONS = "Cadastros"
+        const val SETTINGS = "Configurações"
+        const val MONTH_REMAINING_PREFIX = "Mês · restam "
+        const val MONTH_ALL_SETTLED = "Mês · tudo em dia"
+        const val LAST_BACKUP_PREFIX = "Último backup: "
+        const val LAST_BACKUP_NEVER = "Último backup: Nunca"
     }
 
     object Glossary {
@@ -242,5 +263,13 @@ object AppStrings {
         const val LIGHT = "Claro"
         const val DARK = "Escuro"
         const val AMOLED = "AMOLED"
+    }
+
+    object SettingsPreferences {
+        const val SECTION_TITLE = "Navegação & Início"
+        const val INITIAL_SCREEN_TITLE = "Tela Inicial"
+        const val INITIAL_SCREEN_DESC = "Escolha qual tela deve abrir ao iniciar o aplicativo"
+        const val INITIAL_SCREEN_OVERVIEW = "Visão Geral (padrão)"
+        const val INITIAL_SCREEN_TODAY = "Hoje"
     }
 }

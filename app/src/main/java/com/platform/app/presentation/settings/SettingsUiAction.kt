@@ -10,6 +10,7 @@ sealed interface SettingsUiAction : UiAction {
     data class SetThemeMode(val isDarkMode: Boolean?) : SettingsUiAction
     data class SetAmoledMode(val enabled: Boolean) : SettingsUiAction
     data class SetAppIcon(val iconKey: String) : SettingsUiAction
+    data class SetInitialScreen(val screen: String) : SettingsUiAction
     data class ExportBackupToUri(val uri: Uri, val password: String) : SettingsUiAction
     data class RestoreBackupFromUri(val uri: Uri, val password: String) : SettingsUiAction
     data class ShareBackup(val password: String) : SettingsUiAction

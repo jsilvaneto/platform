@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Security
@@ -176,6 +177,56 @@ fun SettingsSecuritySection(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SettingsNavigationSection(
+    initialScreen: String,
+    onSetInitialScreen: (String) -> Unit
+) {
+    SectionCard(
+        title = AppStrings.SettingsPreferences.SECTION_TITLE,
+        icon = Icons.Default.Home
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = AppStrings.SettingsPreferences.INITIAL_SCREEN_TITLE,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = AppStrings.SettingsPreferences.INITIAL_SCREEN_DESC,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val options = listOf(
+                    "overview" to AppStrings.SettingsPreferences.INITIAL_SCREEN_OVERVIEW,
+                    "today" to AppStrings.SettingsPreferences.INITIAL_SCREEN_TODAY
+                )
+                options.forEach { (key, label) ->
+                    val selected = initialScreen == key
+                    androidx.compose.material3.FilterChip(
+                        selected = selected,
+                        onClick = { onSetInitialScreen(key) },
+                        label = {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
                 }
             }
         }
@@ -349,12 +400,7 @@ fun SettingsAboutSection(
                 modifier = Modifier
                     .size(38.dp)
                     .background(
-                        Brush.linearGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary
-                            )
-                        ),
+                        MaterialTheme.colorScheme.primary,
                         PlatformShapes.medium
                     ),
                 contentAlignment = Alignment.Center

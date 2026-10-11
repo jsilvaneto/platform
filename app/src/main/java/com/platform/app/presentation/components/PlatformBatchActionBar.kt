@@ -66,7 +66,7 @@ fun PlatformBatchActionBar(
             shape = PlatformShapes.large,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            shadowElevation = 6.dp,
+            shadowElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall)

@@ -2,43 +2,54 @@ package com.platform.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark Palette (Deep Obsidian & Slate - Premium Minimalist)
-val DarkBackground = Color(0xFF0A0D14)
-val DarkSurface = Color(0xFF141923)
-val DarkSurfaceVariant = Color(0xFF1E2638)
-val DarkBorder = Color(0xFF222B3D)
-val DarkBorderSubtle = Color(0xFF19202E)
-val DarkTextPrimary = Color(0xFFF8FAFC)
-val DarkTextSecondary = Color(0xFF94A3B8)
-val DarkTextMuted = Color(0xFF64748B)
+// Paleta Escuro (Prompt 55: Minimalista Neutro)
+val DarkBackground = PlatformTokens.Dark.background
+val DarkSurface = PlatformTokens.Dark.surface1
+val DarkSurfaceVariant = PlatformTokens.Dark.surface2
+val DarkBorder = PlatformTokens.Dark.line
+val DarkBorderSubtle = PlatformTokens.Dark.line
+val DarkTextPrimary = PlatformTokens.Dark.text
+val DarkTextSecondary = PlatformTokens.Dark.text2
+val DarkTextMuted = PlatformTokens.Dark.text2
 
-// Light Palette (Clean Premium & Gallery White - Symmetrical & Crisp)
-val LightBackground = Color(0xFFF8FAFC)
-val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF1F5F9)
-val LightBorder = Color(0xFFE2E8F0)
-val LightBorderSubtle = Color(0xFFF1F5F9)
-val LightTextPrimary = Color(0xFF0F172A)
-val LightTextSecondary = Color(0xFF64748B)
-val LightTextMuted = Color(0xFF94A3B8)
+// Paleta Claro (Prompt 55: Minimalista Neutro)
+val LightBackground = PlatformTokens.Light.background
+val LightSurface = PlatformTokens.Light.surface1
+val LightSurfaceVariant = PlatformTokens.Light.surface2
+val LightBorder = PlatformTokens.Light.line
+val LightBorderSubtle = PlatformTokens.Light.line
+val LightTextPrimary = PlatformTokens.Light.text
+val LightTextSecondary = PlatformTokens.Light.text2
+val LightTextMuted = PlatformTokens.Light.text2
 
-// Sinalização Semafórica Funcional e Elegante
-val UrgentRed = Color(0xFFEF4444)
-val UrgentRedContainer = Color(0x2BEF4444)
-val WarningAmber = Color(0xFFF59E0B)
-val WarningAmberContainer = Color(0x2BF59E0B)
-val SuccessGreen = Color(0xFF10B981)
-val SuccessGreenContainer = Color(0x2B10B981)
-val BrandPrimary = Color(0xFF2563EB)
-val BrandPrimaryDark = Color(0xFF3B82F6)
+// Paleta AMOLED (Prompt 55: Preto Puro & Neutros)
+val AmoledBackground = PlatformTokens.Amoled.background
+val AmoledSurface = PlatformTokens.Amoled.surface1
+val AmoledSurfaceVariant = PlatformTokens.Amoled.surface2
+val AmoledBorder = PlatformTokens.Amoled.line
+val AmoledTextPrimary = PlatformTokens.Amoled.text
+val AmoledTextSecondary = PlatformTokens.Amoled.text2
 
-// Aliases para compatibilidade total de componentes
+// Marca e Destaque Neutros (Prompt 55: cor de texto como preenchimento)
+val BrandPrimary = LightTextPrimary
+val BrandPrimaryDark = DarkTextPrimary
+val BrandPrimaryAmoled = AmoledTextPrimary
+
+// Cores de status canônicas (acessíveis via PlatformStatusStyle)
+val UrgentRed = PlatformTokens.StatusLight.overdue
+val UrgentRedContainer = UrgentRed.copy(alpha = 0.12f)
+val WarningAmber = PlatformTokens.StatusLight.attention
+val WarningAmberContainer = WarningAmber.copy(alpha = 0.12f)
+val SuccessGreen = PlatformTokens.StatusLight.paid
+val SuccessGreenContainer = SuccessGreen.copy(alpha = 0.12f)
+
+// Aliases mantidos para compatibilidade de compilação semântica
 val ErrorRed = UrgentRed
 val ErrorRedContainer = UrgentRedContainer
 val SuccessGreenLightContainer = SuccessGreenContainer
 val WarningAmberLightContainer = WarningAmberContainer
 val PrimaryBlue = BrandPrimary
-val PrimaryBlueDark = Color(0xFF1D4ED8)
+val PrimaryBlueDark = BrandPrimaryDark
 val PrimaryBlueLight = BrandPrimaryDark
-val InfoCyan = Color(0xFF0EA5E9)
-val InfoCyanContainer = Color(0x2B0EA5E9)
+val InfoCyan = DarkTextSecondary
+val InfoCyanContainer = DarkTextSecondary.copy(alpha = 0.12f)

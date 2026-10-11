@@ -31,6 +31,7 @@ interface PreferencesManager {
     val notifyOverdue: Flow<Boolean>
     val lockTimeoutSeconds: Flow<Int>
     val hideContentInRecents: Flow<Boolean>
+    val initialScreen: Flow<String>
     suspend fun setDarkMode(enabled: Boolean?)
     suspend fun setAmoledMode(enabled: Boolean)
     suspend fun setBiometricEnabled(enabled: Boolean)
@@ -42,6 +43,7 @@ interface PreferencesManager {
     suspend fun setNotifyOverdue(enabled: Boolean)
     suspend fun setLockTimeoutSeconds(seconds: Int)
     suspend fun setHideContentInRecents(enabled: Boolean)
+    suspend fun setInitialScreen(screen: String)
 }
 
 @Singleton
@@ -62,6 +64,7 @@ class PreferencesManagerImpl @Inject constructor(
         val NOTIFY_OVERDUE = booleanPreferencesKey("notify_overdue")
         val LOCK_TIMEOUT_SECONDS = androidx.datastore.preferences.core.intPreferencesKey("lock_timeout_seconds")
         val HIDE_CONTENT_IN_RECENTS = booleanPreferencesKey("hide_content_in_recents")
+        val INITIAL_SCREEN = androidx.datastore.preferences.core.stringPreferencesKey("initial_screen")
     }
 
     override val isDarkMode: Flow<Boolean?> = context.dataStore.data
@@ -240,6 +243,24 @@ class PreferencesManagerImpl @Inject constructor(
     override suspend fun setHideContentInRecents(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.HIDE_CONTENT_IN_RECENTS] = enabled
+        }
+    }
+
+    override val initialScreen: Flow<String> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.INITIAL_SCREEN] ?: "overview"
+        }
+
+    override suspend fun setInitialScreen(screen: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.INITIAL_SCREEN] = screen
         }
     }
 }

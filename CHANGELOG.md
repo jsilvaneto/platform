@@ -3,6 +3,37 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.27.0] - 2026-10-11
+
+### 🎨 Design System Minimalista, Tokens Neutros, Regra de Cor e Menu Lateral (Prompts 55, 56 & 57)
+
+- **Tokens e Regra Estrita de Cor (Prompt 55)**:
+  - Tokens canônicos em `design/tokens.json` e `PlatformTokens.kt`:
+    - AMOLED: Fundo `#000000`, Sup1 `#0B0C10`, Sup2 `#14161D`, Linha `#23262F`, Texto `#F2F4FF`, Texto2 `#9AA3C0`.
+    - Escuro: Fundo `#0E1220`, Sup1 `#161B2E`, Sup2 `#1E2540`, Linha `#2A3354`, Texto `#E8ECFF`, Texto2 `#A3ACCB`.
+    - Claro: Fundo `#F6F7FB`, Sup1 `#FFFFFF`, Sup2 `#EEF0F8`, Linha `#DDE1F0`, Texto `#12162B`, Texto2 `#5B6385`.
+    - Status (Escuro/AMOLED): Pago `#34D399`, Atenção `#FBBF24`, Atrasado `#F87171`.
+    - Status (Claro): Pago `#059669`, Atenção `#B45309`, Atrasado `#DC2626`.
+  - Encapsulamento estrito das cores de status através do `PlatformStatusStyle` (visibilidade restrita), banindo roxo, azul e turquesa de destaques e botões de ação (botão principal e seleção utilizam preenchimento neutro com texto contrastante).
+  - Adição de seletor quádruplo de tema em Configurações: Automático, Claro, Escuro e AMOLED.
+  - Testes automatizados de contraste matemático WCAG 2.1 AA (4.5:1) em `ThemeContrastTest.kt`.
+  - Guard rail Gradle `:app:checkGradientsAndShadows` anexado ao `preBuild`, barrando novos gradientes ou sombras na camada de apresentação.
+  - Formalização no **ADR 041** (substituindo o ADR 034).
+- **Componentes Base Minimalistas e Superfícies Planas (Prompt 56)**:
+  - Eliminação de elevações e sombras em prol de superfícies 100% planas (`PlatformSurface`, `PlatformCard`) com borda de 1dp na cor de linha.
+  - Linha padrão `PlatformListRow`: container de ícone com 36dp (raio 12, fundo `surface2`), título 14sp negrito, subtítulo 12sp, valor 14sp à direita e chip de status. Suporte a gesto de swipe para pagamento rápido com Snackbar de desfazer e suporte a seleção em lote por toque longo (`long-press`).
+  - Chips padronizados: `PlatformStatusChip` (exclusivo para status financeiros) e `PlatformNeutralChip` (neutro `surface2`/`text2` para metadados).
+  - Tipografia e botões: `PlatformSectionTitle` (12sp caixa-alta, letter spacing 0.08em), `PlatformMoneyText` (algarismos tabulares com centavos discretos), `PlatformPrimaryButton` e `PlatformFab` (preenchimento neutro plano).
+  - Testes instrumentados de componentes nos três temas e escala de fonte 1.3x (`MinimalistComponentsAndroidTest.kt`).
+- **Menu Lateral e Arquitetura de Navegação (Prompt 57)**:
+  - Substituição da barra inferior pelo `ModalNavigationDrawer` do Material 3 com gesto de deslizar da borda esquerda, largura de 310dp e cantos arredondados à direita de 24dp (`PlatformShapes.drawer`).
+  - Cabeçalho dinâmico com marca "Platform" e indicador "Mês · restam R$ X" orquestrado via `GetDrawerOverviewUseCase`.
+  - Seções organizadas: Operacional (Visão geral, Hoje, Contas com selo vermelho de atrasadas, Cartões), Planejamento (Análises), Cadastros (Contatos, Cadastros) e Sistema (Configurações). Rodapé com timestamp do último backup seguro.
+  - Remoção definitiva da tela e rota órfã `MoreScreen`.
+  - Configuração de tela inicial (Visão geral vs. Hoje) persistida no DataStore.
+  - Layout adaptativo que converte o menu em barra lateral fixa (`PermanentNavigationDrawer`) em telas largas (>= 600dp).
+  - Formalização no **ADR 042**.
+
 ## [1.26.0] - 2026-10-10
 
 ### 💎 Modelo de Sincronização, Entidade Payment, Inteligência Financeira e Excelência Visual (Prompts 43-54)

@@ -62,19 +62,7 @@ fun PlatformCreditCardView(
     modifier: Modifier = Modifier
 ) {
     val card = summary.card
-    val baseColor = try {
-        Color(android.graphics.Color.parseColor(card.colorHex))
-    } catch (e: Exception) {
-        MaterialTheme.colorScheme.primary
-    }
-
-    val gradientBrush = Brush.linearGradient(
-        colors = listOf(
-            baseColor.copy(alpha = 0.95f),
-            baseColor.copy(alpha = 0.75f),
-            CardSkinColors.BaseGradientDark
-        )
-    )
+    val cardBgColor = MaterialTheme.colorScheme.surfaceVariant
 
     val usageRatio = if (card.totalLimitCents > 0) {
         (summary.usedLimitCents.toFloat() / card.totalLimitCents.toFloat()).coerceIn(0f, 1f)
@@ -104,7 +92,7 @@ fun PlatformCreditCardView(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(gradientBrush)
+                .background(cardBgColor)
                 .padding(12.dp)
         ) {
             Column(

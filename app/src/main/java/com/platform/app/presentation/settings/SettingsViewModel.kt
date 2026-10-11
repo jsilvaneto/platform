@@ -78,12 +78,14 @@ class SettingsViewModel @Inject constructor(
 
         combine(
             preferencesManager.lockTimeoutSeconds,
-            preferencesManager.hideContentInRecents
-        ) { timeout, hideRecents ->
+            preferencesManager.hideContentInRecents,
+            preferencesManager.initialScreen
+        ) { timeout, hideRecents, initialScreen ->
             _uiState.update { current ->
                 current.copy(
                     lockTimeoutSeconds = timeout,
-                    hideContentInRecents = hideRecents
+                    hideContentInRecents = hideRecents,
+                    initialScreen = initialScreen
                 )
             }
         }.launchIn(viewModelScope)
@@ -121,6 +123,11 @@ class SettingsViewModel @Inject constructor(
             is SettingsUiAction.SetThemeMode -> handleSetThemeMode(action.isDarkMode)
             is SettingsUiAction.SetAmoledMode -> handleSetAmoledMode(action.enabled)
             is SettingsUiAction.SetAppIcon -> handleSetAppIcon(action.iconKey)
+            is SettingsUiAction.SetInitialScreen -> {
+                viewModelScope.launch {
+                    preferencesManager.setInitialScreen(action.screen)
+                }
+            }
             is SettingsUiAction.ExportBackupToUri -> handleExportBackupToUri(action.uri, action.password)
             is SettingsUiAction.RestoreBackupFromUri -> handleRestoreBackupFromUri(action.uri, action.password)
             is SettingsUiAction.ShareBackup -> handleShareBackup(action.password)

@@ -42,14 +42,6 @@ fun BiometricLockOverlay(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
                 .padding(32.dp),
             contentAlignment = Alignment.Center
         ) {

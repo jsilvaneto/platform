@@ -388,8 +388,48 @@ tasks.register("checkRawSurfaces") {
     }
 }
 
+tasks.register("checkGradientsAndShadows") {
+    group = "verification"
+    description = "Checks that no gradients or shadows are introduced in presentation code (Prompt 55)"
+    doLast {
+        val presentationDir = file("src/main/java/com/platform/app/presentation")
+        val gradientPattern = Regex("""Brush\.(horizontalGradient|verticalGradient|linearGradient|radialGradient|sweepGradient)""")
+        val shadowPattern = Regex("""(\.shadow\s*\(|shadowElevation\s*=\s*(?!0\.dp)[0-9])""")
+
+        val violations = mutableListOf<String>()
+
+        presentationDir.walkTopDown().forEach { file ->
+            val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
+            if (file.isFile && file.extension == "kt") {
+                file.useLines { lines ->
+                    lines.forEachIndexed { index, line ->
+                        val trimmed = line.trim()
+                        if (!trimmed.startsWith("//") && !trimmed.startsWith("/*") && !trimmed.startsWith("*")) {
+                            if (gradientPattern.containsMatchIn(line) || shadowPattern.containsMatchIn(line)) {
+                                violations.add("$relativePath:${index + 1}: $trimmed")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            val message = buildString {
+                appendLine("FAILED: Encontrado(s) ${violations.size} uso(s) de Gradiente ou Sombra em presentation/ (Prompt 55):")
+                violations.forEach { appendLine("  - $it") }
+                appendLine("\nRegra de Design System Minimalista (Prompt 55):")
+                appendLine("Gradientes e sombras são proibidos. Utilize superfícies planas (0dp) e borda de 1dp na cor de linha.")
+            }
+            throw GradleException(message)
+        } else {
+            println("checkGradientsAndShadows: 0 gradientes e 0 sombras encontrados em presentation/ (Design 100% plano).")
+        }
+    }
+}
+
 tasks.named("preBuild") {
-    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes", "checkRawSurfaces")
+    dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes", "checkRawSurfaces", "checkGradientsAndShadows")
 }
 
 

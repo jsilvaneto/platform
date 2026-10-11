@@ -62,11 +62,10 @@ fun PlatformBatchActionBar(
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
         modifier = modifier
     ) {
-        Surface(
+        PlatformSurface(
             shape = PlatformShapes.large,
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            shadowElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimens.spacingNormal, vertical = Dimens.spacingSmall)

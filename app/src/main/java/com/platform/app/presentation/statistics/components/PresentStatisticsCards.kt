@@ -1,5 +1,6 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.layout.Arrangement
@@ -66,7 +67,7 @@ fun PresentHeroCard(
                     subtitle = metrics.currentMonthLabel
                 )
 
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.pill,
                     color = if (paidRate == 100) SuccessGreenContainer else MaterialTheme.colorScheme.surfaceVariant
                 ) {

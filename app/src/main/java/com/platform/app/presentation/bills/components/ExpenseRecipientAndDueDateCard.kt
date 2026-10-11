@@ -178,7 +178,7 @@ fun ExpenseRecipientAndDueDateCard(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(AppStrings.ExpenseForm.CONTACT_OPTIONAL) },
-                        placeholder = { Text("Selecione o favorecido") },
+                        placeholder = { Text(AppStrings.ExpenseLabels.SELECT_RECIPIENT) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,
@@ -198,7 +198,7 @@ fun ExpenseRecipientAndDueDateCard(
                     ) {
                         if (uiState.contacts.isEmpty()) {
                             DropdownMenuItem(
-                                text = { Text("Nenhum contato cadastrado") },
+                                text = { Text(AppStrings.ExpenseLabels.NO_CONTACT_REGISTERED) },
                                 onClick = { contactDropdownExpanded = false }
                             )
                         }

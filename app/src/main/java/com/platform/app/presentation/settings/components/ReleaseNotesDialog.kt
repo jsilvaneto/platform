@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.layout.Arrangement
@@ -34,13 +36,13 @@ fun ReleaseNotesDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
+                PlatformSurface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("🚀", style = MaterialTheme.typography.titleMedium)
+                        Text(AppStrings.IconsEmoji.ROCKET, style = MaterialTheme.typography.titleMedium)
                     }
                 }
                 Spacer(modifier = Modifier.width(10.dp))
@@ -93,7 +95,7 @@ fun ReleaseNotesDialog(
         },
         confirmButton = {
             Button(onClick = onDismiss, shape = PlatformShapes.medium) {
-                Text("Entendido")
+                Text(AppStrings.Common.UNDERSTOOD)
             }
         }
     )

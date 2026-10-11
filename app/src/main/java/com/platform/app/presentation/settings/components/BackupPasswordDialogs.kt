@@ -1,5 +1,6 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.background
@@ -139,7 +140,7 @@ fun CreateBackupPasswordDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
-            Surface(
+            PlatformSurface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(44.dp)
@@ -255,7 +256,7 @@ fun RestorePasswordDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
-            Surface(
+            PlatformSurface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(44.dp)

@@ -1,5 +1,6 @@
 package com.platform.app.presentation.goals
 
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.PlatformSurfaceVariant
 
@@ -63,7 +64,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -422,7 +422,7 @@ fun EmptyGoalsView(onAddClick: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("🎯", style = MaterialTheme.typography.headlineLarge)
+        Text(AppStrings.IconsEmoji.TARGET, style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "Nenhuma meta cadastrada",
@@ -441,7 +441,7 @@ fun EmptyGoalsView(onAddClick: () -> Unit) {
         Button(onClick = onAddClick, shape = PlatformShapes.medium) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Criar Primeira Meta")
+            Text(AppStrings.Goals.CREATE_FIRST)
         }
     }
 }

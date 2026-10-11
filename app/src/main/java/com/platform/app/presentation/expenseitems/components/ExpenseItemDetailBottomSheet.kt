@@ -108,7 +108,7 @@ fun ExpenseItemDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Editar Item") },
+                            text = { Text(AppStrings.ExpenseItems.EDIT_ITEM) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -123,7 +123,7 @@ fun ExpenseItemDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Item", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.ExpenseItems.DELETE_ITEM, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(
@@ -233,7 +233,7 @@ fun ExpenseItemDetailBottomSheet(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(Dimens.spacingSmall))
-                Text("Editar Item")
+                Text(AppStrings.ExpenseItems.EDIT_ITEM)
             }
 
             Spacer(modifier = Modifier.height(Dimens.spacingMedium))

@@ -332,4 +332,139 @@ object AppStrings {
         const val ATTENTION_SUFFIX = " pendência(s) hoje ou em atraso"
         const val ATTENTION_ACTION = "Ver em Hoje"
     }
+
+    object Common {
+        const val DASH = "—"
+        const val PLUS = "+"
+        const val NONE_MALE = "Nenhum"
+        const val NONE_FEMALE = "Nenhuma"
+        const val UNDERSTOOD = "Entendido"
+        const val SELECT_FILE = "Selecionar Arquivo"
+    }
+
+    object CommitmentType {
+        const val CASH = "À Vista"
+        const val INSTALLMENT = "Parcelado"
+        const val RECURRING = "Recorrente"
+        const val DAILY = "Diariamente"
+        const val WEEKLY = "Semanalmente"
+        const val MONTHLY = "Mensalmente"
+        const val ANNUALLY = "Anualmente"
+        const val FOREVER = "Para sempre"
+        const val UNTIL_DATE = "Até uma data"
+        const val BY_OCCURRENCES = "Por número de eventos"
+        const val CHANGE_END_DATE = "Alterar Data Final"
+    }
+
+    object ExpenseLabels {
+        const val EXPENSE_NAME_REQUIRED = "Nome da Conta / Despesa *"
+        const val AMOUNT_BRL_REQUIRED = "Valor (R$) *"
+        const val CATEGORY = "Categoria"
+        const val RECIPIENT_SUPPLIER = "Favorecido / Fornecedor"
+        const val DEBIT_ACCOUNT_BANK = "Conta de Débito / Banco"
+        const val PAYMENT_METHOD = "Forma de Pagamento"
+        const val SPECIFIC_DESCRIPTION = "Descrição / Detalhe Específico"
+        const val SPECIFIC_DESCRIPTION_PLACEHOLDER = "Ex: Compras no Carrefour, troca de filtro"
+        const val NO_ITEM_REGISTERED = "Nenhum item cadastrado"
+        const val EXPENSE_AMOUNT_REQUIRED = "Valor da Despesa *"
+        const val EXPENSE_ITEM_REQUIRED_LABEL = "Item de Despesa * (Obrigatório)"
+        const val SELECT_CATEGORIZED_ITEM = "Selecione o item categorizado"
+        const val ITEM_REQUIRED_ERROR = "Item é obrigatório para classificar a despesa"
+        const val CREDIT_CARD_REQUIRED = "Cartão de Crédito *"
+        const val PAYMENT_METHOD_LABEL = "Forma de Pagamento (PIX, Boleto, etc.)"
+        const val FINANCIAL_ACCOUNT_BANK = "Conta Financeira / Banco"
+        const val CONTACT_REQUIRED_ERROR = "Contato é obrigatório no lançamento"
+        const val NO_CONTACT_REGISTERED = "Nenhum contato cadastrado"
+        const val CHANGE_DATE = "Alterar Data"
+        const val CONTACT_SUPPLIER_REQUIRED = "Contato / Fornecedor *"
+        const val SELECT_RECIPIENT = "Selecione o favorecido"
+    }
+
+    object Budgets {
+        const val CREATE_FIRST = "Criar Primeiro Teto"
+        const val SELECT_CATEGORY_COLON = "Selecione a Categoria:"
+        const val GENERAL = "Geral"
+        const val MAX_MONTHLY_LIMIT = "Limite Mensal Máximo (R$)"
+        const val EDIT_BUDGET = "Editar Orçamento"
+        const val DELETE_BUDGET = "Excluir Orçamento"
+    }
+
+    object Contacts {
+        const val DETAILS_TITLE = "Detalhes do Contato"
+        const val EDIT_CONTACT = "Editar Contato"
+        const val DELETE_CONTACT = "Excluir Contato"
+        const val FULL_NAME_REQUIRED = "Nome Completo / Razão Social *"
+        const val PHONE_MOBILE = "Telefone / Celular"
+        const val EMAIL = "E-mail"
+        const val CEP_LABEL = "CEP (busca automática ao digitar)"
+        const val CEP_PLACEHOLDER = "Ex: 01001-000"
+        const val STREET_LABEL = "Logradouro (Rua, Avenida, Praça)"
+        const val NUMBER_LABEL = "Número"
+        const val NUMBER_PLACEHOLDER = "Ex: 123, S/N"
+        const val COMPLEMENT_LABEL = "Complemento"
+        const val COMPLEMENT_PLACEHOLDER = "Apto 42, Bloco B"
+        const val NEIGHBORHOOD_LABEL = "Bairro"
+        const val CITY_LABEL = "Cidade"
+        const val STATE_UF_LABEL = "Estado (UF)"
+        const val STATE_UF_PLACEHOLDER = "Ex: SP"
+        const val COUNTRY_LABEL = "País"
+    }
+
+    object CreditCardLabels {
+        const val CUTOFF_DAY_REQUIRED = "Dia Corte (1-31) *"
+        const val DUE_DAY_REQUIRED = "Dia Venc. (1-31) *"
+        const val CARD_NAME_REQUIRED = "Nome do Cartão *"
+        const val CARD_NAME_PLACEHOLDER = "Ex: Nubank Mastercard, Unique Visa"
+        const val TOTAL_LIMIT_REQUIRED = "Limite Total *"
+        const val VIEW_PURCHASES = "Ver Compras"
+        const val SETTLE = "Liquidar"
+        const val SETTLE_INVOICE_NOW = "Liquidar Fatura Agora"
+        const val CONFIRM_DELETE_BUTTON = "Sim, Excluir"
+    }
+
+    object Goals {
+        const val CREATE_FIRST = "Criar Primeira Meta"
+        const val ADD_CONTRIBUTION = "Adicionar Aporte"
+        const val EDIT_GOAL = "Editar Meta"
+        const val DELETE_GOAL = "Excluir Meta"
+        const val CONTRIBUTION_AMOUNT_LABEL = "Valor do Aporte (R$)"
+        const val CONFIRM_CONTRIBUTION = "Confirmar Aporte"
+        const val GOAL_NAME_LABEL = "Nome da Meta (ex: Reserva, Viagem, Carro)"
+        const val TARGET_AMOUNT_LABEL = "Valor Alvo Desejado (R$)"
+        const val INITIAL_SAVED_AMOUNT_LABEL = "Valor Já Poupado Inicial (R$)"
+    }
+
+    object ExpenseItems {
+        const val SEARCH_CATEGORY = "Buscar Categoria..."
+        const val ITEM_NAME_LABEL = "Nome do Item (ex: Supermercado, Internet)"
+        const val EDIT_ITEM = "Editar Item"
+        const val DELETE_ITEM = "Excluir Item"
+    }
+
+    object ManagementLabels {
+        const val EDIT_ACCOUNT = "Editar Conta"
+        const val DELETE_ACCOUNT = "Excluir Conta"
+        const val EDIT_CATEGORY = "Editar Categoria"
+        const val DELETE_CATEGORY = "Excluir Categoria"
+        const val EDIT_PAYMENT_METHOD = "Editar Forma de Pagamento"
+        const val DELETE_PAYMENT_METHOD = "Excluir Forma de Pagamento"
+    }
+
+    object RecurringLabels {
+        const val NEW_AMOUNT_REQUIRED = "Novo Valor *"
+        const val DELETE_ELLIPSIS = "Excluir..."
+        const val CONFIRM_DELETION = "Confirmar Exclusão"
+        const val CHANGE_MONTHLY_AMOUNT = "Alterar Valor Mensal"
+        const val END_RECURRING = "Encerrar Recorrência"
+        const val DELETE_ALL_WITH_HISTORY = "Excluir Tudo (Inclusive Histórico)"
+        const val RESUME = "Retomar"
+        const val DELETE_EXPENSE_TITLE = "Excluir Lançamento"
+        const val END_RECURRING_QUESTION = "Encerrar Recorrência?"
+    }
+
+    object IconsEmoji {
+        const val CHART = "📊"
+        const val TARGET = "🎯"
+        const val ROCKET = "🚀"
+    }
 }

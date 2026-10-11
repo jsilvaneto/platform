@@ -130,7 +130,7 @@ fun CategoriesTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.small,
                                 color = color.copy(alpha = 0.12f)
                             ) {
@@ -231,7 +231,7 @@ fun CategoryDetailBottomSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = catColor.copy(alpha = 0.12f)
                     ) {
@@ -260,7 +260,7 @@ fun CategoryDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Editar Categoria") },
+                            text = { Text(AppStrings.ManagementLabels.EDIT_CATEGORY) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -276,7 +276,7 @@ fun CategoryDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Categoria", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.ManagementLabels.DELETE_CATEGORY, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(
@@ -333,7 +333,7 @@ fun CategoryDetailBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Pendente
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
@@ -364,7 +364,7 @@ fun CategoryDetailBottomSheet(
                         }
 
                         // Pago
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
@@ -398,7 +398,7 @@ fun CategoryDetailBottomSheet(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Total Movimentado
-                    Surface(
+                    PlatformSurface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = PlatformShapes.medium,
                         color = MaterialTheme.colorScheme.surface

@@ -75,8 +75,8 @@ fun CardFormBottomSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome do Cartão *") },
-                placeholder = { Text("Ex: Nubank Mastercard, Unique Visa") },
+                label = { Text(AppStrings.CreditCardLabels.CARD_NAME_REQUIRED) },
+                placeholder = { Text(AppStrings.CreditCardLabels.CARD_NAME_PLACEHOLDER) },
                 isError = validation.nameError != null && name.isNotBlank(),
                 supportingText = if (validation.nameError != null && name.isNotBlank()) {
                     { Text(validation.nameError, color = MaterialTheme.colorScheme.error) }
@@ -91,7 +91,7 @@ fun CardFormBottomSheet(
                 onValueChange = { input ->
                     limitText = input.filter { it.isDigit() }
                 },
-                label = { Text("Limite Total *") },
+                label = { Text(AppStrings.CreditCardLabels.TOTAL_LIMIT_REQUIRED) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -105,7 +105,7 @@ fun CardFormBottomSheet(
                 OutlinedTextField(
                     value = closingDayText,
                     onValueChange = { if (it.length <= 2) closingDayText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Dia Corte (1-31) *") },
+                    label = { Text(AppStrings.CreditCardLabels.CUTOFF_DAY_REQUIRED) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = validation.closingDayError != null,
                     modifier = Modifier.weight(1f),
@@ -114,7 +114,7 @@ fun CardFormBottomSheet(
                 OutlinedTextField(
                     value = dueDayText,
                     onValueChange = { if (it.length <= 2) dueDayText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Dia Venc. (1-31) *") },
+                    label = { Text(AppStrings.CreditCardLabels.DUE_DAY_REQUIRED) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = validation.dueDayError != null,
                     modifier = Modifier.weight(1f),

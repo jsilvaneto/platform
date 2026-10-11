@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.roborazzi)
 }
 
 val versionFile = rootProject.file("VERSION")
@@ -64,6 +65,18 @@ android {
         getByName("androidTest").assets.srcDirs("$projectDir/schemas")
         getByName("test").assets.srcDirs("$projectDir/schemas")
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all {
+                it.systemProperty("robolectric.logging", "stdout")
+            }
+        }
+    }
+}
+
+roborazzi {
+    outputDir.set(file("src/test/snapshots/images"))
 }
 
 ksp {
@@ -119,6 +132,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.work.testing)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.androidx.ui.test.junit4)
 
     // Testes de Instrumentação
     androidTestImplementation(libs.androidx.junit)
@@ -349,7 +367,7 @@ tasks.register("checkRawShapes") {
 
 tasks.register("checkRawSurfaces") {
     group = "verification"
-    description = "Checks that no raw Surface( are used in presentation outside components/ and theme/"
+    description = "Checks that no raw Surface( are used anywhere in presentation except PlatformSurface.kt"
     doLast {
         val presentationDir = file("src/main/java/com/platform/app/presentation")
         val rawSurfacePattern = Regex("""(?<!Platform)\bSurface\s*\(""")
@@ -359,7 +377,7 @@ tasks.register("checkRawSurfaces") {
         presentationDir.walkTopDown().forEach { file ->
             val relativePath = file.relativeTo(projectDir).path.replace('\\', '/')
             if (file.isFile && file.extension == "kt" && 
-                !relativePath.contains("/components/") && 
+                !relativePath.endsWith("presentation/components/PlatformSurface.kt") && 
                 !relativePath.contains("/theme/")) {
                 file.useLines { lines ->
                     lines.forEachIndexed { index, line ->
@@ -376,14 +394,14 @@ tasks.register("checkRawSurfaces") {
 
         if (violations.isNotEmpty()) {
             val message = buildString {
-                appendLine("FAILED: Encontrado(s) ${violations.size} uso(s) de Surface(...) cru fora de presentation/components/:")
+                appendLine("FAILED: Encontrado(s) ${violations.size} uso(s) de Surface(...) cru em presentation/:")
                 violations.forEach { appendLine("  - $it") }
-                appendLine("\nRegra de Design System (coding_standards.md / Prompt 28):")
-                appendLine("Surface(...) cru é proibido fora de components/. Utilize PlatformSurface(...) ou PlatformCard(...).")
+                appendLine("\nRegra de Design System (coding_standards.md / Prompt 28 / Prompt 66):")
+                appendLine("Surface(...) cru é estritamente proibido. Utilize PlatformSurface(...) ou PlatformCard(...).")
             }
             throw GradleException(message)
         } else {
-            println("checkRawSurfaces: Todas as telas utilizam PlatformSurface/PlatformCard padronizados (0 Surface crus fora de components/).")
+            println("checkRawSurfaces: 100% das telas e componentes utilizam PlatformSurface/PlatformCard padronizados (0 Surface crus em todo presentation/).")
         }
     }
 }

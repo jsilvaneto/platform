@@ -154,7 +154,7 @@ fun EditInstallmentBottomSheet(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Nome da Conta / Despesa *") },
+                label = { Text(AppStrings.ExpenseLabels.EXPENSE_NAME_REQUIRED) },
                 singleLine = true,
                 shape = PlatformShapes.medium,
                 modifier = Modifier.fillMaxWidth(),
@@ -172,7 +172,7 @@ fun EditInstallmentBottomSheet(
                     val cleanDigits = newValue.filter { it.isDigit() }
                     amountCents = cleanDigits.toLongOrNull() ?: 0L
                 },
-                label = { Text("Valor (R$) *") },
+                label = { Text(AppStrings.ExpenseLabels.AMOUNT_BRL_REQUIRED) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Payments,
@@ -250,7 +250,7 @@ fun EditInstallmentBottomSheet(
                     value = selectedCategory?.name ?: "Selecione uma Categoria",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Categoria") },
+                    label = { Text(AppStrings.ExpenseLabels.CATEGORY) },
                     leadingIcon = selectedCategory?.let { cat ->
                         {
                             val resolvedColor = try { Color(android.graphics.Color.parseColor(cat.colorHex)) } catch (e: Exception) { MaterialTheme.colorScheme.primary }
@@ -307,7 +307,7 @@ fun EditInstallmentBottomSheet(
                     value = selectedContact?.name ?: "Nenhum contato selecionado",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Favorecido / Fornecedor") },
+                    label = { Text(AppStrings.ExpenseLabels.RECIPIENT_SUPPLIER) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Person,
@@ -331,7 +331,7 @@ fun EditInstallmentBottomSheet(
                     onDismissRequest = { contactExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Nenhum") },
+                        text = { Text(AppStrings.Common.NONE_MALE) },
                         onClick = {
                             selectedContactId = null
                             contactExpanded = false
@@ -358,7 +358,7 @@ fun EditInstallmentBottomSheet(
                     value = selectedAccount?.name ?: "Nenhuma conta vinculada",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Conta de Débito / Banco") },
+                    label = { Text(AppStrings.ExpenseLabels.DEBIT_ACCOUNT_BANK) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.AccountBalance,
@@ -382,7 +382,7 @@ fun EditInstallmentBottomSheet(
                     onDismissRequest = { accountExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Nenhuma") },
+                        text = { Text(AppStrings.Common.NONE_FEMALE) },
                         onClick = {
                             selectedFinancialAccountId = null
                             accountExpanded = false
@@ -409,7 +409,7 @@ fun EditInstallmentBottomSheet(
                     value = selectedMethod?.name ?: "Nenhuma forma selecionada",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Forma de Pagamento") },
+                    label = { Text(AppStrings.ExpenseLabels.PAYMENT_METHOD) },
                     leadingIcon = {
                         val iconVector = selectedMethod?.let { PlatformIconCatalog.getIcon(it.iconName) } ?: Icons.Default.CreditCard
                         Icon(
@@ -434,7 +434,7 @@ fun EditInstallmentBottomSheet(
                     onDismissRequest = { paymentMethodExpanded = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Nenhuma") },
+                        text = { Text(AppStrings.Common.NONE_FEMALE) },
                         onClick = {
                             selectedPaymentMethodId = null
                             paymentMethodExpanded = false

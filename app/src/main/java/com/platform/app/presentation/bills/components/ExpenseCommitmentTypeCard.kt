@@ -1,5 +1,7 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import android.app.DatePickerDialog
@@ -111,10 +113,10 @@ fun ExpenseCommitmentTypeCard(
                             onClick = { onInstallmentsCountChange(uiState.installmentsCount - 1) },
                             enabled = uiState.installmentsCount > 2
                         ) {
-                            Text("—", fontWeight = FontWeight.Bold)
+                            Text(AppStrings.Common.DASH, fontWeight = FontWeight.Bold)
                         }
 
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.small,
                             color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier.padding(horizontal = 4.dp)
@@ -130,7 +132,7 @@ fun ExpenseCommitmentTypeCard(
                             onClick = { onInstallmentsCountChange(uiState.installmentsCount + 1) },
                             enabled = uiState.installmentsCount < 72
                         ) {
-                            Text("+", fontWeight = FontWeight.Bold)
+                            Text(AppStrings.Common.PLUS, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -165,7 +167,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceFrequency == RecurrenceFrequency.DAILY,
                         onClick = { onRecurrenceFrequencyChange(RecurrenceFrequency.DAILY) },
-                        label = { Text("Diariamente") },
+                        label = { Text(AppStrings.CommitmentType.DAILY) },
                         leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.DAILY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -174,7 +176,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceFrequency == RecurrenceFrequency.WEEKLY,
                         onClick = { onRecurrenceFrequencyChange(RecurrenceFrequency.WEEKLY) },
-                        label = { Text("Semanalmente") },
+                        label = { Text(AppStrings.CommitmentType.WEEKLY) },
                         leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.WEEKLY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -189,7 +191,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceFrequency == RecurrenceFrequency.MONTHLY,
                         onClick = { onRecurrenceFrequencyChange(RecurrenceFrequency.MONTHLY) },
-                        label = { Text("Mensalmente") },
+                        label = { Text(AppStrings.CommitmentType.MONTHLY) },
                         leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.MONTHLY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -198,7 +200,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceFrequency == RecurrenceFrequency.YEARLY,
                         onClick = { onRecurrenceFrequencyChange(RecurrenceFrequency.YEARLY) },
-                        label = { Text("Anualmente") },
+                        label = { Text(AppStrings.CommitmentType.ANNUALLY) },
                         leadingIcon = if (uiState.recurrenceFrequency == RecurrenceFrequency.YEARLY) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -222,7 +224,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceEndType == RecurrenceEndType.FOREVER,
                         onClick = { onRecurrenceEndTypeChange(RecurrenceEndType.FOREVER) },
-                        label = { Text("Para sempre") },
+                        label = { Text(AppStrings.CommitmentType.FOREVER) },
                         leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.FOREVER) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -231,7 +233,7 @@ fun ExpenseCommitmentTypeCard(
                     FilterChip(
                         selected = uiState.recurrenceEndType == RecurrenceEndType.UNTIL_DATE,
                         onClick = { onRecurrenceEndTypeChange(RecurrenceEndType.UNTIL_DATE) },
-                        label = { Text("Até uma data") },
+                        label = { Text(AppStrings.CommitmentType.UNTIL_DATE) },
                         leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.UNTIL_DATE) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                         } else null,
@@ -242,7 +244,7 @@ fun ExpenseCommitmentTypeCard(
                 FilterChip(
                     selected = uiState.recurrenceEndType == RecurrenceEndType.BY_OCCURRENCES,
                     onClick = { onRecurrenceEndTypeChange(RecurrenceEndType.BY_OCCURRENCES) },
-                    label = { Text("Por número de eventos") },
+                    label = { Text(AppStrings.CommitmentType.BY_OCCURRENCES) },
                     leadingIcon = if (uiState.recurrenceEndType == RecurrenceEndType.BY_OCCURRENCES) {
                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
                     } else null,
@@ -251,7 +253,7 @@ fun ExpenseCommitmentTypeCard(
 
                 when (uiState.recurrenceEndType) {
                     RecurrenceEndType.FOREVER -> {
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.small,
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.fillMaxWidth()
@@ -314,7 +316,7 @@ fun ExpenseCommitmentTypeCard(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Alterar Data Final")
+                                Text(AppStrings.CommitmentType.CHANGE_END_DATE)
                             }
                         }
                     }
@@ -335,10 +337,10 @@ fun ExpenseCommitmentTypeCard(
                                     onClick = { onRecurrenceOccurrencesCountChange(uiState.recurrenceOccurrencesCount - 1) },
                                     enabled = uiState.recurrenceOccurrencesCount > 2
                                 ) {
-                                    Text("—", fontWeight = FontWeight.Bold)
+                                    Text(AppStrings.Common.DASH, fontWeight = FontWeight.Bold)
                                 }
 
-                                Surface(
+                                PlatformSurface(
                                     shape = PlatformShapes.small,
                                     color = MaterialTheme.colorScheme.primaryContainer,
                                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -354,7 +356,7 @@ fun ExpenseCommitmentTypeCard(
                                     onClick = { onRecurrenceOccurrencesCountChange(uiState.recurrenceOccurrencesCount + 1) },
                                     enabled = uiState.recurrenceOccurrencesCount < 365
                                 ) {
-                                    Text("+", fontWeight = FontWeight.Bold)
+                                    Text(AppStrings.Common.PLUS, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }

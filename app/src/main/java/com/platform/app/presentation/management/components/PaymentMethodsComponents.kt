@@ -124,7 +124,7 @@ fun PaymentMethodsTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.small,
                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             ) {
@@ -223,7 +223,7 @@ fun PaymentMethodDetailBottomSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
@@ -252,7 +252,7 @@ fun PaymentMethodDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Editar Forma de Pagamento") },
+                            text = { Text(AppStrings.ManagementLabels.EDIT_PAYMENT_METHOD) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -268,7 +268,7 @@ fun PaymentMethodDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Forma de Pagamento", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.ManagementLabels.DELETE_PAYMENT_METHOD, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(
@@ -325,7 +325,7 @@ fun PaymentMethodDetailBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Pendente
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
@@ -356,7 +356,7 @@ fun PaymentMethodDetailBottomSheet(
                         }
 
                         // Pago / Liquidado
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
@@ -390,7 +390,7 @@ fun PaymentMethodDetailBottomSheet(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Total Movimentado
-                    Surface(
+                    PlatformSurface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = PlatformShapes.medium,
                         color = MaterialTheme.colorScheme.surface

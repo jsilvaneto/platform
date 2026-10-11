@@ -1,5 +1,6 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.clickable
@@ -119,7 +120,7 @@ fun PreviousMonthComparisonCard(
                 )
 
                 if (hasPrevData) {
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.pill,
                         color = if (isHigher) ErrorRedContainer else SuccessGreenContainer
                     ) {
@@ -242,7 +243,7 @@ fun PastHistoryChartCard(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
+                                PlatformSurface(
                                     shape = PlatformShapes.extraSmall,
                                     color = if (item.paidRate >= 95) SuccessGreenContainer else MaterialTheme.colorScheme.surfaceVariant
                                 ) {
@@ -286,7 +287,7 @@ fun PastExtremesCard(
                 .padding(14.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Surface(
+            PlatformSurface(
                 modifier = Modifier.weight(1f),
                 shape = PlatformShapes.medium,
                 color = ErrorRedContainer.copy(alpha = 0.35f)
@@ -314,7 +315,7 @@ fun PastExtremesCard(
                 }
             }
 
-            Surface(
+            PlatformSurface(
                 modifier = Modifier.weight(1f),
                 shape = PlatformShapes.medium,
                 color = SuccessGreenContainer.copy(alpha = 0.35f)

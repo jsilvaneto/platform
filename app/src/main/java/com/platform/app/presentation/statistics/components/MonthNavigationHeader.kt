@@ -1,5 +1,6 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,7 @@ fun MonthNavigationHeader(
     val currentMonthStart = DateUtils.getStartOfMonth(System.currentTimeMillis())
     val isCurrent = DateUtils.getStartOfMonth(selectedMonthMillis) == currentMonthStart
 
-    Surface(
+    PlatformSurface(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),

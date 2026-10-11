@@ -1,5 +1,6 @@
 package com.platform.app.presentation.budgets
 
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.theme.PlatformShapes
 import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.PlatformSurfaceVariant
@@ -60,7 +61,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import com.platform.app.presentation.common.AppStrings
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -456,7 +456,7 @@ fun EmptyBudgetsView(onAddClick: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("📊", style = MaterialTheme.typography.headlineLarge)
+        Text(AppStrings.IconsEmoji.CHART, style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = "Nenhum teto de orçamento definido",
@@ -475,7 +475,7 @@ fun EmptyBudgetsView(onAddClick: () -> Unit) {
         Button(onClick = onAddClick, shape = PlatformShapes.medium) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Criar Primeiro Teto")
+            Text(AppStrings.Budgets.CREATE_FIRST)
         }
     }
 }

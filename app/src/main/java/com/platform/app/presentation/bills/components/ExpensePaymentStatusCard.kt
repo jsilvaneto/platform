@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.BorderStroke
@@ -59,7 +60,7 @@ fun ExpensePaymentStatusCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Opção: Pendente
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.medium,
                     color = if (!isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     border = if (!isPaid) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
@@ -80,7 +81,7 @@ fun ExpensePaymentStatusCard(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = AppStrings.Status.PENDING,
+                             text = AppStrings.Status.PENDING,
                             fontWeight = if (!isPaid) FontWeight.Bold else FontWeight.Normal,
                             color = if (!isPaid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -88,7 +89,7 @@ fun ExpensePaymentStatusCard(
                 }
 
                 // Opção: Já Paga
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.medium,
                     color = if (isPaid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     border = if (isPaid) BorderStroke(1.dp, SuccessGreen) else null,

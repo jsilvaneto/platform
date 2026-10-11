@@ -1,5 +1,6 @@
 package com.platform.app.presentation.expenseitems.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -81,7 +82,7 @@ fun AddEditExpenseItemBottomSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome do Item (ex: Supermercado, Internet)") },
+                label = { Text(AppStrings.ExpenseItems.ITEM_NAME_LABEL) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = PlatformShapes.medium
@@ -91,7 +92,7 @@ fun AddEditExpenseItemBottomSheet(
                 try { Color(it.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
             }
 
-            Surface(
+            PlatformSurface(
                 shape = PlatformShapes.medium,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
@@ -344,7 +345,7 @@ fun CategorySearchableModal(
                                 try { Color(cat.colorHex.toColorInt()) } catch (e: Exception) { BrandPrimary }
                             }
 
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),

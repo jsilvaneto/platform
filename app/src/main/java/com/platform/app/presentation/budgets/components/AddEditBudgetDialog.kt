@@ -37,7 +37,7 @@ fun AddEditBudgetDialog(
         title = { Text(if (budget == null) "Novo Teto de Orçamento" else "Editar Orçamento") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Selecione a Categoria:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text(AppStrings.Budgets.SELECT_CATEGORY_COLON, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
 
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     item {
@@ -47,7 +47,7 @@ fun AddEditBudgetDialog(
                                 selectedCategoryId = null
                                 selectedCategoryName = "Geral (Todas as despesas)"
                             },
-                            label = { Text("Geral") }
+                            label = { Text(AppStrings.Budgets.GENERAL) }
                         )
                     }
                     items(categories) { cat ->
@@ -66,7 +66,7 @@ fun AddEditBudgetDialog(
                 OutlinedTextField(
                     value = limitText,
                     onValueChange = { limitText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Limite Mensal Máximo (R$)") },
+                    label = { Text(AppStrings.Budgets.MAX_MONTHLY_LIMIT) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = PlatformShapes.medium,

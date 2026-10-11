@@ -44,8 +44,21 @@ fun OverviewScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val overview = uiState.overview
+    OverviewContent(
+        overview = uiState.overview,
+        onOpenDrawer = onOpenDrawer,
+        onNavigateToToday = onNavigateToToday,
+        modifier = modifier
+    )
+}
 
+@Composable
+fun OverviewContent(
+    overview: com.platform.app.domain.model.PortfolioOverview,
+    onOpenDrawer: () -> Unit,
+    onNavigateToToday: () -> Unit = {},
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         topBar = {
             PlatformAppBar(

@@ -71,7 +71,7 @@ fun BillsMiniKpiBar(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {

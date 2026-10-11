@@ -3,10 +3,14 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.roborazzi) apply false
 }
 
 allprojects {
-    val localBuildDir = File(System.getProperty("user.home"), ".gradle-builds/platform/${project.name}")
-    layout.buildDirectory.set(localBuildDir)
+    val isCi = System.getenv("CI") == "true"
+    if (!isCi) {
+        val localBuildDir = File(System.getProperty("user.home"), ".gradle-builds/platform/${project.name}")
+        layout.buildDirectory.set(localBuildDir)
+    }
 }
 

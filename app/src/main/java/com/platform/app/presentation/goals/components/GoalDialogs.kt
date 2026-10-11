@@ -37,7 +37,7 @@ fun AddEditGoalDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Meta (ex: Reserva, Viagem, Carro)") },
+                    label = { Text(AppStrings.Goals.GOAL_NAME_LABEL) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.fillMaxWidth()
@@ -46,7 +46,7 @@ fun AddEditGoalDialog(
                 OutlinedTextField(
                     value = targetText,
                     onValueChange = { targetText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Valor Alvo Desejado (R$)") },
+                    label = { Text(AppStrings.Goals.TARGET_AMOUNT_LABEL) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = PlatformShapes.medium,
@@ -56,7 +56,7 @@ fun AddEditGoalDialog(
                 OutlinedTextField(
                     value = currentText,
                     onValueChange = { currentText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Valor Já Poupado Inicial (R$)") },
+                    label = { Text(AppStrings.Goals.INITIAL_SAVED_AMOUNT_LABEL) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = PlatformShapes.medium,
@@ -120,7 +120,7 @@ fun AddContributionDialog(
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it.filter { char -> char.isDigit() } },
-                    label = { Text("Valor do Aporte (R$)") },
+                    label = { Text(AppStrings.Goals.CONTRIBUTION_AMOUNT_LABEL) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = PlatformShapes.medium,
@@ -139,7 +139,7 @@ fun AddContributionDialog(
                 enabled = (amountText.toLongOrNull() ?: 0L) > 0L,
                 shape = PlatformShapes.medium
             ) {
-                Text("Confirmar Aporte")
+                Text(AppStrings.Goals.CONFIRM_CONTRIBUTION)
             }
         },
         dismissButton = {

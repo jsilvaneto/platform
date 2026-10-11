@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -172,7 +173,7 @@ fun ExpensePaymentMethodCard(
                                 } ?: "Selecione o Cartão de Crédito",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Cartão de Crédito *") },
+                                label = { Text(AppStrings.ExpenseLabels.CREDIT_CARD_REQUIRED) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cardDropdownExpanded) },
                                 shape = PlatformShapes.medium,
                                 modifier = Modifier
@@ -212,7 +213,7 @@ fun ExpensePaymentMethodCard(
                                 purchaseTimestamp = uiState.dueDate,
                                 closingDay = card.closingDay
                             )
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.small,
                                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 modifier = Modifier.fillMaxWidth()
@@ -239,7 +240,7 @@ fun ExpensePaymentMethodCard(
 
                         // Alerta se excede o limite
                         if (uiState.isExceedingCreditLimit) {
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.small,
                                 color = WarningAmber.copy(alpha = 0.15f),
                                 border = BorderStroke(1.dp, WarningAmber),
@@ -274,7 +275,7 @@ fun ExpensePaymentMethodCard(
                                 value = uiState.selectedPaymentMethod?.name ?: "Selecione a Forma",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Forma de Pagamento (PIX, Boleto, etc.)") },
+                                label = { Text(AppStrings.ExpenseLabels.PAYMENT_METHOD_LABEL) },
                                 leadingIcon = uiState.selectedPaymentMethod?.let { pm ->
                                     {
                                         Icon(
@@ -323,7 +324,7 @@ fun ExpensePaymentMethodCard(
                                 value = uiState.selectedFinancialAccount?.name ?: "Selecione a Conta",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Conta Financeira / Banco") },
+                                label = { Text(AppStrings.ExpenseLabels.FINANCIAL_ACCOUNT_BANK) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountDropdownExpanded) },
                                 shape = PlatformShapes.medium,
                                 modifier = Modifier

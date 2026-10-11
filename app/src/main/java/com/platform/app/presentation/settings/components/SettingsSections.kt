@@ -1,5 +1,7 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.common.AppStrings
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.background
@@ -46,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.platform.app.presentation.common.AppStrings
 
 @Composable
 fun SettingsSecuritySection(
@@ -260,7 +261,7 @@ fun SettingsBackupSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Surface(
+        PlatformSurface(
             shape = PlatformShapes.medium,
             color = if (lastBackupFormatted != null)
                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -424,7 +425,7 @@ fun SettingsAboutSection(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                     ) {
@@ -495,7 +496,7 @@ fun RestoreConfirmDialog(
                 ),
                 shape = PlatformShapes.medium
             ) {
-                Text("Selecionar Arquivo")
+                Text(AppStrings.Common.SELECT_FILE)
             }
         },
         dismissButton = {

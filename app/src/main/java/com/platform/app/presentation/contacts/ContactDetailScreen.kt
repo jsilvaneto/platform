@@ -1,5 +1,6 @@
 package com.platform.app.presentation.contacts
 
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.components.PlatformSurfaceVariant
 
@@ -49,7 +50,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAvatar
 import com.platform.app.presentation.components.ConfirmPaymentDialog
 import androidx.compose.runtime.Composable
@@ -139,7 +139,7 @@ fun ContactDetailScreen(
                                 onDismissRequest = { showOptionsMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Editar Contato") },
+                                    text = { Text(AppStrings.Contacts.EDIT_CONTACT) },
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
@@ -153,7 +153,7 @@ fun ContactDetailScreen(
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Excluir Contato", color = MaterialTheme.colorScheme.error) },
+                                    text = { Text(AppStrings.Contacts.DELETE_CONTACT, color = MaterialTheme.colorScheme.error) },
                                     leadingIcon = {
                                         Icon(
                                             imageVector = Icons.Default.Delete,

@@ -428,7 +428,7 @@ fun CreditCardsScreen(
                         onClick = { onAction(CreditCardsUiAction.ConfirmDeleteCard) },
                         colors = ButtonDefaults.buttonColors(containerColor = overdueColors.contentColor)
                     ) {
-                        Text("Sim, Excluir")
+                        Text(AppStrings.CreditCardLabels.CONFIRM_DELETE_BUTTON)
                     }
                 },
                 dismissButton = {

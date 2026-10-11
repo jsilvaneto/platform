@@ -105,7 +105,7 @@ fun BudgetDetailBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.small,
                             color = color.copy(alpha = 0.12f)
                         ) {
@@ -118,7 +118,7 @@ fun BudgetDetailBottomSheet(
                             )
                         }
 
-                        Surface(
+                        PlatformSurface(
                             shape = PlatformShapes.small,
                             color = progressColor.copy(alpha = 0.12f)
                         ) {
@@ -148,7 +148,7 @@ fun BudgetDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Editar Orçamento") },
+                            text = { Text(AppStrings.Budgets.EDIT_BUDGET) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -163,7 +163,7 @@ fun BudgetDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Orçamento", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.Budgets.DELETE_BUDGET, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(

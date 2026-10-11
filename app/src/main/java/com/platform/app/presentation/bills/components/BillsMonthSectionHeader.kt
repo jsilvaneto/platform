@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -43,7 +44,7 @@ fun BillsMonthSectionHeader(
         label = "monthCollapseRotation_$monthLabel"
     )
 
-    Surface(
+    PlatformSurface(
         shape = PlatformShapes.medium,
         color = if (isCurrentMonth) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         border = if (isCurrentMonth) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)) else null,
@@ -77,7 +78,7 @@ fun BillsMonthSectionHeader(
                 )
                 if (isCurrentMonth) {
                     Spacer(modifier = Modifier.width(6.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.extraSmall,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     ) {
@@ -91,7 +92,7 @@ fun BillsMonthSectionHeader(
                     }
                 }
                 Spacer(modifier = Modifier.width(6.dp))
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                 ) {

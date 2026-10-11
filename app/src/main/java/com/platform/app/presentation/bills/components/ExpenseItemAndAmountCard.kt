@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.theme.PlatformShapes
 
@@ -108,7 +109,7 @@ fun ExpenseItemAndAmountCard(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(AppStrings.ExpenseForm.EXPENSE_ITEM_REQUIRED) },
-                    placeholder = { Text("Selecione o item categorizado") },
+                    placeholder = { Text(AppStrings.ExpenseLabels.SELECT_CATEGORIZED_ITEM) },
                     leadingIcon = {
                         val itemIcon = uiState.selectedItem?.let { PlatformIconCatalog.getIcon(it.categoryIconName) } ?: Icons.Default.Payments
                         val itemColor = uiState.selectedItem?.let {
@@ -123,7 +124,7 @@ fun ExpenseItemAndAmountCard(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = itemDropdownExpanded) },
                     isError = uiState.selectedItemId == null && uiState.amountCents > 0L,
                     supportingText = if (uiState.selectedItemId == null && uiState.amountCents > 0L) {
-                        { Text("Item é obrigatório para classificar a despesa", color = MaterialTheme.colorScheme.error) }
+                        { Text(AppStrings.ExpenseLabels.ITEM_REQUIRED_ERROR, color = MaterialTheme.colorScheme.error) }
                     } else null,
                     shape = PlatformShapes.medium,
                     modifier = Modifier
@@ -136,7 +137,7 @@ fun ExpenseItemAndAmountCard(
                 ) {
                     if (uiState.allExpenseItems.isEmpty()) {
                         DropdownMenuItem(
-                            text = { Text("Nenhum item cadastrado") },
+                            text = { Text(AppStrings.ExpenseLabels.NO_ITEM_REGISTERED) },
                             onClick = { itemDropdownExpanded = false }
                         )
                     }
@@ -198,7 +199,7 @@ fun ExpenseItemAndAmountCard(
 
             // Natureza e Categoria
             if (uiState.selectedItem != null) {
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.small,
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),

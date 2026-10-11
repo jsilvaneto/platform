@@ -1,5 +1,6 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.background
@@ -79,7 +80,7 @@ fun MetricKpiBox(
     modifier: Modifier = Modifier,
     valueColor: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    Surface(
+    PlatformSurface(
         modifier = modifier,
         shape = PlatformShapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
@@ -121,7 +122,7 @@ fun StatusBreakdownBox(
     containerColor: Color,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    PlatformSurface(
         modifier = modifier,
         shape = PlatformShapes.medium,
         color = containerColor

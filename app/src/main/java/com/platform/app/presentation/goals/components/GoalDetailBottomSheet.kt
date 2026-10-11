@@ -95,7 +95,7 @@ fun GoalDetailBottomSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = if (goal.isCompleted) SuccessGreen.copy(alpha = 0.12f) else color.copy(alpha = 0.12f)
                     ) {
@@ -124,7 +124,7 @@ fun GoalDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Adicionar Aporte") },
+                            text = { Text(AppStrings.Goals.ADD_CONTRIBUTION) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.TrendingUp,
@@ -138,7 +138,7 @@ fun GoalDetailBottomSheet(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Editar Meta") },
+                            text = { Text(AppStrings.Goals.EDIT_GOAL) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -153,7 +153,7 @@ fun GoalDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Meta", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.Goals.DELETE_GOAL, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(

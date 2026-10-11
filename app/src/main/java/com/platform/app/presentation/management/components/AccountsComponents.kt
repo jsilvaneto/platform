@@ -128,7 +128,7 @@ fun AccountsTab(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.small,
                                 color = color.copy(alpha = 0.12f)
                             ) {
@@ -225,7 +225,7 @@ fun AccountDetailBottomSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(modifier = Modifier.height(2.dp))
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = accountColor.copy(alpha = 0.12f)
                     ) {
@@ -254,7 +254,7 @@ fun AccountDetailBottomSheet(
                         onDismissRequest = { showMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Editar Conta") },
+                            text = { Text(AppStrings.ManagementLabels.EDIT_ACCOUNT) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -270,7 +270,7 @@ fun AccountDetailBottomSheet(
                         )
                         DropdownMenuItem(
                             text = {
-                                Text("Excluir Conta", color = MaterialTheme.colorScheme.error)
+                                Text(AppStrings.ManagementLabels.DELETE_ACCOUNT, color = MaterialTheme.colorScheme.error)
                             },
                             leadingIcon = {
                                 Icon(
@@ -327,7 +327,7 @@ fun AccountDetailBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Pendente
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface
@@ -358,7 +358,7 @@ fun AccountDetailBottomSheet(
                         }
 
                         // Pago / Liquidado
-                        Surface(
+                        PlatformSurface(
                             modifier = Modifier.weight(1f),
                             shape = PlatformShapes.medium,
                             color = MaterialTheme.colorScheme.surface

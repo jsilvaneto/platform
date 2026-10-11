@@ -43,7 +43,7 @@ fun PlatformSegmentedTabs(
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    PlatformSurface(
         modifier = modifier
             .fillMaxWidth()
             .clip(PlatformShapes.medium),
@@ -75,7 +75,7 @@ fun PlatformSegmentedTabs(
                     null
                 }
 
-                Surface(
+                PlatformSurface(
                     modifier = Modifier
                         .weight(1f)
                         .height(38.dp)
@@ -99,7 +99,7 @@ fun PlatformSegmentedTabs(
 
                         if (item.count != null) {
                             Spacer(modifier = Modifier.width(4.dp))
-                            Surface(
+                            PlatformSurface(
                                 shape = PlatformShapes.pill,
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
                             ) {

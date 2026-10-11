@@ -3,6 +3,43 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.36.0] - 2026-10-11
+
+### 🛡️ Eliminação Total de Superfícies Cruas, Centralização de Strings, Roborazzi e Pipeline de CI (Prompt 66)
+
+- **Eliminação Completa de `Surface(` Crus e Blindagem da Guard Rail**:
+  - Migração de todos os 54 `Surface(` restantes fora de `components/` para `PlatformSurface` e `PlatformCard`, abrangendo 22 telas e componentes da camada de apresentação.
+  - Migração adicional dos componentes globais `PlatformBatchActionBar` e `PlatformSegmentedTabs` para `PlatformSurface`.
+  - Reconfiguração da tarefa de auditoria `checkRawSurfaces` no Gradle para analisar 100% de `src/main/java/com/platform/app/presentation` (com isenção exclusiva de `PlatformSurface.kt`), zerando a baseline e impedindo regressões arquiteturais permanentemente.
+
+- **Centralização de Strings e Redução Drástica de Baselines (`AppStrings`)**:
+  - Centralização de ~90 strings literais e emojis em objetos semânticos estruturados em `AppStrings.kt` (`Common`, `CommitmentType`, `ExpenseLabels`, `Budgets`, `Contacts`, `CreditCardLabels`, `Goals`, `ExpenseItems`, `ManagementLabels`, `RecurringLabels`, `IconsEmoji`).
+  - Redução da baseline de strings hardcoded em `config/hardcoded-strings-baseline.txt` de 124 ocorrências para apenas 5 templates dinâmicos restantes.
+  - Conformidade estrita com o limite de 600 linhas por arquivo de especificação (`AppStrings.kt` em ~470 linhas).
+
+- **Suite de Screenshot Tests com Roborazzi e Robolectric**:
+  - Implementação da suíte `PlatformScreenshotsTest` utilizando o plugin e biblioteca `io.github.takahirom.roborazzi` e `Robolectric` com gráficos nativos (`@GraphicsMode(GraphicsMode.Mode.NATIVE)`).
+  - Cobertura completa das 7 telas e elementos principais da aplicação:
+    1. **Visão Geral** (`OverviewScreen` / `OverviewContent`)
+    2. **Hoje** (`HomeScreen`)
+    3. **Contas** (`BillsScreen`)
+    4. **Cartões** (`CreditCardsScreen`)
+    5. **Análises** (`StatisticsScreen`)
+    6. **Lançamento Rápido** (`NewExpenseScreen` / `NewExpenseContent`)
+    7. **Menu Lateral** (`DrawerContent` em `ModalDrawerSheet`)
+  - Registro de baselines determinísticas em 3 estilos visuais completos (**AMOLED**, **Escuro** e **Claro**) com escala de fonte ampliada a **1,3x** (`fontScale = 1.3f`), totalizando 21 golden snapshots validados com sucesso por `verifyRoborazziDebug`.
+
+- **Pipeline Automatizado de CI no GitHub Actions (`.github/workflows/ci.yml`)**:
+  - Orquestração de workflow contínuo com acionamento em `push` e `pull_request` no branch principal.
+  - Job de compilação, qualidade e verificação:
+    - Execução dos 6 guard rails arquiteturais (`checkLiteralColors`, `checkHardcodedStrings`, `checkFileSize`, `checkRawShapes`, `checkRawSurfaces`, `checkGradientsAndShadows`).
+    - Execução de testes unitários (`testDebugUnitTest`).
+    - Verificação de regressão visual com Roborazzi (`verifyRoborazziDebug`).
+    - Análise estática com Android Lint (`lintDebug`).
+    - Compilação do executável de depuração (`assembleDebug`).
+    - Publicação dos relatórios e APK como artefatos de build (`actions/upload-artifact@v4`).
+  - Job de testes conectados em matriz com emulador Android oficial (`reactivecircus/android-emulator-runner@v2`) cobrindo as APIs mínimas e modernas: **API 26** e **API 34**.
+
 ## [1.35.0] - 2026-10-11
 
 ### 💳 Integração do Agregado Payment, Baixas Parciais e Reconciliação (Prompt 64)

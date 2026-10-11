@@ -1,5 +1,6 @@
 package com.platform.app.presentation.statistics.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.background
@@ -117,7 +118,7 @@ fun DeescalationCurveCard(
                 }
 
                 if (lowestProj != null && lowestProj.totalCommittedCents < (highestProj?.totalCommittedCents ?: 0L)) {
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
@@ -166,7 +167,7 @@ fun DeescalationCurveCard(
                                 )
                                 if (isPeak) {
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
+                                    PlatformSurface(
                                         shape = PlatformShapes.extraSmall,
                                         color = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
@@ -184,7 +185,7 @@ fun DeescalationCurveCard(
                                     }
                                 } else if (isLowest) {
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
+                                    PlatformSurface(
                                         shape = PlatformShapes.extraSmall,
                                         color = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
@@ -261,7 +262,7 @@ fun CompletingInstallmentsCard(
                     )
                 }
 
-                Surface(
+                PlatformSurface(
                     shape = PlatformShapes.pill,
                     color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
@@ -279,7 +280,7 @@ fun CompletingInstallmentsCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 completingList.forEach { item ->
-                    Surface(
+                    PlatformSurface(
                         shape = PlatformShapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                         modifier = Modifier.fillMaxWidth()
@@ -372,7 +373,7 @@ fun DecisionAdvisorCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Surface(
+            PlatformSurface(
                 shape = PlatformShapes.medium,
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth()

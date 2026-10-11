@@ -167,7 +167,7 @@ fun ExpenseItemsScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         },
-                        label = { Text("Buscar Categoria...") }
+                        label = { Text(AppStrings.ExpenseItems.SEARCH_CATEGORY) }
                     )
                 }
                 items(uiState.categories, key = { it.id }) { cat ->

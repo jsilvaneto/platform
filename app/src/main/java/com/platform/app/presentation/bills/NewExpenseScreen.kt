@@ -1,5 +1,6 @@
 package com.platform.app.presentation.bills
 
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.background
@@ -94,6 +95,70 @@ fun NewExpenseScreen(
         }
     }
 
+    NewExpenseContent(
+        uiState = uiState,
+        onNavigateBack = onNavigateBack,
+        onSaveClick = onSaveClick,
+        onItemSelect = { viewModel.onItemSelect(it) },
+        onAmountChange = viewModel::onAmountChange,
+        onNavigateToExpenseItems = onNavigateToExpenseItems,
+        onContactSelect = { viewModel.onContactSelect(it) },
+        onDueDateChange = viewModel::onDueDateChange,
+        onNewQuickContactClick = { showQuickContactDialog = true },
+        onExpenseTypeChange = viewModel::onExpenseTypeChange,
+        onInstallmentsCountChange = viewModel::onInstallmentsCountChange,
+        onRecurrenceFrequencyChange = viewModel::onRecurrenceFrequencyChange,
+        onRecurrenceEndTypeChange = viewModel::onRecurrenceEndTypeChange,
+        onRecurrenceEndDateChange = viewModel::onRecurrenceEndDateChange,
+        onRecurrenceOccurrencesCountChange = viewModel::onRecurrenceOccurrencesCountChange,
+        onToggleCreditCard = viewModel::onToggleCreditCard,
+        onCreditCardSelect = { viewModel.onCreditCardSelect(it) },
+        onPaymentMethodSelect = { viewModel.onPaymentMethodSelect(it) },
+        onFinancialAccountSelect = { viewModel.onFinancialAccountSelect(it) },
+        onPaymentStatusChange = viewModel::onPaymentStatusChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
+        snackbarHostState = snackbarHostState,
+        modifier = modifier
+    )
+
+    if (showQuickContactDialog) {
+        QuickContactDialog(
+            onDismiss = { showQuickContactDialog = false },
+            onConfirm = { contactName ->
+                viewModel.createQuickContact(contactName)
+                showQuickContactDialog = false
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NewExpenseContent(
+    uiState: NewExpenseUiState,
+    onNavigateBack: () -> Unit,
+    onSaveClick: () -> Unit,
+    onItemSelect: (String) -> Unit = {},
+    onAmountChange: (Long) -> Unit = {},
+    onNavigateToExpenseItems: (() -> Unit)? = null,
+    onContactSelect: (String) -> Unit = {},
+    onDueDateChange: (Long) -> Unit = {},
+    onNewQuickContactClick: () -> Unit = {},
+    onExpenseTypeChange: (com.platform.app.domain.model.BillType) -> Unit = {},
+    onInstallmentsCountChange: (Int) -> Unit = {},
+    onRecurrenceFrequencyChange: (com.platform.app.domain.model.RecurrenceFrequency) -> Unit = {},
+    onRecurrenceEndTypeChange: (com.platform.app.domain.model.RecurrenceEndType) -> Unit = {},
+    onRecurrenceEndDateChange: (Long) -> Unit = {},
+    onRecurrenceOccurrencesCountChange: (Int) -> Unit = {},
+    onToggleCreditCard: (Boolean) -> Unit = {},
+    onCreditCardSelect: (String) -> Unit = {},
+    onPaymentMethodSelect: (String) -> Unit = {},
+    onFinancialAccountSelect: (String) -> Unit = {},
+    onPaymentStatusChange: (Boolean) -> Unit = {},
+    onDescriptionChange: (String) -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         topBar = {
             PlatformAppBar(
@@ -167,43 +232,43 @@ fun NewExpenseScreen(
             // 1. VALOR & ITEM (PROTAGONISTA)
             ExpenseItemAndAmountCard(
                 uiState = uiState,
-                onItemSelect = viewModel::onItemSelect,
-                onAmountChange = viewModel::onAmountChange,
+                onItemSelect = onItemSelect,
+                onAmountChange = onAmountChange,
                 onNavigateToExpenseItems = onNavigateToExpenseItems
             )
 
             // 2. VENCIMENTO & DESTINATÁRIO
             ExpenseRecipientAndDueDateCard(
                 uiState = uiState,
-                onContactSelect = viewModel::onContactSelect,
-                onDueDateChange = viewModel::onDueDateChange,
-                onNewQuickContactClick = { showQuickContactDialog = true }
+                onContactSelect = onContactSelect,
+                onDueDateChange = onDueDateChange,
+                onNewQuickContactClick = onNewQuickContactClick
             )
 
             // 3. TIPO DE COMPROMISSO
             ExpenseCommitmentTypeCard(
                 uiState = uiState,
-                onExpenseTypeChange = viewModel::onExpenseTypeChange,
-                onInstallmentsCountChange = viewModel::onInstallmentsCountChange,
-                onRecurrenceFrequencyChange = viewModel::onRecurrenceFrequencyChange,
-                onRecurrenceEndTypeChange = viewModel::onRecurrenceEndTypeChange,
-                onRecurrenceEndDateChange = viewModel::onRecurrenceEndDateChange,
-                onRecurrenceOccurrencesCountChange = viewModel::onRecurrenceOccurrencesCountChange
+                onExpenseTypeChange = onExpenseTypeChange,
+                onInstallmentsCountChange = onInstallmentsCountChange,
+                onRecurrenceFrequencyChange = onRecurrenceFrequencyChange,
+                onRecurrenceEndTypeChange = onRecurrenceEndTypeChange,
+                onRecurrenceEndDateChange = onRecurrenceEndDateChange,
+                onRecurrenceOccurrencesCountChange = onRecurrenceOccurrencesCountChange
             )
 
             // 4. COMO VOCÊ PAGA
             ExpensePaymentMethodCard(
                 uiState = uiState,
-                onToggleCreditCard = viewModel::onToggleCreditCard,
-                onCreditCardSelect = viewModel::onCreditCardSelect,
-                onPaymentMethodSelect = viewModel::onPaymentMethodSelect,
-                onFinancialAccountSelect = viewModel::onFinancialAccountSelect
+                onToggleCreditCard = onToggleCreditCard,
+                onCreditCardSelect = onCreditCardSelect,
+                onPaymentMethodSelect = onPaymentMethodSelect,
+                onFinancialAccountSelect = onFinancialAccountSelect
             )
 
             // 5. SITUAÇÃO DA CONTA
             ExpensePaymentStatusCard(
                 isPaid = uiState.isPaid,
-                onPaymentStatusChange = viewModel::onPaymentStatusChange
+                onPaymentStatusChange = onPaymentStatusChange
             )
 
             // 6. OBSERVAÇÕES COMPLEMENTARES (OPCIONAL)
@@ -225,9 +290,9 @@ fun NewExpenseScreen(
 
                     OutlinedTextField(
                         value = uiState.description,
-                        onValueChange = viewModel::onDescriptionChange,
-                        label = { Text("Descrição / Detalhe Específico") },
-                        placeholder = { Text("Ex: Compras no Carrefour, troca de filtro") },
+                        onValueChange = onDescriptionChange,
+                        label = { Text(AppStrings.ExpenseLabels.SPECIFIC_DESCRIPTION) },
+                        placeholder = { Text(AppStrings.ExpenseLabels.SPECIFIC_DESCRIPTION_PLACEHOLDER) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.EditNote,
@@ -251,15 +316,5 @@ fun NewExpenseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-
-    if (showQuickContactDialog) {
-        QuickContactDialog(
-            onDismiss = { showQuickContactDialog = false },
-            onConfirm = { contactName ->
-                viewModel.createQuickContact(contactName)
-                showQuickContactDialog = false
-            }
-        )
     }
 }

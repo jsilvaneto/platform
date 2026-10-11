@@ -1,5 +1,6 @@
 package com.platform.app.presentation.settings.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.BorderStroke
@@ -233,7 +234,7 @@ fun AppIconPreviewCard(
     modifier: Modifier = Modifier,
     iconContent: @Composable () -> Unit
 ) {
-    Surface(
+    PlatformSurface(
         onClick = onClick,
         shape = PlatformShapes.large,
         color = if (isSelected)
@@ -273,7 +274,7 @@ fun AppIconPreviewCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Surface(
+            PlatformSurface(
                 shape = PlatformShapes.small,
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primary

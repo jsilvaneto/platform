@@ -1,5 +1,6 @@
 package com.platform.app.presentation.contacts.components
 
+import com.platform.app.presentation.components.PlatformSurface
 import com.platform.app.presentation.theme.PlatformShapes
 
 import androidx.compose.foundation.BorderStroke
@@ -101,7 +102,7 @@ fun AddContactBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Surface(
+                PlatformSurface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.size(42.dp)
@@ -147,7 +148,7 @@ fun AddContactBottomSheet(
                 ContactType.entries.forEach { contactType ->
                     val isSelected = type == contactType
                     val (typeColor, _) = getContactTypeColors(contactType)
-                    Surface(
+                    PlatformSurface(
                         modifier = Modifier
                             .weight(1f)
                             .clickable { type = contactType },
@@ -204,7 +205,7 @@ fun AddContactBottomSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Nome Completo / Razão Social *") },
+                label = { Text(AppStrings.Contacts.FULL_NAME_REQUIRED) },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 singleLine = true,
                 shape = PlatformShapes.medium,
@@ -218,7 +219,7 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Telefone / Celular") },
+                    label = { Text(AppStrings.Contacts.PHONE_MOBILE) },
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true,
@@ -229,7 +230,7 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("E-mail") },
+                    label = { Text(AppStrings.Contacts.EMAIL) },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true,
@@ -255,8 +256,8 @@ fun AddContactBottomSheet(
                     zipCode = it
                     triggerCepLookup(it)
                 },
-                label = { Text("CEP (busca automática ao digitar)") },
-                placeholder = { Text("Ex: 01001-000") },
+                label = { Text(AppStrings.Contacts.CEP_LABEL) },
+                placeholder = { Text(AppStrings.Contacts.CEP_PLACEHOLDER) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     if (isCepLoading) {
@@ -285,7 +286,7 @@ fun AddContactBottomSheet(
             OutlinedTextField(
                 value = street,
                 onValueChange = { street = it },
-                label = { Text("Logradouro (Rua, Avenida, Praça)") },
+                label = { Text(AppStrings.Contacts.STREET_LABEL) },
                 leadingIcon = { Icon(Icons.Default.Home, contentDescription = null) },
                 singleLine = true,
                 shape = PlatformShapes.medium,
@@ -300,8 +301,8 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = number,
                     onValueChange = { number = it },
-                    label = { Text("Número") },
-                    placeholder = { Text("Ex: 123, S/N") },
+                    label = { Text(AppStrings.Contacts.NUMBER_LABEL) },
+                    placeholder = { Text(AppStrings.Contacts.NUMBER_PLACEHOLDER) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.width(130.dp)
@@ -310,8 +311,8 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = complement,
                     onValueChange = { complement = it },
-                    label = { Text("Complemento") },
-                    placeholder = { Text("Apto 42, Bloco B") },
+                    label = { Text(AppStrings.Contacts.COMPLEMENT_LABEL) },
+                    placeholder = { Text(AppStrings.Contacts.COMPLEMENT_PLACEHOLDER) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
@@ -326,7 +327,7 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = neighborhood,
                     onValueChange = { neighborhood = it },
-                    label = { Text("Bairro") },
+                    label = { Text(AppStrings.Contacts.NEIGHBORHOOD_LABEL) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
@@ -335,7 +336,7 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = city,
                     onValueChange = { city = it },
-                    label = { Text("Cidade") },
+                    label = { Text(AppStrings.Contacts.CITY_LABEL) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)
@@ -350,8 +351,8 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = state,
                     onValueChange = { state = it },
-                    label = { Text("Estado (UF)") },
-                    placeholder = { Text("Ex: SP") },
+                    label = { Text(AppStrings.Contacts.STATE_UF_LABEL) },
+                    placeholder = { Text(AppStrings.Contacts.STATE_UF_PLACEHOLDER) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.width(110.dp)
@@ -360,7 +361,7 @@ fun AddContactBottomSheet(
                 OutlinedTextField(
                     value = country,
                     onValueChange = { country = it },
-                    label = { Text("País") },
+                    label = { Text(AppStrings.Contacts.COUNTRY_LABEL) },
                     singleLine = true,
                     shape = PlatformShapes.medium,
                     modifier = Modifier.weight(1f)

@@ -39,12 +39,6 @@ import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.components.PlatformProgressBar
 import com.platform.app.presentation.components.formatValueOrPrivate
-import com.platform.app.presentation.theme.ErrorRed
-import com.platform.app.presentation.theme.ErrorRedContainer
-import com.platform.app.presentation.theme.SuccessGreen
-import com.platform.app.presentation.theme.SuccessGreenContainer
-import com.platform.app.presentation.theme.WarningAmber
-import com.platform.app.presentation.theme.WarningAmberContainer
 
 @Composable
 fun FutureHeroCard(
@@ -125,7 +119,7 @@ fun DeescalationCurveCard(
                 if (lowestProj != null && lowestProj.totalCommittedCents < (highestProj?.totalCommittedCents ?: 0L)) {
                     Surface(
                         shape = PlatformShapes.small,
-                        color = SuccessGreenContainer.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
@@ -134,7 +128,7 @@ fun DeescalationCurveCard(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.TrendingDown,
                                 contentDescription = null,
-                                tint = SuccessGreen,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -142,7 +136,7 @@ fun DeescalationCurveCard(
                                 text = "Maior folga: ${lowestProj.monthLabel.take(7)}",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = SuccessGreen
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -154,7 +148,7 @@ fun DeescalationCurveCard(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 projections.forEach { proj ->
                     val progress = (proj.totalCommittedCents.toFloat() / maxCommitted.toFloat()).coerceIn(0f, 1f)
-                    val isPeak = proj == highestProj && (highestProj?.totalCommittedCents ?: 0L) > 0L
+                    val isPeak = proj == highestProj && highestProj.totalCommittedCents > 0L
                     val isLowest = proj == lowestProj
 
                     Column {
@@ -174,24 +168,17 @@ fun DeescalationCurveCard(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
                                         shape = PlatformShapes.extraSmall,
-                                        color = ErrorRedContainer.copy(alpha = 0.45f)
+                                        color = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                                             verticalAlignment = Alignment.CenterVertically
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.TrendingUp,
-                                                contentDescription = null,
-                                                tint = ErrorRed,
-                                                modifier = Modifier.size(10.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(2.dp))
                                             Text(
                                                 text = "Pico",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
-                                                color = ErrorRed
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -199,24 +186,17 @@ fun DeescalationCurveCard(
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Surface(
                                         shape = PlatformShapes.extraSmall,
-                                        color = SuccessGreenContainer.copy(alpha = 0.45f)
+                                        color = MaterialTheme.colorScheme.surfaceVariant
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.TrendingDown,
-                                                contentDescription = null,
-                                                tint = SuccessGreen,
-                                                modifier = Modifier.size(10.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(2.dp))
                                             Text(
                                                 text = "Folga",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold,
-                                                color = SuccessGreen
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -228,7 +208,7 @@ fun DeescalationCurveCard(
                                     text = formatValueOrPrivate(proj.totalCommittedCents, isPrivate),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isPeak) ErrorRed else if (isLowest) SuccessGreen else MaterialTheme.colorScheme.onSurface
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
@@ -244,8 +224,8 @@ fun DeescalationCurveCard(
                         PlatformProgressBar(
                             progress = progress,
                             height = 6.dp,
-                            progressColor = if (isPeak) ErrorRed else if (isLowest) SuccessGreen else MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            progressColor = MaterialTheme.colorScheme.onSurface,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     }
                 }
@@ -283,13 +263,13 @@ fun CompletingInstallmentsCard(
 
                 Surface(
                     shape = PlatformShapes.pill,
-                    color = SuccessGreenContainer
+                    color = MaterialTheme.colorScheme.surfaceVariant
                 ) {
                     Text(
                         text = "+${formatValueOrPrivate(totalFreedFlowCents, isPrivate)}/mês livre",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = SuccessGreen,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
@@ -331,13 +311,13 @@ fun CompletingInstallmentsCard(
                                 Text(
                                     text = "Libera",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = SuccessGreen
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "+${formatValueOrPrivate(item.freedMonthlyAmountCents, isPrivate)}/mês",
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = SuccessGreen
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -350,8 +330,7 @@ fun CompletingInstallmentsCard(
 
 @Composable
 fun DecisionAdvisorCard(
-    metrics: FinancialDashboardMetrics,
-    isPrivate: Boolean
+    metrics: FinancialDashboardMetrics
 ) {
     val avgSpend = metrics.historicalMonthlyAverageCents.coerceAtLeast(1L)
     val nextMonthCommitment = metrics.futureMonthsProjections.firstOrNull()?.totalCommittedCents ?: 0L
@@ -395,15 +374,15 @@ fun DecisionAdvisorCard(
 
             Surface(
                 shape = PlatformShapes.medium,
-                color = if (canAffordNewInstallment) SuccessGreenContainer.copy(alpha = 0.4f) else WarningAmberContainer.copy(alpha = 0.4f),
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = if (canAffordNewInstallment) Icons.Default.CheckCircle else Icons.Default.Warning,
+                            imageVector = Icons.Default.Lightbulb,
                             contentDescription = null,
-                            tint = if (canAffordNewInstallment) SuccessGreen else WarningAmber,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -424,7 +403,7 @@ fun DecisionAdvisorCard(
                         else
                             "Os próximos meses já possuem comprometimento próximo ou superior à sua média de gastos. Sugerido aguardar o término de parcelamentos em andamento.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

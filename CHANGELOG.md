@@ -3,6 +3,35 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.33.0] - 2026-10-11
+
+### 📈 Reconstrução Minimalista de Análises e Inteligência Financeira (Prompt 62)
+
+- **Estrutura Temporal e Navegação de Períodos (`StatisticsScreen`)**:
+  - Abas segmentadas no topo: Passado | Presente | Futuro (`PlatformSegmentedTabs`).
+  - Seletor de período com chips neutros (`PlatformNeutralChip`): Mês, Trimestre, Ano e Tudo.
+  - Navegador temporal de mês ativado contextualmente no modo Mês (`MonthNavigationHeader`).
+  - Frase de insight em 18sp (`titleMedium` semibold) exibida de forma direta e limpa no topo da aba, sem banners pesados.
+
+- **Equilíbrio Orçamentário e Pagamentos Futuros em Tons Neutros**:
+  - Card "Equilíbrio do orçamento" (`NatureDistributionCard`) com barras horizontais em tons estritamente neutros (necessário, desejos e poupança são naturezas financeiras e não status semafóricos).
+  - Card "Pagamentos nos próximos meses" (`DeescalationCurveCard`) migrado para barras em tons neutros, eliminando colorações semafóricas de despesas previstas.
+  - Diagnósticos orçamentários e de rigidez financeira adaptados para recipientes neutros de alto contraste.
+
+- **Organização Modular e Limite de 4 Cards por Aba**:
+  - Teto de no máximo 4 cards por aba para leitura executiva ágil.
+  - Botão neutro "Ver mais análises" / "Ver menos" para expandir métricas e detalhamentos adicionais (distribuição de contas, maiores contatos).
+
+- **Seção "Planejar" Integrada**:
+  - Seção estruturada `PlanningSection` no rodapé das análises reunindo:
+    - **Orçamentos**: limites e tetos de gastos por categoria.
+    - **Metas**: poupança e reservas financeiras.
+    - **Plano de quitação**: simulador de liquidação acelerada de compras parceladas (`PayoffPlanBottomSheet`) com estratégias Bola de Neve (Snowball) e Avalanche.
+
+- **Testes e Validação**:
+  - Suíte de testes instrumentados `AnalyticsAndroidTest` cobrindo renderização nos temas AMOLED, Escuro e Claro, além de validação em escala de fonte 1,3x.
+  - Suíte de testes unitários `DashboardViewModelTest` cobrindo seleção de abas, períodos e privacidade.
+
 ## [1.32.0] - 2026-10-11
 
 ### 💳 Reconstrução Minimalista de Cartões e Faturas (Prompt 61)

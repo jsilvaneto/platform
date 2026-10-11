@@ -49,6 +49,9 @@ class DashboardViewModel @Inject constructor(
             is DashboardUiAction.SelectTab -> {
                 _uiState.update { it.copy(selectedTab = action.tab) }
             }
+            is DashboardUiAction.SelectPeriod -> {
+                _uiState.update { it.copy(selectedPeriod = action.period) }
+            }
             is DashboardUiAction.TogglePrivacyMode -> {
                 _uiState.update { it.copy(isPrivacyMode = !it.isPrivacyMode) }
             }

@@ -14,11 +14,19 @@ enum class StatisticsTab(val title: String) {
     FUTURE("Futuro")
 }
 
+enum class StatisticsPeriod(val title: String) {
+    MONTH("Mês"),
+    QUARTER("Trimestre"),
+    YEAR("Ano"),
+    ALL("Tudo")
+}
+
 data class DashboardUiState(
     val selectedMonthMillis: Long = System.currentTimeMillis(),
     val metrics: FinancialDashboardMetrics? = null,
     val viewMode: DashboardViewMode = DashboardViewMode.OVERVIEW,
     val selectedTab: StatisticsTab = StatisticsTab.PRESENT,
+    val selectedPeriod: StatisticsPeriod = StatisticsPeriod.MONTH,
     val isPrivacyMode: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null

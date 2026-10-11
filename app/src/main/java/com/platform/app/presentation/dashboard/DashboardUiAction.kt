@@ -8,6 +8,7 @@ sealed interface DashboardUiAction : UiAction {
     object CurrentMonth : DashboardUiAction
     data class SelectMonth(val monthMillis: Long) : DashboardUiAction
     data class SelectTab(val tab: StatisticsTab) : DashboardUiAction
+    data class SelectPeriod(val period: StatisticsPeriod) : DashboardUiAction
     object TogglePrivacyMode : DashboardUiAction
     data class ChangeViewMode(val mode: DashboardViewMode) : DashboardUiAction
     data class TogglePayment(

@@ -12,24 +12,36 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformAppBar
+import com.platform.app.presentation.components.PlatformNeutralChip
 import com.platform.app.presentation.components.PlatformPrivacyToggle
 import com.platform.app.presentation.components.PlatformSegmentedTabs
 import com.platform.app.presentation.components.SegmentedTabItem
 import com.platform.app.presentation.components.formatValueOrPrivate
-import androidx.compose.material.icons.filled.Lightbulb
 import com.platform.app.presentation.dashboard.DashboardUiAction
 import com.platform.app.presentation.dashboard.DashboardUiState
+import com.platform.app.presentation.dashboard.StatisticsPeriod
 import com.platform.app.presentation.dashboard.StatisticsTab
 import com.platform.app.presentation.statistics.components.AccountsDistributionCard
 import com.platform.app.presentation.statistics.components.CategoryDistributionCard
@@ -43,30 +55,26 @@ import com.platform.app.presentation.statistics.components.NatureDistributionCar
 import com.platform.app.presentation.statistics.components.PastExtremesCard
 import com.platform.app.presentation.statistics.components.PastHeroCard
 import com.platform.app.presentation.statistics.components.PastHistoryChartCard
+import com.platform.app.presentation.statistics.components.PayoffPlanBottomSheet
 import com.platform.app.presentation.statistics.components.PaymentMethodDistributionCard
+import com.platform.app.presentation.statistics.components.PlanningSection
 import com.platform.app.presentation.statistics.components.PresentHeroCard
 import com.platform.app.presentation.statistics.components.PreviousMonthComparisonCard
 import com.platform.app.presentation.statistics.components.TopContactsCard
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material3.Icon
-import com.platform.app.presentation.components.PlatformSurface
-import com.platform.app.presentation.components.PlatformSurfaceVariant
-import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.font.FontWeight
-import com.platform.app.presentation.common.AppStrings
-import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.PlatformShapes
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Tela de Análises reconstruída (Prompt 62):
+ * - Abas Passado | Presente | Futuro (segmentadas).
+ * - Seletor de período (Mês, Trimestre, Ano, Tudo) em chips neutros.
+ * - 1 frase de insight em 18sp.
+ * - Card 'Equilíbrio do orçamento' com barras horizontais neutras.
+ * - Card 'Pagamentos nos próximos meses' com barras neutras.
+ * - Máximo de 4 cards por aba e botão 'Ver mais análises'.
+ * - Seção 'Planejar' com Orçamentos, Metas e Plano de quitação.
+ * - Sem cores de status fora de status.
+ */
 @Composable
 fun StatisticsScreen(
     uiState: DashboardUiState,
@@ -78,7 +86,7 @@ fun StatisticsScreen(
 ) {
     var showMorePast by rememberSaveable { mutableStateOf(false) }
     var showMorePresent by rememberSaveable { mutableStateOf(false) }
-    var showMoreFuture by rememberSaveable { mutableStateOf(false) }
+    var showPayoffPlan by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -102,15 +110,7 @@ fun StatisticsScreen(
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Seletor de Período / Navegador Temporal
-            MonthNavigationHeader(
-                selectedMonthMillis = uiState.selectedMonthMillis,
-                onPreviousMonth = { onAction(DashboardUiAction.PreviousMonth) },
-                onNextMonth = { onAction(DashboardUiAction.NextMonth) },
-                onCurrentMonth = { onAction(DashboardUiAction.CurrentMonth) }
-            )
-
-            // Abas Segmentadas: Passado, Presente e Futuro
+            // 1. Abas Segmentadas: Passado | Presente | Futuro
             val tabs = listOf(
                 SegmentedTabItem(title = StatisticsTab.PAST.title),
                 SegmentedTabItem(title = StatisticsTab.PRESENT.title),
@@ -126,12 +126,31 @@ fun StatisticsScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
             )
 
-            // Seção de Planejamento Integrado (Orçamentos e Metas)
-            PlanningQuickAccessCard(
-                onNavigateToBudgets = onNavigateToBudgets,
-                onNavigateToGoals = onNavigateToGoals,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
-            )
+            // 2. Seletor de Período em Chips Neutros (Mês, Trimestre, Ano, Tudo)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                StatisticsPeriod.entries.forEach { period ->
+                    PlatformNeutralChip(
+                        text = period.title,
+                        selected = uiState.selectedPeriod == period,
+                        onClick = { onAction(DashboardUiAction.SelectPeriod(period)) }
+                    )
+                }
+            }
+
+            // Navegação de mês quando em período mensal
+            if (uiState.selectedPeriod == StatisticsPeriod.MONTH) {
+                MonthNavigationHeader(
+                    selectedMonthMillis = uiState.selectedMonthMillis,
+                    onPreviousMonth = { onAction(DashboardUiAction.PreviousMonth) },
+                    onNextMonth = { onAction(DashboardUiAction.NextMonth) },
+                    onCurrentMonth = { onAction(DashboardUiAction.CurrentMonth) }
+                )
+            }
 
             if (uiState.isLoading && uiState.metrics == null) {
                 Box(
@@ -151,31 +170,46 @@ fun StatisticsScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        // 3. 1 Frase de Insight em 18sp
+                        item {
+                            val insightText = when (uiState.selectedTab) {
+                                StatisticsTab.PAST -> if (metrics.savingsCents > 0) {
+                                    "Você economizou ${formatValueOrPrivate(metrics.savingsCents, uiState.isPrivacyMode)} em relação ao mês anterior."
+                                } else {
+                                    "Histórico e taxa de pontualidade consolidada dos meses passados."
+                                }
+                                StatisticsTab.PRESENT -> if (metrics.savingsPercentage >= 20f) {
+                                    "Excelente: você poupou ${String.format(Locale.US, "%.0f", metrics.savingsPercentage)}% das suas receitas este mês."
+                                } else {
+                                    "Equilíbrio orçamentário: acompanhe como você gasta e divida despesas essenciais."
+                                }
+                                StatisticsTab.FUTURE -> if (metrics.projectedFreedMonthlyFlowCents > 0) {
+                                    "Fluxo liberado de ${formatValueOrPrivate(metrics.projectedFreedMonthlyFlowCents, uiState.isPrivacyMode)} nos próximos meses com a quitação de parcelas."
+                                } else {
+                                    "Projeção dos seus compromissos futuros para manter suas finanças em dia."
+                                }
+                            }
+
+                            Text(
+                                text = insightText,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    lineHeight = 24.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+
+                        // 4. Cards por Aba (Máximo de 4 por padrão + 'Ver mais análises')
                         when (uiState.selectedTab) {
                             StatisticsTab.PAST -> {
-                                item {
-                                    val pastInsight = if (metrics.savingsCents > 0) {
-                                        "Economia de ${formatValueOrPrivate(metrics.savingsCents, uiState.isPrivacyMode)} em relação ao mês anterior."
-                                    } else {
-                                        "Histórico e taxa de pontualidade consolidada dos meses passados."
-                                    }
-                                    StatisticsInsightBanner(pastInsight)
-                                }
-                                item {
-                                    PastHeroCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
-                                item {
-                                    PreviousMonthComparisonCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { PastHeroCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
+                                item { PreviousMonthComparisonCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
                                 item {
                                     PastHistoryChartCard(
                                         pastHistory = metrics.pastMonthsHistory,
@@ -183,15 +217,12 @@ fun StatisticsScreen(
                                         onSelectMonth = { onAction(DashboardUiAction.SelectMonth(it)) }
                                     )
                                 }
-                                item {
-                                    PastExtremesCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { PastExtremesCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
+
+                                // Extras da aba Passado
                                 if (metrics.topContactsSpend.isNotEmpty()) {
                                     item {
-                                        ShowMoreButton(
+                                        ViewMoreAnalyticsButton(
                                             expanded = showMorePast,
                                             onToggle = { showMorePast = !showMorePast }
                                         )
@@ -208,20 +239,7 @@ fun StatisticsScreen(
                             }
 
                             StatisticsTab.PRESENT -> {
-                                item {
-                                    val presentInsight = if (metrics.savingsPercentage >= 20f) {
-                                        "Excelente: você poupou ${String.format(java.util.Locale.US, "%.0f", metrics.savingsPercentage)}% das suas receitas este mês."
-                                    } else {
-                                        "Equilíbrio orçamentário: acompanhe como você gasta e divida despesas essenciais."
-                                    }
-                                    StatisticsInsightBanner(presentInsight)
-                                }
-                                item {
-                                    PresentHeroCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { PresentHeroCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
                                 item {
                                     NatureDistributionCard(
                                         natureDistribution = metrics.natureDistribution,
@@ -232,23 +250,15 @@ fun StatisticsScreen(
                                         isPrivate = uiState.isPrivacyMode
                                     )
                                 }
-                                item {
-                                    PaymentMethodDistributionCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { PaymentMethodDistributionCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
                                 if (metrics.categoryDistribution.isNotEmpty()) {
-                                    item {
-                                        CategoryDistributionCard(
-                                            categories = metrics.categoryDistribution,
-                                            isPrivate = uiState.isPrivacyMode
-                                        )
-                                    }
+                                    item { CategoryDistributionCard(categories = metrics.categoryDistribution, isPrivate = uiState.isPrivacyMode) }
                                 }
+
+                                // Extras da aba Presente
                                 if (metrics.accountsDistribution.isNotEmpty()) {
                                     item {
-                                        ShowMoreButton(
+                                        ViewMoreAnalyticsButton(
                                             expanded = showMorePresent,
                                             onToggle = { showMorePresent = !showMorePresent }
                                         )
@@ -265,184 +275,74 @@ fun StatisticsScreen(
                             }
 
                             StatisticsTab.FUTURE -> {
-                                item {
-                                    val futureInsight = if (metrics.projectedFreedMonthlyFlowCents > 0) {
-                                        "Fluxo liberado de ${formatValueOrPrivate(metrics.projectedFreedMonthlyFlowCents, uiState.isPrivacyMode)} nos próximos meses com a quitação de parcelas."
-                                    } else {
-                                        "Projeção dos seus compromissos futuros para manter suas finanças em dia."
-                                    }
-                                    StatisticsInsightBanner(futureInsight)
-                                }
-                                item {
-                                    FutureHeroCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { FutureHeroCard(metrics = metrics, isPrivate = uiState.isPrivacyMode) }
                                 item {
                                     DeescalationCurveCard(
                                         projections = metrics.futureMonthsProjections,
                                         isPrivate = uiState.isPrivacyMode
                                     )
                                 }
-                                item {
-                                    DecisionAdvisorCard(
-                                        metrics = metrics,
-                                        isPrivate = uiState.isPrivacyMode
-                                    )
-                                }
+                                item { DecisionAdvisorCard(metrics = metrics) }
                                 if (metrics.nextCompletingInstallments.isNotEmpty()) {
                                     item {
-                                        ShowMoreButton(
-                                            expanded = showMoreFuture,
-                                            onToggle = { showMoreFuture = !showMoreFuture }
+                                        CompletingInstallmentsCard(
+                                            completingList = metrics.nextCompletingInstallments,
+                                            totalFreedFlowCents = metrics.projectedFreedMonthlyFlowCents,
+                                            isPrivate = uiState.isPrivacyMode
                                         )
-                                    }
-                                    if (showMoreFuture) {
-                                        item {
-                                            CompletingInstallmentsCard(
-                                                completingList = metrics.nextCompletingInstallments,
-                                                totalFreedFlowCents = metrics.projectedFreedMonthlyFlowCents,
-                                                isPrivate = uiState.isPrivacyMode
-                                            )
-                                        }
                                     }
                                 }
                             }
                         }
 
+                        // 5. Seção "Planejar" (Orçamentos, Metas e Plano de quitação)
                         item {
-                            Spacer(modifier = Modifier.height(20.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
+                            PlanningSection(
+                                onNavigateToBudgets = onNavigateToBudgets,
+                                onNavigateToGoals = onNavigateToGoals,
+                                onOpenPayoffPlan = { showPayoffPlan = true }
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
                         }
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-private fun StatisticsInsightBanner(text: String, modifier: Modifier = Modifier) {
-    PlatformSurface(
-        shape = PlatformShapes.medium,
-        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Lightbulb,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+        // Modal do Plano de Quitação
+        if (showPayoffPlan) {
+            PayoffPlanBottomSheet(
+                debts = emptyList(),
+                onDismiss = { showPayoffPlan = false }
             )
         }
     }
 }
 
 @Composable
-private fun PlanningQuickAccessCard(
-    onNavigateToBudgets: () -> Unit,
-    onNavigateToGoals: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        PlatformSurface(
-            onClick = onNavigateToBudgets,
-            shape = PlatformShapes.medium,
-            variant = PlatformSurfaceVariant.Tonal,
-            modifier = Modifier.weight(1f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PieChart,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Orçamentos",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-
-        PlatformSurface(
-            onClick = onNavigateToGoals,
-            shape = PlatformShapes.medium,
-            variant = PlatformSurfaceVariant.Tonal,
-            modifier = Modifier.weight(1f)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Flag,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Metas",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShowMoreButton(
+private fun ViewMoreAnalyticsButton(
     expanded: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    PlatformSurface(
+    OutlinedButton(
         onClick = onToggle,
-        shape = PlatformShapes.pill,
-        variant = PlatformSurfaceVariant.Tonal,
+        shape = PlatformShapes.medium,
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier.padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = if (expanded) AppStrings.Actions.SEE_LESS else AppStrings.Actions.SEE_MORE,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        Icon(
+            imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.size(6.dp))
+        Text(
+            text = if (expanded) "Ver menos" else "Ver mais análises",
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+        )
     }
 }

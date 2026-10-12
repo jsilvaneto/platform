@@ -97,42 +97,90 @@ fun ExpenseCommitmentTypeCard(
 
             // Se for Parcelado: Quantidade de Parcelas
             if (uiState.expenseType == BillType.INSTALLMENT) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Número de Parcelas:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+                val isLargeFont = fontScale > 1.25f
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { onInstallmentsCountChange(uiState.installmentsCount - 1) },
-                            enabled = uiState.installmentsCount > 2
+                if (isLargeFont) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Número de Parcelas:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(AppStrings.Common.DASH, fontWeight = FontWeight.Bold)
+                            IconButton(
+                                onClick = { onInstallmentsCountChange(uiState.installmentsCount - 1) },
+                                enabled = uiState.installmentsCount > 2
+                            ) {
+                                Text(AppStrings.Common.DASH, fontWeight = FontWeight.Bold)
+                            }
+
+                            PlatformSurface(
+                                shape = PlatformShapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    text = "${uiState.installmentsCount}x",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { onInstallmentsCountChange(uiState.installmentsCount + 1) },
+                                enabled = uiState.installmentsCount < 72
+                            ) {
+                                Text(AppStrings.Common.PLUS, fontWeight = FontWeight.Bold)
+                            }
                         }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Número de Parcelas:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
 
-                        PlatformSurface(
-                            shape = PlatformShapes.small,
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        ) {
-                            Text(
-                                text = "${uiState.installmentsCount}x",
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                            )
-                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { onInstallmentsCountChange(uiState.installmentsCount - 1) },
+                                enabled = uiState.installmentsCount > 2
+                            ) {
+                                Text(AppStrings.Common.DASH, fontWeight = FontWeight.Bold)
+                            }
 
-                        IconButton(
-                            onClick = { onInstallmentsCountChange(uiState.installmentsCount + 1) },
-                            enabled = uiState.installmentsCount < 72
-                        ) {
-                            Text(AppStrings.Common.PLUS, fontWeight = FontWeight.Bold)
+                            PlatformSurface(
+                                shape = PlatformShapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    text = "${uiState.installmentsCount}x",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { onInstallmentsCountChange(uiState.installmentsCount + 1) },
+                                enabled = uiState.installmentsCount < 72
+                            ) {
+                                Text(AppStrings.Common.PLUS, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }

@@ -3,6 +3,49 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e este projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
+## [1.37.0] - 2026-10-11
+
+### 🔍 Auditoria Automática de Layout, Relatório Visual Unificado e QA Visual Autônomo (Prompts 80, 81, 82, 83)
+
+- **Auditoria Automática de Layout nos Testes (Prompt 80)**:
+  - Criação do helper `LayoutAudit` (`app/src/test/java/com/platform/app/test/audit/LayoutAudit.kt`) para varredura semântica (`useUnmergedTree = true`) inspecionando nós de texto (`SemanticsActions.GetTextLayoutResult`).
+  - Verificação de 5 regras mandatórias de integridade de layout:
+    1. **Overflow Visual**: Reprova se `didOverflowHeight` ou `hasWidthOverflow` exceder limites com tolerância de subpixel de 4f.
+    2. **Quebra Extrema no Meio da Palavra**: Reprova textos com 6+ caracteres e menos de 4 caracteres médios por linha (ex.: quebras verticais tipo `PA-R-CE-LA`).
+    3. **Valores Monetários e Percentuais**: Garante que quantias concisas (`R$ ...` ou `%`) não quebrem em múltiplas linhas.
+    4. **Limites de Tela**: Garante que nenhum nó saia dos limites da janela raiz.
+    5. **Inexistência de Sobreposição**: Valida pares de caixas de texto para evitar colisões visuais.
+  - Fixtures compartilhadas em `app/src/test/java/com/platform/app/test/fixtures/ScreenFixtures.kt` com estados representativos (padrão, valores vultosos, nomes extensos, vazio, carregamento e erro) compartilhados entre testes de layout e screenshot.
+  - Implementação de `ScreenLayoutAuditTest` com 29 testes abrangendo as 7 telas principais nos temas AMOLED, Escuro e Claro, e nas escalas de fonte de acessibilidade (1.0x, 1.3x e 2.0x).
+  - Habilitação de `AccessibilityChecks.enable().setRunChecksFromRootView(true)` em testes instrumentados Compose.
+
+- **Relatório Visual Unificado com Diff Comparativo (Prompt 81)**:
+  - Criação de `scripts/visual_report.py` gerando relatório HTML responsivo em `build/visual-report/index.html`.
+  - Exibição de cada tela nos três temas lado a lado (AMOLED, Escuro, Claro) com cópia local e portabilidade total de imagens.
+  - Suporte a detecção de diffs gerados pelo Roborazzi (`_compare.png`), apresentando seções retráteis para telas sem alteração e realce de diferenças antes/depois.
+  - Registro da tarefa Gradle `visualReport`, configurada como finalizadora automática de `verifyRoborazziDebug`.
+  - Atualização do workflow `.github/workflows/ci.yml` para publicação de `build/visual-report/` como artefato do CI.
+
+- **Protocolo de QA Visual e Workflow Autônomo para o Agente (Prompt 82)**:
+  - Criação da skill oficial `.agents/skills/visual-qa/SKILL.md` definindo o ciclo de 3 rodadas para qualquer alteração de interface.
+  - Inclusão da regra mandatória 11 em `AGENT_RULES.md`: nenhuma tarefa que altere interface é finalizada sem o ciclo visual 100% limpo.
+  - Diretrizes estritas de economia de tokens (inspeção visual cirúrgica restrita a telas com diff, pulando visão quando Roborazzi acusar 0 alterações).
+  - Checklist rigoroso de inspeção: alinhamento e proporção, contraste/legibilidade, densidade sem gigantismo, integridade de texto e fidelidade de temas.
+
+- **Alinhamento de Abas, Linhas, Chips e Cabeçalhos (Prompt 83)**:
+  - `PlatformSegmentedTabs`: Altura mínima de 44dp, centralização bidimensional, rolagem horizontal quando em fontes de acessibilidade (> 1.15x), largura distribuída e contadores em pills de largura mínima garantida.
+  - `BillsMiniKpiBar`: Resumo de contas em `FlowRow`, valores com números tabulares (`PlatformMoneyText`), e empilhamento adaptativo do total geral em fontes ampliadas.
+  - `BillsMonthSectionHeader`: Alinhamento de título e selo de itens na mesma linha de base, subtotal tabular alinhado à direita sem quebras.
+  - `ExpenseRecipientAndDueDateCard`: Chips de atalho de data migrados para `FlowRow` responsivo sem compressão.
+  - `CreditCardsScreen`: Chips de faturas com rolagem horizontal; botões de ação ("Posso comprar?" e "Pagar fatura") com `heightIn(min = 48.dp)` flexíveis para fontes grandes.
+  - `PlatformCreditCardView`: Largura adaptável para 330dp em fontes ampliadas, título com até 2 linhas e rótulo de limite usado conciso sem truncamento.
+  - `OverviewTilesRow` & `Overview12MonthChart`: Largura de tiles expandida para 220dp em fontes ampliadas eliminando quebra de "RESERVA"; cabeçalho de legenda e barras em container flexível e rolável.
+  - `NatureDistributionCard`: Adaptação de categorias, poupança e total orçado para empilhamento vertical em fontes ampliadas (> 1.25x).
+  - `ExpenseCommitmentTypeCard`: Seletor de parcelas adaptativo empilhado em fontes grandes, eliminando compressão dos botões `[-]` e `[+]`.
+  - `PlatformListRow`: Layout responsivo com empilhamento de valor monetário e chip de status em fontes ampliadas (> 1.25x), e isolamento semântico de swipe layer eliminando colisões de texto.
+
+---
+
 ## [1.36.0] - 2026-10-11
 
 ### 🛡️ Eliminação Total de Superfícies Cruas, Centralização de Strings, Roborazzi e Pipeline de CI (Prompt 66)
@@ -1138,6 +1181,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 - Automação de versionamento móvel sincronizando `versionCode`, `versionName` e `CHANGELOG.md`.
 
 ---
+
 
 
 

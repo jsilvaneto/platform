@@ -30,6 +30,11 @@ import com.platform.app.presentation.theme.PlatformShapes
 import com.platform.app.presentation.theme.PlatformStatusStyle
 import com.platform.app.presentation.theme.PlatformStatusType
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.platform.LocalDensity
+
 /**
  * Gráfico minimalista de 12 meses da Visão Geral (Prompt 58):
  * - 2 passados (cor de linha), mês atual (rótulo em negrito), 9 futuros (neutro 2).
@@ -42,6 +47,9 @@ fun Overview12MonthChart(
     modifier: Modifier = Modifier
 ) {
     if (monthlySeries.isEmpty()) return
+
+    val fontScale = LocalDensity.current.fontScale
+    val isLargeFont = fontScale > 1.25f
 
     val isDark = isSystemInDarkTheme()
     val peakColor = PlatformStatusStyle.getColors(PlatformStatusType.ATTENTION, isDark).contentColor
@@ -61,52 +69,105 @@ fun Overview12MonthChart(
                 .padding(16.dp)
         ) {
             // Cabeçalho com Título e Legenda
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                PlatformSectionTitle(text = AppStrings.Overview.MONTHLY_SERIES_TITLE)
+            if (isLargeFont) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    PlatformSectionTitle(text = AppStrings.Overview.MONTHLY_SERIES_TITLE)
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(peakColor)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = AppStrings.Overview.PEAK,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(peakColor)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = AppStrings.Overview.PEAK,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(reliefColor)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = AppStrings.Overview.RELIEF,
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    PlatformSectionTitle(text = AppStrings.Overview.MONTHLY_SERIES_TITLE)
 
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(reliefColor)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = AppStrings.Overview.RELIEF,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(peakColor)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = AppStrings.Overview.PEAK,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(reliefColor)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = AppStrings.Overview.RELIEF,
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
             // Linha das 12 barras
-            Row(
-                modifier = Modifier
+            val chartRowModifier = if (isLargeFont) {
+                Modifier
                     .fillMaxWidth()
-                    .height(chartHeight + 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .heightIn(min = chartHeight + 36.dp)
+                    .horizontalScroll(rememberScrollState())
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = chartHeight + 28.dp)
+            }
+
+            Row(
+                modifier = chartRowModifier,
+                horizontalArrangement = if (isLargeFont) Arrangement.spacedBy(8.dp) else Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
                 monthlySeries.forEach { bar ->
@@ -125,9 +186,11 @@ fun Overview12MonthChart(
                         else -> neutral2Color
                     }
 
+                    val colModifier = if (isLargeFont) Modifier.width(36.dp) else Modifier.weight(1f)
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f)
+                        modifier = colModifier
                     ) {
                         Box(
                             modifier = Modifier

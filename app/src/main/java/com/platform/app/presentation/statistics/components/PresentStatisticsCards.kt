@@ -64,8 +64,11 @@ fun PresentHeroCard(
                     icon = Icons.Default.PieChart,
                     iconTint = MaterialTheme.colorScheme.primary,
                     title = "Execução do Mês",
-                    subtitle = metrics.currentMonthLabel
+                    subtitle = metrics.currentMonthLabel,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 PlatformSurface(
                     shape = PlatformShapes.pill,
@@ -76,6 +79,7 @@ fun PresentHeroCard(
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (paidRate == 100) SuccessGreen else MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
@@ -178,6 +182,7 @@ fun CategoryDistributionCard(
                                 text = "${formatValueOrPrivate(cat.amountCents, isPrivate)} (${String.format(Locale.getDefault(), "%.1f", cat.percentage)}%)",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }

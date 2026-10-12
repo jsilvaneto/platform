@@ -1,5 +1,6 @@
 package com.platform.app.presentation.overview.components
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,10 +8,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,14 +35,25 @@ fun OverviewTilesRow(
     overview: PortfolioOverview,
     modifier: Modifier = Modifier
 ) {
+    val fontScale = LocalDensity.current.fontScale
+    val isLargeFont = fontScale > 1.15f
+
+    val rowModifier = if (isLargeFont) {
+        modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+    } else {
+        modifier.fillMaxWidth()
+    }
+
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = rowModifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        val tileModifier = if (isLargeFont) Modifier.width(220.dp) else Modifier.weight(1f)
+
         // Tile 1: Custo fixo / mês
-        PlatformCard(
-            modifier = Modifier.weight(1f)
-        ) {
+        PlatformCard(modifier = tileModifier) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -57,9 +72,7 @@ fun OverviewTilesRow(
         }
 
         // Tile 2: Cartões em uso
-        PlatformCard(
-            modifier = Modifier.weight(1f)
-        ) {
+        PlatformCard(modifier = tileModifier) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -80,9 +93,7 @@ fun OverviewTilesRow(
         }
 
         // Tile 3: Reserva
-        PlatformCard(
-            modifier = Modifier.weight(1f)
-        ) {
+        PlatformCard(modifier = tileModifier) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -103,16 +103,17 @@ fun PlatformAppBar(
                     }
                 )
             } else {
+                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
                 Column {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = if (fontScale > 1.3f) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    if (!subtitle.isNullOrBlank()) {
+                    if (!subtitle.isNullOrBlank() && fontScale <= 1.3f) {
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.labelSmall,

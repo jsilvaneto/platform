@@ -41,8 +41,8 @@ class PlatformApplication : Application() {
             })
         }
         applicationScope.launch {
-            seedInitialDataUseCase()
-            extendRecurringBillsUseCase()
+            runCatching { seedInitialDataUseCase() }
+            runCatching { extendRecurringBillsUseCase() }
         }
     }
 }

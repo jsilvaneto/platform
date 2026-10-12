@@ -59,6 +59,17 @@ jobs:
             app/build/reports/roborazzi/
             app/build/outputs/roborazzi/
 
+      - name: Generate Visual Report
+        if: always()
+        run: ./gradlew visualReport
+
+      - name: Upload Visual Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: build/visual-report/
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:

@@ -17,12 +17,22 @@ import com.platform.app.presentation.settings.components.RestorePasswordDialog
 import com.platform.app.presentation.theme.PlatformTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import androidx.test.espresso.accessibility.AccessibilityChecks
 
 @RunWith(AndroidJUnit4::class)
 class ComposeUiFlowsTest {
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun enableAccessibility() {
+            AccessibilityChecks.enable().setRunChecksFromRootView(true)
+        }
+    }
 
     @get:Rule
     val composeTestRule = createComposeRule()

@@ -141,6 +141,7 @@ dependencies {
     // Testes de Instrumentação
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.accessibility)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.room.testing)
@@ -449,5 +450,19 @@ tasks.register("checkGradientsAndShadows") {
 tasks.named("preBuild") {
     dependsOn("checkLiteralColors", "checkHardcodedStrings", "checkFileSize", "checkRawShapes", "checkRawSurfaces", "checkGradientsAndShadows")
 }
+
+tasks.register<Exec>("visualReport") {
+    group = "verification"
+    description = "Generates unified HTML visual report for all screenshot tests with diff comparison"
+    workingDir = rootDir
+    val isWindows = org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)
+    val pythonCmd = if (isWindows) "python" else "python3"
+    commandLine(pythonCmd, "scripts/visual_report.py")
+}
+
+tasks.matching { it.name == "verifyRoborazziDebug" }.configureEach {
+    finalizedBy("visualReport")
+}
+
 
 

@@ -66,6 +66,8 @@ graph TD
 10. **Codificação Estrita de Arquivos Markdown (UTF-8 sem BOM)**:
     - Toda e qualquer gravação ou edição em arquivos `.md` (incluindo `CHANGELOG.md`, `AGENT_RULES.md`, `.ai/STATUS.md`, ADRs e documentações em geral) DEVE forçar estritamente a codificação **UTF-8 sem BOM**.
     - Em comandos ou scripts (especialmente em ambientes PowerShell ou Windows), é terminantemente proibido utilizar `Out-File` ou redirects (`>`) sem o parâmetro explícito `-Encoding utf8`. Em scripts Python, utilize sempre `encoding="utf-8"`. Isso previne contaminação por mojibake e reinterpretações sucessivas de caracteres acentuados.
+11. **Garantia de Qualidade Visual Obrigatória (`visual-qa`)**:
+    - Toda tarefa que altere interface em Compose só termina com o ciclo visual limpo: guard rails + `LayoutAudit` sem falhas, verificação do Roborazzi e checklist visual validado.
 
 ---
 
@@ -108,6 +110,7 @@ Ao receber uma demanda para implementar uma nova funcionalidade, siga este fluxo
 ## 4. Repositório de Skills e Regras (`.agents/`)
 
 - **Skills Disponíveis (`.agents/skills/<skill-name>/SKILL.md`)**:
+  - `visual-qa`: Protocolo autônomo de garantia de qualidade visual em Compose (LayoutAudit, Roborazzi diffs, ciclo de 3 rodadas e checklist visual). Toda tarefa que altere interface só termina com o ciclo visual limpo.
   - `financial-domain-guard`: Invariantes de contas a pagar, parcelamentos, recorrências, centavos exatos e contas de referência.
   - `ui-elegance-and-proportions`: Diretrizes de elegância visual, moderação de escala, busca inline, padrão universal de BottomSheet e ações seguras.
   - `android-compose-design-system`: Padrões de interface Material 3, Dark Mode e previews.

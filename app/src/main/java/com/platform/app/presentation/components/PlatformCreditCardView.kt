@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -77,13 +78,16 @@ fun PlatformCreditCardView(
         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
     }
 
+    val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+    val cardWidth = if (fontScale > 1.25f) 330.dp else 280.dp
+
     PlatformSurface(
         shape = PlatformShapes.card,
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, borderColor),
         modifier = modifier
-            .width(280.dp)
-            .height(170.dp)
+            .width(cardWidth)
+            .heightIn(min = 170.dp)
             .clip(PlatformShapes.card)
             .clickable(onClick = onClick)
     ) {
@@ -106,7 +110,7 @@ fun PlatformCreditCardView(
                         fontWeight = FontWeight.Bold
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
@@ -152,7 +156,7 @@ fun PlatformCreditCardView(
                 )
             }
 
-            // Limite: Barra de 8dp + "Usado R$ X de R$ Y (Z%)"
+            // Limite: Barra de 8dp + "Usado R$ X (Z%)"
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -163,20 +167,25 @@ fun PlatformCreditCardView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Usado ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)} de ${CurrencyUtils.formatCentsToCurrency(card.totalLimitCents)}",
+                        text = "Usado: ${CurrencyUtils.formatCentsToCurrency(summary.usedLimitCents)}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f, fill = false),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "$usagePercent%",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
                     )
                 }
 

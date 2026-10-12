@@ -4,6 +4,7 @@ import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,9 +42,10 @@ import com.platform.app.presentation.common.AppStrings
 import com.platform.app.presentation.components.PlatformCard
 import com.platform.app.presentation.theme.Dimens
 import com.platform.app.presentation.theme.PlatformShapes
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import java.util.Calendar
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ExpenseRecipientAndDueDateCard(
     uiState: NewExpenseUiState,
@@ -104,24 +106,23 @@ fun ExpenseRecipientAndDueDateCard(
                     )
                 }
 
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     FilterChip(
                         selected = isToday,
                         onClick = { onDueDateChange(System.currentTimeMillis()) },
                         label = { Text(AppStrings.DateShortcuts.TODAY) },
-                        shape = PlatformShapes.small,
-                        modifier = Modifier.weight(1f)
+                        shape = PlatformShapes.small
                     )
 
                     FilterChip(
                         selected = isTomorrow,
                         onClick = { onDueDateChange(DateUtils.addDays(System.currentTimeMillis(), 1)) },
                         label = { Text(AppStrings.DateShortcuts.TOMORROW) },
-                        shape = PlatformShapes.small,
-                        modifier = Modifier.weight(1f)
+                        shape = PlatformShapes.small
                     )
 
                     FilterChip(
@@ -135,8 +136,7 @@ fun ExpenseRecipientAndDueDateCard(
                             onDueDateChange(cal.timeInMillis)
                         },
                         label = { Text(AppStrings.DateShortcuts.DAY_5) },
-                        shape = PlatformShapes.small,
-                        modifier = Modifier.weight(1f)
+                        shape = PlatformShapes.small
                     )
 
                     FilterChip(
@@ -157,8 +157,7 @@ fun ExpenseRecipientAndDueDateCard(
                             ).show()
                         },
                         label = { Text(AppStrings.DateShortcuts.OTHER) },
-                        shape = PlatformShapes.small,
-                        modifier = Modifier.weight(1f)
+                        shape = PlatformShapes.small
                     )
                 }
             }

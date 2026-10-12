@@ -31,11 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.platform.app.presentation.theme.PlatformShapes
 import com.platform.app.presentation.theme.PlatformStatusStyle
 import com.platform.app.presentation.theme.PlatformStatusType
@@ -73,22 +74,21 @@ fun PlatformListRow(
             MaterialTheme.colorScheme.surface
         }
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(rowBg, PlatformShapes.medium)
-                .combinedClickable(
-                    onClick = { onClick?.invoke() },
-                    onLongClick = onLongClick
-                )
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Lado Esquerdo: Ícone 36dp com raio 12 e fundo sup2 + Título e Subtítulo
+        val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+        val isLargeFont = fontScale > 1.25f
+
+        if (isLargeFont) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(rowBg, PlatformShapes.medium)
+                    .combinedClickable(
+                        onClick = { onClick?.invoke() },
+                        onLongClick = onLongClick
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -105,9 +105,10 @@ fun PlatformListRow(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Column {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -115,7 +116,8 @@ fun PlatformListRow(
                             fontWeight = FontWeight.Bold
                         ),
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                     val subtitleColor = if (isSubtitleStatus && statusType != null) {
                         PlatformStatusStyle.getColors(statusType).contentColor
@@ -126,33 +128,120 @@ fun PlatformListRow(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = subtitleColor,
-                        maxLines = 1
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        PlatformMoneyText(
+                            amountCents = amountCents,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+
+                        if (statusText != null && statusType != null) {
+                            PlatformStatusChip(
+                                text = statusText,
+                                type = when (statusType) {
+                                    PlatformStatusType.PAID -> StatusChipType.SUCCESS
+                                    PlatformStatusType.ATTENTION -> StatusChipType.WARNING
+                                    PlatformStatusType.OVERDUE -> StatusChipType.ERROR
+                                }
+                            )
+                        }
+                    }
                 }
             }
-
-            // Lado Direito: Valor 14sp bold e Chip de Status abaixo
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(rowBg, PlatformShapes.medium)
+                    .combinedClickable(
+                        onClick = { onClick?.invoke() },
+                        onLongClick = onLongClick
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlatformMoneyText(
-                    amountCents = amountCents,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
+                // Lado Esquerdo: Ícone 36dp com raio 12 e fundo sup2 + Título e Subtítulo
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(PlatformShapes.medium)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
 
-                if (statusText != null && statusType != null) {
-                    PlatformStatusChip(
-                        text = statusText,
-                        type = when (statusType) {
-                            PlatformStatusType.PAID -> StatusChipType.SUCCESS
-                            PlatformStatusType.ATTENTION -> StatusChipType.WARNING
-                            PlatformStatusType.OVERDUE -> StatusChipType.ERROR
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Column {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val subtitleColor = if (isSubtitleStatus && statusType != null) {
+                            PlatformStatusStyle.getColors(statusType).contentColor
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
                         }
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = subtitleColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                // Lado Direito: Valor 14sp bold e Chip de Status abaixo
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    PlatformMoneyText(
+                        amountCents = amountCents,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
+
+                    if (statusText != null && statusType != null) {
+                        PlatformStatusChip(
+                            text = statusText,
+                            type = when (statusType) {
+                                PlatformStatusType.PAID -> StatusChipType.SUCCESS
+                                PlatformStatusType.ATTENTION -> StatusChipType.WARNING
+                                PlatformStatusType.OVERDUE -> StatusChipType.ERROR
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -182,6 +271,8 @@ fun PlatformListRow(
         enableDismissFromStartToEnd = true,
         enableDismissFromEndToStart = false,
         backgroundContent = {
+            val isSettled = dismissState.currentValue == SwipeToDismissBoxValue.Settled &&
+                dismissState.targetValue == SwipeToDismissBoxValue.Settled
             val color by animateColorAsState(
                 targetValue = if (dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd) {
                     paidColors.contentColor
@@ -198,20 +289,22 @@ fun PlatformListRow(
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Pagar",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Pagar",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                if (!isSettled) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Pagar",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Pagar",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         },
@@ -274,6 +367,8 @@ fun PlatformListRow(
         enableDismissFromStartToEnd = onSwipeToPay != null && enabled,
         enableDismissFromEndToStart = onSwipeToDelete != null && enabled,
         backgroundContent = {
+            val isSettled = dismissState.currentValue == SwipeToDismissBoxValue.Settled &&
+                dismissState.targetValue == SwipeToDismissBoxValue.Settled
             val isStart = dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd
             val bgColor = if (isStart) paidColors.contentColor else deleteColors.contentColor
             val alignment = if (isStart) Alignment.CenterStart else Alignment.CenterEnd
@@ -286,20 +381,22 @@ fun PlatformListRow(
                     .padding(horizontal = 16.dp),
                 contentAlignment = alignment
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = text,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
+                if (!isSettled) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = text,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = text,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         },
